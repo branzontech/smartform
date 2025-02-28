@@ -1,6 +1,6 @@
 
-import { Link } from "react-router-dom";
-import { FileText, Menu, Moon, Sun } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { FileText, Menu, Moon, Sun, Home } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useState, useEffect } from "react";
@@ -11,6 +11,7 @@ interface HeaderProps {
 
 export const Header = ({ showCreate = true }: HeaderProps) => {
   const isMobile = useIsMobile();
+  const navigate = useNavigate();
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -34,13 +35,17 @@ export const Header = ({ showCreate = true }: HeaderProps) => {
     setMobileMenuOpen(!mobileMenuOpen);
   };
 
+  const goHome = () => {
+    navigate('/');
+  };
+
   return (
     <header className="border-b border-gray-200 dark:border-gray-800 sticky top-0 bg-background/80 backdrop-blur-md z-10">
       <div className="container mx-auto flex items-center justify-between h-16">
         <div className="flex items-center">
           <Link to="/" className="flex items-center space-x-2">
             <FileText className="h-6 w-6 text-form-primary" />
-            <span className="text-xl font-semibold">FormBuilder</span>
+            <span className="text-xl font-semibold">Smart Doctor</span>
           </Link>
         </div>
 
@@ -56,6 +61,15 @@ export const Header = ({ showCreate = true }: HeaderProps) => {
             {mobileMenuOpen && (
               <div className="absolute top-16 left-0 right-0 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 shadow-lg animate-slide-down">
                 <div className="p-4 space-y-3">
+                  <Button 
+                    variant="ghost"
+                    onClick={goHome} 
+                    className="w-full justify-start"
+                  >
+                    <Home size={16} className="mr-2" />
+                    Inicio
+                  </Button>
+                  
                   {showCreate && (
                     <Link to="/crear" className="block w-full">
                       <Button className="w-full bg-form-primary hover:bg-form-primary/90">
@@ -86,6 +100,15 @@ export const Header = ({ showCreate = true }: HeaderProps) => {
           </>
         ) : (
           <div className="flex items-center space-x-4">
+            <Button 
+              variant="ghost"
+              onClick={goHome}
+              className="p-2 flex items-center gap-2"
+            >
+              <Home size={18} />
+              Inicio
+            </Button>
+            
             <Button 
               variant="ghost"
               onClick={toggleTheme}

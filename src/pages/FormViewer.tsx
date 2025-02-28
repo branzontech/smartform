@@ -6,6 +6,7 @@ import { Header } from "@/components/layout/header";
 import { FormTitle } from "@/components/ui/form-title";
 import { Question, QuestionData } from "@/components/ui/question";
 import { Button } from "@/components/ui/button";
+import { BackButton } from "../App";
 import { useToast } from "@/hooks/use-toast";
 
 interface FormResponse {
@@ -322,6 +323,7 @@ const FormViewer = () => {
       <Header showCreate={false} />
       <main className="flex-1 container mx-auto py-6">
         <div className="max-w-3xl mx-auto">
+          <BackButton />
           <form onSubmit={handleSubmit}>
             {formData && (
               <>
