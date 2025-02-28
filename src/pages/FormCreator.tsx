@@ -21,8 +21,8 @@ const FormCreator = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [loading, setLoading] = useState(!!id);
-  const [title, setTitle] = useState("Formulario sin título");
-  const [description, setDescription] = useState("");
+  const [title, setTitle] = useState("Nuevo formulario Smart Doctor");
+  const [description, setDescription] = useState("Formulario para registro de datos clínicos");
   const [questions, setQuestions] = useState<QuestionData[]>([]);
   const [saving, setSaving] = useState(false);
 
@@ -60,12 +60,31 @@ const FormCreator = () => {
         }
       }
     } else {
-      // Crear nuevo formulario con una pregunta inicial
+      // Crear nuevo formulario con preguntas iniciales clínicas
       setQuestions([
         {
           id: nanoid(),
           ...defaultQuestion,
-          title: "¿Cuál es tu nombre?",
+          title: "Nombre del paciente",
+          type: "short",
+          required: true,
+        },
+        {
+          id: nanoid(),
+          ...defaultQuestion,
+          title: "Presión arterial",
+          type: "vitals",
+          required: true,
+          min: 80,
+          max: 180,
+          units: "mmHg",
+        },
+        {
+          id: nanoid(),
+          ...defaultQuestion,
+          title: "Índice de Masa Corporal (IMC)",
+          type: "calculation",
+          formula: "[Peso] / ([Altura] * [Altura])",
         },
       ]);
     }
@@ -166,7 +185,7 @@ const FormCreator = () => {
         forms.unshift(newForm);
         toast({
           title: "Formulario creado",
-          description: "Tu nuevo formulario está listo",
+          description: "Tu nuevo formulario clínico está listo",
         });
       }
       
@@ -239,7 +258,7 @@ const FormCreator = () => {
               variant="outline"
             >
               <Plus size={16} className="mr-2" />
-              Añadir pregunta
+              Añadir campo clínico
             </Button>
           </div>
           
@@ -259,7 +278,7 @@ const FormCreator = () => {
                   className="bg-form-primary hover:bg-form-primary/90"
                   disabled={saving}
                 >
-                  {saving ? "Guardando..." : "Guardar formulario"}
+                  {saving ? "Guardando..." : "Guardar formulario médico"}
                 </Button>
               </div>
             </div>

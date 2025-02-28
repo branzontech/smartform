@@ -1,5 +1,5 @@
 
-import { CheckSquare, Circle, List, MessageSquare, Minus, Plus, Type } from "lucide-react";
+import { CheckSquare, Circle, List, MessageSquare, Minus, Plus, Type, Calculator, Activity, Stethoscope, FileText } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface QuestionTypeProps {
@@ -13,6 +13,10 @@ export const questionTypes = [
   { id: "multiple", label: "Selección múltiple", icon: Circle },
   { id: "checkbox", label: "Casillas", icon: CheckSquare },
   { id: "dropdown", label: "Desplegable", icon: List },
+  { id: "calculation", label: "Campo calculable", icon: Calculator },
+  { id: "vitals", label: "Signos vitales", icon: Activity },
+  { id: "diagnosis", label: "Diagnóstico", icon: Stethoscope },
+  { id: "clinical", label: "Datos clínicos", icon: FileText },
 ];
 
 export const QuestionType = ({ selected, onChange }: QuestionTypeProps) => {
