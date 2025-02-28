@@ -8,9 +8,11 @@ import { Question, QuestionData } from "@/components/ui/question";
 import { Button } from "@/components/ui/button";
 import { BackButton } from "../App";
 import { useToast } from "@/hooks/use-toast";
+import { Diagnosis } from "@/components/ui/question-types";
+import { Search } from "lucide-react";
 
 interface FormResponse {
-  [key: string]: string | string[];
+  [key: string]: string | string[] | Diagnosis[];
 }
 
 interface SubmitOptions {
@@ -29,6 +31,7 @@ const FormViewer = () => {
   const [formErrors, setFormErrors] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [searchTerms, setSearchTerms] = useState<{[key: string]: string}>({});
 
   useEffect(() => {
     // Cargar formulario
@@ -73,10 +76,17 @@ const FormViewer = () => {
     setLoading(false);
   }, [id, navigate, toast]);
 
-  const handleInputChange = (questionId: string, value: string | string[]) => {
+  const handleInputChange = (questionId: string, value: string | string[] | Diagnosis[]) => {
     setResponses({
       ...responses,
       [questionId]: value
+    });
+  };
+
+  const handleSearchChange = (questionId: string, term: string) => {
+    setSearchTerms({
+      ...searchTerms,
+      [questionId]: term
     });
   };
 
@@ -254,6 +264,162 @@ const FormViewer = () => {
               <option key={index} value={option}>{option}</option>
             ))}
           </select>
+        );
+      
+      case 'calculation':
+        return (
+          <div>
+            <p className="text-sm text-gray-500 mb-2">Campo calculable: {question.formula}</p>
+            <input 
+              type="number" 
+              disabled 
+              className="w-full border border-gray-300 rounded-md p-2 bg-gray-50"
+              placeholder="Valor calculado"
+            />
+          </div>
+        );
+      
+      case 'vitals':
+        return (
+          <div>
+            <div className="flex items-center justify-between text-sm text-gray-500 mb-2">
+              <span>Rango: {question.min || 0} - {question.max || 100} {question.units || ''}</span>
+            </div>
+            <input
+              type="number"
+              id={`q-${question.id}`}
+              value={(responses[question.id] as string) || ''}
+              onChange={(e) => handleInputChange(question.id, e.target.value)}
+              className={`w-full border ${isError ? 'border-red-500' : 'border-gray-300'} rounded-md p-2 bg-transparent focus:outline-none focus:border-form-primary`}
+              placeholder={`Valor (${question.units || ''})`}
+            />
+          </div>
+        );
+      
+      case 'diagnosis':
+        // Obtenemos los diagnósticos predefinidos
+        const predefinedDiagnoses: Diagnosis[] = [
+          { id: "1", code: "E11", name: "Diabetes tipo 2" },
+          { id: "2", code: "I10", name: "Hipertensión esencial (primaria)" },
+          { id: "3", code: "J45", name: "Asma" },
+          { id: "4", code: "K29.7", name: "Gastritis, no especificada" },
+          { id: "5", code: "M54.5", name: "Dolor lumbar" },
+          { id: "6", code: "G43", name: "Migraña" },
+          { id: "7", code: "F41.1", name: "Trastorno de ansiedad generalizada" },
+          { id: "8", code: "F32", name: "Episodio depresivo" },
+          { id: "9", code: "J03", name: "Amigdalitis aguda" },
+          { id: "10", code: "B01", name: "Varicela" },
+          { id: "11", code: "A09", name: "Diarrea y gastroenteritis de presunto origen infeccioso" },
+          { id: "12", code: "N39.0", name: "Infección de vías urinarias, sitio no especificado" },
+          { id: "13", code: "H10", name: "Conjuntivitis" },
+          { id: "14", code: "J01", name: "Sinusitis aguda" },
+          { id: "15", code: "L20", name: "Dermatitis atópica" }
+        ];
+
+        const searchTerm = searchTerms[question.id] || '';
+        const selectedDiagnoses = (responses[question.id] as Diagnosis[]) || [];
+        
+        const filteredDiagnoses = predefinedDiagnoses.filter(
+          (diagnosis) => 
+            diagnosis.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+            diagnosis.code.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+
+        return (
+          <div className="border border-gray-300 rounded-md p-3">
+            {/* Buscador de diagnósticos */}
+            <div className="relative mb-3">
+              <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                <Search size={16} className="text-gray-400" />
+              </div>
+              <input
+                type="text"
+                className={`block w-full pl-10 pr-3 py-2 border ${isError ? 'border-red-500' : 'border-gray-300'} rounded-md focus:ring-form-primary focus:border-form-primary`}
+                placeholder="Buscar diagnóstico por código o nombre"
+                value={searchTerm}
+                onChange={(e) => handleSearchChange(question.id, e.target.value)}
+              />
+            </div>
+
+            {/* Diagnósticos seleccionados */}
+            {selectedDiagnoses.length > 0 && (
+              <div className="mb-3">
+                <h4 className="text-sm font-medium text-gray-700 mb-2">Diagnósticos seleccionados:</h4>
+                <div className="space-y-2">
+                  {selectedDiagnoses.map(diagnosis => (
+                    <div 
+                      key={diagnosis.id} 
+                      className="flex items-center justify-between bg-blue-50 px-3 py-2 rounded-md"
+                    >
+                      <div>
+                        <span className="font-medium text-blue-700">{diagnosis.code}</span>
+                        <span className="mx-2">-</span>
+                        <span>{diagnosis.name}</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const newSelected = selectedDiagnoses.filter(d => d.id !== diagnosis.id);
+                          handleInputChange(question.id, newSelected);
+                        }}
+                        className="text-gray-500 hover:text-red-500"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Lista de diagnósticos filtrados */}
+            <div className="border border-gray-300 rounded-md max-h-60 overflow-y-auto">
+              {filteredDiagnoses.length > 0 ? (
+                <ul className="divide-y divide-gray-200">
+                  {filteredDiagnoses.map(diagnosis => {
+                    const isSelected = selectedDiagnoses.some(d => d.id === diagnosis.id);
+                    if (isSelected) return null;
+                    
+                    return (
+                      <li 
+                        key={diagnosis.id}
+                        className="px-4 py-3 flex items-center justify-between cursor-pointer hover:bg-gray-50"
+                        onClick={() => {
+                          const newSelected = [...selectedDiagnoses, diagnosis];
+                          handleInputChange(question.id, newSelected);
+                          // Limpiar búsqueda después de seleccionar
+                          handleSearchChange(question.id, '');
+                        }}
+                      >
+                        <div>
+                          <span className="font-medium">{diagnosis.code}</span>
+                          <span className="mx-2">-</span>
+                          <span>{diagnosis.name}</span>
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
+              ) : (
+                <div className="p-4 text-center text-gray-500">
+                  {searchTerm ? "No se encontraron diagnósticos" : "Busque y seleccione diagnósticos"}
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      
+      case 'clinical':
+        return (
+          <div className="space-y-3">
+            <input
+              type="text"
+              placeholder="Datos clínicos principales"
+              value={(responses[question.id] as string) || ''}
+              onChange={(e) => handleInputChange(question.id, e.target.value)}
+              className={`w-full border ${isError ? 'border-red-500' : 'border-gray-300'} rounded-md p-2 bg-transparent focus:outline-none focus:border-form-primary`}
+            />
+          </div>
         );
       
       default:
