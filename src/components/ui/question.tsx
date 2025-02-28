@@ -2,7 +2,26 @@
 import { useState } from "react";
 import { Trash2, GripVertical, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { QuestionType, Option, AddOptionButton } from "./question-types";
+import { QuestionType, Option, AddOptionButton, DiagnosisList, Diagnosis } from "./question-types";
+
+// Lista de diagnósticos predeterminados para demostración
+const predefinedDiagnoses: Diagnosis[] = [
+  { id: "1", code: "E11", name: "Diabetes tipo 2" },
+  { id: "2", code: "I10", name: "Hipertensión esencial (primaria)" },
+  { id: "3", code: "J45", name: "Asma" },
+  { id: "4", code: "K29.7", name: "Gastritis, no especificada" },
+  { id: "5", code: "M54.5", name: "Dolor lumbar" },
+  { id: "6", code: "G43", name: "Migraña" },
+  { id: "7", code: "F41.1", name: "Trastorno de ansiedad generalizada" },
+  { id: "8", code: "F32", name: "Episodio depresivo" },
+  { id: "9", code: "J03", name: "Amigdalitis aguda" },
+  { id: "10", code: "B01", name: "Varicela" },
+  { id: "11", code: "A09", name: "Diarrea y gastroenteritis de presunto origen infeccioso" },
+  { id: "12", code: "N39.0", name: "Infección de vías urinarias, sitio no especificado" },
+  { id: "13", code: "H10", name: "Conjuntivitis" },
+  { id: "14", code: "J01", name: "Sinusitis aguda" },
+  { id: "15", code: "L20", name: "Dermatitis atópica" }
+];
 
 export interface QuestionData {
   id: string;
@@ -14,6 +33,7 @@ export interface QuestionData {
   min?: number;
   max?: number;
   units?: string;
+  diagnoses?: Diagnosis[];
 }
 
 interface QuestionProps {
@@ -37,6 +57,7 @@ export const Question = ({
   const [min, setMin] = useState(question.min || 0);
   const [max, setMax] = useState(question.max || 100);
   const [units, setUnits] = useState(question.units || "");
+  const [selectedDiagnoses, setSelectedDiagnoses] = useState<Diagnosis[]>(question.diagnoses || []);
 
   const updateQuestion = () => {
     const data: Partial<QuestionData> = {
@@ -57,6 +78,10 @@ export const Question = ({
       data.min = min;
       data.max = max;
       data.units = units;
+    }
+
+    if (questionType === "diagnosis") {
+      data.diagnoses = selectedDiagnoses;
     }
 
     onUpdate(question.id, data);
@@ -99,6 +124,18 @@ export const Question = ({
   const handleUnitsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setUnits(e.target.value);
     onUpdate(question.id, { units: e.target.value });
+  };
+
+  const handleDiagnosisSelect = (diagnosis: Diagnosis) => {
+    const newSelectedDiagnoses = [...selectedDiagnoses, diagnosis];
+    setSelectedDiagnoses(newSelectedDiagnoses);
+    onUpdate(question.id, { diagnoses: newSelectedDiagnoses });
+  };
+
+  const handleDiagnosisRemove = (id: string) => {
+    const newSelectedDiagnoses = selectedDiagnoses.filter(d => d.id !== id);
+    setSelectedDiagnoses(newSelectedDiagnoses);
+    onUpdate(question.id, { diagnoses: newSelectedDiagnoses });
   };
 
   const addOption = () => {
@@ -190,8 +227,21 @@ export const Question = ({
         case 'diagnosis':
           return (
             <div className="border border-gray-300 rounded-md p-2">
-              <input type="text" placeholder="Diagnóstico" disabled className="w-full bg-transparent" />
-              <textarea placeholder="Detalles del diagnóstico" disabled className="w-full mt-2 bg-transparent" rows={2} />
+              {selectedDiagnoses.length > 0 ? (
+                <div className="space-y-2">
+                  {selectedDiagnoses.map(diagnosis => (
+                    <div key={diagnosis.id} className="flex items-center gap-2 bg-blue-50 px-3 py-2 rounded-md">
+                      <span className="font-medium text-blue-700">{diagnosis.code}</span>
+                      <span>-</span>
+                      <span>{diagnosis.name}</span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-gray-500 text-center p-2">
+                  No se han seleccionado diagnósticos
+                </div>
+              )}
             </div>
           );
         case 'clinical':
@@ -280,6 +330,17 @@ export const Question = ({
             />
           </div>
         </div>
+      );
+    }
+
+    if (questionType === "diagnosis") {
+      return (
+        <DiagnosisList 
+          diagnoses={predefinedDiagnoses}
+          selectedDiagnoses={selectedDiagnoses}
+          onSelect={handleDiagnosisSelect}
+          onRemove={handleDiagnosisRemove}
+        />
       );
     }
 
