@@ -1,746 +1,359 @@
-import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
-import { Form } from "./Home";
-import { Header } from "@/components/layout/header";
-import { FormTitle } from "@/components/ui/form-title";
-import { Question, QuestionData } from "@/components/ui/question";
-import { Button } from "@/components/ui/button";
-import { BackButton } from "../App";
-import { useToast } from "@/hooks/use-toast";
-import { Diagnosis } from "@/components/ui/question-types";
-import { Search, FileUp, X } from "lucide-react";
-import { SignaturePad } from "@/components/ui/signature-pad";
+import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/router';
+import { Button } from "@/components/ui/button"
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form"
+import { Input } from "@/components/ui/input"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { useForm } from "react-hook-form"
+import * as z from "zod"
+import { Textarea } from "@/components/ui/textarea"
+import { Checkbox } from "@/components/ui/checkbox"
+import { Label } from "@/components/ui/label"
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { cn } from "@/lib/utils";
 
-interface FormResponse {
-  [key: string]: string | string[] | Diagnosis[] | { sys: string; dia: string } | { peso: string; altura: string; imc: string } | {fileName: string, fileSize: string, fileType: string, fileContent: string};
+interface QuestionData {
+  id: string;
+  type: string;
+  title: string;
+  required: boolean;
+  options?: string[];
+  formula?: string;
+  min?: number;
+  max?: number;
+  units?: string;
+  diagnoses?: Diagnosis[];
+  vitalType?: string;
+  sysMin?: number;
+  sysMax?: number;
+  diaMin?: number;
+  diaMax?: number;
+  fileTypes?: string[];
+  maxFileSize?: number;
+  multifields?: MultifieldConfig[];
+  orientation?: "vertical" | "horizontal";
 }
 
-interface SubmitOptions {
-  method: "GET" | "POST";
-  action?: string;
-  custom?: boolean;
+export interface MultifieldConfig {
+  id: string;
+  label: string;
 }
+
+export interface Diagnosis {
+  id: string;
+  code: string;
+  name: string;
+}
+
+interface FormData {
+  [key: string]: any;
+}
+
+interface QuestionRendererProps {
+  question: QuestionData;
+  formData: FormData;
+  onChange: (id: string, value: any) => void;
+  errors: any;
+}
+
+const QuestionRenderer = ({ question, formData, onChange, errors }: QuestionRendererProps) => {
+  switch (question.type) {
+    case "short":
+      return (
+        <FormField
+          control={useFormContext().control}
+          name={question.id}
+          rules={{ required: question.required }}
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>{question.title}</FormLabel>
+              <FormControl>
+                <Input {...field} placeholder="Respuesta corta" required={question.required} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      );
+    case "paragraph":
+      return (
+        <FormField
+          control={useFormContext().control}
+          name={question.id}
+          rules={{ required: question.required }}
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>{question.title}</FormLabel>
+              <FormControl>
+                <Textarea {...field} placeholder="Párrafo" rows={3} required={question.required} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      );
+    case "multiple":
+      return (
+        <FormField
+          control={useFormContext().control}
+          name={question.id}
+          rules={{ required: question.required }}
+          render={({ field }) => (
+            <FormItem className="space-y-3">
+              <FormLabel>{question.title}</FormLabel>
+              <FormControl>
+                <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex flex-col space-y-1">
+                  {question.options?.map((option, i) => (
+                    <FormItem key={i} className="flex items-center space-x-3 space-y-0">
+                      <RadioGroupItem value={option} id={`${question.id}-${i}`} className="peer shrink-0" />
+                      <FormLabel htmlFor={`${question.id}-${i}`} className="cursor-pointer peer-checked:text-foreground">
+                        {option}
+                      </FormLabel>
+                    </FormItem>
+                  ))}
+                </RadioGroup>
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      );
+    case "checkbox":
+      return (
+        <FormField
+          control={useFormContext().control}
+          name={question.id}
+          rules={{ required: question.required }}
+          render={({ field }) => (
+            <FormItem className="flex flex-col space-y-3">
+              <FormLabel>{question.title}</FormLabel>
+              <FormControl>
+                <div className="space-y-2">
+                  {question.options?.map((option, i) => (
+                    <FormItem key={i} className="flex items-center space-x-3 space-y-0">
+                      <Checkbox
+                        checked={Array.isArray(field.value) && field.value.includes(option)}
+                        onCheckedChange={(checked) => {
+                          const newValues = checked
+                            ? [...(field.value || []), option]
+                            : Array.isArray(field.value)
+                              ? field.value.filter((v: any) => v !== option)
+                              : [];
+                          field.onChange(newValues);
+                        }}
+                        id={`${question.id}-${i}`}
+                        className="peer shrink-0"
+                      />
+                      <FormLabel htmlFor={`${question.id}-${i}`} className="cursor-pointer peer-checked:text-foreground">
+                        {option}
+                      </FormLabel>
+                    </FormItem>
+                  ))}
+                </div>
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      );
+    case "dropdown":
+      return (
+        <FormField
+          control={useFormContext().control}
+          name={question.id}
+          rules={{ required: question.required }}
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>{question.title}</FormLabel>
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecciona una opción" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {question.options?.map((option, i) => (
+                    <SelectItem key={i} value={option}>{option}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      );
+    case "calculation":
+      return (
+        <FormField
+          control={useFormContext().control}
+          name={question.id}
+          rules={{ required: question.required }}
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>{question.title}</FormLabel>
+              <FormControl>
+                <Input {...field} placeholder="Resultado del cálculo" disabled />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      );
+    case "vitals":
+      return (
+        <FormField
+          control={useFormContext().control}
+          name={question.id}
+          rules={{ required: question.required }}
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>{question.title}</FormLabel>
+              <FormControl>
+                <Input {...field} placeholder="Signos vitales" required={question.required} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      );
+    case "diagnosis":
+      return (
+        <FormField
+          control={useFormContext().control}
+          name={question.id}
+          rules={{ required: question.required }}
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>{question.title}</FormLabel>
+              <FormControl>
+                <Input {...field} placeholder="Diagnóstico" required={question.required} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      );
+    case "clinical":
+      return (
+        <FormField
+          control={useFormContext().control}
+          name={question.id}
+          rules={{ required: question.required }}
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>{question.title}</FormLabel>
+              <FormControl>
+                <Input {...field} placeholder="Datos clínicos" required={question.required} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      );
+      
+    case "multifield":
+      return (
+        <div className={cn(
+          "space-y-3",
+          question.orientation === "horizontal" && "sm:space-y-0 sm:grid sm:grid-cols-2 sm:gap-4"
+        )}>
+          {question.multifields?.map((field) => (
+            <div key={field.id} className="mb-2">
+              <label className="block text-sm font-medium text-gray-700 mb-1">{field.label}</label>
+              <input 
+                type="text" 
+                value={formData[`${question.id}_${field.id}`] || ""}
+                onChange={(e) => onChange(`${question.id}_${field.id}`, e.target.value)}
+                className="w-full border border-gray-300 rounded-md p-2"
+                required={question.required} 
+              />
+            </div>
+          ))}
+        </div>
+      );
+      
+    default:
+      return <div>Tipo de pregunta no soportado</div>;
+  }
+};
+
+const formSchema = z.object({
+  username: z.string().min(2, {
+    message: "Username must be at least 2 characters.",
+  }),
+});
+
+import { useFormContext } from 'react-hook-form';
 
 const FormViewer = () => {
-  const { id } = useParams();
-  const navigate = useNavigate();
-  const { toast } = useToast();
-  const [loading, setLoading] = useState(true);
-  const [formData, setFormData] = useState<Form | null>(null);
-  const [responses, setResponses] = useState<FormResponse>({});
-  const [formErrors, setFormErrors] = useState<string[]>([]);
-  const [submitting, setSubmitting] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
-  const [searchTerms, setSearchTerms] = useState<{[key: string]: string}>({});
+  const router = useRouter();
+  const { formId } = router.query;
+  const [formData, setFormData] = useState<FormData>({});
+  const [questions, setQuestions] = useState<QuestionData[]>([]);
 
   useEffect(() => {
-    const savedForms = localStorage.getItem("forms");
-    if (savedForms && id) {
-      try {
-        const forms = JSON.parse(savedForms);
-        const form = forms.find((f: Form) => f.id === id);
-        
-        if (form) {
-          setFormData({
-            ...form,
-            createdAt: new Date(form.createdAt),
-            updatedAt: new Date(form.updatedAt)
-          });
-        } else {
-          toast({
-            title: "Error",
-            description: "El formulario no existe",
-            variant: "destructive",
-          });
-          navigate("/");
-        }
-      } catch (error) {
-        console.error("Error loading form:", error);
-        toast({
-          title: "Error",
-          description: "No se pudo cargar el formulario",
-          variant: "destructive",
-        });
-        navigate("/");
-      }
-    } else {
-      toast({
-        title: "Error",
-        description: "El formulario no existe",
-        variant: "destructive",
-      });
-      navigate("/");
-    }
-    
-    setLoading(false);
-  }, [id, navigate, toast]);
-
-  const handleInputChange = (questionId: string, value: string | string[] | Diagnosis[] | { sys: string; dia: string } | { peso: string; altura: string; imc: string } | {fileName: string, fileSize: string, fileType: string, fileContent: string}) => {
-    setResponses({
-      ...responses,
-      [questionId]: value
-    });
-  };
-
-  const handleSearchChange = (questionId: string, term: string) => {
-    setSearchTerms({
-      ...searchTerms,
-      [questionId]: term
-    });
-  };
-
-  const calculateBMI = (weight: number, height: number): string => {
-    if (weight <= 0 || height <= 0) return "";
-    const heightInMeters = height / 100;
-    const bmi = weight / (heightInMeters * heightInMeters);
-    return bmi.toFixed(2);
-  };
-
-  const validateForm = (): boolean => {
-    const errors: string[] = [];
-    
-    if (!formData) return false;
-    
-    formData.questions.forEach(question => {
-      if (question.required) {
-        const response = responses[question.id];
-        if (!response || 
-            (Array.isArray(response) && response.length === 0) || 
-            (typeof response === 'string' && response.trim() === '') ||
-            (typeof response === 'object' && !Array.isArray(response) && 
-              ((('sys' in response) && (response.sys === '' || ('dia' in response) && response.dia === '')) ||
-               (('peso' in response) && (response.peso === '' || ('altura' in response) && response.altura === ''))))) {
-          errors.push(question.id);
-        }
-      }
-    });
-    
-    setFormErrors(errors);
-    return errors.length === 0;
-  };
-
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    
-    if (!validateForm()) {
-      toast({
-        title: "Error",
-        description: "Por favor completa todos los campos requeridos",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    setSubmitting(true);
-    
-    try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      if (formData && id) {
-        const savedForms = localStorage.getItem("forms");
-        if (savedForms) {
-          const forms = JSON.parse(savedForms);
-          const updatedForms = forms.map((form: Form) => {
-            if (form.id === id) {
-              return {
-                ...form,
-                responseCount: form.responseCount + 1
-              };
-            }
-            return form;
-          });
-          
-          localStorage.setItem("forms", JSON.stringify(updatedForms));
-        }
-      }
-      
-      const formResponses = localStorage.getItem(`formResponses_${id}`) || "[]";
-      const existingResponses = JSON.parse(formResponses);
-      existingResponses.push({
-        timestamp: new Date(),
-        data: responses
-      });
-      localStorage.setItem(`formResponses_${id}`, JSON.stringify(existingResponses));
-      
-      setSubmitted(true);
-    } catch (error) {
-      console.error("Error submitting form:", error);
-      toast({
-        title: "Error",
-        description: "No se pudo enviar el formulario",
-        variant: "destructive",
-      });
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const renderQuestionInput = (question: QuestionData) => {
-    const isError = formErrors.includes(question.id);
-    
-    switch (question.type) {
-      
-      case 'short':
-        return (
-          <input
-            type="text"
-            id={`q-${question.id}`}
-            value={(responses[question.id] as string) || ''}
-            onChange={(e) => handleInputChange(question.id, e.target.value)}
-            className={`w-full border-b ${isError ? 'border-red-500' : 'border-gray-300'} py-1 px-0 bg-transparent focus:outline-none focus:border-form-primary`}
-            placeholder="Tu respuesta"
-          />
-        );
-      
-      case 'paragraph':
-        return (
-          <textarea
-            id={`q-${question.id}`}
-            value={(responses[question.id] as string) || ''}
-            onChange={(e) => handleInputChange(question.id, e.target.value)}
-            className={`w-full border ${isError ? 'border-red-500' : 'border-gray-300'} rounded-md p-2 bg-transparent focus:outline-none focus:border-form-primary`}
-            rows={3}
-            placeholder="Tu respuesta"
-          />
-        );
-      
-      case 'multiple':
-        return (
-          <div className="space-y-2">
-            {question.options?.map((option, index) => (
-              <div key={index} className="flex items-center gap-2">
-                <input
-                  type="radio"
-                  name={`q-${question.id}`}
-                  id={`q-${question.id}-${index}`}
-                  value={option}
-                  checked={(responses[question.id] as string) === option}
-                  onChange={() => handleInputChange(question.id, option)}
-                  className={`text-form-primary focus:ring-form-primary ${isError ? 'border-red-500' : ''}`}
-                />
-                <label htmlFor={`q-${question.id}-${index}`}>{option}</label>
-              </div>
-            ))}
-          </div>
-        );
-      
-      case 'checkbox':
-        return (
-          <div className="space-y-2">
-            {question.options?.map((option, index) => {
-              const selected = (responses[question.id] as string[]) || [];
-              const isChecked = selected.includes(option);
-              
-              const handleCheckboxChange = () => {
-                const currentSelections = [...(responses[question.id] as string[] || [])];
-                
-                if (isChecked) {
-                  const filtered = currentSelections.filter(item => item !== option);
-                  handleInputChange(question.id, filtered);
-                } else {
-                  handleInputChange(question.id, [...currentSelections, option]);
-                }
-              };
-              
-              return (
-                <div key={index} className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    id={`q-${question.id}-${index}`}
-                    checked={isChecked}
-                    onChange={handleCheckboxChange}
-                    className={`text-form-primary focus:ring-form-primary ${isError ? 'border-red-500' : ''}`}
-                  />
-                  <label htmlFor={`q-${question.id}-${index}`}>{option}</label>
-                </div>
-              );
-            })}
-          </div>
-        );
-      
-      case 'dropdown':
-        return (
-          <select
-            id={`q-${question.id}`}
-            value={(responses[question.id] as string) || ''}
-            onChange={(e) => handleInputChange(question.id, e.target.value)}
-            className={`w-full border ${isError ? 'border-red-500' : 'border-gray-300'} rounded-md p-2 bg-transparent focus:outline-none focus:border-form-primary`}
-          >
-            <option value="" disabled>Seleccionar</option>
-            {question.options?.map((option, index) => (
-              <option key={index} value={option}>{option}</option>
-            ))}
-          </select>
-        );
-      
-      case 'calculation':
-        return (
-          <div>
-            <p className="text-sm text-gray-500 mb-2">Campo calculable: {question.formula}</p>
-            <input 
-              type="number" 
-              disabled 
-              className="w-full border border-gray-300 rounded-md p-2 bg-gray-50"
-              placeholder="Valor calculado"
-            />
-          </div>
-        );
-      
-      case 'vitals':
-        if (question.vitalType === "TA") {
-          const bpValues = (responses[question.id] as { sys: string; dia: string }) || { sys: "", dia: "" };
-          
-          return (
-            <div>
-              <div className="flex items-center justify-between text-sm text-gray-500 mb-2">
-                <span>Tensión Arterial (T/A): {question.sysMin || 90}-{question.sysMax || 140}/{question.diaMin || 60}-{question.diaMax || 90} {question.units || "mmHg"}</span>
-              </div>
-              <div className="flex gap-2 items-center">
-                <input
-                  type="number"
-                  value={bpValues.sys}
-                  onChange={(e) => handleInputChange(question.id, { ...bpValues, sys: e.target.value })}
-                  placeholder="Sistólica"
-                  className={`w-1/2 border ${isError ? 'border-red-500' : 'border-gray-300'} rounded-md p-2 bg-transparent focus:outline-none focus:border-form-primary`}
-                />
-                <span className="text-lg">/</span>
-                <input
-                  type="number"
-                  value={bpValues.dia}
-                  onChange={(e) => handleInputChange(question.id, { ...bpValues, dia: e.target.value })}
-                  placeholder="Diastólica"
-                  className={`w-1/2 border ${isError ? 'border-red-500' : 'border-gray-300'} rounded-md p-2 bg-transparent focus:outline-none focus:border-form-primary`}
-                />
-              </div>
-              <p className="text-xs text-gray-500 mt-1">Formato: sistólica/diastólica (ej: 120/80)</p>
-            </div>
-          );
-        } else if (question.vitalType === "IMC") {
-          const imcValues = (responses[question.id] as { peso: string; altura: string; imc: string }) || { 
-            peso: "", 
-            altura: "", 
-            imc: "" 
-          };
-          
-          const altura = parseFloat(imcValues.altura);
-          const peso = parseFloat(imcValues.peso);
-          
-          if (!isNaN(altura) && !isNaN(peso) && altura > 0 && peso > 0) {
-            imcValues.imc = calculateBMI(peso, altura);
+    const fetchForm = async () => {
+      if (formId) {
+        try {
+          const response = await fetch(`/api/forms/${formId}`);
+          if (response.ok) {
+            const data = await response.json();
+            setQuestions(data.questions);
           } else {
-            imcValues.imc = "";
+            console.error('Failed to fetch form:', response.status);
           }
-          
-          return (
-            <div>
-              <p className="text-sm text-gray-500 mb-2">Índice de Masa Corporal (IMC)</p>
-              <div className="grid grid-cols-3 gap-2">
-                <div>
-                  <label className="text-xs text-gray-500">Peso (kg)</label>
-                  <input
-                    type="number"
-                    value={imcValues.peso}
-                    onChange={(e) => handleInputChange(question.id, { ...imcValues, peso: e.target.value })}
-                    className={`w-full border ${isError ? 'border-red-500' : 'border-gray-300'} rounded-md p-2 bg-transparent focus:outline-none focus:border-form-primary`}
-                    placeholder="Peso"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs text-gray-500">Altura (cm)</label>
-                  <input
-                    type="number"
-                    value={imcValues.altura}
-                    onChange={(e) => handleInputChange(question.id, { ...imcValues, altura: e.target.value })}
-                    className={`w-full border ${isError ? 'border-red-500' : 'border-gray-300'} rounded-md p-2 bg-transparent focus:outline-none focus:border-form-primary`}
-                    placeholder="Altura"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs text-gray-500">IMC (kg/m²)</label>
-                  <input
-                    type="text"
-                    value={imcValues.imc}
-                    disabled
-                    className="w-full border border-gray-300 rounded-md p-2 bg-gray-50"
-                    placeholder="IMC"
-                  />
-                </div>
-              </div>
-            </div>
-          );
-        } else {
-          return (
-            <div>
-              <div className="flex items-center justify-between text-sm text-gray-500 mb-2">
-                <span>Rango: {question.min || 0} - {question.max || 100} {question.units || ''}</span>
-              </div>
-              <input
-                type="number"
-                id={`q-${question.id}`}
-                value={(responses[question.id] as string) || ''}
-                onChange={(e) => handleInputChange(question.id, e.target.value)}
-                className={`w-full border ${isError ? 'border-red-500' : 'border-gray-300'} rounded-md p-2 bg-transparent focus:outline-none focus:border-form-primary`}
-                placeholder={`Valor (${question.units || ''})`}
-              />
-            </div>
-          );
+        } catch (error) {
+          console.error('Error fetching form:', error);
         }
-      
-      case 'diagnosis':
-        const predefinedDiagnoses: Diagnosis[] = [
-          { id: "1", code: "E11", name: "Diabetes tipo 2" },
-          { id: "2", code: "I10", name: "Hipertensión esencial (primaria)" },
-          { id: "3", code: "J45", name: "Asma" },
-          { id: "4", code: "K29.7", name: "Gastritis, no especificada" },
-          { id: "5", code: "M54.5", name: "Dolor lumbar" },
-          { id: "6", code: "G43", name: "Migraña" },
-          { id: "7", code: "F41.1", name: "Trastorno de ansiedad generalizada" },
-          { id: "8", code: "F32", name: "Episodio depresivo" },
-          { id: "9", code: "J03", name: "Amigdalitis aguda" },
-          { id: "10", code: "B01", name: "Varicela" },
-          { id: "11", code: "A09", name: "Diarrea y gastroenteritis de presunto origen infeccioso" },
-          { id: "12", code: "N39.0", name: "Infección de vías urinarias, sitio no especificado" },
-          { id: "13", code: "H10", name: "Conjuntivitis" },
-          { id: "14", code: "J01", name: "Sinusitis aguda" },
-          { id: "15", code: "L20", name: "Dermatitis atópica" }
-        ];
+      }
+    };
 
-        const searchTerm = searchTerms[question.id] || '';
-        const selectedDiagnoses = (responses[question.id] as Diagnosis[]) || [];
-        
-        const filteredDiagnoses = predefinedDiagnoses.filter(
-          (diagnosis) => 
-            diagnosis.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-            diagnosis.code.toLowerCase().includes(searchTerm.toLowerCase())
-        );
+    fetchForm();
+  }, [formId]);
 
-        return (
-          <div className="border border-gray-300 rounded-md p-3">
-            <div className="relative mb-3">
-              <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                <Search size={16} className="text-gray-400" />
-              </div>
-              <input
-                type="text"
-                className={`block w-full pl-10 pr-3 py-2 border ${isError ? 'border-red-500' : 'border-gray-300'} rounded-md focus:ring-form-primary focus:border-form-primary`}
-                placeholder="Buscar diagnóstico por código o nombre"
-                value={searchTerm}
-                onChange={(e) => handleSearchChange(question.id, e.target.value)}
-              />
-            </div>
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      username: "",
+    },
+  })
 
-            {selectedDiagnoses.length > 0 && (
-              <div className="mb-3">
-                <h4 className="text-sm font-medium text-gray-700 mb-2">Diagnósticos seleccionados:</h4>
-                <div className="space-y-2">
-                  {selectedDiagnoses.map(diagnosis => (
-                    <div 
-                      key={diagnosis.id} 
-                      className="flex items-center justify-between bg-blue-50 px-3 py-2 rounded-md"
-                    >
-                      <div>
-                        <span className="font-medium text-blue-700">{diagnosis.code}</span>
-                        <span className="mx-2">-</span>
-                        <span>{diagnosis.name}</span>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const newSelected = selectedDiagnoses.filter(d => d.id !== diagnosis.id);
-                          handleInputChange(question.id, newSelected);
-                        }}
-                        className="text-gray-500 hover:text-red-500"
-                      >
-                        ×
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
+  function onSubmit(values: z.infer<typeof formSchema>) {
+    console.log(values)
+  }
 
-            <div className="border border-gray-300 rounded-md max-h-60 overflow-y-auto">
-              {filteredDiagnoses.length > 0 ? (
-                <ul className="divide-y divide-gray-200">
-                  {filteredDiagnoses.map(diagnosis => {
-                    const isSelected = selectedDiagnoses.some(d => d.id === diagnosis.id);
-                    if (isSelected) return null;
-                    
-                    return (
-                      <li 
-                        key={diagnosis.id}
-                        className="px-4 py-3 flex items-center justify-between cursor-pointer hover:bg-gray-50"
-                        onClick={() => {
-                          const newSelected = [...selectedDiagnoses, diagnosis];
-                          handleInputChange(question.id, newSelected);
-                          handleSearchChange(question.id, '');
-                        }}
-                      >
-                        <div>
-                          <span className="font-medium">{diagnosis.code}</span>
-                          <span className="mx-2">-</span>
-                          <span>{diagnosis.name}</span>
-                        </div>
-                      </li>
-                    );
-                  })}
-                </ul>
-              ) : (
-                <div className="p-4 text-center text-gray-500">
-                  {searchTerm ? "No se encontraron diagnósticos" : "Busque y seleccione diagnósticos"}
-                </div>
-              )}
-            </div>
-          </div>
-        );
-      
-      case 'clinical':
-        return (
-          <div className="space-y-3">
-            <input
-              type="text"
-              placeholder="Datos clínicos principales"
-              value={(responses[question.id] as string) || ''}
-              onChange={(e) => handleInputChange(question.id, e.target.value)}
-              className={`w-full border ${isError ? 'border-red-500' : 'border-gray-300'} rounded-md p-2 bg-transparent focus:outline-none focus:border-form-primary`}
-            />
-          </div>
-        );
-      
-      case 'file':
-        const fileResponse = (responses[question.id] as {fileName: string, fileSize: string, fileType: string, fileContent: string}) || null;
-        
-        const handleFileInput = async (e: React.ChangeEvent<HTMLInputElement>) => {
-          const files = e.target.files;
-          if (!files || files.length === 0) return;
-          
-          const file = files[0];
-          const fileSize = file.size / (1024 * 1024);
-          const maxSize = question.maxFileSize || 2;
-          
-          const allowedTypes = question.fileTypes || [".pdf", ".jpg", ".jpeg", ".png"];
-          const fileType = file.type;
-          let isValidType = false;
-          
-          if (fileType === "application/pdf" && allowedTypes.includes(".pdf")) {
-            isValidType = true;
-          } else if (fileType === "image/jpeg" && (allowedTypes.includes(".jpg") || allowedTypes.includes(".jpeg"))) {
-            isValidType = true;
-          } else if (fileType === "image/png" && allowedTypes.includes(".png")) {
-            isValidType = true;
-          }
-          
-          if (!isValidType) {
-            toast({
-              title: "Tipo de archivo no permitido",
-              description: "Solo se permiten archivos PDF, JPG o PNG",
-              variant: "destructive",
-            });
-            e.target.value = "";
-            return;
-          }
-          
-          if (fileSize > maxSize) {
-            toast({
-              title: "Archivo demasiado grande",
-              description: `El tamaño máximo permitido es ${maxSize}MB`,
-              variant: "destructive",
-            });
-            e.target.value = "";
-            return;
-          }
-          
-          const reader = new FileReader();
-          reader.onload = (event) => {
-            if (event.target && event.target.result) {
-              const fileContent = event.target.result as string;
-              handleInputChange(question.id, {
-                fileName: file.name,
-                fileSize: fileSize.toFixed(2),
-                fileType: file.type,
-                fileContent: fileContent
-              });
-            }
-          };
-          reader.readAsDataURL(file);
-        };
-        
-        const removeFile = () => {
-          handleInputChange(question.id, { fileName: "", fileSize: "", fileType: "", fileContent: "" });
-        };
-        
-        return (
-          <div className="border border-dashed border-gray-300 rounded-md p-4">
-            {fileResponse && fileResponse.fileName ? (
-              <div className="flex flex-col">
-                <div className="bg-blue-50 p-3 rounded-md flex items-center justify-between">
-                  <div className="flex items-center">
-                    <div className="bg-blue-100 p-2 rounded mr-3">
-                      <FileUp size={20} className="text-blue-600" />
-                    </div>
-                    <div>
-                      <p className="font-medium text-sm">{fileResponse.fileName}</p>
-                      <p className="text-xs text-gray-500">{fileResponse.fileSize} MB</p>
-                    </div>
-                  </div>
-                  <button 
-                    type="button"
-                    onClick={removeFile} 
-                    className="text-gray-400 hover:text-red-500"
-                  >
-                    <X size={18} />
-                  </button>
-                </div>
-                {question.required && isError && (
-                  <p className="text-red-500 text-sm mt-1">Este campo es requerido</p>
-                )}
-              </div>
-            ) : (
-              <div className="text-center">
-                <input
-                  type="file"
-                  id={`file-input-${question.id}`}
-                  onChange={handleFileInput}
-                  className="hidden"
-                  accept=".pdf,.jpg,.jpeg,.png"
-                />
-                <label 
-                  htmlFor={`file-input-${question.id}`}
-                  className="cursor-pointer flex flex-col items-center justify-center py-6"
-                >
-                  <FileUp size={24} className="text-gray-400 mb-2" />
-                  <p className="text-sm font-medium text-gray-700">Haga clic para adjuntar un archivo</p>
-                  <p className="text-xs text-gray-500 mt-1">
-                    PDF, JPG o PNG (máx. {question.maxFileSize || 2}MB)
-                  </p>
-                </label>
-                {question.required && isError && (
-                  <p className="text-red-500 text-sm mt-1">Este campo es requerido</p>
-                )}
-              </div>
-            )}
-          </div>
-        );
-      
-      case 'signature':
-        return (
-          <div>
-            <p className="text-sm text-gray-500 mb-2">Dibuje su firma con el dedo o un lápiz óptico</p>
-            <SignaturePad
-              value={(responses[question.id] as string) || ''}
-              onChange={(value) => handleInputChange(question.id, value)}
-              className={isError ? 'border-red-500' : ''}
-            />
-          </div>
-        );
-    
-      default:
-        return null;
-    }
+  const handleInputChange = (id: string, value: any) => {
+    setFormData(prevData => ({
+      ...prevData,
+      [id]: value,
+    }));
   };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex flex-col">
-        <Header showCreate={false} />
-        <div className="flex-1 flex items-center justify-center">
-          <div className="animate-pulse space-y-6 w-full max-w-3xl px-4">
-            <div className="h-12 bg-gray-200 dark:bg-gray-800 rounded-md w-3/4"></div>
-            <div className="h-8 bg-gray-200 dark:bg-gray-800 rounded-md w-1/2"></div>
-            <div className="space-y-4">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="h-36 bg-gray-200 dark:bg-gray-800 rounded-md"></div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (submitted) {
-    return (
-      <div className="min-h-screen flex flex-col">
-        <Header showCreate={false} />
-        <main className="flex-1 flex items-center justify-center p-4">
-          <div className="max-w-md w-full text-center animate-scale-in">
-            <div className="mb-6 text-form-primary">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-            </div>
-            <h1 className="text-2xl font-bold mb-4">Respuesta enviada</h1>
-            <p className="text-gray-600 mb-8">
-              Gracias por completar este formulario. Tu respuesta ha sido registrada.
-            </p>
-            <div className="flex justify-center space-x-4">
-              <Button 
-                onClick={() => navigate("/")}
-                variant="outline"
-              >
-                Volver al inicio
-              </Button>
-              <Button 
-                onClick={() => {
-                  setSubmitted(false);
-                  setResponses({});
-                }}
-                className="bg-form-primary hover:bg-form-primary/90"
-              >
-                Enviar otra respuesta
-              </Button>
-            </div>
-          </div>
-        </main>
-      </div>
-    );
-  }
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <Header showCreate={false} />
-      <main className="flex-1 container mx-auto py-6">
-        <div className="max-w-3xl mx-auto">
-          <BackButton />
-          <form onSubmit={handleSubmit}>
-            {formData && (
-              <>
-                <div className="mb-6 form-card overflow-visible">
-                  <FormTitle
-                    defaultTitle={formData.title}
-                    defaultDescription={formData.description}
-                    readOnly
-                  />
-                </div>
-                
-                <div className="space-y-4 mb-8">
-                  {formData.questions.map((question) => (
-                    <div key={question.id} className="question-card">
-                      <h3 className="text-lg font-medium mb-4">{question.title}</h3>
-                      {renderQuestionInput(question)}
-                      {question.required && (
-                        <div className="mt-2 text-sm text-red-500">* Requerido</div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-                
-                <div className="sticky bottom-6 flex justify-end">
-                  <div className="glassmorphism px-6 py-4 rounded-full shadow-lg animate-slide-up">
-                    <Button
-                      type="submit"
-                      className="bg-form-primary hover:bg-form-primary/90"
-                      disabled={submitting}
-                    >
-                      {submitting ? "Enviando..." : "Enviar"}
-                    </Button>
-                  </div>
-                </div>
-              </>
-            )}
-          </form>
-        </div>
-      </main>
+    <div className="container py-12">
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+          {questions.map(question => (
+            <QuestionRenderer
+              key={question.id}
+              question={question}
+              formData={formData}
+              onChange={handleInputChange}
+              errors={form.errors}
+            />
+          ))}
+          <Button type="submit">Submit</Button>
+        </form>
+      </Form>
     </div>
   );
 };

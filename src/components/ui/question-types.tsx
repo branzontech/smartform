@@ -123,7 +123,7 @@ export type QuestionType =
   | "signature"
   | "file";
 
-export interface Diagnosis {
+interface Diagnosis {
   id: string;
   code: string;
   name: string;
