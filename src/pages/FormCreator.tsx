@@ -113,6 +113,13 @@ const FormCreator = () => {
           vitalType: "IMC",
           required: true,
         },
+        {
+          id: nanoid(),
+          ...defaultQuestion,
+          title: "Firma del paciente",
+          type: "signature",
+          required: true,
+        },
       ]);
     }
   }, [id, navigate, toast]);

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Form } from "./Home";
@@ -10,6 +9,7 @@ import { BackButton } from "../App";
 import { useToast } from "@/hooks/use-toast";
 import { Diagnosis } from "@/components/ui/question-types";
 import { Search } from "lucide-react";
+import { SignaturePad } from "@/components/ui/signature-pad";
 
 interface FormResponse {
   [key: string]: string | string[] | Diagnosis[] | { sys: string; dia: string } | { peso: string; altura: string; imc: string };
@@ -181,10 +181,11 @@ const FormViewer = () => {
     }
   };
 
-  const renderQuestionInput = (question: QuestionData) => {
-    const isError = formErrors.includes(question.id);
+const renderQuestionInput = (question: QuestionData) => {
+  const isError = formErrors.includes(question.id);
+  
+  switch (question.type) {
     
-    switch (question.type) {
       case 'short':
         return (
           <input
@@ -518,6 +519,18 @@ const FormViewer = () => {
           </div>
         );
       
+    case 'signature':
+      return (
+        <div>
+          <p className="text-sm text-gray-500 mb-2">Dibuje su firma con el dedo o un lápiz óptico</p>
+          <SignaturePad
+            value={(responses[question.id] as string) || ''}
+            onChange={(value) => handleInputChange(question.id, value)}
+            className={isError ? 'border-red-500' : ''}
+          />
+        </div>
+      );
+    
       default:
         return null;
     }

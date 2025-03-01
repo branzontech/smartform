@@ -1,4 +1,3 @@
-
 import { CheckSquare, Circle, List, MessageSquare, Minus, Plus, Type, Calculator, Activity, Stethoscope, FileText, Search, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
@@ -106,6 +105,18 @@ export const AddOptionButton = ({ onClick }: AddOptionButtonProps) => {
   );
 };
 
+export type QuestionType = 
+  | "short" 
+  | "paragraph" 
+  | "multiple" 
+  | "checkbox" 
+  | "dropdown" 
+  | "calculation" 
+  | "vitals" 
+  | "diagnosis" 
+  | "clinical" 
+  | "signature";
+
 export interface Diagnosis {
   id: string;
   code: string;
@@ -202,4 +213,3 @@ export const DiagnosisList = ({ diagnoses, selectedDiagnoses, onSelect, onRemove
     </div>
   );
 };
-
