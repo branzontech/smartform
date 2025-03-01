@@ -12,7 +12,7 @@ import { Diagnosis } from "@/components/ui/question-types";
 import { Search } from "lucide-react";
 
 interface FormResponse {
-  [key: string]: string | string[] | Diagnosis[];
+  [key: string]: string | string[] | Diagnosis[] | { sys: string; dia: string } | { peso: string; altura: string; imc: string };
 }
 
 interface SubmitOptions {
@@ -76,7 +76,7 @@ const FormViewer = () => {
     setLoading(false);
   }, [id, navigate, toast]);
 
-  const handleInputChange = (questionId: string, value: string | string[] | Diagnosis[]) => {
+  const handleInputChange = (questionId: string, value: string | string[] | Diagnosis[] | { sys: string; dia: string } | { peso: string; altura: string; imc: string }) => {
     setResponses({
       ...responses,
       [questionId]: value
@@ -90,6 +90,15 @@ const FormViewer = () => {
     });
   };
 
+  // Función para calcular IMC
+  const calculateBMI = (weight: number, height: number): string => {
+    if (weight <= 0 || height <= 0) return "";
+    // Convertir altura de cm a metros
+    const heightInMeters = height / 100;
+    const bmi = weight / (heightInMeters * heightInMeters);
+    return bmi.toFixed(2);
+  };
+
   const validateForm = (): boolean => {
     const errors: string[] = [];
     
@@ -100,7 +109,10 @@ const FormViewer = () => {
         const response = responses[question.id];
         if (!response || 
             (Array.isArray(response) && response.length === 0) || 
-            (typeof response === 'string' && response.trim() === '')) {
+            (typeof response === 'string' && response.trim() === '') ||
+            (typeof response === 'object' && !Array.isArray(response) && 
+              ((('sys' in response) && (response.sys === '' || ('dia' in response) && response.dia === '')) ||
+               (('peso' in response) && (response.peso === '' || ('altura' in response) && response.altura === ''))))) {
           errors.push(question.id);
         }
       }
@@ -280,21 +292,105 @@ const FormViewer = () => {
         );
       
       case 'vitals':
-        return (
-          <div>
-            <div className="flex items-center justify-between text-sm text-gray-500 mb-2">
-              <span>Rango: {question.min || 0} - {question.max || 100} {question.units || ''}</span>
+        if (question.vitalType === "TA") {
+          const bpValues = (responses[question.id] as { sys: string; dia: string }) || { sys: "", dia: "" };
+          
+          return (
+            <div>
+              <div className="flex items-center justify-between text-sm text-gray-500 mb-2">
+                <span>Tensión Arterial (T/A): {question.sysMin || 90}-{question.sysMax || 140}/{question.diaMin || 60}-{question.diaMax || 90} {question.units || "mmHg"}</span>
+              </div>
+              <div className="flex gap-2 items-center">
+                <input
+                  type="number"
+                  value={bpValues.sys}
+                  onChange={(e) => handleInputChange(question.id, { ...bpValues, sys: e.target.value })}
+                  placeholder="Sistólica"
+                  className={`w-1/2 border ${isError ? 'border-red-500' : 'border-gray-300'} rounded-md p-2 bg-transparent focus:outline-none focus:border-form-primary`}
+                />
+                <span className="text-lg">/</span>
+                <input
+                  type="number"
+                  value={bpValues.dia}
+                  onChange={(e) => handleInputChange(question.id, { ...bpValues, dia: e.target.value })}
+                  placeholder="Diastólica"
+                  className={`w-1/2 border ${isError ? 'border-red-500' : 'border-gray-300'} rounded-md p-2 bg-transparent focus:outline-none focus:border-form-primary`}
+                />
+              </div>
+              <p className="text-xs text-gray-500 mt-1">Formato: sistólica/diastólica (ej: 120/80)</p>
             </div>
-            <input
-              type="number"
-              id={`q-${question.id}`}
-              value={(responses[question.id] as string) || ''}
-              onChange={(e) => handleInputChange(question.id, e.target.value)}
-              className={`w-full border ${isError ? 'border-red-500' : 'border-gray-300'} rounded-md p-2 bg-transparent focus:outline-none focus:border-form-primary`}
-              placeholder={`Valor (${question.units || ''})`}
-            />
-          </div>
-        );
+          );
+        } else if (question.vitalType === "IMC") {
+          const imcValues = (responses[question.id] as { peso: string; altura: string; imc: string }) || { 
+            peso: "", 
+            altura: "", 
+            imc: "" 
+          };
+          
+          // Calcular IMC automáticamente si peso y altura están presentes
+          const altura = parseFloat(imcValues.altura);
+          const peso = parseFloat(imcValues.peso);
+          
+          if (!isNaN(altura) && !isNaN(peso) && altura > 0 && peso > 0) {
+            imcValues.imc = calculateBMI(peso, altura);
+          } else {
+            imcValues.imc = "";
+          }
+          
+          return (
+            <div>
+              <p className="text-sm text-gray-500 mb-2">Índice de Masa Corporal (IMC)</p>
+              <div className="grid grid-cols-3 gap-2">
+                <div>
+                  <label className="text-xs text-gray-500">Peso (kg)</label>
+                  <input
+                    type="number"
+                    value={imcValues.peso}
+                    onChange={(e) => handleInputChange(question.id, { ...imcValues, peso: e.target.value })}
+                    className={`w-full border ${isError ? 'border-red-500' : 'border-gray-300'} rounded-md p-2 bg-transparent focus:outline-none focus:border-form-primary`}
+                    placeholder="Peso"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-gray-500">Altura (cm)</label>
+                  <input
+                    type="number"
+                    value={imcValues.altura}
+                    onChange={(e) => handleInputChange(question.id, { ...imcValues, altura: e.target.value })}
+                    className={`w-full border ${isError ? 'border-red-500' : 'border-gray-300'} rounded-md p-2 bg-transparent focus:outline-none focus:border-form-primary`}
+                    placeholder="Altura"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-gray-500">IMC (kg/m²)</label>
+                  <input
+                    type="text"
+                    value={imcValues.imc}
+                    disabled
+                    className="w-full border border-gray-300 rounded-md p-2 bg-gray-50"
+                    placeholder="IMC"
+                  />
+                </div>
+              </div>
+            </div>
+          );
+        } else {
+          return (
+            <div>
+              <div className="flex items-center justify-between text-sm text-gray-500 mb-2">
+                <span>Rango: {question.min || 0} - {question.max || 100} {question.units || ''}</span>
+              </div>
+              <input
+                type="number"
+                id={`q-${question.id}`}
+                value={(responses[question.id] as string) || ''}
+                onChange={(e) => handleInputChange(question.id, e.target.value)}
+                className={`w-full border ${isError ? 'border-red-500' : 'border-gray-300'} rounded-md p-2 bg-transparent focus:outline-none focus:border-form-primary`}
+                placeholder={`Valor (${question.units || ''})`}
+              />
+            </div>
+          );
+        }
       
       case 'diagnosis':
         // Obtenemos los diagnósticos predefinidos

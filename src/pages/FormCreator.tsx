@@ -9,6 +9,7 @@ import { Question, QuestionData } from "@/components/ui/question";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Form } from "./Home";
+import { BackButton } from "../App";
 
 const defaultQuestion: Omit<QuestionData, "id"> = {
   type: "short",
@@ -72,19 +73,45 @@ const FormCreator = () => {
         {
           id: nanoid(),
           ...defaultQuestion,
-          title: "Presión arterial",
+          title: "Tensión Arterial (T/A)",
           type: "vitals",
           required: true,
-          min: 80,
-          max: 180,
+          vitalType: "TA",
+          sysMin: 90,
+          sysMax: 140,
+          diaMin: 60,
+          diaMax: 90,
           units: "mmHg",
         },
         {
           id: nanoid(),
           ...defaultQuestion,
+          title: "Frecuencia Cardíaca (FC)",
+          type: "vitals",
+          required: true,
+          vitalType: "FC",
+          min: 60,
+          max: 100,
+          units: "lpm",
+        },
+        {
+          id: nanoid(),
+          ...defaultQuestion,
+          title: "Temperatura",
+          type: "vitals",
+          required: true,
+          vitalType: "temperatura",
+          min: 36,
+          max: 38,
+          units: "°C",
+        },
+        {
+          id: nanoid(),
+          ...defaultQuestion,
           title: "Índice de Masa Corporal (IMC)",
-          type: "calculation",
-          formula: "[Peso] / ([Altura] * [Altura])",
+          type: "vitals",
+          vitalType: "IMC",
+          required: true,
         },
       ]);
     }
@@ -231,6 +258,7 @@ const FormCreator = () => {
       <Header showCreate={false} />
       <main className="flex-1 container mx-auto py-6">
         <div className="max-w-3xl mx-auto">
+          <BackButton />
           <div className="mb-6 form-card overflow-visible">
             <FormTitle
               defaultTitle={title}
