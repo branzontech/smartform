@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/router';
+import { useParams } from 'react-router-dom';
 import { Button } from "@/components/ui/button"
 import {
   Form,
@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { useForm } from "react-hook-form"
+import { useForm, useFormContext } from "react-hook-form"
 import * as z from "zod"
 import { Textarea } from "@/components/ui/textarea"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -292,11 +292,9 @@ const formSchema = z.object({
   }),
 });
 
-import { useFormContext } from 'react-hook-form';
-
 const FormViewer = () => {
-  const router = useRouter();
-  const { formId } = router.query;
+  const params = useParams();
+  const formId = params.formId;
   const [formData, setFormData] = useState<FormData>({});
   const [questions, setQuestions] = useState<QuestionData[]>([]);
 
