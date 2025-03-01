@@ -1,4 +1,4 @@
-<lov-code>
+
 import { useState } from "react";
 import { Trash2, GripVertical, Check, FileUp, Plus, AlignHorizontalSpaceBetween, AlignVerticalSpaceBetween } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -775,4 +775,27 @@ export const Question = ({
         </div>
 
         {!readOnly && (
-          <div className="ml-3 flex flex-col items-center space
+          <div className="ml-3 flex flex-col items-center space-y-2">
+            <button
+              onClick={toggleRequired}
+              className={cn(
+                "p-2 rounded-full transition-colors",
+                required ? "text-form-primary bg-blue-50" : "text-gray-400 hover:text-gray-600"
+              )}
+              title={required ? "Esta pregunta es obligatoria" : "Hacer obligatoria"}
+            >
+              <Check size={16} />
+            </button>
+            <button
+              onClick={() => onDelete(question.id)}
+              className="p-2 rounded-full text-gray-400 hover:text-red-500 transition-colors"
+              title="Eliminar pregunta"
+            >
+              <Trash2 size={16} />
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
