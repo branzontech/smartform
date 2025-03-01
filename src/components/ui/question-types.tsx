@@ -1,6 +1,8 @@
-import { CheckSquare, Circle, List, MessageSquare, Minus, Plus, Type, Calculator, Activity, Stethoscope, FileText, Search, Check } from "lucide-react";
+
+import { CheckSquare, Circle, List, MessageSquare, Minus, Plus, Type, Calculator, Activity, Stethoscope, FileText, Search, Check, Edit3 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
+import { SignaturePad } from "./signature-pad";
 
 interface QuestionTypeProps {
   selected: string;
@@ -17,6 +19,7 @@ export const questionTypes = [
   { id: "vitals", label: "Signos vitales", icon: Activity },
   { id: "diagnosis", label: "Diagnóstico", icon: Stethoscope },
   { id: "clinical", label: "Datos clínicos", icon: FileText },
+  { id: "signature", label: "Firma", icon: Edit3 },
 ];
 
 export const QuestionType = ({ selected, onChange }: QuestionTypeProps) => {

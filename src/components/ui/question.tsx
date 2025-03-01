@@ -1,10 +1,8 @@
-
 import { useState } from "react";
 import { Trash2, GripVertical, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { QuestionType, Option, AddOptionButton, DiagnosisList, Diagnosis } from "./question-types";
 
-// Lista de diagnósticos predeterminados para demostración
 const predefinedDiagnoses: Diagnosis[] = [
   { id: "1", code: "E11", name: "Diabetes tipo 2" },
   { id: "2", code: "I10", name: "Hipertensión esencial (primaria)" },
@@ -34,11 +32,11 @@ export interface QuestionData {
   max?: number;
   units?: string;
   diagnoses?: Diagnosis[];
-  vitalType?: string; // Tipo de signo vital (TA, FC, FR, etc.)
-  sysMin?: number; // Para tensión arterial: mínimo sistólica
-  sysMax?: number; // Para tensión arterial: máximo sistólica
-  diaMin?: number; // Para tensión arterial: mínimo diastólica
-  diaMax?: number; // Para tensión arterial: máximo diastólica
+  vitalType?: string;
+  sysMin?: number;
+  sysMax?: number;
+  diaMin?: number;
+  diaMax?: number;
 }
 
 interface QuestionProps {
@@ -121,7 +119,6 @@ export const Question = ({
     const newVitalType = e.target.value;
     setVitalType(newVitalType);
     
-    // Actualizar unidades predeterminadas según el tipo de vital
     let newUnits = "";
     if (newVitalType === "TA") newUnits = "mmHg";
     else if (newVitalType === "FC") newUnits = "lpm";
@@ -351,6 +348,12 @@ export const Question = ({
             <div className="border border-gray-300 rounded-md p-2">
               <input type="text" placeholder="Datos clínicos" disabled className="w-full bg-transparent" />
               <textarea placeholder="Información detallada" disabled className="w-full mt-2 bg-transparent" rows={2} />
+            </div>
+          );
+        case 'signature':
+          return (
+            <div className="border border-gray-300 rounded-md h-32 bg-gray-50 flex items-center justify-center text-gray-400">
+              Área para firma
             </div>
           );
         default:
