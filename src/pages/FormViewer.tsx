@@ -8,11 +8,11 @@ import { Button } from "@/components/ui/button";
 import { BackButton } from "../App";
 import { useToast } from "@/hooks/use-toast";
 import { Diagnosis } from "@/components/ui/question-types";
-import { Search } from "lucide-react";
+import { Search, FileUp, X } from "lucide-react";
 import { SignaturePad } from "@/components/ui/signature-pad";
 
 interface FormResponse {
-  [key: string]: string | string[] | Diagnosis[] | { sys: string; dia: string } | { peso: string; altura: string; imc: string };
+  [key: string]: string | string[] | Diagnosis[] | { sys: string; dia: string } | { peso: string; altura: string; imc: string } | {fileName: string, fileSize: string, fileType: string, fileContent: string};
 }
 
 interface SubmitOptions {
@@ -34,7 +34,6 @@ const FormViewer = () => {
   const [searchTerms, setSearchTerms] = useState<{[key: string]: string}>({});
 
   useEffect(() => {
-    // Cargar formulario
     const savedForms = localStorage.getItem("forms");
     if (savedForms && id) {
       try {
@@ -76,7 +75,7 @@ const FormViewer = () => {
     setLoading(false);
   }, [id, navigate, toast]);
 
-  const handleInputChange = (questionId: string, value: string | string[] | Diagnosis[] | { sys: string; dia: string } | { peso: string; altura: string; imc: string }) => {
+  const handleInputChange = (questionId: string, value: string | string[] | Diagnosis[] | { sys: string; dia: string } | { peso: string; altura: string; imc: string } | {fileName: string, fileSize: string, fileType: string, fileContent: string}) => {
     setResponses({
       ...responses,
       [questionId]: value
@@ -90,10 +89,8 @@ const FormViewer = () => {
     });
   };
 
-  // Función para calcular IMC
   const calculateBMI = (weight: number, height: number): string => {
     if (weight <= 0 || height <= 0) return "";
-    // Convertir altura de cm a metros
     const heightInMeters = height / 100;
     const bmi = weight / (heightInMeters * heightInMeters);
     return bmi.toFixed(2);
@@ -137,10 +134,8 @@ const FormViewer = () => {
     setSubmitting(true);
     
     try {
-      // Simular envío de datos
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // Actualizar contador de respuestas
       if (formData && id) {
         const savedForms = localStorage.getItem("forms");
         if (savedForms) {
@@ -159,7 +154,6 @@ const FormViewer = () => {
         }
       }
       
-      // Guardar respuesta
       const formResponses = localStorage.getItem(`formResponses_${id}`) || "[]";
       const existingResponses = JSON.parse(formResponses);
       existingResponses.push({
@@ -181,11 +175,11 @@ const FormViewer = () => {
     }
   };
 
-const renderQuestionInput = (question: QuestionData) => {
-  const isError = formErrors.includes(question.id);
-  
-  switch (question.type) {
+  const renderQuestionInput = (question: QuestionData) => {
+    const isError = formErrors.includes(question.id);
     
+    switch (question.type) {
+      
       case 'short':
         return (
           <input
@@ -328,7 +322,6 @@ const renderQuestionInput = (question: QuestionData) => {
             imc: "" 
           };
           
-          // Calcular IMC automáticamente si peso y altura están presentes
           const altura = parseFloat(imcValues.altura);
           const peso = parseFloat(imcValues.peso);
           
@@ -394,7 +387,6 @@ const renderQuestionInput = (question: QuestionData) => {
         }
       
       case 'diagnosis':
-        // Obtenemos los diagnósticos predefinidos
         const predefinedDiagnoses: Diagnosis[] = [
           { id: "1", code: "E11", name: "Diabetes tipo 2" },
           { id: "2", code: "I10", name: "Hipertensión esencial (primaria)" },
@@ -424,7 +416,6 @@ const renderQuestionInput = (question: QuestionData) => {
 
         return (
           <div className="border border-gray-300 rounded-md p-3">
-            {/* Buscador de diagnósticos */}
             <div className="relative mb-3">
               <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
                 <Search size={16} className="text-gray-400" />
@@ -438,7 +429,6 @@ const renderQuestionInput = (question: QuestionData) => {
               />
             </div>
 
-            {/* Diagnósticos seleccionados */}
             {selectedDiagnoses.length > 0 && (
               <div className="mb-3">
                 <h4 className="text-sm font-medium text-gray-700 mb-2">Diagnósticos seleccionados:</h4>
@@ -469,7 +459,6 @@ const renderQuestionInput = (question: QuestionData) => {
               </div>
             )}
 
-            {/* Lista de diagnósticos filtrados */}
             <div className="border border-gray-300 rounded-md max-h-60 overflow-y-auto">
               {filteredDiagnoses.length > 0 ? (
                 <ul className="divide-y divide-gray-200">
@@ -484,7 +473,6 @@ const renderQuestionInput = (question: QuestionData) => {
                         onClick={() => {
                           const newSelected = [...selectedDiagnoses, diagnosis];
                           handleInputChange(question.id, newSelected);
-                          // Limpiar búsqueda después de seleccionar
                           handleSearchChange(question.id, '');
                         }}
                       >
@@ -519,17 +507,132 @@ const renderQuestionInput = (question: QuestionData) => {
           </div>
         );
       
-    case 'signature':
-      return (
-        <div>
-          <p className="text-sm text-gray-500 mb-2">Dibuje su firma con el dedo o un lápiz óptico</p>
-          <SignaturePad
-            value={(responses[question.id] as string) || ''}
-            onChange={(value) => handleInputChange(question.id, value)}
-            className={isError ? 'border-red-500' : ''}
-          />
-        </div>
-      );
+      case 'file':
+        const fileResponse = (responses[question.id] as {fileName: string, fileSize: string, fileType: string, fileContent: string}) || null;
+        
+        const handleFileInput = async (e: React.ChangeEvent<HTMLInputElement>) => {
+          const files = e.target.files;
+          if (!files || files.length === 0) return;
+          
+          const file = files[0];
+          const fileSize = file.size / (1024 * 1024);
+          const maxSize = question.maxFileSize || 2;
+          
+          const allowedTypes = question.fileTypes || [".pdf", ".jpg", ".jpeg", ".png"];
+          const fileType = file.type;
+          let isValidType = false;
+          
+          if (fileType === "application/pdf" && allowedTypes.includes(".pdf")) {
+            isValidType = true;
+          } else if (fileType === "image/jpeg" && (allowedTypes.includes(".jpg") || allowedTypes.includes(".jpeg"))) {
+            isValidType = true;
+          } else if (fileType === "image/png" && allowedTypes.includes(".png")) {
+            isValidType = true;
+          }
+          
+          if (!isValidType) {
+            toast({
+              title: "Tipo de archivo no permitido",
+              description: "Solo se permiten archivos PDF, JPG o PNG",
+              variant: "destructive",
+            });
+            e.target.value = "";
+            return;
+          }
+          
+          if (fileSize > maxSize) {
+            toast({
+              title: "Archivo demasiado grande",
+              description: `El tamaño máximo permitido es ${maxSize}MB`,
+              variant: "destructive",
+            });
+            e.target.value = "";
+            return;
+          }
+          
+          const reader = new FileReader();
+          reader.onload = (event) => {
+            if (event.target && event.target.result) {
+              const fileContent = event.target.result as string;
+              handleInputChange(question.id, {
+                fileName: file.name,
+                fileSize: fileSize.toFixed(2),
+                fileType: file.type,
+                fileContent: fileContent
+              });
+            }
+          };
+          reader.readAsDataURL(file);
+        };
+        
+        const removeFile = () => {
+          handleInputChange(question.id, { fileName: "", fileSize: "", fileType: "", fileContent: "" });
+        };
+        
+        return (
+          <div className="border border-dashed border-gray-300 rounded-md p-4">
+            {fileResponse && fileResponse.fileName ? (
+              <div className="flex flex-col">
+                <div className="bg-blue-50 p-3 rounded-md flex items-center justify-between">
+                  <div className="flex items-center">
+                    <div className="bg-blue-100 p-2 rounded mr-3">
+                      <FileUp size={20} className="text-blue-600" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-sm">{fileResponse.fileName}</p>
+                      <p className="text-xs text-gray-500">{fileResponse.fileSize} MB</p>
+                    </div>
+                  </div>
+                  <button 
+                    type="button"
+                    onClick={removeFile} 
+                    className="text-gray-400 hover:text-red-500"
+                  >
+                    <X size={18} />
+                  </button>
+                </div>
+                {question.required && isError && (
+                  <p className="text-red-500 text-sm mt-1">Este campo es requerido</p>
+                )}
+              </div>
+            ) : (
+              <div className="text-center">
+                <input
+                  type="file"
+                  id={`file-input-${question.id}`}
+                  onChange={handleFileInput}
+                  className="hidden"
+                  accept=".pdf,.jpg,.jpeg,.png"
+                />
+                <label 
+                  htmlFor={`file-input-${question.id}`}
+                  className="cursor-pointer flex flex-col items-center justify-center py-6"
+                >
+                  <FileUp size={24} className="text-gray-400 mb-2" />
+                  <p className="text-sm font-medium text-gray-700">Haga clic para adjuntar un archivo</p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    PDF, JPG o PNG (máx. {question.maxFileSize || 2}MB)
+                  </p>
+                </label>
+                {question.required && isError && (
+                  <p className="text-red-500 text-sm mt-1">Este campo es requerido</p>
+                )}
+              </div>
+            )}
+          </div>
+        );
+      
+      case 'signature':
+        return (
+          <div>
+            <p className="text-sm text-gray-500 mb-2">Dibuje su firma con el dedo o un lápiz óptico</p>
+            <SignaturePad
+              value={(responses[question.id] as string) || ''}
+              onChange={(value) => handleInputChange(question.id, value)}
+              className={isError ? 'border-red-500' : ''}
+            />
+          </div>
+        );
     
       default:
         return null;
