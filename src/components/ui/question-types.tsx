@@ -1,5 +1,4 @@
-
-import { CheckSquare, Circle, List, MessageSquare, Minus, Plus, Type, Calculator, Activity, Stethoscope, FileText, Search, Check, Edit3 } from "lucide-react";
+import { CheckSquare, Circle, List, MessageSquare, Minus, Plus, Type, Calculator, Activity, Stethoscope, FileText, Search, Check, Edit3, FileUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { SignaturePad } from "./signature-pad";
@@ -20,6 +19,7 @@ export const questionTypes = [
   { id: "diagnosis", label: "Diagnóstico", icon: Stethoscope },
   { id: "clinical", label: "Datos clínicos", icon: FileText },
   { id: "signature", label: "Firma", icon: Edit3 },
+  { id: "file", label: "Adjuntar archivo", icon: FileUp },
 ];
 
 export const QuestionType = ({ selected, onChange }: QuestionTypeProps) => {
@@ -118,7 +118,8 @@ export type QuestionType =
   | "vitals" 
   | "diagnosis" 
   | "clinical" 
-  | "signature";
+  | "signature"
+  | "file";
 
 export interface Diagnosis {
   id: string;

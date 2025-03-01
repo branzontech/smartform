@@ -116,6 +116,15 @@ const FormCreator = () => {
         {
           id: nanoid(),
           ...defaultQuestion,
+          title: "Documentos clínicos",
+          type: "file",
+          required: false,
+          fileTypes: ["application/pdf", "image/jpeg", "image/png"],
+          maxFileSize: 2,
+        },
+        {
+          id: nanoid(),
+          ...defaultQuestion,
           title: "Firma del paciente",
           type: "signature",
           required: true,
