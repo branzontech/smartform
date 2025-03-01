@@ -97,6 +97,19 @@ const FormCreator = () => {
         {
           id: nanoid(),
           ...defaultQuestion,
+          title: "Información de contacto",
+          type: "multifield",
+          required: true,
+          multifields: [
+            { id: nanoid(), label: "Teléfono" },
+            { id: nanoid(), label: "Correo electrónico" },
+            { id: nanoid(), label: "Dirección" }
+          ],
+          orientation: "vertical",
+        },
+        {
+          id: nanoid(),
+          ...defaultQuestion,
           title: "Temperatura",
           type: "vitals",
           required: true,

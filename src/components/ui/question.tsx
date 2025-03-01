@@ -1,7 +1,9 @@
+<lov-code>
 import { useState } from "react";
-import { Trash2, GripVertical, Check, FileUp } from "lucide-react";
+import { Trash2, GripVertical, Check, FileUp, Plus, AlignHorizontalSpaceBetween, AlignVerticalSpaceBetween } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { QuestionType, Option, AddOptionButton, DiagnosisList, Diagnosis } from "./question-types";
+import { QuestionType, Option, AddOptionButton, DiagnosisList, Diagnosis, MultifieldItem, MultifieldConfig } from "./question-types";
+import { nanoid } from "nanoid";
 
 const predefinedDiagnoses: Diagnosis[] = [
   { id: "1", code: "E11", name: "Diabetes tipo 2" },
@@ -39,6 +41,8 @@ export interface QuestionData {
   diaMax?: number;
   fileTypes?: string[];
   maxFileSize?: number;
+  multifields?: MultifieldConfig[];
+  orientation?: "vertical" | "horizontal";
 }
 
 interface QuestionProps {
@@ -72,6 +76,16 @@ export const Question = ({
   const [maxFileSize, setMaxFileSize] = useState<number>(question.maxFileSize || 2);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [fileError, setFileError] = useState<string>("");
+  
+  const [multifields, setMultifields] = useState<MultifieldConfig[]>(
+    question.multifields || [
+      { id: nanoid(), label: "Campo 1" },
+      { id: nanoid(), label: "Campo 2" }
+    ]
+  );
+  const [orientation, setOrientation] = useState<"vertical" | "horizontal">(
+    question.orientation || "vertical"
+  );
 
   const updateQuestion = () => {
     const data: Partial<QuestionData> = {
@@ -108,6 +122,11 @@ export const Question = ({
       data.diagnoses = selectedDiagnoses;
     }
 
+    if (questionType === "multifield") {
+      data.multifields = multifields;
+      data.orientation = orientation;
+    }
+    
     if (questionType === "file") {
       data.fileTypes = fileTypes;
       data.maxFileSize = maxFileSize;
@@ -253,6 +272,36 @@ export const Question = ({
     }
     
     setSelectedFile(file);
+  };
+
+  const handleMultifieldLabelChange = (id: string, label: string) => {
+    const updatedMultifields = multifields.map(field => 
+      field.id === id ? { ...field, label } : field
+    );
+    setMultifields(updatedMultifields);
+    onUpdate(question.id, { multifields: updatedMultifields });
+  };
+
+  const addMultifield = () => {
+    const newMultifields = [
+      ...multifields, 
+      { id: nanoid(), label: `Campo ${multifields.length + 1}` }
+    ];
+    setMultifields(newMultifields);
+    onUpdate(question.id, { multifields: newMultifields });
+  };
+
+  const removeMultifield = (id: string) => {
+    if (multifields.length <= 2) return;
+    const newMultifields = multifields.filter(field => field.id !== id);
+    setMultifields(newMultifields);
+    onUpdate(question.id, { multifields: newMultifields });
+  };
+
+  const toggleOrientation = () => {
+    const newOrientation = orientation === "vertical" ? "horizontal" : "vertical";
+    setOrientation(newOrientation);
+    onUpdate(question.id, { orientation: newOrientation });
   };
 
   const renderQuestionInput = () => {
@@ -403,6 +452,22 @@ export const Question = ({
               </div>
             </div>
           );
+        
+        case "multifield": {
+          return (
+            <div className={cn(
+              "space-y-2",
+              orientation === "horizontal" && "sm:space-y-0 sm:grid sm:grid-cols-2 sm:gap-4"
+            )}>
+              {multifields.map((field) => (
+                <div key={field.id} className="mb-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{field.label}</label>
+                  <input type="text" disabled className="w-full border border-gray-300 rounded-md p-2 bg-transparent" />
+                </div>
+              ))}
+            </div>
+          );
+        }
         default:
           return null;
       }
@@ -625,6 +690,68 @@ export const Question = ({
       );
     }
 
+    if (questionType === "multifield") {
+      return (
+        <div className="mt-4 space-y-4">
+          <div className="flex items-center justify-between mb-2">
+            <h4 className="text-sm font-medium text-gray-700">Campos de texto</h4>
+            <button
+              onClick={toggleOrientation}
+              className="flex items-center gap-2 text-sm text-gray-600 hover:text-form-primary transition-colors p-1 rounded"
+            >
+              {orientation === "vertical" ? (
+                <>
+                  <AlignVerticalSpaceBetween size={16} />
+                  <span>Vertical</span>
+                </>
+              ) : (
+                <>
+                  <AlignHorizontalSpaceBetween size={16} />
+                  <span>Horizontal</span>
+                </>
+              )}
+            </button>
+          </div>
+          
+          <div className="space-y-2">
+            {multifields.map((field) => (
+              <MultifieldItem
+                key={field.id}
+                id={field.id}
+                label={field.label}
+                onLabelChange={handleMultifieldLabelChange}
+                onRemove={removeMultifield}
+                canRemove={multifields.length > 2}
+              />
+            ))}
+            
+            <button
+              onClick={addMultifield}
+              className="flex items-center gap-2 text-gray-600 hover:text-form-primary transition-all mt-2"
+            >
+              <Plus size={16} />
+              <span>Agregar campo</span>
+            </button>
+          </div>
+          
+          <div className="bg-gray-50 p-3 rounded-md border border-dashed border-gray-300">
+            <p className="text-sm text-gray-500">Vista previa:</p>
+            <div className={cn(
+              "mt-2 space-y-3",
+              orientation === "horizontal" && "sm:space-y-0 sm:grid sm:grid-cols-2 sm:gap-4"
+            )}>
+              {multifields.map((field) => (
+                <div key={field.id} className="mb-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{field.label}</label>
+                  <input type="text" disabled className="w-full border border-gray-300 rounded-md p-2 bg-transparent" />
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     return null;
   };
 
@@ -648,32 +775,4 @@ export const Question = ({
         </div>
 
         {!readOnly && (
-          <div className="ml-3 flex flex-col items-center space-y-3 opacity-0 group-hover:opacity-100 transition-opacity">
-            <button
-              onClick={() => onDelete(question.id)}
-              className="text-gray-400 hover:text-red-500 transition-colors"
-            >
-              <Trash2 size={20} />
-            </button>
-            <button
-              onClick={toggleRequired}
-              className={cn(
-                "rounded-full p-1 transition-colors",
-                required 
-                  ? "bg-form-primary text-white" 
-                  : "bg-gray-200 text-gray-500 hover:bg-gray-300"
-              )}
-              title={required ? "Pregunta requerida" : "Pregunta opcional"}
-            >
-              <Check size={16} />
-            </button>
-          </div>
-        )}
-      </div>
-      
-      {readOnly && required && (
-        <div className="mt-2 text-sm text-red-500">* Requerido</div>
-      )}
-    </div>
-  );
-};
+          <div className="ml-3 flex flex-col items-center space

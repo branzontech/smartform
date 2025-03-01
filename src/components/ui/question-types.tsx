@@ -1,4 +1,4 @@
-import { CheckSquare, Circle, List, MessageSquare, Minus, Plus, Type, Calculator, Activity, Stethoscope, FileText, Search, Check, Edit3, FileUp } from "lucide-react";
+import { CheckSquare, Circle, List, MessageSquare, Minus, Plus, Type, Calculator, Activity, Stethoscope, FileText, Search, Check, Edit3, FileUp, AlignHorizontalSpaceBetween, AlignVerticalSpaceBetween } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { SignaturePad } from "./signature-pad";
@@ -18,6 +18,7 @@ export const questionTypes = [
   { id: "vitals", label: "Signos vitales", icon: Activity },
   { id: "diagnosis", label: "Diagnóstico", icon: Stethoscope },
   { id: "clinical", label: "Datos clínicos", icon: FileText },
+  { id: "multifield", label: "Campos múltiples", icon: AlignVerticalSpaceBetween },
   { id: "signature", label: "Firma", icon: Edit3 },
   { id: "file", label: "Adjuntar archivo", icon: FileUp },
 ];
@@ -118,6 +119,7 @@ export type QuestionType =
   | "vitals" 
   | "diagnosis" 
   | "clinical" 
+  | "multifield"
   | "signature"
   | "file";
 
@@ -217,3 +219,48 @@ export const DiagnosisList = ({ diagnoses, selectedDiagnoses, onSelect, onRemove
     </div>
   );
 };
+
+interface MultifieldItemProps {
+  id: string;
+  label: string;
+  onLabelChange: (id: string, label: string) => void;
+  onRemove: (id: string) => void;
+  canRemove: boolean;
+}
+
+export const MultifieldItem = ({
+  id,
+  label,
+  onLabelChange,
+  onRemove,
+  canRemove,
+}: MultifieldItemProps) => {
+  return (
+    <div className="flex items-center gap-3 mb-2 animate-fade-in">
+      <input
+        type="text"
+        value={label}
+        onChange={(e) => onLabelChange(id, e.target.value)}
+        placeholder="Etiqueta del campo"
+        className="flex-1 border-b border-gray-300 focus:border-form-primary focus:outline-none py-1 px-0 bg-transparent"
+      />
+      <button
+        onClick={() => onRemove(id)}
+        disabled={!canRemove}
+        className={cn(
+          "p-1 rounded-full transition-all",
+          canRemove 
+            ? "text-gray-500 hover:bg-gray-100" 
+            : "text-gray-300 cursor-not-allowed"
+        )}
+      >
+        <Minus size={16} />
+      </button>
+    </div>
+  );
+};
+
+export interface MultifieldConfig {
+  id: string;
+  label: string;
+}
