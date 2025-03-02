@@ -32,21 +32,21 @@ const mockForm = {
       id: "q1",
       type: "short",
       required: true,
-      question: "Nombre completo",
+      title: "Nombre completo", // Changed from question to title
       placeholder: "Escribe tu nombre completo",
     },
     {
       id: "q2",
       type: "paragraph",
       required: false,
-      question: "Descripción",
+      title: "Descripción", // Changed from question to title
       placeholder: "Escribe una descripción",
     },
     {
       id: "q3",
       type: "multiple",
       required: true,
-      question: "¿Cómo nos conociste?",
+      title: "¿Cómo nos conociste?", // Changed from question to title
       options: [
         { id: "o1", value: "Redes sociales" },
         { id: "o2", value: "Amigos" },
@@ -57,7 +57,7 @@ const mockForm = {
       id: "q4",
       type: "checkbox",
       required: true,
-      question: "Servicios de interés",
+      title: "Servicios de interés", // Changed from question to title
       options: [
         { id: "o1", value: "Consulta médica" },
         { id: "o2", value: "Laboratorio" },
