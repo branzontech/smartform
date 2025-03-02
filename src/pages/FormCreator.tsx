@@ -1,17 +1,22 @@
 
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { Plus, FileText, PieChart } from "lucide-react";
+import { Plus, FileText, PieChart, Palette } from "lucide-react";
 import { nanoid } from "nanoid";
 import { Header } from "@/components/layout/header";
 import { FormTitle } from "@/components/ui/form-title";
 import { Question } from "@/components/ui/question";
-import { QuestionData } from "@/components/forms/question/types";
+import { QuestionData, FormDesignOptions, defaultDesignOptions } from "@/components/forms/question/types";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Form } from "./Home";
 import { BackButton } from "../App";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
 
 const defaultQuestion: Omit<QuestionData, "id"> = {
   type: "short",
@@ -19,17 +24,29 @@ const defaultQuestion: Omit<QuestionData, "id"> = {
   required: false,
 };
 
+// Predefined color schemes
+const colorSchemes = [
+  { name: "Default", primaryColor: "#0099ff", backgroundColor: "#ffffff", questionBackgroundColor: "#ffffff", questionTextColor: "#1f2937" },
+  { name: "Soothing Green", primaryColor: "#10b981", backgroundColor: "#f0fdf4", questionBackgroundColor: "#ffffff", questionTextColor: "#1f2937" },
+  { name: "Professional Blue", primaryColor: "#3b82f6", backgroundColor: "#f0f9ff", questionBackgroundColor: "#ffffff", questionTextColor: "#1f2937" },
+  { name: "Warm Orange", primaryColor: "#f97316", backgroundColor: "#fff7ed", questionBackgroundColor: "#ffffff", questionTextColor: "#1f2937" },
+  { name: "Elegant Purple", primaryColor: "#8b5cf6", backgroundColor: "#f5f3ff", questionBackgroundColor: "#ffffff", questionTextColor: "#1f2937" },
+  { name: "Medical Green", primaryColor: "#22c55e", backgroundColor: "#f0fdf4", questionBackgroundColor: "#ffffff", questionTextColor: "#1f2937" }
+];
+
 const FormCreator = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [loading, setLoading] = useState(!!id);
+  const [activeTab, setActiveTab] = useState("content");
   const [title, setTitle] = useState("Nuevo formulario Smart Doctor");
   const [description, setDescription] = useState("Formulario para registro de datos clínicos");
   const [formType, setFormType] = useState<"forms" | "formato">("forms");
   const [questions, setQuestions] = useState<QuestionData[]>([]);
   const [saving, setSaving] = useState(false);
   const [expandedQuestions, setExpandedQuestions] = useState<string[]>([]);
+  const [designOptions, setDesignOptions] = useState<FormDesignOptions>(defaultDesignOptions);
 
   useEffect(() => {
     if (id) {
@@ -45,6 +62,10 @@ const FormCreator = () => {
             setDescription(form.description);
             setFormType(form.formType || "forms");
             setQuestions(form.questions || []);
+            // Cargar opciones de diseño si existen
+            if (form.designOptions) {
+              setDesignOptions(form.designOptions);
+            }
             setLoading(false);
           } else {
             // Formulario no encontrado
@@ -130,6 +151,26 @@ const FormCreator = () => {
     }
   };
 
+  const handleColorSchemeChange = (schemeName: string) => {
+    const scheme = colorSchemes.find(s => s.name === schemeName);
+    if (scheme) {
+      setDesignOptions(prev => ({
+        ...prev,
+        primaryColor: scheme.primaryColor,
+        backgroundColor: scheme.backgroundColor,
+        questionBackgroundColor: scheme.questionBackgroundColor,
+        questionTextColor: scheme.questionTextColor
+      }));
+    }
+  };
+
+  const handleDesignOptionChange = (option: keyof FormDesignOptions, value: string) => {
+    setDesignOptions(prev => ({
+      ...prev,
+      [option]: value
+    }));
+  };
+
   const saveForm = async () => {
     setSaving(true);
     
@@ -174,6 +215,7 @@ const FormCreator = () => {
               description,
               questions,
               formType,
+              designOptions,
               updatedAt: now
             };
           }
@@ -192,6 +234,7 @@ const FormCreator = () => {
           description,
           questions,
           formType,
+          designOptions,
           createdAt: now,
           updatedAt: now,
           responseCount: 0
@@ -222,6 +265,14 @@ const FormCreator = () => {
     }
   };
 
+  const applyDesignToPreview = () => {
+    document.documentElement.style.setProperty('--form-primary', designOptions.primaryColor);
+    return {
+      backgroundColor: designOptions.backgroundColor,
+      fontFamily: designOptions.fontFamily,
+    };
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex flex-col">
@@ -242,12 +293,12 @@ const FormCreator = () => {
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col" style={applyDesignToPreview()}>
       <Header showCreate={false} />
       <main className="flex-1 container mx-auto py-6">
         <div className="max-w-3xl mx-auto">
           <BackButton />
-          <div className="form-card overflow-visible mb-6">
+          <div className="form-card overflow-visible mb-6" style={{backgroundColor: designOptions.backgroundColor}}>
             <FormTitle
               defaultTitle={title}
               defaultDescription={description}
@@ -255,41 +306,189 @@ const FormCreator = () => {
               onDescriptionChange={setDescription}
             />
             
-            <div className="px-5 pb-5 pt-2">
-              <div className="mt-4">
-                <label htmlFor="form-type" className="block text-sm font-medium text-gray-700 mb-2">
-                  Tipo de formulario
-                </label>
-                <Select
-                  value={formType}
-                  onValueChange={(value: "forms" | "formato") => setFormType(value)}
-                >
-                  <SelectTrigger id="form-type" className="w-full max-w-xs">
-                    <SelectValue placeholder="Selecciona un tipo" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="forms" className="flex items-center">
-                      <div className="flex items-center">
-                        <PieChart size={16} className="mr-2 text-blue-600" />
-                        <span>Forms (Para estadísticas)</span>
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full px-5 pb-5">
+              <TabsList className="grid w-full grid-cols-2 mb-4">
+                <TabsTrigger value="content">Contenido</TabsTrigger>
+                <TabsTrigger value="design" className="flex items-center gap-1">
+                  <Palette size={16} />
+                  <span>Diseño</span>
+                </TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="content">
+                <div className="mt-4">
+                  <label htmlFor="form-type" className="block text-sm font-medium text-gray-700 mb-2">
+                    Tipo de formulario
+                  </label>
+                  <Select
+                    value={formType}
+                    onValueChange={(value: "forms" | "formato") => setFormType(value)}
+                  >
+                    <SelectTrigger id="form-type" className="w-full max-w-xs">
+                      <SelectValue placeholder="Selecciona un tipo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="forms" className="flex items-center">
+                        <div className="flex items-center">
+                          <PieChart size={16} className="mr-2 text-blue-600" />
+                          <span>Forms (Para estadísticas)</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="formato" className="flex items-center">
+                        <div className="flex items-center">
+                          <FileText size={16} className="mr-2 text-emerald-600" />
+                          <span>Formato (Para documentos)</span>
+                        </div>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                  
+                  <p className="mt-2 text-sm text-gray-500">
+                    {formType === "forms" 
+                      ? "Ideal para recopilar datos y generar estadísticas de las respuestas."
+                      : "Diseñado para crear documentos que se pueden visualizar e imprimir con formato organizado."}
+                  </p>
+                </div>
+              </TabsContent>
+              
+              <TabsContent value="design" className="space-y-6">
+                <div>
+                  <h3 className="text-lg font-medium mb-2">Esquema de colores predefinidos</h3>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    {colorSchemes.map((scheme) => (
+                      <div 
+                        key={scheme.name}
+                        className="flex flex-col items-center p-3 border rounded-md cursor-pointer hover:shadow-md transition-shadow"
+                        style={{
+                          backgroundColor: scheme.backgroundColor,
+                          borderColor: designOptions.primaryColor === scheme.primaryColor ? scheme.primaryColor : 'transparent',
+                        }}
+                        onClick={() => handleColorSchemeChange(scheme.name)}
+                      >
+                        <div 
+                          className="w-8 h-8 mb-2 rounded-full" 
+                          style={{ backgroundColor: scheme.primaryColor }}
+                        ></div>
+                        <span className="text-sm font-medium">{scheme.name}</span>
                       </div>
-                    </SelectItem>
-                    <SelectItem value="formato" className="flex items-center">
-                      <div className="flex items-center">
-                        <FileText size={16} className="mr-2 text-emerald-600" />
-                        <span>Formato (Para documentos)</span>
-                      </div>
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
+                    ))}
+                  </div>
+                </div>
                 
-                <p className="mt-2 text-sm text-gray-500">
-                  {formType === "forms" 
-                    ? "Ideal para recopilar datos y generar estadísticas de las respuestas."
-                    : "Diseñado para crear documentos que se pueden visualizar e imprimir con formato organizado."}
-                </p>
-              </div>
-            </div>
+                <Separator />
+                
+                <div>
+                  <h3 className="text-lg font-medium mb-4">Personalización</h3>
+                  
+                  <div className="grid gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="primaryColor">Color principal</Label>
+                      <div className="flex items-center gap-2">
+                        <div 
+                          className="w-6 h-6 rounded-full border"
+                          style={{ backgroundColor: designOptions.primaryColor }}
+                        ></div>
+                        <Input 
+                          id="primaryColor"
+                          type="color"
+                          value={designOptions.primaryColor}
+                          onChange={(e) => handleDesignOptionChange('primaryColor', e.target.value)}
+                          className="w-12 h-8 p-0"
+                        />
+                        <Input 
+                          type="text"
+                          value={designOptions.primaryColor}
+                          onChange={(e) => handleDesignOptionChange('primaryColor', e.target.value)}
+                          className="w-28"
+                        />
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label>Tipografía</Label>
+                      <Select
+                        value={designOptions.fontFamily}
+                        onValueChange={(value) => handleDesignOptionChange('fontFamily', value)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecciona una tipografía" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Inter, system-ui, sans-serif">Inter (Moderna)</SelectItem>
+                          <SelectItem value="'Playfair Display', serif">Playfair (Elegante)</SelectItem>
+                          <SelectItem value="'Roboto', sans-serif">Roboto (Profesional)</SelectItem>
+                          <SelectItem value="'Montserrat', sans-serif">Montserrat (Limpia)</SelectItem>
+                          <SelectItem value="'Poppins', sans-serif">Poppins (Amigable)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label>Bordes</Label>
+                      <Select
+                        value={designOptions.borderRadius}
+                        onValueChange={(value) => handleDesignOptionChange('borderRadius', value)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Estilo de bordes" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">Cuadrados</SelectItem>
+                          <SelectItem value="sm">Ligeramente redondeados</SelectItem>
+                          <SelectItem value="md">Redondeados</SelectItem>
+                          <SelectItem value="lg">Muy redondeados</SelectItem>
+                          <SelectItem value="xl">Completamente redondeados</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label>Espaciado entre preguntas</Label>
+                      <RadioGroup
+                        value={designOptions.questionSpacing}
+                        onValueChange={(value) => handleDesignOptionChange('questionSpacing', value)}
+                        className="flex space-x-4"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="compact" id="spacing-compact" />
+                          <Label htmlFor="spacing-compact">Compacto</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="normal" id="spacing-normal" />
+                          <Label htmlFor="spacing-normal">Normal</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="spacious" id="spacing-spacious" />
+                          <Label htmlFor="spacing-spacious">Espacioso</Label>
+                        </div>
+                      </RadioGroup>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label>Estilo de botones</Label>
+                      <Select
+                        value={designOptions.buttonStyle}
+                        onValueChange={(value) => handleDesignOptionChange('buttonStyle', value)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Estilo de botones" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="default">Estándar</SelectItem>
+                          <SelectItem value="outline">Con borde</SelectItem>
+                          <SelectItem value="rounded">Redondeados</SelectItem>
+                          <SelectItem value="pill">Forma de píldora</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="pt-4">
+                  <p className="text-sm text-gray-500 italic">Los cambios se aplicarán automáticamente a la vista previa. Guarda el formulario para conservar estos cambios.</p>
+                </div>
+              </TabsContent>
+            </Tabs>
           </div>
           
           {/* Lista de preguntas */}
@@ -306,6 +505,7 @@ const FormCreator = () => {
                 onMoveDown={handleMoveQuestionDown}
                 isFirst={index === 0}
                 isLast={index === questions.length - 1}
+                designOptions={designOptions}
               />
             ))}
           </div>
@@ -317,6 +517,11 @@ const FormCreator = () => {
               className="bg-white hover:bg-gray-50 border border-gray-300 text-gray-700 shadow-sm"
               variant="outline"
               size="lg"
+              style={{
+                backgroundColor: designOptions.questionBackgroundColor,
+                color: designOptions.questionTextColor,
+                borderColor: `${designOptions.primaryColor}30`,
+              }}
             >
               <Plus size={20} className="mr-2" />
               Añadir campo clínico
@@ -338,6 +543,10 @@ const FormCreator = () => {
                   onClick={saveForm}
                   className="bg-form-primary hover:bg-form-primary/90"
                   disabled={saving}
+                  style={{
+                    backgroundColor: designOptions.primaryColor,
+                    borderColor: designOptions.primaryColor
+                  }}
                 >
                   {saving ? "Guardando..." : `Guardar ${formType === "forms" ? "formulario" : "formato"} médico`}
                 </Button>

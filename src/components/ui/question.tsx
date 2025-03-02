@@ -17,6 +17,7 @@ interface QuestionProps {
   onMoveDown?: (id: string) => void;
   isFirst?: boolean;
   isLast?: boolean;
+  designOptions?: any; // Añadimos opciones de diseño
 }
 
 export const Question = ({
@@ -30,6 +31,7 @@ export const Question = ({
   onMoveDown,
   isFirst = false,
   isLast = false,
+  designOptions,
 }: QuestionProps) => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
@@ -83,15 +85,30 @@ export const Question = ({
     }
   };
 
+  // Estilos personalizados basados en designOptions
+  const questionStyle = designOptions ? {
+    backgroundColor: designOptions.questionBackgroundColor,
+    color: designOptions.questionTextColor,
+    borderRadius: designOptions.borderRadius === "md" ? "0.375rem" : 
+                 designOptions.borderRadius === "lg" ? "0.5rem" : 
+                 designOptions.borderRadius === "xl" ? "0.75rem" : "0.25rem",
+    marginBottom: designOptions.questionSpacing === "compact" ? "0.5rem" : 
+                 designOptions.questionSpacing === "spacious" ? "1.5rem" : "1rem",
+  } : {};
+
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden transition-all duration-300">
+    <div 
+      className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden transition-all duration-300"
+      style={questionStyle}
+    >
       {/* Header - siempre visible */}
       <div 
         className="px-5 py-4 flex items-center justify-between cursor-pointer border-b border-gray-100"
         onClick={onToggleExpand}
+        style={designOptions ? { borderColor: `${designOptions.primaryColor}20` } : {}}
       >
         <div className="flex-1 truncate">
-          <h3 className="font-medium text-gray-900">
+          <h3 className="font-medium text-gray-900" style={designOptions ? { color: designOptions.questionTextColor } : {}}>
             {question.title || "Nueva pregunta"}
           </h3>
         </div>
@@ -107,6 +124,7 @@ export const Question = ({
                 }}
                 disabled={isFirst}
                 className="text-gray-400 hover:text-blue-500 disabled:opacity-30"
+                style={designOptions ? { color: isFirst ? undefined : designOptions.primaryColor } : {}}
               >
                 <ArrowUp size={16} />
               </Button>
@@ -119,6 +137,7 @@ export const Question = ({
                 }}
                 disabled={isLast}
                 className="text-gray-400 hover:text-blue-500 disabled:opacity-30"
+                style={designOptions ? { color: isLast ? undefined : designOptions.primaryColor } : {}}
               >
                 <ArrowDown size={16} />
               </Button>
@@ -148,6 +167,7 @@ export const Question = ({
                 onToggleExpand();
               }}
               className="text-gray-400"
+              style={designOptions ? { color: designOptions.primaryColor } : {}}
             >
               {isExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
             </Button>
@@ -168,6 +188,11 @@ export const Question = ({
                     onChange={(e) => handleUpdate({ title: e.target.value })}
                     placeholder="Título de la pregunta"
                     className="w-full p-2 border-b border-gray-200 focus:border-form-primary focus:outline-none text-base font-medium"
+                    style={designOptions ? { 
+                      borderColor: `${designOptions.primaryColor}50`,
+                      color: designOptions.questionTextColor,
+                      fontFamily: designOptions.fontFamily
+                    } : {}}
                   />
                 </div>
 
@@ -193,10 +218,12 @@ export const Question = ({
                     checked={question.required}
                     onChange={(e) => handleRequiredChange(e.target.checked)}
                     className="rounded text-form-primary focus:ring-form-primary"
+                    style={designOptions ? { color: designOptions.primaryColor } : {}}
                   />
                   <label
                     htmlFor={`required-${question.id}`}
                     className="text-sm text-gray-600"
+                    style={designOptions ? { color: designOptions.questionTextColor } : {}}
                   >
                     Obligatorio
                   </label>

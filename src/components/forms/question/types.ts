@@ -112,3 +112,26 @@ export interface QuestionContentProps {
   onUpdate: (data: Partial<QuestionData>) => void;
   readOnly?: boolean;
 }
+
+// Nuevos tipos para la personalización del diseño
+export interface FormDesignOptions {
+  primaryColor: string;
+  fontFamily: string;
+  borderRadius: string;
+  backgroundColor: string;
+  questionSpacing: string;
+  questionBackgroundColor: string;
+  questionTextColor: string;
+  buttonStyle: string;
+}
+
+export const defaultDesignOptions: FormDesignOptions = {
+  primaryColor: "#0099ff",
+  fontFamily: "Inter, system-ui, sans-serif",
+  borderRadius: "md",
+  backgroundColor: "#ffffff",
+  questionSpacing: "normal",
+  questionBackgroundColor: "#ffffff",
+  questionTextColor: "#1f2937",
+  buttonStyle: "default"
+};
