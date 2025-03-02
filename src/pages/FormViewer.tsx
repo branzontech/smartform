@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -47,22 +46,14 @@ const mockForm = {
       type: "multiple",
       required: true,
       title: "¿Cómo nos conociste?", // Changed from question to title
-      options: [
-        { id: "o1", value: "Redes sociales" },
-        { id: "o2", value: "Amigos" },
-        { id: "o3", value: "Búsqueda web" },
-      ]
+      options: ["Redes sociales", "Amigos", "Búsqueda web"],
     },
     {
       id: "q4",
       type: "checkbox",
       required: true,
       title: "Servicios de interés", // Changed from question to title
-      options: [
-        { id: "o1", value: "Consulta médica" },
-        { id: "o2", value: "Laboratorio" },
-        { id: "o3", value: "Exámenes especiales" },
-      ]
+      options: ["Consulta médica", "Laboratorio", "Exámenes especiales"],
     }
   ]
 };
@@ -106,7 +97,7 @@ const FormViewer = () => {
           */
           
           // Mientras tanto, usamos datos de ejemplo:
-          setQuestions(mockForm.questions);
+          setQuestions(mockForm.questions as QuestionData[]);
           setFormTitle(mockForm.title);
           setFormDescription(mockForm.description);
           
@@ -122,7 +113,6 @@ const FormViewer = () => {
     fetchForm();
   }, [formId]);
 
-  // Creamos un esquema dinámico basado en las preguntas
   const createDynamicSchema = () => {
     const schemaFields: Record<string, any> = {};
     
