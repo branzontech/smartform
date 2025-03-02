@@ -1,3 +1,5 @@
+
+import React from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -10,6 +12,10 @@ import FormCreator from "./pages/FormCreator";
 import FormViewer from "./pages/FormViewer";
 import FormResponses from "./pages/FormResponses";
 import NotFound from "./pages/NotFound";
+
+// Lazy-loaded components
+const Surveys = React.lazy(() => import('./pages/Surveys'));
+const SurveyCreator = React.lazy(() => import('./pages/SurveyCreator'));
 
 export const BackButton = () => {
   const navigate = useNavigate();
@@ -45,10 +51,38 @@ function App() {
             <Route path="/editar/:id" element={<FormCreator />} />
             <Route path="/ver/:id" element={<FormViewer />} />
             <Route path="/respuestas/:id" element={<FormResponses />} />
-            <Route path="/encuestas" element={<React.lazy(() => import('./pages/Surveys'))() } />
-            <Route path="/encuestas/crear" element={<React.lazy(() => import('./pages/SurveyCreator'))() } />
-            <Route path="/encuestas/:id" element={<React.lazy(() => import('./pages/Surveys'))() } />
-            <Route path="/encuestas/:id/editar" element={<React.lazy(() => import('./pages/SurveyCreator'))() } />
+            <Route 
+              path="/encuestas" 
+              element={
+                <React.Suspense fallback={<div>Loading...</div>}>
+                  <Surveys />
+                </React.Suspense>
+              } 
+            />
+            <Route 
+              path="/encuestas/crear" 
+              element={
+                <React.Suspense fallback={<div>Loading...</div>}>
+                  <SurveyCreator />
+                </React.Suspense>
+              } 
+            />
+            <Route 
+              path="/encuestas/:id" 
+              element={
+                <React.Suspense fallback={<div>Loading...</div>}>
+                  <Surveys />
+                </React.Suspense>
+              } 
+            />
+            <Route 
+              path="/encuestas/:id/editar" 
+              element={
+                <React.Suspense fallback={<div>Loading...</div>}>
+                  <SurveyCreator />
+                </React.Suspense>
+              } 
+            />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
