@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -12,7 +11,6 @@ import FormViewer from "./pages/FormViewer";
 import FormResponses from "./pages/FormResponses";
 import NotFound from "./pages/NotFound";
 
-// Componente para el botón de volver
 export const BackButton = () => {
   const navigate = useNavigate();
   
@@ -34,23 +32,29 @@ export const BackButton = () => {
 
 const queryClient = new QueryClient();
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/crear" element={<FormCreator />} />
-          <Route path="/editar/:id" element={<FormCreator />} />
-          <Route path="/ver/:id" element={<FormViewer />} />
-          <Route path="/respuestas/:id" element={<FormResponses />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/crear" element={<FormCreator />} />
+            <Route path="/editar/:id" element={<FormCreator />} />
+            <Route path="/ver/:id" element={<FormViewer />} />
+            <Route path="/respuestas/:id" element={<FormResponses />} />
+            <Route path="/encuestas" element={<React.lazy(() => import('./pages/Surveys'))() } />
+            <Route path="/encuestas/crear" element={<React.lazy(() => import('./pages/SurveyCreator'))() } />
+            <Route path="/encuestas/:id" element={<React.lazy(() => import('./pages/Surveys'))() } />
+            <Route path="/encuestas/:id/editar" element={<React.lazy(() => import('./pages/SurveyCreator'))() } />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </TooltipProvider>
+    </QueryClientProvider>
+  );
+}
 
 export default App;
