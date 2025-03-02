@@ -6,7 +6,7 @@ import { FormCard } from "@/components/ui/form-card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { useToast } from "@/hooks/use-toast";
 import { toast } from "sonner";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
 // Tipo de datos para formularios
 export interface Form {
@@ -17,6 +17,7 @@ export interface Form {
   createdAt: Date;
   updatedAt: Date;
   responseCount: number;
+  formType: "forms" | "formato";
 }
 
 // Mock de datos iniciales
@@ -28,7 +29,8 @@ const mockForms: Form[] = [
     questions: [],
     createdAt: new Date("2023-01-15"),
     updatedAt: new Date("2023-06-20"),
-    responseCount: 24
+    responseCount: 24,
+    formType: "forms"
   },
   {
     id: "2",
@@ -37,16 +39,18 @@ const mockForms: Form[] = [
     questions: [],
     createdAt: new Date("2023-03-10"),
     updatedAt: new Date("2023-05-05"),
-    responseCount: 12
+    responseCount: 12,
+    formType: "forms"
   },
   {
     id: "3",
-    title: "Evaluación de curso",
-    description: "Formulario para evaluar la calidad del curso",
+    title: "Historia clínica",
+    description: "Formato para registro de historia clínica",
     questions: [],
     createdAt: new Date("2023-02-28"),
     updatedAt: new Date("2023-04-15"),
-    responseCount: 8
+    responseCount: 8,
+    formType: "formato"
   }
 ];
 
@@ -165,6 +169,7 @@ const Home = () => {
                 title={form.title}
                 lastUpdated={form.updatedAt}
                 responseCount={form.responseCount}
+                formType={form.formType || "forms"}
                 onEdit={handleEditForm}
                 onView={handleViewForm}
                 onResponses={handleViewResponses}

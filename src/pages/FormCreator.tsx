@@ -1,7 +1,6 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { Plus } from "lucide-react";
+import { Plus, FileText, PieChart } from "lucide-react";
 import { nanoid } from "nanoid";
 import { Header } from "@/components/layout/header";
 import { FormTitle } from "@/components/ui/form-title";
@@ -10,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Form } from "./Home";
 import { BackButton } from "../App";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const defaultQuestion: Omit<QuestionData, "id"> = {
   type: "short",
@@ -24,6 +24,7 @@ const FormCreator = () => {
   const [loading, setLoading] = useState(!!id);
   const [title, setTitle] = useState("Nuevo formulario Smart Doctor");
   const [description, setDescription] = useState("Formulario para registro de datos clínicos");
+  const [formType, setFormType] = useState<"forms" | "formato">("forms");
   const [questions, setQuestions] = useState<QuestionData[]>([]);
   const [saving, setSaving] = useState(false);
 
@@ -39,6 +40,7 @@ const FormCreator = () => {
           if (form) {
             setTitle(form.title);
             setDescription(form.description);
+            setFormType(form.formType || "forms");
             setQuestions(form.questions || []);
             setLoading(false);
           } else {
@@ -216,6 +218,7 @@ const FormCreator = () => {
               title,
               description,
               questions,
+              formType,
               updatedAt: now
             };
           }
@@ -233,6 +236,7 @@ const FormCreator = () => {
           title,
           description,
           questions,
+          formType,
           createdAt: now,
           updatedAt: now,
           responseCount: 0
@@ -241,7 +245,7 @@ const FormCreator = () => {
         forms.unshift(newForm);
         toast({
           title: "Formulario creado",
-          description: "Tu nuevo formulario clínico está listo",
+          description: `Tu nuevo ${formType === "forms" ? "formulario" : "formato"} clínico está listo`,
         });
       }
       
@@ -295,6 +299,42 @@ const FormCreator = () => {
               onTitleChange={setTitle}
               onDescriptionChange={setDescription}
             />
+            
+            <div className="px-5 pb-5 pt-2">
+              <div className="mt-4">
+                <label htmlFor="form-type" className="block text-sm font-medium text-gray-700 mb-2">
+                  Tipo de formulario
+                </label>
+                <Select
+                  value={formType}
+                  onValueChange={(value: "forms" | "formato") => setFormType(value)}
+                >
+                  <SelectTrigger id="form-type" className="w-full max-w-xs">
+                    <SelectValue placeholder="Selecciona un tipo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="forms" className="flex items-center">
+                      <div className="flex items-center">
+                        <PieChart size={16} className="mr-2 text-blue-600" />
+                        <span>Forms (Para estadísticas)</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="formato" className="flex items-center">
+                      <div className="flex items-center">
+                        <FileText size={16} className="mr-2 text-emerald-600" />
+                        <span>Formato (Para documentos)</span>
+                      </div>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+                
+                <p className="mt-2 text-sm text-gray-500">
+                  {formType === "forms" 
+                    ? "Ideal para recopilar datos y generar estadísticas de las respuestas."
+                    : "Diseñado para crear documentos que se pueden visualizar e imprimir con formato organizado."}
+                </p>
+              </div>
+            </div>
           </div>
           
           <div className="space-y-4 mb-8">
@@ -335,7 +375,7 @@ const FormCreator = () => {
                   className="bg-form-primary hover:bg-form-primary/90"
                   disabled={saving}
                 >
-                  {saving ? "Guardando..." : "Guardar formulario médico"}
+                  {saving ? "Guardando..." : `Guardar ${formType === "forms" ? "formulario" : "formato"} médico`}
                 </Button>
               </div>
             </div>
