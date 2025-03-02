@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { FileText } from "lucide-react";
+import { FileText, Printer } from "lucide-react";
 import { IndividualResponse } from './individual-response';
 import { Form } from '@/pages/Home';
 
