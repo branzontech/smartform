@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { ChevronDown, ChevronUp, Trash } from "lucide-react";
+import { ChevronDown, ChevronUp, Trash, ArrowUp, ArrowDown } from "lucide-react";
 import { Button } from "./button";
 import { QuestionData } from "../forms/question/types";
 import { QuestionType } from "./question-types";
@@ -13,6 +13,10 @@ interface QuestionProps {
   readOnly?: boolean;
   isExpanded?: boolean;
   onToggleExpand?: () => void;
+  onMoveUp?: (id: string) => void;
+  onMoveDown?: (id: string) => void;
+  isFirst?: boolean;
+  isLast?: boolean;
 }
 
 export const Question = ({
@@ -22,6 +26,10 @@ export const Question = ({
   readOnly = false,
   isExpanded = false,
   onToggleExpand,
+  onMoveUp,
+  onMoveDown,
+  isFirst = false,
+  isLast = false,
 }: QuestionProps) => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
@@ -88,6 +96,34 @@ export const Question = ({
           </h3>
         </div>
         <div className="flex items-center gap-2">
+          {!readOnly && onMoveUp && onMoveDown && (
+            <>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onMoveUp(question.id);
+                }}
+                disabled={isFirst}
+                className="text-gray-400 hover:text-blue-500 disabled:opacity-30"
+              >
+                <ArrowUp size={16} />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onMoveDown(question.id);
+                }}
+                disabled={isLast}
+                className="text-gray-400 hover:text-blue-500 disabled:opacity-30"
+              >
+                <ArrowDown size={16} />
+              </Button>
+            </>
+          )}
           {!readOnly && (
             <Button
               variant="ghost"

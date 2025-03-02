@@ -112,6 +112,24 @@ const FormCreator = () => {
     }
   };
 
+  const handleMoveQuestionUp = (id: string) => {
+    const index = questions.findIndex(q => q.id === id);
+    if (index > 0) {
+      const newQuestions = [...questions];
+      [newQuestions[index - 1], newQuestions[index]] = [newQuestions[index], newQuestions[index - 1]];
+      setQuestions(newQuestions);
+    }
+  };
+
+  const handleMoveQuestionDown = (id: string) => {
+    const index = questions.findIndex(q => q.id === id);
+    if (index < questions.length - 1) {
+      const newQuestions = [...questions];
+      [newQuestions[index], newQuestions[index + 1]] = [newQuestions[index + 1], newQuestions[index]];
+      setQuestions(newQuestions);
+    }
+  };
+
   const saveForm = async () => {
     setSaving(true);
     
@@ -276,7 +294,7 @@ const FormCreator = () => {
           
           {/* Lista de preguntas */}
           <div className="space-y-4 mb-8">
-            {questions.map((question) => (
+            {questions.map((question, index) => (
               <Question
                 key={question.id}
                 question={question}
@@ -284,6 +302,10 @@ const FormCreator = () => {
                 onDelete={handleDeleteQuestion}
                 isExpanded={expandedQuestions.includes(question.id)}
                 onToggleExpand={() => toggleQuestionExpansion(question.id)}
+                onMoveUp={handleMoveQuestionUp}
+                onMoveDown={handleMoveQuestionDown}
+                isFirst={index === 0}
+                isLast={index === questions.length - 1}
               />
             ))}
           </div>
