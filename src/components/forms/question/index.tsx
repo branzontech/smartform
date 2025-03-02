@@ -1,27 +1,38 @@
-import { useState } from "react";
-import { Trash2, GripVertical, Check } from "lucide-react";
+import React, { useState } from "react";
+import { Trash2, GripVertical, Check, FileUp, Plus, AlignHorizontalSpaceBetween, AlignVerticalSpaceBetween } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { nanoid } from "nanoid";
+import { QuestionData } from "./types";
+import { Diagnosis } from "@/components/forms/question/types";
+import { SignaturePad } from "@/components/ui/signature-pad";
+import { QuestionType, Option, AddOptionButton, DiagnosisList, MultifieldItem, MultifieldConfig } from "@/components/ui/question-types";
 
-// Importar tipos
-import { QuestionData, QuestionProps } from "./types";
+const predefinedDiagnoses: Diagnosis[] = [
+  { id: "1", code: "E11", name: "Diabetes tipo 2" },
+  { id: "2", code: "I10", name: "Hipertensión esencial (primaria)" },
+  { id: "3", code: "J45", name: "Asma" },
+  { id: "4", code: "K29.7", name: "Gastritis, no especificada" },
+  { id: "5", code: "M54.5", name: "Dolor lumbar" },
+  { id: "6", code: "G43", name: "Migraña" },
+  { id: "7", code: "F41.1", name: "Trastorno de ansiedad generalizada" },
+  { id: "8", code: "F32", name: "Episodio depresivo" },
+  { id: "9", code: "J03", name: "Amigdalitis aguda" },
+  { id: "10", code: "B01", name: "Varicela" },
+  { id: "11", code: "A09", name: "Diarrea y gastroenteritis de presunto origen infeccioso" },
+  { id: "12", code: "N39.0", name: "Infección de vías urinarias, sitio no especificado" },
+  { id: "13", code: "H10", name: "Conjuntivitis" },
+  { id: "14", code: "J01", name: "Sinusitis aguda" },
+  { id: "15", code: "L20", name: "Dermatitis atópica" }
+];
 
-// Importar datos
-import { predefinedDiagnoses } from "./data";
+interface QuestionProps {
+  question: QuestionData;
+  onUpdate: (id: string, data: Partial<QuestionData>) => void;
+  onDelete: (id: string) => void;
+  readOnly?: boolean;
+}
 
-// Importar controles
-import { QuestionType } from "./controls/question-type";
-import { DiagnosisList } from "./controls/diagnosis-list";
-
-// Importar contenido específico por tipo
-import { MultipleChoice } from "./content/multiple-choice";
-import { Checkbox } from "./content/checkbox";
-import { Dropdown } from "./content/dropdown";
-import { Multifield } from "./content/multifield";
-
-// Importaremos los demás componentes en futuras refactorizaciones
-
-export const Question = ({
+const Question = ({
   question,
   onUpdate,
   onDelete,
@@ -46,7 +57,7 @@ export const Question = ({
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [fileError, setFileError] = useState<string>("");
   
-  const [multifields, setMultifields] = useState(
+  const [multifields, setMultifields] = useState<MultifieldConfig[]>(
     question.multifields || [
       { id: nanoid(), label: "Campo 1" },
       { id: nanoid(), label: "Campo 2" }
@@ -56,7 +67,6 @@ export const Question = ({
     question.orientation || "vertical"
   );
 
-  // Funciones de actualización
   const updateQuestion = () => {
     const data: Partial<QuestionData> = {
       title: questionTitle,
@@ -623,7 +633,7 @@ export const Question = ({
             <textarea
               placeholder="Información detallada"
               className="w-full border border-gray-300 rounded-md p-2 focus:border-form-primary focus:outline-none"
-              rows={3}
+              rows={2}
             />
           </div>
         </div>
@@ -632,9 +642,11 @@ export const Question = ({
 
     if (questionType === "signature") {
       return (
-        <div className="mt-4">
-          <SignaturePad />
-        </div>
+        <SignaturePad
+          value=""
+          onChange={() => {}}
+          className="mt-4"
+        />
       );
     }
 
@@ -749,3 +761,5 @@ export const Question = ({
     </div>
   );
 };
+
+export default Question;

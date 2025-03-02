@@ -1,3 +1,4 @@
+
 import { CheckSquare, Circle, List, MessageSquare, Minus, Plus, Type, Calculator, Activity, Stethoscope, FileText, Search, Check, Edit3, FileUp, AlignHorizontalSpaceBetween, AlignVerticalSpaceBetween } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
@@ -123,7 +124,8 @@ export type QuestionType =
   | "signature"
   | "file";
 
-interface Diagnosis {
+// Export the Diagnosis interface
+export interface Diagnosis {
   id: string;
   code: string;
   name: string;

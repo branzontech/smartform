@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useFormContext } from 'react-hook-form';
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -7,6 +8,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+import { SignaturePad } from "@/components/ui/signature-pad";
 import { QuestionData, Diagnosis, MultifieldConfig } from "../question/types";
 
 interface QuestionRendererProps {
@@ -230,6 +232,57 @@ export const QuestionRenderer = ({ question, formData, onChange, errors }: Quest
             </div>
           ))}
         </div>
+      );
+    
+    case "signature":
+      return (
+        <FormField
+          control={useFormContext().control}
+          name={question.id}
+          rules={{ required: question.required }}
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>{question.title}</FormLabel>
+              <FormControl>
+                <SignaturePad
+                  value={field.value || ""}
+                  onChange={field.onChange}
+                  readOnly={false}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      );
+    
+    case "file":
+      return (
+        <FormField
+          control={useFormContext().control}
+          name={question.id}
+          rules={{ required: question.required }}
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>{question.title}</FormLabel>
+              <FormControl>
+                <Input 
+                  type="file" 
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      field.onChange(file);
+                      onChange(question.id, file);
+                    }
+                  }}
+                  accept={question.fileTypes?.join(',')}
+                  required={question.required}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
       );
       
     default:
