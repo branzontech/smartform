@@ -2,8 +2,9 @@
 import { useState } from "react";
 import { Trash2, GripVertical, Check, FileUp, Plus, AlignHorizontalSpaceBetween, AlignVerticalSpaceBetween } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { QuestionType, Option, AddOptionButton, DiagnosisList, Diagnosis, MultifieldItem, MultifieldConfig } from "./question-types";
+import { QuestionType, Option, AddOptionButton, DiagnosisList, MultifieldItem, SignaturePad } from "./question-types";
 import { nanoid } from "nanoid";
+import type { Diagnosis, MultifieldConfig } from "./question-types";
 
 const predefinedDiagnoses: Diagnosis[] = [
   { id: "1", code: "E11", name: "Diabetes tipo 2" },

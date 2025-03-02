@@ -1,7 +1,7 @@
 
+import React, { useState, useRef, useEffect } from "react";
 import { CheckSquare, Circle, List, MessageSquare, Minus, Plus, Type, Calculator, Activity, Stethoscope, FileText, Search, Check, Edit3, FileUp, AlignHorizontalSpaceBetween, AlignVerticalSpaceBetween } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useState } from "react";
 import { QuestionTypeProps, OptionProps, AddOptionButtonProps, DiagnosisListProps, Diagnosis, MultifieldItemProps, MultifieldConfig, SignaturePadProps } from "@/components/forms/question/types";
 
 export const questionTypes = [
@@ -215,10 +215,10 @@ export const SignaturePad: React.FC<SignaturePadProps> = ({
   className,
   readOnly = false,
 }) => {
-  const canvasRef = React.useRef<HTMLCanvasElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isDrawing, setIsDrawing] = useState(false);
 
-  React.useEffect(() => {
+  useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
@@ -365,5 +365,8 @@ export const SignaturePad: React.FC<SignaturePadProps> = ({
   );
 };
 
-// Exportamos todos los componentes y tipos necesarios
+// Export types for question.tsx to use
+export type { Diagnosis, MultifieldConfig };
+
+// Export all components and types needed
 export { questionTypes as questionTypesList };
