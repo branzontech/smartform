@@ -20,8 +20,9 @@ import { FormTitle } from '@/components/ui/form-title';
 import { BackButton } from '@/App';
 import { ArrowLeft, Link as LinkIcon, Check } from 'lucide-react';
 import { toast } from "sonner";
+import { Form as FormType } from './Home';
 
-// Ejemplo de formulario para desarrollo
+// Ejemplo de formulario para desarrollo (solo se usa si no se encuentra el formulario en localStorage)
 const mockForm = {
   id: "mock-form",
   title: "Formulario de Ejemplo",
@@ -31,28 +32,28 @@ const mockForm = {
       id: "q1",
       type: "short",
       required: true,
-      title: "Nombre completo", // Changed from question to title
+      title: "Nombre completo",
       placeholder: "Escribe tu nombre completo",
     },
     {
       id: "q2",
       type: "paragraph",
       required: false,
-      title: "Descripción", // Changed from question to title
+      title: "Descripción",
       placeholder: "Escribe una descripción",
     },
     {
       id: "q3",
       type: "multiple",
       required: true,
-      title: "¿Cómo nos conociste?", // Changed from question to title
+      title: "¿Cómo nos conociste?",
       options: ["Redes sociales", "Amigos", "Búsqueda web"],
     },
     {
       id: "q4",
       type: "checkbox",
       required: true,
-      title: "Servicios de interés", // Changed from question to title
+      title: "Servicios de interés",
       options: ["Consulta médica", "Laboratorio", "Exámenes especiales"],
     }
   ]
@@ -80,26 +81,31 @@ const FormViewer = () => {
         setError("");
         
         try {
-          // Por ahora usamos los datos de ejemplo para desarrollo
-          // Cuando la API esté lista, descomentar el bloque de abajo:
-          
-          /* 
-          const response = await fetch(`/api/forms/${formId}`);
-          if (response.ok) {
-            const data = await response.json();
-            setQuestions(data.questions);
-            setFormTitle(data.title);
-            setFormDescription(data.description);
+          // Buscamos el formulario en localStorage
+          const savedForms = localStorage.getItem("forms");
+          if (savedForms) {
+            const forms = JSON.parse(savedForms);
+            const form = forms.find((f: FormType) => f.id === formId);
+            
+            if (form) {
+              setQuestions(form.questions as QuestionData[]);
+              setFormTitle(form.title);
+              setFormDescription(form.description);
+            } else {
+              console.error('Form not found:', formId);
+              setError("El formulario solicitado no existe");
+              
+              // Usamos los datos de ejemplo como fallback
+              setQuestions(mockForm.questions as QuestionData[]);
+              setFormTitle(mockForm.title);
+              setFormDescription(mockForm.description);
+            }
           } else {
-            console.error('Failed to fetch form:', response.status);
-            setError("No se pudo cargar el formulario");
+            // Si no hay formularios en localStorage, usamos los datos de ejemplo
+            setQuestions(mockForm.questions as QuestionData[]);
+            setFormTitle(mockForm.title);
+            setFormDescription(mockForm.description);
           }
-          */
-          
-          // Mientras tanto, usamos datos de ejemplo:
-          setQuestions(mockForm.questions as QuestionData[]);
-          setFormTitle(mockForm.title);
-          setFormDescription(mockForm.description);
           
         } catch (error) {
           console.error('Error fetching form:', error);
@@ -160,7 +166,26 @@ const FormViewer = () => {
   const onSubmit = (values: z.infer<typeof dynamicSchema>) => {
     console.log("Formulario enviado:", values);
     
-    // Aquí iría la lógica para enviar los datos a un endpoint
+    // Simulamos el envío de respuesta incrementando el contador
+    const savedForms = localStorage.getItem("forms");
+    if (savedForms && formId) {
+      try {
+        const forms = JSON.parse(savedForms);
+        const updatedForms = forms.map((form: FormType) => {
+          if (form.id === formId) {
+            return {
+              ...form,
+              responseCount: (form.responseCount || 0) + 1
+            };
+          }
+          return form;
+        });
+        
+        localStorage.setItem("forms", JSON.stringify(updatedForms));
+      } catch (error) {
+        console.error("Error updating response count:", error);
+      }
+    }
     
     setSubmitted(true);
     toast("Formulario enviado correctamente", {

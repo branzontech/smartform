@@ -5,6 +5,8 @@ import { Header } from "@/components/layout/header";
 import { FormCard } from "@/components/ui/form-card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 // Tipo de datos para formularios
 export interface Form {
@@ -51,8 +53,9 @@ const mockForms: Form[] = [
 const Home = () => {
   const [forms, setForms] = useState<Form[]>([]);
   const [loading, setLoading] = useState(true);
+  const [formToDelete, setFormToDelete] = useState<string | null>(null);
   const navigate = useNavigate();
-  const { toast } = useToast();
+  const { toast: uiToast } = useToast();
 
   useEffect(() => {
     // Simular carga de datos
@@ -92,19 +95,32 @@ const Home = () => {
 
   const handleViewForm = (id: string) => {
     navigate(`/ver/${id}`);
-    
-    // Copiar URL al portapapeles
-    const url = `${window.location.origin}/ver/${id}`;
-    navigator.clipboard.writeText(url).then(() => {
-      toast({
-        title: "Enlace copiado al portapapeles",
-        description: "Ahora puedes compartir el formulario",
-      });
-    });
   };
 
   const handleViewResponses = (id: string) => {
     navigate(`/respuestas/${id}`);
+  };
+
+  const handleDeleteForm = (id: string) => {
+    setFormToDelete(id);
+  };
+
+  const confirmDeleteForm = () => {
+    if (formToDelete) {
+      const updatedForms = forms.filter(form => form.id !== formToDelete);
+      setForms(updatedForms);
+      localStorage.setItem("forms", JSON.stringify(updatedForms));
+      
+      toast("Formulario eliminado", {
+        description: "El formulario ha sido eliminado exitosamente",
+      });
+      
+      setFormToDelete(null);
+    }
+  };
+
+  const cancelDeleteForm = () => {
+    setFormToDelete(null);
   };
 
   if (loading) {
@@ -152,11 +168,30 @@ const Home = () => {
                 onEdit={handleEditForm}
                 onView={handleViewForm}
                 onResponses={handleViewResponses}
+                onDelete={handleDeleteForm}
               />
             ))}
           </div>
         )}
       </main>
+
+      <AlertDialog open={!!formToDelete} onOpenChange={(open) => !open && setFormToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Estás seguro de eliminar este formulario?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción no puede deshacerse. El formulario será eliminado permanentemente, 
+              incluso si tiene respuestas.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={cancelDeleteForm}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDeleteForm} className="bg-red-600 hover:bg-red-700">
+              Eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

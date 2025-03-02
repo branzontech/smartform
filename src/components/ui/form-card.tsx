@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { Edit, View, BarChart } from "lucide-react";
+import { Edit, View, BarChart, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatDistance } from "date-fns";
 import { es } from "date-fns/locale";
@@ -13,6 +13,7 @@ interface FormCardProps {
   onEdit: (id: string) => void;
   onView: (id: string) => void;
   onResponses: (id: string) => void;
+  onDelete: (id: string) => void;
 }
 
 export const FormCard = ({ 
@@ -22,7 +23,8 @@ export const FormCard = ({
   responseCount, 
   onEdit, 
   onView, 
-  onResponses 
+  onResponses,
+  onDelete
 }: FormCardProps) => {
   const [isHovered, setIsHovered] = useState(false);
   
@@ -86,6 +88,16 @@ export const FormCard = ({
         >
           <BarChart size={16} className="mr-2" />
           <span>Respuestas</span>
+        </button>
+        
+        <div className="w-px bg-gray-100" />
+        
+        <button 
+          onClick={() => onDelete(id)}
+          className="flex-1 flex items-center justify-center py-3 text-red-600 hover:bg-red-50 transition-colors text-sm"
+        >
+          <Trash2 size={16} className="mr-2" />
+          <span>Borrar</span>
         </button>
       </div>
     </div>
