@@ -7,7 +7,7 @@ import { Form } from "./Home";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { EmptyState } from "@/components/ui/empty-state";
-import { BarChart, Users } from "lucide-react";
+import { BarChart, Users, Printer, FileText } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface FormResponse {
@@ -179,8 +179,21 @@ const FormResponses = () => {
           <div key={index} className="bg-white rounded-lg shadow-sm border border-gray-100 p-6 animate-scale-in">
             <div className="flex justify-between items-center mb-4 pb-2 border-b border-gray-100">
               <h3 className="text-lg font-medium">Respuesta {index + 1}</h3>
-              <div className="text-sm text-gray-500">
-                {format(new Date(response.timestamp), "d 'de' MMMM 'de' yyyy, HH:mm", { locale: es })}
+              <div className="flex items-center gap-2">
+                <div className="text-sm text-gray-500">
+                  {format(new Date(response.timestamp), "d 'de' MMMM 'de' yyyy, HH:mm", { locale: es })}
+                </div>
+                {formData.formType === "formato" && (
+                  <Button 
+                    size="sm" 
+                    variant="outline" 
+                    onClick={() => handlePrintFormat(response, index)}
+                    className="flex items-center gap-1"
+                  >
+                    <Printer size={14} />
+                    Imprimir
+                  </Button>
+                )}
               </div>
             </div>
             
@@ -207,6 +220,131 @@ const FormResponses = () => {
           </div>
         ))}
       </div>
+    );
+  };
+
+  const handlePrintFormat = (response: FormResponse, index: number) => {
+    // Creamos una ventana de impresión con estilo
+    const printWindow = window.open('', '_blank');
+    if (!printWindow || !formData) return;
+
+    const printContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>${formData.title} - Respuesta ${index + 1}</title>
+        <style>
+          body { font-family: Arial, sans-serif; line-height: 1.6; padding: 20px; max-width: 800px; margin: 0 auto; }
+          h1 { font-size: 24px; border-bottom: 1px solid #ddd; padding-bottom: 10px; }
+          .header { display: flex; justify-content: space-between; align-items: center; }
+          .date { color: #666; font-size: 14px; }
+          .question-group { margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid #eee; }
+          .question { font-weight: bold; margin-bottom: 5px; }
+          .answer { margin-left: 10px; }
+          .no-answer { color: #999; font-style: italic; }
+          @media print {
+            body { padding: 0; font-size: 12px; }
+            h1 { font-size: 18px; }
+            .question-group { page-break-inside: avoid; }
+            .print-button { display: none; }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>${formData.title}</h1>
+          <div class="date">
+            ${format(new Date(response.timestamp), "d 'de' MMMM 'de' yyyy, HH:mm", { locale: es })}
+          </div>
+        </div>
+        
+        ${formData.questions.map(question => {
+          const answer = response.data[question.id];
+          return `
+            <div class="question-group">
+              <div class="question">${question.title}</div>
+              <div class="answer">
+                ${answer 
+                  ? (Array.isArray(answer) 
+                      ? answer.join(", ") 
+                      : String(answer))
+                  : '<span class="no-answer">Sin respuesta</span>'
+                }
+              </div>
+            </div>
+          `;
+        }).join('')}
+        
+        <div class="print-button">
+          <button onclick="window.print()">Imprimir documento</button>
+        </div>
+        <script>
+          // Auto-print cuando se carga el documento
+          window.onload = function() {
+            setTimeout(() => window.print(), 500);
+          };
+        </script>
+      </body>
+      </html>
+    `;
+    
+    printWindow.document.open();
+    printWindow.document.write(printContent);
+    printWindow.document.close();
+  };
+
+  const renderFormTypeContent = () => {
+    if (!formData) return null;
+    
+    // Para formularios tipo "formato"
+    if (formData.formType === "formato") {
+      return (
+        <div className="animate-fade-in">
+          <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6 mb-6">
+            <div className="flex items-center gap-2 text-emerald-700 mb-4">
+              <FileText size={20} />
+              <h3 className="text-lg font-medium">Formato Tipo Documento</h3>
+            </div>
+            <p className="text-gray-600 mb-4">
+              Este es un formato tipo documento. Cada respuesta se guarda como un documento individual que puede visualizarse o imprimirse.
+            </p>
+            <div className="flex items-center gap-2">
+              <span className="font-medium">{responses.length}</span>
+              <span className="text-gray-500">documentos guardados</span>
+            </div>
+          </div>
+          
+          {renderIndividualResponses()}
+        </div>
+      );
+    }
+    
+    // Para formularios tipo "forms" (original)
+    return (
+      <>
+        <div className="flex space-x-1 border border-gray-200 rounded-lg p-1 mb-6 bg-gray-50 w-fit">
+          <button
+            className={`px-4 py-2 rounded ${activeTab === "summary" ? 'bg-white shadow-sm' : 'text-gray-600 hover:bg-gray-100'} transition-all`}
+            onClick={() => setActiveTab("summary")}
+          >
+            <div className="flex items-center">
+              <BarChart size={16} className="mr-2" />
+              Resumen
+            </div>
+          </button>
+          <button
+            className={`px-4 py-2 rounded ${activeTab === "individual" ? 'bg-white shadow-sm' : 'text-gray-600 hover:bg-gray-100'} transition-all`}
+            onClick={() => setActiveTab("individual")}
+          >
+            <div className="flex items-center">
+              <Users size={16} className="mr-2" />
+              Individuales
+            </div>
+          </button>
+        </div>
+        
+        {activeTab === "summary" ? renderSummary() : renderIndividualResponses()}
+      </>
     );
   };
 
@@ -250,30 +388,7 @@ const FormResponses = () => {
               </div>
               
               {responses.length > 0 ? (
-                <>
-                  <div className="flex space-x-1 border border-gray-200 rounded-lg p-1 mb-6 bg-gray-50 w-fit">
-                    <button
-                      className={`px-4 py-2 rounded ${activeTab === "summary" ? 'bg-white shadow-sm' : 'text-gray-600 hover:bg-gray-100'} transition-all`}
-                      onClick={() => setActiveTab("summary")}
-                    >
-                      <div className="flex items-center">
-                        <BarChart size={16} className="mr-2" />
-                        Resumen
-                      </div>
-                    </button>
-                    <button
-                      className={`px-4 py-2 rounded ${activeTab === "individual" ? 'bg-white shadow-sm' : 'text-gray-600 hover:bg-gray-100'} transition-all`}
-                      onClick={() => setActiveTab("individual")}
-                    >
-                      <div className="flex items-center">
-                        <Users size={16} className="mr-2" />
-                        Individuales
-                      </div>
-                    </button>
-                  </div>
-                  
-                  {activeTab === "summary" ? renderSummary() : renderIndividualResponses()}
-                </>
+                renderFormTypeContent()
               ) : (
                 <EmptyState
                   title="No hay respuestas"

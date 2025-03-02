@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -56,7 +57,8 @@ const mockForm = {
       title: "Servicios de interés",
       options: ["Consulta médica", "Laboratorio", "Exámenes especiales"],
     }
-  ]
+  ],
+  formType: "forms"
 };
 
 interface FormData {
@@ -70,6 +72,7 @@ const FormViewer = () => {
   const [questions, setQuestions] = useState<QuestionData[]>([]);
   const [formTitle, setFormTitle] = useState("Formulario");
   const [formDescription, setFormDescription] = useState("");
+  const [formType, setFormType] = useState<"forms" | "formato">("forms");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [submitted, setSubmitted] = useState(false);
@@ -91,6 +94,7 @@ const FormViewer = () => {
               setQuestions(form.questions as QuestionData[]);
               setFormTitle(form.title);
               setFormDescription(form.description);
+              setFormType(form.formType || "forms");
             } else {
               console.error('Form not found:', formId);
               setError("El formulario solicitado no existe");
@@ -99,12 +103,14 @@ const FormViewer = () => {
               setQuestions(mockForm.questions as QuestionData[]);
               setFormTitle(mockForm.title);
               setFormDescription(mockForm.description);
+              setFormType(mockForm.formType);
             }
           } else {
             // Si no hay formularios en localStorage, usamos los datos de ejemplo
             setQuestions(mockForm.questions as QuestionData[]);
             setFormTitle(mockForm.title);
             setFormDescription(mockForm.description);
+            setFormType(mockForm.formType);
           }
           
         } catch (error) {
@@ -166,24 +172,49 @@ const FormViewer = () => {
   const onSubmit = (values: z.infer<typeof dynamicSchema>) => {
     console.log("Formulario enviado:", values);
     
-    // Simulamos el envío de respuesta incrementando el contador
-    const savedForms = localStorage.getItem("forms");
-    if (savedForms && formId) {
-      try {
-        const forms = JSON.parse(savedForms);
-        const updatedForms = forms.map((form: FormType) => {
-          if (form.id === formId) {
-            return {
-              ...form,
-              responseCount: (form.responseCount || 0) + 1
-            };
-          }
-          return form;
-        });
-        
-        localStorage.setItem("forms", JSON.stringify(updatedForms));
-      } catch (error) {
-        console.error("Error updating response count:", error);
+    // Guardar la respuesta en localStorage
+    if (formId) {
+      const timestamp = new Date().toISOString();
+      const formResponse = {
+        timestamp,
+        data: values
+      };
+      
+      // Obtener respuestas existentes o crear array vacío
+      const existingResponses = localStorage.getItem(`formResponses_${formId}`);
+      let responses = [];
+      
+      if (existingResponses) {
+        try {
+          responses = JSON.parse(existingResponses);
+        } catch (error) {
+          console.error("Error parsing existing responses:", error);
+        }
+      }
+      
+      // Añadir nueva respuesta
+      responses.push(formResponse);
+      localStorage.setItem(`formResponses_${formId}`, JSON.stringify(responses));
+      
+      // Actualizar contador de respuestas en el formulario
+      const savedForms = localStorage.getItem("forms");
+      if (savedForms) {
+        try {
+          const forms = JSON.parse(savedForms);
+          const updatedForms = forms.map((form: FormType) => {
+            if (form.id === formId) {
+              return {
+                ...form,
+                responseCount: (form.responseCount || 0) + 1
+              };
+            }
+            return form;
+          });
+          
+          localStorage.setItem("forms", JSON.stringify(updatedForms));
+        } catch (error) {
+          console.error("Error updating response count:", error);
+        }
       }
     }
     

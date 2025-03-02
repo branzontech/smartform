@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Header } from "@/components/layout/header";
@@ -7,6 +6,8 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { useToast } from "@/hooks/use-toast";
 import { toast } from "sonner";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { FileText, PieChart } from "lucide-react";
 
 // Tipo de datos para formularios
 export interface Form {
@@ -58,6 +59,7 @@ const Home = () => {
   const [forms, setForms] = useState<Form[]>([]);
   const [loading, setLoading] = useState(true);
   const [formToDelete, setFormToDelete] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<"all" | "forms" | "formato">("all");
   const navigate = useNavigate();
   const { toast: uiToast } = useToast();
 
@@ -88,6 +90,11 @@ const Home = () => {
 
     return () => clearTimeout(timer);
   }, []);
+
+  const filteredForms = forms.filter(form => {
+    if (activeTab === "all") return true;
+    return form.formType === activeTab;
+  });
 
   const handleCreateForm = () => {
     navigate("/crear");
@@ -161,21 +168,55 @@ const Home = () => {
             />
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {forms.map((form) => (
-              <FormCard
-                key={form.id}
-                id={form.id}
-                title={form.title}
-                lastUpdated={form.updatedAt}
-                responseCount={form.responseCount}
-                formType={form.formType || "forms"}
-                onEdit={handleEditForm}
-                onView={handleViewForm}
-                onResponses={handleViewResponses}
-                onDelete={handleDeleteForm}
-              />
-            ))}
+          <div>
+            <Tabs 
+              defaultValue="all" 
+              value={activeTab}
+              onValueChange={(value) => setActiveTab(value as "all" | "forms" | "formato")}
+              className="mb-6"
+            >
+              <TabsList>
+                <TabsTrigger value="all">Todos</TabsTrigger>
+                <TabsTrigger value="forms" className="flex items-center gap-1">
+                  <PieChart size={14} />
+                  Forms
+                </TabsTrigger>
+                <TabsTrigger value="formato" className="flex items-center gap-1">
+                  <FileText size={14} />
+                  Formatos
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+            
+            {filteredForms.length === 0 ? (
+              <div className="text-center py-12 text-gray-500">
+                No hay formularios de este tipo. 
+                <Button 
+                  variant="link" 
+                  onClick={handleCreateForm}
+                  className="ml-2"
+                >
+                  Crear nuevo
+                </Button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredForms.map((form) => (
+                  <FormCard
+                    key={form.id}
+                    id={form.id}
+                    title={form.title}
+                    lastUpdated={form.updatedAt}
+                    responseCount={form.responseCount}
+                    formType={form.formType}
+                    onEdit={handleEditForm}
+                    onView={handleViewForm}
+                    onResponses={handleViewResponses}
+                    onDelete={handleDeleteForm}
+                  />
+                ))}
+              </div>
+            )}
           </div>
         )}
       </main>
