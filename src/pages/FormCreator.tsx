@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Plus, FileText, PieChart } from "lucide-react";
@@ -27,6 +28,7 @@ const FormCreator = () => {
   const [formType, setFormType] = useState<"forms" | "formato">("forms");
   const [questions, setQuestions] = useState<QuestionData[]>([]);
   const [saving, setSaving] = useState(false);
+  const [expandedQuestions, setExpandedQuestions] = useState<string[]>([]);
 
   useEffect(() => {
     if (id) {
@@ -63,99 +65,31 @@ const FormCreator = () => {
         }
       }
     } else {
-      // Crear nuevo formulario con preguntas iniciales clínicas
-      setQuestions([
-        {
-          id: nanoid(),
-          ...defaultQuestion,
-          title: "Nombre del paciente",
-          type: "short",
-          required: true,
-        },
-        {
-          id: nanoid(),
-          ...defaultQuestion,
-          title: "Tensión Arterial (T/A)",
-          type: "vitals",
-          required: true,
-          vitalType: "TA",
-          sysMin: 90,
-          sysMax: 140,
-          diaMin: 60,
-          diaMax: 90,
-          units: "mmHg",
-        },
-        {
-          id: nanoid(),
-          ...defaultQuestion,
-          title: "Frecuencia Cardíaca (FC)",
-          type: "vitals",
-          required: true,
-          vitalType: "FC",
-          min: 60,
-          max: 100,
-          units: "lpm",
-        },
-        {
-          id: nanoid(),
-          ...defaultQuestion,
-          title: "Información de contacto",
-          type: "multifield",
-          required: true,
-          multifields: [
-            { id: nanoid(), label: "Teléfono" },
-            { id: nanoid(), label: "Correo electrónico" },
-            { id: nanoid(), label: "Dirección" }
-          ],
-          orientation: "vertical",
-        },
-        {
-          id: nanoid(),
-          ...defaultQuestion,
-          title: "Temperatura",
-          type: "vitals",
-          required: true,
-          vitalType: "temperatura",
-          min: 36,
-          max: 38,
-          units: "°C",
-        },
-        {
-          id: nanoid(),
-          ...defaultQuestion,
-          title: "Índice de Masa Corporal (IMC)",
-          type: "vitals",
-          vitalType: "IMC",
-          required: true,
-        },
-        {
-          id: nanoid(),
-          ...defaultQuestion,
-          title: "Documentos clínicos",
-          type: "file",
-          required: false,
-          fileTypes: ["application/pdf", "image/jpeg", "image/png"],
-          maxFileSize: 2,
-        },
-        {
-          id: nanoid(),
-          ...defaultQuestion,
-          title: "Firma del paciente",
-          type: "signature",
-          required: true,
-        },
-      ]);
+      // En caso de nuevo formulario, no cargamos preguntas por defecto
+      // Mantenemos el arreglo de preguntas vacío
+      setQuestions([]);
     }
   }, [id, navigate, toast]);
 
+  const toggleQuestionExpansion = (id: string) => {
+    setExpandedQuestions(prev => 
+      prev.includes(id) 
+        ? prev.filter(qId => qId !== id) 
+        : [...prev, id]
+    );
+  };
+
   const handleAddQuestion = () => {
-    setQuestions([
-      ...questions,
-      {
-        id: nanoid(),
-        ...defaultQuestion,
-      },
-    ]);
+    const newQuestionId = nanoid();
+    const newQuestion = {
+      id: newQuestionId,
+      ...defaultQuestion,
+      title: "Nueva pregunta",
+    };
+    
+    setQuestions([...questions, newQuestion]);
+    // Expandir automáticamente la nueva pregunta
+    setExpandedQuestions(prev => [...prev, newQuestionId]);
   };
 
   const handleUpdateQuestion = (id: string, data: Partial<QuestionData>) => {
@@ -167,6 +101,8 @@ const FormCreator = () => {
   const handleDeleteQuestion = (id: string) => {
     if (questions.length > 1) {
       setQuestions(questions.filter((q) => q.id !== id));
+      // Eliminar del arreglo de expandidos si estaba ahí
+      setExpandedQuestions(prev => prev.filter(qId => qId !== id));
     } else {
       toast({
         title: "Error",
@@ -292,7 +228,7 @@ const FormCreator = () => {
       <main className="flex-1 container mx-auto py-6">
         <div className="max-w-3xl mx-auto">
           <BackButton />
-          <div className="mb-6 form-card overflow-visible">
+          <div className="form-card overflow-visible mb-6">
             <FormTitle
               defaultTitle={title}
               defaultDescription={description}
@@ -337,6 +273,7 @@ const FormCreator = () => {
             </div>
           </div>
           
+          {/* Lista de preguntas */}
           <div className="space-y-4 mb-8">
             {questions.map((question) => (
               <Question
@@ -344,17 +281,21 @@ const FormCreator = () => {
                 question={question}
                 onUpdate={handleUpdateQuestion}
                 onDelete={handleDeleteQuestion}
+                isExpanded={expandedQuestions.includes(question.id)}
+                onToggleExpand={() => toggleQuestionExpansion(question.id)}
               />
             ))}
           </div>
           
-          <div className="flex items-center mb-8">
+          {/* Botón para añadir campos */}
+          <div className="flex justify-center mb-8">
             <Button 
               onClick={handleAddQuestion}
-              className="bg-white hover:bg-gray-50 border border-gray-300 text-gray-700"
+              className="bg-white hover:bg-gray-50 border border-gray-300 text-gray-700 shadow-sm"
               variant="outline"
+              size="lg"
             >
-              <Plus size={16} className="mr-2" />
+              <Plus size={20} className="mr-2" />
               Añadir campo clínico
             </Button>
           </div>

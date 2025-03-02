@@ -33,10 +33,10 @@ export const FormTitle = ({
   };
 
   return (
-    <div className={cn("form-header animate-fade-in", className)}>
+    <div className={cn("form-header p-6 border-b border-gray-200", className)}>
       {readOnly ? (
         <>
-          <h1 className="text-2xl font-bold">{title}</h1>
+          <h1 className="text-2xl font-bold text-gray-800">{title}</h1>
           {description && <p className="mt-2 text-gray-600">{description}</p>}
         </>
       ) : (
@@ -46,13 +46,13 @@ export const FormTitle = ({
             value={title}
             onChange={handleTitleChange}
             placeholder="Título del formulario"
-            className="text-2xl font-bold w-full bg-transparent border-b border-transparent hover:border-gray-300 focus:border-form-primary focus:outline-none transition-all duration-200 px-0 py-1"
+            className="text-2xl font-bold w-full bg-transparent border-none hover:border-b hover:border-gray-300 focus:border-form-primary focus:outline-none transition-all duration-200 px-0 py-1 text-gray-800"
           />
           <textarea
             value={description}
             onChange={handleDescriptionChange}
             placeholder="Descripción del formulario (opcional)"
-            className="mt-2 text-gray-600 w-full bg-transparent resize-none border-b border-transparent hover:border-gray-300 focus:border-form-primary focus:outline-none transition-all duration-200 px-0 py-1"
+            className="mt-2 text-gray-600 w-full bg-transparent resize-none border-none hover:border-b hover:border-gray-300 focus:border-form-primary focus:outline-none transition-all duration-200 px-0 py-1"
             rows={2}
           />
         </>
