@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Header } from "@/components/layout/header";
@@ -9,6 +10,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FileText, PieChart } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { FormDesignOptions } from "@/components/forms/question/types";
 
 export interface Form {
   id: string;
@@ -19,6 +21,7 @@ export interface Form {
   updatedAt: Date;
   responseCount: number;
   formType: "forms" | "formato";
+  designOptions?: FormDesignOptions;
 }
 
 const mockForms: Form[] = [
