@@ -4,6 +4,7 @@ import { FileText, Menu, Moon, Sun, Home } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useState, useEffect } from "react";
+import { SettingsDialog } from "@/components/config/settings";
 
 interface HeaderProps {
   showCreate?: boolean;
@@ -45,7 +46,7 @@ export const Header = ({ showCreate = true }: HeaderProps) => {
         <div className="flex items-center">
           <Link to="/" className="flex items-center space-x-2">
             <FileText className="h-6 w-6 text-form-primary" />
-            <span className="text-xl font-semibold">Smart Doctor</span>
+            <span className="text-xl font-semibold">Smart Forms</span>
           </Link>
         </div>
 
@@ -70,15 +71,8 @@ export const Header = ({ showCreate = true }: HeaderProps) => {
                     Inicio
                   </Button>
                   
-                  {showCreate && (
-                    <Link to="/crear" className="block w-full">
-                      <Button className="w-full bg-form-primary hover:bg-form-primary/90">
-                        Crear formulario
-                      </Button>
-                    </Link>
-                  )}
                   <Button 
-                    variant="outline" 
+                    variant="ghost" 
                     onClick={toggleTheme}
                     className="w-full justify-start"
                   >
@@ -94,6 +88,14 @@ export const Header = ({ showCreate = true }: HeaderProps) => {
                       </>
                     )}
                   </Button>
+                  
+                  {showCreate && (
+                    <Link to="/crear" className="block w-full">
+                      <Button className="w-full bg-form-primary hover:bg-form-primary/90">
+                        Crear formulario
+                      </Button>
+                    </Link>
+                  )}
                 </div>
               </div>
             )}
@@ -108,6 +110,8 @@ export const Header = ({ showCreate = true }: HeaderProps) => {
               <Home size={18} />
               Inicio
             </Button>
+            
+            <SettingsDialog />
             
             <Button 
               variant="ghost"
