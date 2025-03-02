@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Trash2, GripVertical, Check, FileUp, Plus, AlignHorizontalSpaceBetween, AlignVerticalSpaceBetween } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -774,4 +775,29 @@ export const Question = ({
         </div>
 
         {!readOnly && (
-          <div className="ml-3 flex flex-col items-center space-y-
+          <div className="ml-3 flex flex-col items-center space-y-2">
+            <button
+              onClick={toggleRequired}
+              className={cn(
+                "p-1.5 rounded-full transition-colors",
+                required 
+                  ? "bg-form-primary text-white" 
+                  : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+              )}
+              title={required ? "Campo obligatorio" : "Campo opcional"}
+            >
+              <Check size={16} />
+            </button>
+            <button
+              onClick={() => onDelete(question.id)}
+              className="p-1.5 rounded-full text-gray-500 hover:bg-gray-100 transition-colors"
+              title="Eliminar pregunta"
+            >
+              <Trash2 size={16} />
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
