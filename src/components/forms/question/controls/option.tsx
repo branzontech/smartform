@@ -1,14 +1,7 @@
 
-import { Minus, CheckSquare, Circle } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-interface OptionProps {
-  value: string;
-  onChange: (value: string) => void;
-  onRemove: () => void;
-  canRemove: boolean;
-  isMultiple?: boolean;
-}
+import { CheckSquare, Circle, Minus } from "lucide-react";
+import { OptionProps } from "../types";
 
 export const Option = ({
   value,

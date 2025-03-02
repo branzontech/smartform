@@ -2,12 +2,7 @@
 import { CheckSquare, Circle, List, MessageSquare, Minus, Plus, Type, Calculator, Activity, Stethoscope, FileText, Search, Check, Edit3, FileUp, AlignHorizontalSpaceBetween, AlignVerticalSpaceBetween } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
-import { SignaturePad } from "./signature-pad";
-
-interface QuestionTypeProps {
-  selected: string;
-  onChange: (type: string) => void;
-}
+import { QuestionTypeProps, OptionProps, AddOptionButtonProps, DiagnosisListProps, Diagnosis, MultifieldItemProps, MultifieldConfig, SignaturePadProps } from "@/components/forms/question/types";
 
 export const questionTypes = [
   { id: "short", label: "Respuesta corta", icon: Type },
@@ -49,14 +44,6 @@ export const QuestionType = ({ selected, onChange }: QuestionTypeProps) => {
   );
 };
 
-interface OptionProps {
-  value: string;
-  onChange: (value: string) => void;
-  onRemove: () => void;
-  canRemove: boolean;
-  isMultiple?: boolean;
-}
-
 export const Option = ({
   value,
   onChange,
@@ -94,10 +81,6 @@ export const Option = ({
   );
 };
 
-interface AddOptionButtonProps {
-  onClick: () => void;
-}
-
 export const AddOptionButton = ({ onClick }: AddOptionButtonProps) => {
   return (
     <button
@@ -109,34 +92,6 @@ export const AddOptionButton = ({ onClick }: AddOptionButtonProps) => {
     </button>
   );
 };
-
-export type QuestionType = 
-  | "short" 
-  | "paragraph" 
-  | "multiple" 
-  | "checkbox" 
-  | "dropdown" 
-  | "calculation" 
-  | "vitals" 
-  | "diagnosis" 
-  | "clinical" 
-  | "multifield"
-  | "signature"
-  | "file";
-
-// Export the Diagnosis interface
-export interface Diagnosis {
-  id: string;
-  code: string;
-  name: string;
-}
-
-interface DiagnosisListProps {
-  diagnoses: Diagnosis[];
-  selectedDiagnoses: Diagnosis[];
-  onSelect: (diagnosis: Diagnosis) => void;
-  onRemove: (id: string) => void;
-}
 
 export const DiagnosisList = ({ diagnoses, selectedDiagnoses, onSelect, onRemove }: DiagnosisListProps) => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -222,14 +177,6 @@ export const DiagnosisList = ({ diagnoses, selectedDiagnoses, onSelect, onRemove
   );
 };
 
-interface MultifieldItemProps {
-  id: string;
-  label: string;
-  onLabelChange: (id: string, label: string) => void;
-  onRemove: (id: string) => void;
-  canRemove: boolean;
-}
-
 export const MultifieldItem = ({
   id,
   label,
@@ -262,7 +209,161 @@ export const MultifieldItem = ({
   );
 };
 
-export interface MultifieldConfig {
-  id: string;
-  label: string;
-}
+export const SignaturePad: React.FC<SignaturePadProps> = ({
+  value,
+  onChange,
+  className,
+  readOnly = false,
+}) => {
+  const canvasRef = React.useRef<HTMLCanvasElement>(null);
+  const [isDrawing, setIsDrawing] = useState(false);
+
+  React.useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const context = canvas.getContext("2d");
+    if (!context) return;
+
+    // Set canvas dimensions
+    const updateCanvasSize = () => {
+      const rect = canvas.getBoundingClientRect();
+      canvas.width = rect.width;
+      canvas.height = rect.height;
+      
+      // Set up drawing style
+      context.lineWidth = 2;
+      context.lineCap = "round";
+      context.lineJoin = "round";
+      context.strokeStyle = "#000000";
+    };
+
+    // Initialize canvas and load existing signature
+    updateCanvasSize();
+    window.addEventListener("resize", updateCanvasSize);
+
+    // Load existing signature if available
+    if (value) {
+      const img = new Image();
+      img.onload = () => {
+        context.drawImage(img, 0, 0);
+      };
+      img.src = value;
+    }
+
+    return () => {
+      window.removeEventListener("resize", updateCanvasSize);
+    };
+  }, [value]);
+
+  // Drawing functions
+  const startDrawing = (e: React.MouseEvent | React.TouchEvent) => {
+    if (readOnly) return;
+    
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    
+    const context = canvas.getContext("2d");
+    if (!context) return;
+    
+    setIsDrawing(true);
+    
+    const { offsetX, offsetY } = getCoordinates(e, canvas);
+    context.beginPath();
+    context.moveTo(offsetX, offsetY);
+  };
+
+  const draw = (e: React.MouseEvent | React.TouchEvent) => {
+    if (!isDrawing || readOnly) return;
+    
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    
+    const context = canvas.getContext("2d");
+    if (!context) return;
+    
+    const { offsetX, offsetY } = getCoordinates(e, canvas);
+    context.lineTo(offsetX, offsetY);
+    context.stroke();
+  };
+
+  const endDrawing = () => {
+    if (!isDrawing || readOnly) return;
+    
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    
+    const context = canvas.getContext("2d");
+    if (!context) return;
+    
+    context.closePath();
+    setIsDrawing(false);
+    
+    // Save signature as base64 string
+    const signatureData = canvas.toDataURL("image/png");
+    onChange(signatureData);
+  };
+
+  const getCoordinates = (e: React.MouseEvent | React.TouchEvent, canvas: HTMLCanvasElement) => {
+    const rect = canvas.getBoundingClientRect();
+    
+    if ('touches' in e) {
+      // Touch event
+      const touch = e.touches[0];
+      return {
+        offsetX: touch.clientX - rect.left,
+        offsetY: touch.clientY - rect.top
+      };
+    } else {
+      // Mouse event
+      return {
+        offsetX: e.nativeEvent.offsetX,
+        offsetY: e.nativeEvent.offsetY
+      };
+    }
+  };
+
+  const clearSignature = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    
+    const context = canvas.getContext("2d");
+    if (!context) return;
+    
+    context.clearRect(0, 0, canvas.width, canvas.height);
+    onChange("");
+  };
+
+  return (
+    <div className={cn("flex flex-col space-y-2", className)}>
+      <div
+        className="border border-gray-300 rounded-md bg-white touch-none"
+        style={{ height: "200px", width: "100%" }}
+      >
+        <canvas
+          ref={canvasRef}
+          className="w-full h-full cursor-crosshair"
+          onMouseDown={startDrawing}
+          onMouseMove={draw}
+          onMouseUp={endDrawing}
+          onMouseLeave={endDrawing}
+          onTouchStart={startDrawing}
+          onTouchMove={draw}
+          onTouchEnd={endDrawing}
+        />
+      </div>
+      {!readOnly && (
+        <button
+          type="button"
+          onClick={clearSignature}
+          className="self-end px-3 py-1 bg-gray-100 text-gray-700 rounded-md text-sm hover:bg-gray-200 transition-colors"
+        >
+          Borrar firma
+        </button>
+      )}
+    </div>
+  );
+};
+
+// Exportamos todos los componentes y tipos necesarios
+export { questionTypes as questionTypesList };

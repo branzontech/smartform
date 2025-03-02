@@ -1,31 +1,47 @@
 
+import React, { useState } from "react";
+import { ContentComponentProps, OptionProps } from "../types";
 import { Option } from "../controls/option";
 import { AddOptionButton } from "../controls/add-option-button";
 
-interface MultipleChoiceProps {
-  options: string[];
-  questionId: string;
-  readonly?: boolean;
-  handleOptionChange: (index: number, value: string) => void;
-  removeOption: (index: number) => void;
-  addOption: () => void;
-}
+export const MultipleChoice: React.FC<ContentComponentProps> = ({ 
+  question, 
+  onUpdate, 
+  readOnly 
+}) => {
+  const [options, setOptions] = useState(question.options || ["", ""]);
 
-export const MultipleChoice = ({
-  options,
-  questionId,
-  readonly = false,
-  handleOptionChange,
-  removeOption,
-  addOption
-}: MultipleChoiceProps) => {
-  if (readonly) {
+  const handleOptionChange = (index: number, value: string) => {
+    const newOptions = [...options];
+    newOptions[index] = value;
+    setOptions(newOptions);
+    onUpdate({ options: newOptions });
+  };
+
+  const addOption = () => {
+    setOptions([...options, ""]);
+  };
+
+  const removeOption = (index: number) => {
+    if (options.length <= 2) return;
+    const newOptions = options.filter((_, i) => i !== index);
+    setOptions(newOptions);
+    onUpdate({ options: newOptions });
+  };
+
+  if (readOnly) {
     return (
       <div className="space-y-2">
         {options.map((option, index) => (
           <div key={index} className="flex items-center gap-2">
-            <input type="radio" name={`q-${questionId}`} id={`q-${questionId}-${index}`} className="text-form-primary" disabled />
-            <label htmlFor={`q-${questionId}-${index}`}>{option || `Opción ${index + 1}`}</label>
+            <input 
+              type="radio" 
+              name={`q-${question.id}`} 
+              id={`q-${question.id}-${index}`} 
+              className="text-form-primary" 
+              disabled 
+            />
+            <label htmlFor={`q-${question.id}-${index}`}>{option || `Opción ${index + 1}`}</label>
           </div>
         ))}
       </div>

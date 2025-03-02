@@ -1,29 +1,57 @@
 
-import { cn } from "@/lib/utils";
-import { Plus, AlignVerticalSpaceBetween, AlignHorizontalSpaceBetween } from "lucide-react";
+import React, { useState } from "react";
+import { ContentComponentProps, MultifieldConfig } from "../types";
 import { MultifieldItem } from "../controls/multifield-item";
-import { MultifieldConfig } from "../types";
+import { nanoid } from "nanoid";
+import { cn } from "@/lib/utils";
+import { AlignHorizontalSpaceBetween, AlignVerticalSpaceBetween, Plus } from "lucide-react";
 
-interface MultifieldProps {
-  multifields: MultifieldConfig[];
-  orientation: "vertical" | "horizontal";
-  readonly?: boolean;
-  handleLabelChange: (id: string, label: string) => void;
-  removeMultifield: (id: string) => void;
-  addMultifield: () => void;
-  toggleOrientation: () => void;
-}
+export const Multifield: React.FC<ContentComponentProps> = ({ 
+  question, 
+  onUpdate, 
+  readOnly 
+}) => {
+  const [multifields, setMultifields] = useState<MultifieldConfig[]>(
+    question.multifields || [
+      { id: nanoid(), label: "Campo 1" },
+      { id: nanoid(), label: "Campo 2" }
+    ]
+  );
+  const [orientation, setOrientation] = useState<"vertical" | "horizontal">(
+    question.orientation || "vertical"
+  );
 
-export const Multifield = ({
-  multifields,
-  orientation,
-  readonly = false,
-  handleLabelChange,
-  removeMultifield,
-  addMultifield,
-  toggleOrientation
-}: MultifieldProps) => {
-  if (readonly) {
+  const handleMultifieldLabelChange = (id: string, label: string) => {
+    const updatedMultifields = multifields.map(field => 
+      field.id === id ? { ...field, label } : field
+    );
+    setMultifields(updatedMultifields);
+    onUpdate({ multifields: updatedMultifields });
+  };
+
+  const addMultifield = () => {
+    const newMultifields = [
+      ...multifields, 
+      { id: nanoid(), label: `Campo ${multifields.length + 1}` }
+    ];
+    setMultifields(newMultifields);
+    onUpdate({ multifields: newMultifields });
+  };
+
+  const removeMultifield = (id: string) => {
+    if (multifields.length <= 2) return;
+    const newMultifields = multifields.filter(field => field.id !== id);
+    setMultifields(newMultifields);
+    onUpdate({ multifields: newMultifields });
+  };
+
+  const toggleOrientation = () => {
+    const newOrientation = orientation === "vertical" ? "horizontal" : "vertical";
+    setOrientation(newOrientation);
+    onUpdate({ orientation: newOrientation });
+  };
+
+  if (readOnly) {
     return (
       <div className={cn(
         "space-y-2",
@@ -67,7 +95,7 @@ export const Multifield = ({
             key={field.id}
             id={field.id}
             label={field.label}
-            onLabelChange={handleLabelChange}
+            onLabelChange={handleMultifieldLabelChange}
             onRemove={removeMultifield}
             canRemove={multifields.length > 2}
           />

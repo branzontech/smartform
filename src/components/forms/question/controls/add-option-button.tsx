@@ -1,9 +1,6 @@
 
 import { Plus } from "lucide-react";
-
-interface AddOptionButtonProps {
-  onClick: () => void;
-}
+import { AddOptionButtonProps } from "../types";
 
 export const AddOptionButton = ({ onClick }: AddOptionButtonProps) => {
   return (

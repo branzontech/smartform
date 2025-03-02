@@ -1,14 +1,7 @@
 
-import { Minus } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-interface MultifieldItemProps {
-  id: string;
-  label: string;
-  onLabelChange: (id: string, label: string) => void;
-  onRemove: (id: string) => void;
-  canRemove: boolean;
-}
+import { Minus } from "lucide-react";
+import { MultifieldItemProps } from "../types";
 
 export const MultifieldItem = ({
   id,

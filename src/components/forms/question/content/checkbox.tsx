@@ -1,31 +1,46 @@
 
+import React, { useState } from "react";
+import { ContentComponentProps } from "../types";
 import { Option } from "../controls/option";
 import { AddOptionButton } from "../controls/add-option-button";
 
-interface CheckboxProps {
-  options: string[];
-  questionId: string;
-  readonly?: boolean;
-  handleOptionChange: (index: number, value: string) => void;
-  removeOption: (index: number) => void;
-  addOption: () => void;
-}
+export const Checkbox: React.FC<ContentComponentProps> = ({ 
+  question, 
+  onUpdate, 
+  readOnly 
+}) => {
+  const [options, setOptions] = useState(question.options || ["", ""]);
 
-export const Checkbox = ({
-  options,
-  questionId,
-  readonly = false,
-  handleOptionChange,
-  removeOption,
-  addOption
-}: CheckboxProps) => {
-  if (readonly) {
+  const handleOptionChange = (index: number, value: string) => {
+    const newOptions = [...options];
+    newOptions[index] = value;
+    setOptions(newOptions);
+    onUpdate({ options: newOptions });
+  };
+
+  const addOption = () => {
+    setOptions([...options, ""]);
+  };
+
+  const removeOption = (index: number) => {
+    if (options.length <= 2) return;
+    const newOptions = options.filter((_, i) => i !== index);
+    setOptions(newOptions);
+    onUpdate({ options: newOptions });
+  };
+
+  if (readOnly) {
     return (
       <div className="space-y-2">
         {options.map((option, index) => (
           <div key={index} className="flex items-center gap-2">
-            <input type="checkbox" id={`q-${questionId}-${index}`} className="text-form-primary" disabled />
-            <label htmlFor={`q-${questionId}-${index}`}>{option || `Opción ${index + 1}`}</label>
+            <input 
+              type="checkbox" 
+              id={`q-${question.id}-${index}`} 
+              className="text-form-primary" 
+              disabled 
+            />
+            <label htmlFor={`q-${question.id}-${index}`}>{option || `Opción ${index + 1}`}</label>
           </div>
         ))}
       </div>

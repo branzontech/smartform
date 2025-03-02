@@ -1,23 +1,35 @@
 
+import React, { useState } from "react";
+import { ContentComponentProps } from "../types";
 import { Option } from "../controls/option";
 import { AddOptionButton } from "../controls/add-option-button";
 
-interface DropdownProps {
-  options: string[];
-  readonly?: boolean;
-  handleOptionChange: (index: number, value: string) => void;
-  removeOption: (index: number) => void;
-  addOption: () => void;
-}
+export const Dropdown: React.FC<ContentComponentProps> = ({ 
+  question, 
+  onUpdate, 
+  readOnly 
+}) => {
+  const [options, setOptions] = useState(question.options || ["", ""]);
 
-export const Dropdown = ({
-  options,
-  readonly = false,
-  handleOptionChange,
-  removeOption,
-  addOption
-}: DropdownProps) => {
-  if (readonly) {
+  const handleOptionChange = (index: number, value: string) => {
+    const newOptions = [...options];
+    newOptions[index] = value;
+    setOptions(newOptions);
+    onUpdate({ options: newOptions });
+  };
+
+  const addOption = () => {
+    setOptions([...options, ""]);
+  };
+
+  const removeOption = (index: number) => {
+    if (options.length <= 2) return;
+    const newOptions = options.filter((_, i) => i !== index);
+    setOptions(newOptions);
+    onUpdate({ options: newOptions });
+  };
+
+  if (readOnly) {
     return (
       <select disabled className="w-full border border-gray-300 rounded-md p-2 bg-transparent">
         <option value="" disabled selected>Seleccionar</option>

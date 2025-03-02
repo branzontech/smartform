@@ -1,15 +1,8 @@
 
-import { useState } from "react";
 import { Search, Check, Minus } from "lucide-react";
+import { useState } from "react";
 import { cn } from "@/lib/utils";
-import { Diagnosis } from "../types";
-
-interface DiagnosisListProps {
-  diagnoses: Diagnosis[];
-  selectedDiagnoses: Diagnosis[];
-  onSelect: (diagnosis: Diagnosis) => void;
-  onRemove: (id: string) => void;
-}
+import { DiagnosisListProps } from "../types";
 
 export const DiagnosisList = ({ diagnoses, selectedDiagnoses, onSelect, onRemove }: DiagnosisListProps) => {
   const [searchTerm, setSearchTerm] = useState("");

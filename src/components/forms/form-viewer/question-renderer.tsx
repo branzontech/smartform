@@ -8,8 +8,8 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import { SignaturePad } from "@/components/ui/signature-pad";
-import { QuestionData, Diagnosis, MultifieldConfig } from "../question/types";
+import { SignaturePad } from "@/components/ui/question-types";
+import { QuestionData } from "../question/types";
 
 interface QuestionRendererProps {
   question: QuestionData;
@@ -162,6 +162,33 @@ export const QuestionRenderer = ({ question, formData, onChange, errors }: Quest
         />
       );
     case "vitals":
+      if (question.vitalType === "TA") {
+        return (
+          <div className="space-y-2">
+            <FormLabel>{question.title}</FormLabel>
+            <div className="flex gap-2 items-center">
+              <Input
+                type="number"
+                placeholder="Sistólica"
+                value={formData[`${question.id}_sys`] || ""}
+                onChange={(e) => onChange(`${question.id}_sys`, e.target.value)}
+                className="w-1/2"
+              />
+              <span className="text-lg">/</span>
+              <Input
+                type="number"
+                placeholder="Diastólica"
+                value={formData[`${question.id}_dia`] || ""}
+                onChange={(e) => onChange(`${question.id}_dia`, e.target.value)}
+                className="w-1/2"
+              />
+            </div>
+            {question.required && (!formData[`${question.id}_sys`] || !formData[`${question.id}_dia`]) && errors[question.id] && (
+              <p className="text-sm font-medium text-destructive">Este campo es obligatorio</p>
+            )}
+          </div>
+        );
+      }
       return (
         <FormField
           control={useFormContext().control}
@@ -171,7 +198,12 @@ export const QuestionRenderer = ({ question, formData, onChange, errors }: Quest
             <FormItem>
               <FormLabel>{question.title}</FormLabel>
               <FormControl>
-                <Input {...field} placeholder="Signos vitales" required={question.required} />
+                <Input
+                  {...field}
+                  type="number"
+                  placeholder={`Valor (${question.units || ""})`}
+                  required={question.required}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -187,9 +219,23 @@ export const QuestionRenderer = ({ question, formData, onChange, errors }: Quest
           render={({ field }) => (
             <FormItem>
               <FormLabel>{question.title}</FormLabel>
-              <FormControl>
-                <Input {...field} placeholder="Diagnóstico" required={question.required} />
-              </FormControl>
+              <div className="border border-gray-300 rounded-md p-2">
+                {question.diagnoses && question.diagnoses.length > 0 ? (
+                  <div className="space-y-2">
+                    {question.diagnoses.map(diagnosis => (
+                      <div key={diagnosis.id} className="flex items-center gap-2 bg-blue-50 px-3 py-2 rounded-md">
+                        <span className="font-medium text-blue-700">{diagnosis.code}</span>
+                        <span>-</span>
+                        <span>{diagnosis.name}</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-gray-500 text-center p-2">
+                    No se han seleccionado diagnósticos
+                  </div>
+                )}
+              </div>
               <FormMessage />
             </FormItem>
           )}
@@ -204,9 +250,21 @@ export const QuestionRenderer = ({ question, formData, onChange, errors }: Quest
           render={({ field }) => (
             <FormItem>
               <FormLabel>{question.title}</FormLabel>
-              <FormControl>
-                <Input {...field} placeholder="Datos clínicos" required={question.required} />
-              </FormControl>
+              <div className="space-y-2">
+                <Input
+                  value={formData[`${question.id}_title`] || ""}
+                  onChange={(e) => onChange(`${question.id}_title`, e.target.value)}
+                  placeholder="Título del dato clínico"
+                  required={question.required}
+                />
+                <Textarea
+                  value={formData[`${question.id}_detail`] || ""}
+                  onChange={(e) => onChange(`${question.id}_detail`, e.target.value)}
+                  placeholder="Información detallada"
+                  rows={2}
+                  required={question.required}
+                />
+              </div>
               <FormMessage />
             </FormItem>
           )}
@@ -215,22 +273,25 @@ export const QuestionRenderer = ({ question, formData, onChange, errors }: Quest
       
     case "multifield":
       return (
-        <div className={cn(
-          "space-y-3",
-          question.orientation === "horizontal" && "sm:space-y-0 sm:grid sm:grid-cols-2 sm:gap-4"
-        )}>
-          {question.multifields?.map((field) => (
-            <div key={field.id} className="mb-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">{field.label}</label>
-              <input 
-                type="text" 
-                value={formData[`${question.id}_${field.id}`] || ""}
-                onChange={(e) => onChange(`${question.id}_${field.id}`, e.target.value)}
-                className="w-full border border-gray-300 rounded-md p-2"
-                required={question.required} 
-              />
-            </div>
-          ))}
+        <div className="space-y-2">
+          <FormLabel>{question.title}</FormLabel>
+          <div className={cn(
+            "space-y-3",
+            question.orientation === "horizontal" && "sm:space-y-0 sm:grid sm:grid-cols-2 sm:gap-4"
+          )}>
+            {question.multifields?.map((field) => (
+              <div key={field.id} className="mb-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">{field.label}</label>
+                <input 
+                  type="text" 
+                  value={formData[`${question.id}_${field.id}`] || ""}
+                  onChange={(e) => onChange(`${question.id}_${field.id}`, e.target.value)}
+                  className="w-full border border-gray-300 rounded-md p-2"
+                  required={question.required} 
+                />
+              </div>
+            ))}
+          </div>
         </div>
       );
     
