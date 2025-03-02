@@ -8,8 +8,8 @@ import { toast } from "sonner";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FileText, PieChart } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
-// Tipo de datos para formularios
 export interface Form {
   id: string;
   title: string;
@@ -21,7 +21,6 @@ export interface Form {
   formType: "forms" | "formato";
 }
 
-// Mock de datos iniciales
 const mockForms: Form[] = [
   {
     id: "1",
@@ -64,9 +63,7 @@ const Home = () => {
   const { toast: uiToast } = useToast();
 
   useEffect(() => {
-    // Simular carga de datos
     const timer = setTimeout(() => {
-      // Cargar datos del localStorage o usar mockForms
       const savedForms = localStorage.getItem("forms");
       if (savedForms) {
         try {
@@ -82,7 +79,6 @@ const Home = () => {
         }
       } else {
         setForms(mockForms);
-        // Guardar mockForms en localStorage
         localStorage.setItem("forms", JSON.stringify(mockForms));
       }
       setLoading(false);
