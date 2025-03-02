@@ -1,0 +1,48 @@
+
+import { Minus, CheckSquare, Circle } from "lucide-react";
+import { cn } from "@/lib/utils";
+
+interface OptionProps {
+  value: string;
+  onChange: (value: string) => void;
+  onRemove: () => void;
+  canRemove: boolean;
+  isMultiple?: boolean;
+}
+
+export const Option = ({
+  value,
+  onChange,
+  onRemove,
+  canRemove,
+  isMultiple = false,
+}: OptionProps) => {
+  return (
+    <div className="flex items-center gap-3 mb-2 animate-fade-in">
+      {isMultiple ? (
+        <CheckSquare size={18} className="text-gray-400" />
+      ) : (
+        <Circle size={18} className="text-gray-400" />
+      )}
+      <input
+        type="text"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder="Opción"
+        className="flex-1 border-b border-gray-300 focus:border-form-primary focus:outline-none py-1 px-0 bg-transparent"
+      />
+      <button
+        onClick={onRemove}
+        disabled={!canRemove}
+        className={cn(
+          "p-1 rounded-full transition-all",
+          canRemove 
+            ? "text-gray-500 hover:bg-gray-100" 
+            : "text-gray-300 cursor-not-allowed"
+        )}
+      >
+        <Minus size={16} />
+      </button>
+    </div>
+  );
+};
