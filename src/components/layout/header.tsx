@@ -1,6 +1,6 @@
 
 import { Link, useNavigate } from "react-router-dom";
-import { FileText, Menu, Moon, Sun, Home, ClipboardList } from "lucide-react";
+import { FileText, Menu, Moon, Sun, Home } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useState, useEffect } from "react";
@@ -40,10 +40,6 @@ export const Header = ({ showCreate = true }: HeaderProps) => {
     navigate('/');
   };
 
-  const goToSurveys = () => {
-    navigate('/encuestas');
-  };
-
   return (
     <header className="border-b border-gray-200 dark:border-gray-800 sticky top-0 bg-background/80 backdrop-blur-md z-10">
       <div className="container mx-auto flex items-center justify-between h-16">
@@ -73,15 +69,6 @@ export const Header = ({ showCreate = true }: HeaderProps) => {
                   >
                     <Home size={16} className="mr-2" />
                     Inicio
-                  </Button>
-                  
-                  <Button 
-                    variant="ghost"
-                    onClick={goToSurveys} 
-                    className="w-full justify-start"
-                  >
-                    <ClipboardList size={16} className="mr-2" />
-                    Encuestas
                   </Button>
                   
                   <Button 
@@ -122,15 +109,6 @@ export const Header = ({ showCreate = true }: HeaderProps) => {
             >
               <Home size={18} />
               Inicio
-            </Button>
-            
-            <Button 
-              variant="ghost"
-              onClick={goToSurveys}
-              className="p-2 flex items-center gap-2"
-            >
-              <ClipboardList size={18} />
-              Encuestas
             </Button>
             
             <SettingsDialog />
