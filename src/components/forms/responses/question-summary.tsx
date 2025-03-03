@@ -1,14 +1,7 @@
-
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Form } from '@/pages/Home';
-
-interface FormResponse {
-  timestamp: string;
-  data: {
-    [key: string]: string | string[] | Record<string, any>;
-  };
-}
+import { FormResponse } from '@/types/form-types';
 
 interface QuestionSummaryProps {
   question: {
@@ -26,14 +19,12 @@ export const QuestionSummary = ({ question, responses, onViewAllResponses }: Que
                          question.type === 'clinical' || question.type === 'signature' || 
                          question.type === 'file';
   
-  // Función para obtener una representación adecuada para el resumen
   const getDisplayValue = (answer: any): string => {
     if (!answer) return "Sin respuesta";
     
     if (Array.isArray(answer)) {
       return answer.join(", ");
     } else if (typeof answer === 'object') {
-      // Manejar respuestas de tipo objeto según el tipo de pregunta
       if (question.type === 'vitals' && question.vitalType === 'TA') {
         return `${answer.sys}/${answer.dia} mmHg`;
       } else if (question.type === 'vitals' && question.vitalType === 'IMC') {
@@ -67,13 +58,11 @@ export const QuestionSummary = ({ question, responses, onViewAllResponses }: Que
         const displayValue = getDisplayValue(answer);
         
         if (Array.isArray(answer)) {
-          // Para casillas de verificación (checkbox)
           answer.forEach(option => {
             counts[option] = (counts[option] || 0) + 1;
             displayMap[option] = option;
           });
         } else if (answer) {
-          // Para selección múltiple, desplegable
           const key = typeof answer === 'object' ? JSON.stringify(answer) : String(answer);
           counts[key] = (counts[key] || 0) + 1;
           displayMap[key] = displayValue;

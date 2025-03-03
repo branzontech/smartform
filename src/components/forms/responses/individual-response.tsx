@@ -1,17 +1,10 @@
-
 import React from 'react';
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { Printer, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Form } from '@/pages/Home';
-
-interface FormResponse {
-  timestamp: string;
-  data: {
-    [key: string]: string | string[] | Record<string, any>;
-  };
-}
+import { FormResponse } from '@/types/form-types';
 
 interface IndividualResponseProps {
   response: FormResponse;

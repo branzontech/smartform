@@ -1,15 +1,8 @@
-
 import React from 'react';
 import { FileText, Printer } from "lucide-react";
 import { IndividualResponse } from './individual-response';
 import { Form } from '@/pages/Home';
-
-interface FormResponse {
-  timestamp: string;
-  data: {
-    [key: string]: string | string[];
-  };
-}
+import { FormResponse } from '@/types/form-types';
 
 interface FormatDocumentViewProps {
   formData: Form;

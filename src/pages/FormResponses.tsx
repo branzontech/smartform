@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Header } from "@/components/layout/header";
@@ -11,13 +10,7 @@ import { FormatDocumentView } from "@/components/forms/responses/format-document
 import { FormSummaryTabs } from "@/components/forms/responses/form-summary-tabs";
 import { printFormResponse } from "@/utils/print-utils";
 import { getFormResponses } from "@/utils/form-utils";
-
-interface FormResponse {
-  timestamp: string;
-  data: {
-    [key: string]: string | string[] | Record<string, any>;
-  };
-}
+import { FormResponse } from "@/types/form-types";
 
 const FormResponses = () => {
   const { id } = useParams();
@@ -29,7 +22,6 @@ const FormResponses = () => {
   const [activeTab, setActiveTab] = useState<"summary" | "individual">("summary");
 
   useEffect(() => {
-    // Cargar formulario y respuestas
     if (id) {
       setLoading(true);
       const savedForms = localStorage.getItem("forms");
@@ -46,7 +38,6 @@ const FormResponses = () => {
               updatedAt: new Date(form.updatedAt)
             });
             
-            // Usar la nueva función para obtener respuestas
             const formResponses = getFormResponses(id);
             console.log("Respuestas cargadas:", formResponses);
             setResponses(formResponses);
