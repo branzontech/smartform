@@ -6,7 +6,7 @@ import { Form } from '@/pages/Home';
 interface FormResponse {
   timestamp: string;
   data: {
-    [key: string]: string | string[];
+    [key: string]: string | string[] | Record<string, any>;
   };
 }
 
@@ -15,38 +15,76 @@ interface QuestionSummaryProps {
     id: string;
     title: string;
     type: string;
+    vitalType?: string;
   };
   responses: FormResponse[];
   onViewAllResponses: () => void;
 }
 
 export const QuestionSummary = ({ question, responses, onViewAllResponses }: QuestionSummaryProps) => {
-  const isTextResponse = question.type === 'short' || question.type === 'paragraph';
+  const isTextResponse = question.type === 'short' || question.type === 'paragraph' || 
+                         question.type === 'clinical' || question.type === 'signature' || 
+                         question.type === 'file';
+  
+  // Función para obtener una representación adecuada para el resumen
+  const getDisplayValue = (answer: any): string => {
+    if (!answer) return "Sin respuesta";
+    
+    if (Array.isArray(answer)) {
+      return answer.join(", ");
+    } else if (typeof answer === 'object') {
+      // Manejar respuestas de tipo objeto según el tipo de pregunta
+      if (question.type === 'vitals' && question.vitalType === 'TA') {
+        return `${answer.sys}/${answer.dia} mmHg`;
+      } else if (question.type === 'vitals' && question.vitalType === 'IMC') {
+        return `IMC: ${answer.bmi}`;
+      } else if (question.type === 'clinical') {
+        return answer.title || "Dato clínico";
+      } else if (question.type === 'file' && answer.name) {
+        return answer.name;
+      } else if (question.type === 'multifield') {
+        return "Datos múltiples";
+      } else {
+        return JSON.stringify(answer);
+      }
+    } else {
+      return String(answer);
+    }
+  };
   
   const getSummary = () => {
     if (isTextResponse) {
       return responses.map(response => {
         const answer = response.data[question.id];
-        return { answer: answer || "Sin respuesta", count: 1 };
+        return { answer, count: 1, displayValue: getDisplayValue(answer) };
       });
     } else {
       const counts: { [key: string]: number } = {};
+      const displayMap: { [key: string]: any } = {};
       
       responses.forEach(response => {
         const answer = response.data[question.id];
+        const displayValue = getDisplayValue(answer);
         
         if (Array.isArray(answer)) {
           // Para casillas de verificación (checkbox)
           answer.forEach(option => {
             counts[option] = (counts[option] || 0) + 1;
+            displayMap[option] = option;
           });
         } else if (answer) {
           // Para selección múltiple, desplegable
-          counts[answer] = (counts[answer] || 0) + 1;
+          const key = typeof answer === 'object' ? JSON.stringify(answer) : String(answer);
+          counts[key] = (counts[key] || 0) + 1;
+          displayMap[key] = displayValue;
         }
       });
       
-      return Object.entries(counts).map(([answer, count]) => ({ answer, count }));
+      return Object.entries(counts).map(([key, count]) => ({ 
+        answer: key, 
+        count, 
+        displayValue: displayMap[key] 
+      }));
     }
   };
   
@@ -65,7 +103,7 @@ export const QuestionSummary = ({ question, responses, onViewAllResponses }: Que
             <div className="space-y-2">
               {summary.map((item, i) => (
                 <div key={i} className="border-b border-gray-100 pb-2">
-                  {item.answer ? String(item.answer) : <span className="text-gray-400 italic">Sin respuesta</span>}
+                  {item.displayValue || <span className="text-gray-400 italic">Sin respuesta</span>}
                 </div>
               ))}
             </div>
@@ -84,7 +122,7 @@ export const QuestionSummary = ({ question, responses, onViewAllResponses }: Que
           <div className="space-y-4">
             {summary.map((item, i) => (
               <div key={i} className="flex items-center">
-                <div className="w-1/2 text-sm">{item.answer}</div>
+                <div className="w-1/2 text-sm">{item.displayValue}</div>
                 <div className="w-1/2">
                   <div className="flex items-center">
                     <div 

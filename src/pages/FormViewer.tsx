@@ -97,12 +97,18 @@ const FormViewer = () => {
     // Process any special field types that need additional handling
     const processedValues = { ...values };
     
-    // For any special field types, we need to manually process them
+    // Para preguntas con tipos especiales, debemos procesarlas manualmente
     questions.forEach(question => {
       if (question.type === "vitals" && question.vitalType === "TA") {
         processedValues[question.id] = {
           sys: formData[`${question.id}_sys`],
           dia: formData[`${question.id}_dia`]
+        };
+      } else if (question.type === "vitals" && question.vitalType === "IMC") {
+        processedValues[question.id] = {
+          weight: formData[`${question.id}_weight`],
+          height: formData[`${question.id}_height`],
+          bmi: formData[`${question.id}_bmi`]
         };
       } else if (question.type === "clinical") {
         processedValues[question.id] = {
@@ -117,6 +123,8 @@ const FormViewer = () => {
         processedValues[question.id] = multifieldValues;
       }
     });
+    
+    console.log("Valores procesados antes de guardar:", processedValues);
     
     // Guardar la respuesta en localStorage
     if (formId) {

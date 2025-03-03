@@ -10,11 +10,12 @@ import { useToast } from "@/hooks/use-toast";
 import { FormatDocumentView } from "@/components/forms/responses/format-document-view";
 import { FormSummaryTabs } from "@/components/forms/responses/form-summary-tabs";
 import { printFormResponse } from "@/utils/print-utils";
+import { getFormResponses } from "@/utils/form-utils";
 
 interface FormResponse {
   timestamp: string;
   data: {
-    [key: string]: string | string[];
+    [key: string]: string | string[] | Record<string, any>;
   };
 }
 
@@ -30,8 +31,8 @@ const FormResponses = () => {
   useEffect(() => {
     // Cargar formulario y respuestas
     if (id) {
+      setLoading(true);
       const savedForms = localStorage.getItem("forms");
-      const formResponses = localStorage.getItem(`formResponses_${id}`);
       
       if (savedForms) {
         try {
@@ -44,6 +45,11 @@ const FormResponses = () => {
               createdAt: new Date(form.createdAt),
               updatedAt: new Date(form.updatedAt)
             });
+            
+            // Usar la nueva función para obtener respuestas
+            const formResponses = getFormResponses(id);
+            console.log("Respuestas cargadas:", formResponses);
+            setResponses(formResponses);
           } else {
             toast({
               title: "Error",
@@ -54,20 +60,16 @@ const FormResponses = () => {
           }
         } catch (error) {
           console.error("Error loading form:", error);
+          toast({
+            title: "Error",
+            description: "Error al cargar el formulario",
+            variant: "destructive",
+          });
         }
       }
       
-      if (formResponses) {
-        try {
-          const parsedResponses = JSON.parse(formResponses);
-          setResponses(parsedResponses);
-        } catch (error) {
-          console.error("Error loading responses:", error);
-        }
-      }
+      setLoading(false);
     }
-    
-    setLoading(false);
   }, [id, navigate, toast]);
 
   const handlePrintFormat = (response: FormResponse, index: number) => {
@@ -123,7 +125,7 @@ const FormResponses = () => {
               
               <h1 className="text-2xl font-bold mb-2">{formData.title}</h1>
               <div className="text-gray-500 mb-4">
-                {formData.responseCount} respuesta{formData.responseCount !== 1 ? 's' : ''} totales
+                {responses.length} respuesta{responses.length !== 1 ? 's' : ''} totales
               </div>
               
               {responses.length > 0 ? (

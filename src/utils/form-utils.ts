@@ -130,6 +130,23 @@ export const saveFormResponse = (formId: string, values: any) => {
     }
   }
   
+  // Asegurarse de que las respuestas se procesan correctamente para cada tipo de pregunta
+  Object.keys(values).forEach(key => {
+    // Procesamiento especial para ciertos tipos de preguntas si es necesario
+    if (typeof values[key] === 'object' && !(values[key] instanceof File) && !Array.isArray(values[key])) {
+      // Para objetos complejos (como el caso de vitals con TA)
+      formResponse.data[key] = JSON.stringify(values[key]);
+    } else if (values[key] instanceof File) {
+      // Para archivos, guardamos solo el nombre ya que no podemos serializar el objeto File completo
+      formResponse.data[key] = {
+        name: values[key].name,
+        size: values[key].size,
+        type: values[key].type
+      };
+    }
+    // Los tipos simples (string, number) y arrays se pueden guardar directamente
+  });
+  
   // Añadir nueva respuesta
   responses.push(formResponse);
   localStorage.setItem(`formResponses_${formId}`, JSON.stringify(responses));
@@ -156,4 +173,38 @@ export const saveFormResponse = (formId: string, values: any) => {
   }
   
   return true;
+};
+
+// Función para recuperar respuestas de formulario con procesamiento adecuado
+export const getFormResponses = (formId: string) => {
+  const storedResponses = localStorage.getItem(`formResponses_${formId}`);
+  if (!storedResponses) return [];
+  
+  try {
+    const responses = JSON.parse(storedResponses);
+    
+    // Procesamos las respuestas para asegurarnos de que están en el formato correcto
+    return responses.map((response: any) => {
+      const processedData = { ...response.data };
+      
+      // Convertir de nuevo los objetos serializados a su formato original
+      Object.keys(processedData).forEach(key => {
+        if (typeof processedData[key] === 'string' && processedData[key].startsWith('{') && processedData[key].endsWith('}')) {
+          try {
+            processedData[key] = JSON.parse(processedData[key]);
+          } catch (e) {
+            // Si no se puede parsear, lo dejamos como está
+          }
+        }
+      });
+      
+      return {
+        timestamp: response.timestamp,
+        data: processedData
+      };
+    });
+  } catch (error) {
+    console.error("Error loading form responses:", error);
+    return [];
+  }
 };
