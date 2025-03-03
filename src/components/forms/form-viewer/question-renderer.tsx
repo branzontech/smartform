@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useFormContext } from 'react-hook-form';
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -186,6 +185,74 @@ export const QuestionRenderer = ({ question, formData, onChange, errors }: Quest
             {question.required && (!formData[`${question.id}_sys`] || !formData[`${question.id}_dia`]) && errors[question.id] && (
               <p className="text-sm font-medium text-destructive">Este campo es obligatorio</p>
             )}
+          </div>
+        );
+      } else if (question.vitalType === "IMC") {
+        const calculateBMI = () => {
+          const weight = parseFloat(formData[`${question.id}_weight`] || "0");
+          const height = parseFloat(formData[`${question.id}_height`] || "0");
+          
+          if (weight > 0 && height > 0) {
+            const heightInMeters = height / 100;
+            const bmi = weight / (heightInMeters * heightInMeters);
+            return bmi.toFixed(2);
+          }
+          return "";
+        };
+        
+        const handleWeightChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+          onChange(`${question.id}_weight`, e.target.value);
+          const bmi = calculateBMI();
+          onChange(`${question.id}_bmi`, bmi);
+        };
+        
+        const handleHeightChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+          onChange(`${question.id}_height`, e.target.value);
+          const bmi = calculateBMI();
+          onChange(`${question.id}_bmi`, bmi);
+        };
+        
+        return (
+          <div className="space-y-2">
+            <FormLabel>{question.title}</FormLabel>
+            <div className="grid grid-cols-3 gap-2">
+              <div>
+                <label className="text-xs text-gray-500">Peso (kg)</label>
+                <Input
+                  type="number"
+                  placeholder="Peso"
+                  value={formData[`${question.id}_weight`] || ""}
+                  onChange={handleWeightChange}
+                  required={question.required}
+                />
+              </div>
+              <div>
+                <label className="text-xs text-gray-500">Altura (cm)</label>
+                <Input
+                  type="number"
+                  placeholder="Altura"
+                  value={formData[`${question.id}_height`] || ""}
+                  onChange={handleHeightChange}
+                  required={question.required}
+                />
+              </div>
+              <div>
+                <label className="text-xs text-gray-500">IMC</label>
+                <Input
+                  type="text"
+                  placeholder="IMC"
+                  value={formData[`${question.id}_bmi`] || ""}
+                  readOnly
+                  className="bg-gray-50"
+                />
+              </div>
+            </div>
+            {question.required && 
+              (!formData[`${question.id}_weight`] || !formData[`${question.id}_height`]) && 
+              errors[question.id] && (
+                <p className="text-sm font-medium text-destructive">Este campo es obligatorio</p>
+              )
+            }
           </div>
         );
       }
