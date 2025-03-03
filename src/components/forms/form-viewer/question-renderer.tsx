@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { cn } from "@/lib/utils";
 import { SignaturePad } from "@/components/ui/question-types";
 import { QuestionData } from "../question/types";
+import { FileUp } from "lucide-react";
 
 interface QuestionRendererProps {
   question: QuestionData;
@@ -394,18 +395,41 @@ export const QuestionRenderer = ({ question, formData, onChange, errors }: Quest
             <FormItem>
               <FormLabel>{question.title}</FormLabel>
               <FormControl>
-                <Input 
-                  type="file" 
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) {
-                      field.onChange(file);
-                      onChange(question.id, file);
-                    }
-                  }}
-                  accept={question.fileTypes?.join(',')}
-                  required={question.required}
-                />
+                <div className="border border-dashed border-gray-300 rounded-md p-4 bg-gray-50">
+                  <label htmlFor={`file-upload-${question.id}`} className="cursor-pointer flex flex-col items-center">
+                    <FileUp size={24} className="text-gray-500 mb-2" />
+                    <span className="text-sm text-gray-700 mb-1">
+                      Clic para seleccionar un archivo
+                    </span>
+                    <span className="text-xs text-gray-500">
+                      {question.fileTypes?.join(', ') || "PDF, JPG, PNG"} (máx. {question.maxFileSize || 2}MB)
+                    </span>
+                    <input
+                      id={`file-upload-${question.id}`}
+                      type="file"
+                      className="hidden"
+                      accept={question.fileTypes?.join(',') || ".pdf,.jpg,.jpeg,.png"}
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          field.onChange(file);
+                          onChange(question.id, file);
+                        }
+                      }}
+                      required={question.required}
+                    />
+                  </label>
+                  {field.value && (
+                    <div className="mt-3 text-sm text-left flex items-center justify-between bg-blue-50 p-2 rounded">
+                      <span className="truncate max-w-[200px]">
+                        {field.value.name}
+                      </span>
+                      <span className="text-xs text-gray-500">
+                        {(field.value.size / (1024 * 1024)).toFixed(2)}MB
+                      </span>
+                    </div>
+                  )}
+                </div>
               </FormControl>
               <FormMessage />
             </FormItem>
