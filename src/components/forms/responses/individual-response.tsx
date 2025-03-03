@@ -1,10 +1,11 @@
+
 import React from 'react';
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { Printer, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Form } from '@/pages/Home';
-import { FormResponse } from '@/types/form-types';
+import { FormResponse, FormComplexValue } from '@/types/form-types';
 
 interface IndividualResponseProps {
   response: FormResponse;
@@ -26,27 +27,30 @@ export const IndividualResponse = ({ response, index, formData, onPrint }: Indiv
         return Array.isArray(answer) ? answer.join(", ") : String(answer);
       
       case "vitals":
-        if (question.vitalType === "TA" && typeof answer === 'object') {
-          return `${answer.sys}/${answer.dia} mmHg`;
-        } else if (question.vitalType === "IMC" && typeof answer === 'object') {
-          return `Peso: ${answer.weight} kg, Altura: ${answer.height} cm, IMC: ${answer.bmi}`;
+        if (question.vitalType === "TA" && typeof answer === 'object' && !Array.isArray(answer)) {
+          const vitalValue = answer as FormComplexValue;
+          return `${vitalValue.sys}/${vitalValue.dia} mmHg`;
+        } else if (question.vitalType === "IMC" && typeof answer === 'object' && !Array.isArray(answer)) {
+          const vitalValue = answer as FormComplexValue;
+          return `Peso: ${vitalValue.weight} kg, Altura: ${vitalValue.height} cm, IMC: ${vitalValue.bmi}`;
         } else {
           return String(answer);
         }
       
       case "clinical":
-        if (typeof answer === 'object') {
+        if (typeof answer === 'object' && !Array.isArray(answer)) {
+          const clinicalValue = answer as FormComplexValue;
           return (
             <div>
-              <div className="font-medium">{answer.title}</div>
-              <div className="text-sm text-gray-600">{answer.detail}</div>
+              <div className="font-medium">{clinicalValue.title}</div>
+              <div className="text-sm text-gray-600">{clinicalValue.detail}</div>
             </div>
           );
         }
         return String(answer);
       
       case "multifield":
-        if (typeof answer === 'object') {
+        if (typeof answer === 'object' && !Array.isArray(answer)) {
           return (
             <div className="space-y-1">
               {Object.entries(answer).map(([key, value]) => {
@@ -64,16 +68,19 @@ export const IndividualResponse = ({ response, index, formData, onPrint }: Indiv
         return String(answer);
       
       case "file":
-        if (typeof answer === 'object' && answer.name) {
-          return (
-            <div className="flex items-center gap-2">
-              <FileText size={16} className="text-gray-500" />
-              <span>{answer.name}</span>
-              <span className="text-xs text-gray-500">
-                ({(answer.size / (1024 * 1024)).toFixed(2)} MB)
-              </span>
-            </div>
-          );
+        if (typeof answer === 'object' && !Array.isArray(answer)) {
+          const fileValue = answer as FormComplexValue;
+          if (fileValue.name) {
+            return (
+              <div className="flex items-center gap-2">
+                <FileText size={16} className="text-gray-500" />
+                <span>{fileValue.name}</span>
+                <span className="text-xs text-gray-500">
+                  ({((fileValue.size || 0) / (1024 * 1024)).toFixed(2)} MB)
+                </span>
+              </div>
+            );
+          }
         }
         return <span className="text-gray-400 italic">Archivo no disponible</span>;
       

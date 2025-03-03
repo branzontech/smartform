@@ -1,6 +1,6 @@
 
 import { Form } from "@/pages/Home";
-import { FormResponse } from "@/types/form-types";
+import { FormResponse, FormComplexValue } from "@/types/form-types";
 
 export const printFormResponse = (formData: Form, response: FormResponse, index: number) => {
   // Create a new window for printing
@@ -112,27 +112,30 @@ export const printFormResponse = (formData: Form, response: FormResponse, index:
           break;
         
         case 'vitals':
-          if (question.vitalType === "TA" && typeof answer === 'object') {
-            content += `${answer.sys}/${answer.dia} mmHg`;
-          } else if (question.vitalType === "IMC" && typeof answer === 'object') {
-            content += `Peso: ${answer.weight} kg, Altura: ${answer.height} cm, IMC: ${answer.bmi}`;
+          if (question.vitalType === "TA" && typeof answer === 'object' && !Array.isArray(answer)) {
+            const vitalValue = answer as FormComplexValue;
+            content += `${vitalValue.sys}/${vitalValue.dia} mmHg`;
+          } else if (question.vitalType === "IMC" && typeof answer === 'object' && !Array.isArray(answer)) {
+            const vitalValue = answer as FormComplexValue;
+            content += `Peso: ${vitalValue.weight} kg, Altura: ${vitalValue.height} cm, IMC: ${vitalValue.bmi}`;
           } else {
             content += String(answer);
           }
           break;
         
         case 'clinical':
-          if (typeof answer === 'object') {
-            content += `<div style="font-weight: 500;">${answer.title}</div>`;
-            content += `<div style="font-size: 14px; color: #666;">${answer.detail}</div>`;
+          if (typeof answer === 'object' && !Array.isArray(answer)) {
+            const clinicalValue = answer as FormComplexValue;
+            content += `<div style="font-weight: 500;">${clinicalValue.title}</div>`;
+            content += `<div style="font-size: 14px; color: #666;">${clinicalValue.detail}</div>`;
           } else {
             content += String(answer);
           }
           break;
         
         case 'multifield':
-          if (typeof answer === 'object') {
-            Object.entries(answer).forEach(([key, value]) => {
+          if (typeof answer === 'object' && !Array.isArray(answer)) {
+            Object.entries(answer as Record<string, any>).forEach(([key, value]) => {
               const fieldLabel = question.multifields?.find((f: any) => f.id === key)?.label || key;
               content += `<div><span style="font-size: 14px; color: #666; margin-right: 8px;">${fieldLabel}:</span>${String(value)}</div>`;
             });
@@ -142,8 +145,13 @@ export const printFormResponse = (formData: Form, response: FormResponse, index:
           break;
         
         case 'file':
-          if (typeof answer === 'object' && answer.name) {
-            content += `<div>Archivo: ${answer.name} (${(answer.size / (1024 * 1024)).toFixed(2)} MB)</div>`;
+          if (typeof answer === 'object' && !Array.isArray(answer)) {
+            const fileValue = answer as FormComplexValue;
+            if (fileValue.name) {
+              content += `<div>Archivo: ${fileValue.name} (${((fileValue.size || 0) / (1024 * 1024)).toFixed(2)} MB)</div>`;
+            } else {
+              content += '<span style="color: #999; font-style: italic;">Archivo no disponible</span>';
+            }
           } else {
             content += '<span style="color: #999; font-style: italic;">Archivo no disponible</span>';
           }
