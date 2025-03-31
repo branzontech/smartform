@@ -1,11 +1,19 @@
 
-import React from "react";
+import React, { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Header } from "@/components/layout/header";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { FileText, ArrowRight, Calendar, Users, BarChart } from "lucide-react";
 
 const Index = () => {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    // Redirect to the new home page path
+    navigate("/app/home");
+  }, [navigate]);
+
   return (
     <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900">
       <Header />
@@ -19,26 +27,26 @@ const Index = () => {
           </p>
           
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-8 max-w-2xl mx-auto">
-            <Link to="/crear">
+            <Link to="/app/crear">
               <Button size="lg" className="w-full bg-form-primary hover:bg-form-primary/90">
                 <FileText className="mr-2 h-5 w-5" />
                 Crear nuevo formulario
               </Button>
             </Link>
-            <Link to="/pacientes">
+            <Link to="/app/pacientes">
               <Button size="lg" variant="outline" className="w-full group">
                 <Users className="mr-2 h-5 w-5" />
                 Ver pacientes
                 <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
               </Button>
             </Link>
-            <Link to="/citas">
+            <Link to="/app/citas">
               <Button size="lg" className="w-full bg-purple-600 hover:bg-purple-700">
                 <Calendar className="mr-2 h-5 w-5" />
                 Gestionar citas
               </Button>
             </Link>
-            <Link to="/pacientes/dashboard">
+            <Link to="/app/pacientes/dashboard">
               <Button size="lg" variant="outline" className="w-full group">
                 <BarChart className="mr-2 h-5 w-5" />
                 Ver estadísticas

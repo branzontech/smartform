@@ -4,9 +4,10 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, useNavigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useNavigate, Navigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import LandingPage from "./pages/LandingPage";
 import Home from "./pages/Home";
 import FormCreator from "./pages/FormCreator";
 import FormViewer from "./pages/FormViewer";
@@ -50,20 +51,42 @@ function App() {
         <Sonner />
         <BrowserRouter>
           <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/crear" element={<FormCreator />} />
-            <Route path="/editar/:id" element={<FormCreator />} />
-            <Route path="/ver/:id" element={<FormViewer />} />
-            <Route path="/respuestas/:id" element={<FormResponses />} />
-            <Route path="/pacientes" element={<PatientList />} />
-            <Route path="/pacientes/dashboard" element={<PatientDashboard />} />
-            <Route path="/pacientes/:id" element={<PatientDetail />} />
-            <Route path="/pacientes/nueva-consulta" element={<NewConsultation />} />
-            <Route path="/citas" element={<AppointmentList />} />
-            <Route path="/citas/:id" element={<AppointmentDetail />} />
-            <Route path="/citas/nueva" element={<AppointmentForm />} />
-            <Route path="/citas/editar/:id" element={<AppointmentForm />} />
-            <Route path="/configuracion" element={<SettingsPage />} />
+            {/* Landing page route */}
+            <Route path="/" element={<LandingPage />} />
+            
+            {/* Application routes */}
+            <Route path="/app" element={<AppointmentList />} />
+            <Route path="/app/home" element={<Home />} />
+            <Route path="/app/crear" element={<FormCreator />} />
+            <Route path="/app/editar/:id" element={<FormCreator />} />
+            <Route path="/app/ver/:id" element={<FormViewer />} />
+            <Route path="/app/respuestas/:id" element={<FormResponses />} />
+            <Route path="/app/pacientes" element={<PatientList />} />
+            <Route path="/app/pacientes/dashboard" element={<PatientDashboard />} />
+            <Route path="/app/pacientes/:id" element={<PatientDetail />} />
+            <Route path="/app/pacientes/nueva-consulta" element={<NewConsultation />} />
+            <Route path="/app/citas" element={<AppointmentList />} />
+            <Route path="/app/citas/:id" element={<AppointmentDetail />} />
+            <Route path="/app/citas/nueva" element={<AppointmentForm />} />
+            <Route path="/app/citas/editar/:id" element={<AppointmentForm />} />
+            <Route path="/app/configuracion" element={<SettingsPage />} />
+            
+            {/* Support legacy routes */}
+            <Route path="/crear" element={<Navigate to="/app/crear" replace />} />
+            <Route path="/editar/:id" element={<Navigate to="/app/editar/:id" replace />} />
+            <Route path="/ver/:id" element={<Navigate to="/app/ver/:id" replace />} />
+            <Route path="/respuestas/:id" element={<Navigate to="/app/respuestas/:id" replace />} />
+            <Route path="/pacientes" element={<Navigate to="/app/pacientes" replace />} />
+            <Route path="/pacientes/dashboard" element={<Navigate to="/app/pacientes/dashboard" replace />} />
+            <Route path="/pacientes/:id" element={<Navigate to="/app/pacientes/:id" replace />} />
+            <Route path="/pacientes/nueva-consulta" element={<Navigate to="/app/pacientes/nueva-consulta" replace />} />
+            <Route path="/citas" element={<Navigate to="/app/citas" replace />} />
+            <Route path="/citas/:id" element={<Navigate to="/app/citas/:id" replace />} />
+            <Route path="/citas/nueva" element={<Navigate to="/app/citas/nueva" replace />} />
+            <Route path="/citas/editar/:id" element={<Navigate to="/app/citas/editar/:id" replace />} />
+            <Route path="/configuracion" element={<Navigate to="/app/configuracion" replace />} />
+            
+            {/* 404 route */}
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
