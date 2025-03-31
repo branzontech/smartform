@@ -269,6 +269,103 @@ const AppointmentList = () => {
     return acc;
   }, {} as Record<string, Appointment[]>);
 
+  const renderViewContent = () => {
+    if (filteredAppointments.length === 0) {
+      return (
+        <EmptyState
+          title="No hay citas para mostrar"
+          description="No se encontraron citas que coincidan con los criterios de búsqueda."
+          icon={Calendar}
+        />
+      );
+    }
+
+    if (viewMode === 'day') {
+      return (
+        <div className="space-y-4">
+          <h3 className="text-lg font-medium">
+            {format(selectedDate, "EEEE d 'de' MMMM", { locale: es })}
+            {isToday(selectedDate) && <span className="ml-2 text-purple-500">(Hoy)</span>}
+          </h3>
+          <div className="space-y-2">
+            {filteredAppointments.map((appointment) => (
+              <AppointmentCard
+                key={appointment.id}
+                appointment={appointment}
+                onClick={() => handleViewAppointment(appointment.id)}
+                onStartConsultation={() => handleStartConsultation(appointment)}
+              />
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    if (viewMode === 'week') {
+      return (
+        <div className="space-y-4">
+          {weekDays.map((day) => {
+            const dateKey = format(day, 'yyyy-MM-dd');
+            const dayAppointments = appointmentsByDay[dateKey] || [];
+
+            if (dayAppointments.length === 0) {
+              return null;
+            }
+
+            return (
+              <div key={dateKey} className="space-y-2">
+                <h3 className="text-lg font-medium">
+                  {format(day, "EEEE d", { locale: es })}
+                  {isToday(day) && <span className="ml-2 text-purple-500">(Hoy)</span>}
+                </h3>
+                {dayAppointments.map((appointment) => (
+                  <AppointmentCard
+                    key={appointment.id}
+                    appointment={appointment}
+                    onClick={() => handleViewAppointment(appointment.id)}
+                    onStartConsultation={() => handleStartConsultation(appointment)}
+                  />
+                ))}
+              </div>
+            );
+          })}
+        </div>
+      );
+    }
+
+    if (viewMode === 'month') {
+      const groupedByDate = Object.keys(appointmentsByDay).sort();
+      
+      return (
+        <div className="space-y-4">
+          {groupedByDate.map((dateKey) => {
+            const date = new Date(dateKey);
+            const dayAppointments = appointmentsByDay[dateKey] || [];
+
+            return (
+              <div key={dateKey} className="space-y-2">
+                <h3 className="text-lg font-medium">
+                  {format(date, "EEEE d", { locale: es })}
+                  {isToday(date) && <span className="ml-2 text-purple-500">(Hoy)</span>}
+                </h3>
+                {dayAppointments.map((appointment) => (
+                  <AppointmentCard
+                    key={appointment.id}
+                    appointment={appointment}
+                    onClick={() => handleViewAppointment(appointment.id)}
+                    onStartConsultation={() => handleStartConsultation(appointment)}
+                  />
+                ))}
+              </div>
+            );
+          })}
+        </div>
+      );
+    }
+
+    return null;
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex flex-col">
