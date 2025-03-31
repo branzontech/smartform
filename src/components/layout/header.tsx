@@ -65,66 +65,66 @@ export const Header = ({ showCreate = true }: HeaderProps) => {
                   <Button 
                     variant="ghost"
                     onClick={goHome} 
-                    className="w-full justify-start hover:bg-violet-400/30 dark:hover:bg-violet-500/30"
+                    className="w-full justify-start hover:bg-violet-400/30 dark:hover:bg-violet-500/30 group"
                   >
-                    <Home size={16} className="mr-2" />
-                    Inicio
+                    <Home size={16} className="mr-2 group-hover:text-form-primary" />
+                    <span className="group-hover:bg-gradient-to-r group-hover:from-form-primary group-hover:to-form-secondary group-hover:bg-clip-text group-hover:text-transparent transition-all duration-300">Inicio</span>
                   </Button>
                   
                   <Link to="/pacientes" className="w-full block">
                     <Button 
                       variant="ghost"
-                      className="w-full justify-start hover:bg-violet-400/30 dark:hover:bg-violet-500/30"
+                      className="w-full justify-start hover:bg-violet-400/30 dark:hover:bg-violet-500/30 group"
                     >
-                      <Users size={16} className="mr-2" />
-                      Pacientes
+                      <Users size={16} className="mr-2 group-hover:text-form-primary" />
+                      <span className="group-hover:bg-gradient-to-r group-hover:from-form-primary group-hover:to-form-secondary group-hover:bg-clip-text group-hover:text-transparent transition-all duration-300">Pacientes</span>
                     </Button>
                   </Link>
                   
                   <Link to="/citas" className="w-full block">
                     <Button 
                       variant="ghost"
-                      className="w-full justify-start hover:bg-violet-400/30 dark:hover:bg-violet-500/30"
+                      className="w-full justify-start hover:bg-violet-400/30 dark:hover:bg-violet-500/30 group"
                     >
-                      <Calendar size={16} className="mr-2" />
-                      Citas
+                      <Calendar size={16} className="mr-2 group-hover:text-form-primary" />
+                      <span className="group-hover:bg-gradient-to-r group-hover:from-form-primary group-hover:to-form-secondary group-hover:bg-clip-text group-hover:text-transparent transition-all duration-300">Citas</span>
                     </Button>
                   </Link>
                   
                   <Link to="/pacientes/dashboard" className="w-full block">
                     <Button 
                       variant="ghost"
-                      className="w-full justify-start hover:bg-violet-400/30 dark:hover:bg-violet-500/30"
+                      className="w-full justify-start hover:bg-violet-400/30 dark:hover:bg-violet-500/30 group"
                     >
-                      <BarChart size={16} className="mr-2" />
-                      Estadísticas
+                      <BarChart size={16} className="mr-2 group-hover:text-form-primary" />
+                      <span className="group-hover:bg-gradient-to-r group-hover:from-form-primary group-hover:to-form-secondary group-hover:bg-clip-text group-hover:text-transparent transition-all duration-300">Estadísticas</span>
                     </Button>
                   </Link>
                   
                   <Link to="/configuracion" className="w-full block">
                     <Button 
                       variant="ghost"
-                      className="w-full justify-start hover:bg-violet-400/30 dark:hover:bg-violet-500/30"
+                      className="w-full justify-start hover:bg-violet-400/30 dark:hover:bg-violet-500/30 group"
                     >
-                      <SettingsIcon size={16} className="mr-2" />
-                      Configuración
+                      <SettingsIcon size={16} className="mr-2 group-hover:text-form-primary" />
+                      <span className="group-hover:bg-gradient-to-r group-hover:from-form-primary group-hover:to-form-secondary group-hover:bg-clip-text group-hover:text-transparent transition-all duration-300">Configuración</span>
                     </Button>
                   </Link>
                   
                   <Button 
                     variant="ghost" 
                     onClick={toggleTheme}
-                    className="w-full justify-start hover:bg-violet-400/30 dark:hover:bg-violet-500/30"
+                    className="w-full justify-start hover:bg-violet-400/30 dark:hover:bg-violet-500/30 group"
                   >
                     {theme === "light" ? (
                       <>
-                        <Moon size={16} className="mr-2" />
-                        Modo oscuro
+                        <Moon size={16} className="mr-2 group-hover:text-form-primary" />
+                        <span className="group-hover:bg-gradient-to-r group-hover:from-form-primary group-hover:to-form-secondary group-hover:bg-clip-text group-hover:text-transparent transition-all duration-300">Modo oscuro</span>
                       </>
                     ) : (
                       <>
-                        <Sun size={16} className="mr-2" />
-                        Modo claro
+                        <Sun size={16} className="mr-2 group-hover:text-form-primary" />
+                        <span className="group-hover:bg-gradient-to-r group-hover:from-form-primary group-hover:to-form-secondary group-hover:bg-clip-text group-hover:text-transparent transition-all duration-300">Modo claro</span>
                       </>
                     )}
                   </Button>
@@ -137,59 +137,59 @@ export const Header = ({ showCreate = true }: HeaderProps) => {
             <Button 
               variant="ghost"
               onClick={goHome}
-              className="p-2 flex items-center gap-2 hover:bg-violet-400/20 dark:hover:bg-violet-500/30"
+              className="p-2 flex items-center gap-2 hover:bg-violet-400/20 dark:hover:bg-violet-500/30 group"
             >
-              <Home size={18} />
-              Inicio
+              <Home size={18} className="group-hover:text-form-primary" />
+              <span className="group-hover:bg-gradient-to-r group-hover:from-form-primary group-hover:to-form-secondary group-hover:bg-clip-text group-hover:text-transparent transition-all duration-300">Inicio</span>
             </Button>
             
             <Link to="/pacientes">
               <Button 
                 variant="ghost"
-                className="p-2 flex items-center gap-2 hover:bg-violet-400/20 dark:hover:bg-violet-500/30"
+                className="p-2 flex items-center gap-2 hover:bg-violet-400/20 dark:hover:bg-violet-500/30 group"
               >
-                <Users size={18} />
-                Pacientes
+                <Users size={18} className="group-hover:text-form-primary" />
+                <span className="group-hover:bg-gradient-to-r group-hover:from-form-primary group-hover:to-form-secondary group-hover:bg-clip-text group-hover:text-transparent transition-all duration-300">Pacientes</span>
               </Button>
             </Link>
             
             <Link to="/citas">
               <Button 
                 variant="ghost"
-                className="p-2 flex items-center gap-2 hover:bg-violet-400/20 dark:hover:bg-violet-500/30"
+                className="p-2 flex items-center gap-2 hover:bg-violet-400/20 dark:hover:bg-violet-500/30 group"
               >
-                <Calendar size={18} />
-                Citas
+                <Calendar size={18} className="group-hover:text-form-primary" />
+                <span className="group-hover:bg-gradient-to-r group-hover:from-form-primary group-hover:to-form-secondary group-hover:bg-clip-text group-hover:text-transparent transition-all duration-300">Citas</span>
               </Button>
             </Link>
             
             <Link to="/pacientes/dashboard">
               <Button 
                 variant="ghost"
-                className="p-2 flex items-center gap-2 hover:bg-violet-400/20 dark:hover:bg-violet-500/30"
+                className="p-2 flex items-center gap-2 hover:bg-violet-400/20 dark:hover:bg-violet-500/30 group"
               >
-                <BarChart size={18} />
-                Estadísticas
+                <BarChart size={18} className="group-hover:text-form-primary" />
+                <span className="group-hover:bg-gradient-to-r group-hover:from-form-primary group-hover:to-form-secondary group-hover:bg-clip-text group-hover:text-transparent transition-all duration-300">Estadísticas</span>
               </Button>
             </Link>
             
             <Link to="/configuracion">
               <Button 
                 variant="ghost"
-                className="p-2 flex items-center gap-2 hover:bg-violet-400/20 dark:hover:bg-violet-500/30"
+                className="p-2 flex items-center gap-2 hover:bg-violet-400/20 dark:hover:bg-violet-500/30 group"
               >
-                <SettingsIcon size={18} />
-                Configuración
+                <SettingsIcon size={18} className="group-hover:text-form-primary" />
+                <span className="group-hover:bg-gradient-to-r group-hover:from-form-primary group-hover:to-form-secondary group-hover:bg-clip-text group-hover:text-transparent transition-all duration-300">Configuración</span>
               </Button>
             </Link>
             
             <Button 
               variant="ghost"
               onClick={toggleTheme}
-              className="p-2 hover:bg-violet-400/20 dark:hover:bg-violet-500/30"
+              className="p-2 hover:bg-violet-400/20 dark:hover:bg-violet-500/30 group"
               size="icon"
             >
-              {theme === "light" ? <Moon size={18} /> : <Sun size={18} />}
+              {theme === "light" ? <Moon size={18} className="group-hover:text-form-primary" /> : <Sun size={18} className="group-hover:text-form-primary" />}
             </Button>
           </div>
         )}
