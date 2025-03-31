@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { format, startOfWeek, endOfWeek, eachDayOfInterval, isToday, isSameDay, addDays, parseISO } from "date-fns";
@@ -122,7 +123,7 @@ const AppointmentCard = ({ appointment, onClick, onStartConsultation }: {
 }) => {
   return (
     <Card 
-      className="mb-2 hover:shadow-md transition-shadow cursor-pointer relative"
+      className="mb-2 hover:shadow-md transition-shadow cursor-pointer relative bg-[#F1F0FB] dark:bg-gray-800" // Added soft pastel gray background
     >
       <CardContent className="p-3" onClick={onClick}>
         <div className="flex justify-between items-start">
@@ -168,6 +169,7 @@ const AppointmentList = () => {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<AppointmentStatus | 'Todas'>('Todas');
+  // Set default view mode to 'day'
   const [viewMode, setViewMode] = useState<AppointmentView>('day');
 
   useEffect(() => {
