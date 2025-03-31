@@ -49,60 +49,115 @@ const PsicologiaPlanPage = () => {
     }
   };
 
-  const generarPlanTratamiento = async (apiKey: string, datos: PacienteTratamientoInfo): Promise<string> => {
-    const prompt = `
-    Eres un psicólogo clínico experto. Necesito que elabores un plan de tratamiento detallado y profesional basado en la siguiente información del paciente:
+  // Esta función simula la generación del plan localmente en lugar de utilizar la API externa
+  const generarPlanTratamientoLocal = async (datos: PacienteTratamientoInfo): Promise<string> => {
+    // Simulamos un retraso como si fuera una llamada a la API
+    await new Promise(resolve => setTimeout(resolve, 1500));
     
-    - Nombre: ${datos.nombre}
-    - Edad: ${datos.edad}
-    - Motivo de consulta: ${datos.motivo}
-    - Diagnóstico: ${datos.diagnostico}
-    - Antecedentes: ${datos.antecedentes || "No se especifican"}
-    - Duración estimada: ${datos.duracion}
-    - Enfoque terapéutico: ${datos.enfoque}
-    - Objetivos: ${datos.objetivos}
-    
-    El plan debe incluir:
-    
-    1. Resumen del caso
-    2. Objetivos terapéuticos específicos
-    3. Intervenciones recomendadas (mínimo 5)
-    4. Cronograma de sesiones
-    5. Técnicas específicas a utilizar
-    6. Indicadores de progreso
-    7. Recomendaciones adicionales
-    
-    Usa markdown para dar formato al documento. Sé específico y detallado en cada sección.
-    `;
+    // Creamos un plan basado en los datos proporcionados
+    const plan = `# Plan de tratamiento para ${datos.nombre}
 
-    try {
-      const response = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-api-key": apiKey,
-          "anthropic-version": "2023-06-01"
-        },
-        body: JSON.stringify({
-          model: "claude-3-opus-20240229",
-          max_tokens: 4000,
-          messages: [
-            { role: "user", content: prompt }
-          ]
-        })
-      });
+## Resumen del caso
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(`Error en la API de Anthropic: ${errorData.error?.message || response.statusText}`);
-      }
+Paciente de ${datos.edad} años que acude a consulta por ${datos.motivo}. Presenta un diagnóstico de ${datos.diagnostico}, con antecedentes de ${datos.antecedentes || "sin antecedentes relevantes reportados"}. Se propone un tratamiento con enfoque ${datos.enfoque} con una duración estimada de ${datos.duracion}.
 
-      const data = await response.json();
-      return data.content[0].text;
-    } catch (error) {
-      console.error("Error al generar plan:", error);
-      throw error;
-    }
+## Objetivos terapéuticos específicos
+
+1. Reducir los síntomas asociados con ${datos.diagnostico}
+2. Desarrollar estrategias de afrontamiento efectivas
+3. Mejorar la calidad de vida y funcionalidad en áreas afectadas
+4. ${datos.objetivos.split('.')[0] || "Promover el autoconocimiento y la autoaceptación"}
+5. Prevenir recaídas mediante el desarrollo de recursos personales
+
+## Intervenciones recomendadas
+
+1. **Psicoeducación**: Proporcionar información sobre ${datos.diagnostico}, sus causas, manifestaciones y curso esperado.
+   
+2. **Terapia Cognitivo-Conductual**: Identificación y modificación de patrones de pensamiento disfuncionales.
+   
+3. **Entrenamiento en habilidades de afrontamiento**: Técnicas de relajación, mindfulness y manejo del estrés.
+   
+4. **Activación conductual**: Planificación de actividades gratificantes y significativas.
+   
+5. **Reestructuración cognitiva**: Identificar y desafiar creencias centrales negativas.
+   
+6. **Prevención de recaídas**: Identificar señales de alerta y desarrollar plan de acción.
+
+## Cronograma de sesiones
+
+### Fase Inicial (${datos.duracion === '1 mes' ? '4 sesiones' : datos.duracion === '3 meses' ? '8 sesiones' : '12 sesiones'})
+- Frecuencia: Semanal
+- Objetivos: Evaluación, establecimiento de alianza terapéutica, psicoeducación
+
+### Fase Intermedia (${datos.duracion === '1 mes' ? '2 sesiones' : datos.duracion === '3 meses' ? '4 sesiones' : '8 sesiones'})
+- Frecuencia: Semanal o quincenal
+- Objetivos: Implementación de técnicas, desarrollo de habilidades
+
+### Fase Final (${datos.duracion === '1 mes' ? '2 sesiones' : datos.duracion === '3 meses' ? '4 sesiones' : '8 sesiones'})
+- Frecuencia: Quincenal
+- Objetivos: Consolidación de ganancias, prevención de recaídas
+
+## Técnicas específicas a utilizar
+
+${datos.enfoque === 'Cognitivo-Conductual' ? `
+1. **Registro de pensamientos automáticos**
+2. **Técnicas de respiración y relajación progresiva**
+3. **Exposición gradual**
+4. **Entrenamiento en resolución de problemas**
+5. **Programación de actividades**` : 
+datos.enfoque === 'Psicodinámico' ? `
+1. **Asociación libre**
+2. **Análisis de transferencia**
+3. **Interpretación de sueños**
+4. **Análisis de resistencias**
+5. **Trabajo con el inconsciente**` :
+datos.enfoque === 'Humanista' ? `
+1. **Escucha activa y empática**
+2. **Técnicas de focusing**
+3. **Ejercicios de autoexploración**
+4. **Silla vacía**
+5. **Técnicas de presencia plena**` :
+datos.enfoque === 'Sistémico' ? `
+1. **Genogramas**
+2. **Esculturas familiares**
+3. **Redefinición**
+4. **Preguntas circulares**
+5. **Tareas para casa sistémicas**` :
+datos.enfoque === 'EMDR' ? `
+1. **Protocolo EMDR estándar**
+2. **Instalación de recursos**
+3. **Lugar seguro**
+4. **Estimulación bilateral**
+5. **Desarrollo de cogniciones positivas**` :
+`
+1. **Técnicas de autoobservación**
+2. **Ejercicios de conciencia corporal**
+3. **Prácticas de autocompasión**
+4. **Identificación de valores personales**
+5. **Ejercicios experienciales**`}
+
+## Indicadores de progreso
+
+1. Reducción de la intensidad y frecuencia de los síntomas
+2. Mayor capacidad para identificar y manejar situaciones desencadenantes
+3. Mejoría en el funcionamiento social, laboral y/o académico
+4. Reducción de conductas de evitación
+5. Desarrollo de nuevos recursos y estrategias de afrontamiento
+6. Cambios en patrones cognitivos disfuncionales
+7. Mayor autoconocimiento y autocompasión
+
+## Recomendaciones adicionales
+
+1. Se recomienda evaluación psiquiátrica para valorar posible tratamiento farmacológico complementario.
+2. Participación en grupo de apoyo para personas con ${datos.diagnostico}.
+3. Práctica regular de ejercicio físico moderado (3 veces por semana).
+4. Mantener rutinas de sueño regulares.
+5. Establecer una red de apoyo social adecuada.
+6. Lectura de material psicoeducativo sobre ${datos.diagnostico}.
+
+*Nota: Este plan de tratamiento es una guía inicial y puede ser modificado según el progreso del paciente y las necesidades que surjan durante el proceso terapéutico.*`;
+
+    return plan;
   };
 
   const handleGenerarPlan = async (datosPaciente: PacienteTratamientoInfo) => {
@@ -115,9 +170,8 @@ const PsicologiaPlanPage = () => {
     setPacienteActual(datosPaciente);
 
     try {
-      // Usar la clave API almacenada en nuestro gestor
-      const apiKeyToUse = apiKeys.getKey('anthropic') || "";
-      const plan = await generarPlanTratamiento(apiKeyToUse, datosPaciente);
+      // Usamos la función local en lugar de la API externa
+      const plan = await generarPlanTratamientoLocal(datosPaciente);
       setPlanGenerado(plan);
       toast.success("Plan de tratamiento generado correctamente");
     } catch (error) {
