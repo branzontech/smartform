@@ -77,15 +77,15 @@ export const SettingsPage = () => {
         <div className="p-6">
           <Tabs defaultValue="general" className="w-full">
             <div className="mb-8">
-              <TabsList className={`grid ${isMobile ? 'grid-cols-3 gap-1' : 'grid-cols-6'} w-full`}>
+              <TabsList className={`inline-flex ${isMobile ? 'grid-cols-3 gap-1' : 'grid-cols-6'} w-full overflow-x-auto`}>
                 {categories.map(category => (
                   <TabsTrigger 
                     key={category.id} 
                     value={category.id}
-                    className="flex flex-col items-center gap-1 py-2 h-auto"
+                    className="flex flex-col items-center justify-center gap-1 py-2 h-auto"
                   >
                     {category.icon}
-                    <span className="text-xs">{category.label}</span>
+                    <span className="text-xs whitespace-nowrap">{category.label}</span>
                   </TabsTrigger>
                 ))}
               </TabsList>
