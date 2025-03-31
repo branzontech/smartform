@@ -1,12 +1,13 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Calendar, Check } from "lucide-react";
 import { toast } from "sonner";
 import { 
   createGoogleCalendarEvent, 
   updateGoogleCalendarEvent,
-  deleteGoogleCalendarEvent
+  deleteGoogleCalendarEvent,
+  isUserSignedIn
 } from "@/utils/google-calendar";
 import { Appointment } from "@/types/patient-types";
 
@@ -15,16 +16,34 @@ interface CalendarSyncButtonProps {
   eventId?: string;
   onSync?: (eventId: string) => void;
   action: "create" | "update" | "delete";
+  className?: string;
 }
 
 export const CalendarSyncButton = ({ 
   appointment, 
   eventId, 
   onSync,
-  action = "create"
+  action = "create",
+  className = ""
 }: CalendarSyncButtonProps) => {
   const [isSyncing, setIsSyncing] = useState(false);
   const [isSynced, setIsSynced] = useState(!!eventId);
+  const [isGoogleConnected, setIsGoogleConnected] = useState(false);
+
+  // Verificar si el usuario está conectado a Google
+  useEffect(() => {
+    const checkGoogleConnection = () => {
+      try {
+        const connected = isUserSignedIn();
+        setIsGoogleConnected(connected);
+      } catch (error) {
+        console.error("Error checking Google connection:", error);
+        setIsGoogleConnected(false);
+      }
+    };
+    
+    checkGoogleConnection();
+  }, []);
 
   const handleSync = async () => {
     setIsSyncing(true);
@@ -82,9 +101,13 @@ export const CalendarSyncButton = ({
     }
   };
 
+  if (!isGoogleConnected) {
+    return null;
+  }
+
   if (isSynced && action !== "delete") {
     return (
-      <Button variant="outline" size="sm" className="bg-green-50 border-green-200 text-green-600" disabled>
+      <Button variant="outline" size="sm" className={`bg-green-50 border-green-200 text-green-600 ${className}`} disabled>
         <Check className="mr-1 h-4 w-4" /> Sincronizado
       </Button>
     );
@@ -104,6 +127,7 @@ export const CalendarSyncButton = ({
       size="sm"
       onClick={handleSync}
       disabled={isSyncing}
+      className={className}
     >
       {isSyncing ? (
         <span className="flex items-center">

@@ -5,7 +5,7 @@ import { toast } from "sonner";
 const SCOPES = 'https://www.googleapis.com/auth/calendar';
 
 // ID de cliente de Google (este es un ejemplo, deberías usar tu propio ID)
-const CLIENT_ID = ''; // Necesitarás obtener este ID del Google Cloud Console
+const CLIENT_ID = '1234567890-abc123def456.apps.googleusercontent.com'; // Necesitarás obtener este ID del Google Cloud Console
 
 // Función para inicializar la API de Google
 export const initGoogleApi = () => {
@@ -15,7 +15,7 @@ export const initGoogleApi = () => {
     script.onload = () => {
       window.gapi.load('client:auth2', () => {
         window.gapi.client.init({
-          apiKey: '',
+          apiKey: 'YOUR_API_KEY',
           clientId: CLIENT_ID,
           scope: SCOPES,
           discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest']
@@ -38,8 +38,13 @@ export const initGoogleApi = () => {
 // Verificar si el usuario está autenticado con Google
 export const isUserSignedIn = () => {
   if (!window.gapi || !window.gapi.auth2) return false;
-  const authInstance = window.gapi.auth2.getAuthInstance();
-  return authInstance && authInstance.isSignedIn.get();
+  try {
+    const authInstance = window.gapi.auth2.getAuthInstance();
+    return authInstance && authInstance.isSignedIn.get();
+  } catch (error) {
+    console.error("Error checking if user is signed in:", error);
+    return false;
+  }
 };
 
 // Iniciar sesión con Google
