@@ -1,5 +1,5 @@
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { FileText, Menu, Moon, Sun, Home, Users, BarChart, Settings as SettingsIcon, Calendar, Heart } from "lucide-react";
+import { FileText, Menu, Moon, Sun, Home, Users, BarChart, Settings as SettingsIcon, Calendar, Stethoscope } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useState, useEffect } from "react";
@@ -44,7 +44,7 @@ export const Header = ({ showCreate = true }: HeaderProps) => {
       <div className="container mx-auto flex items-center justify-between h-16">
         <div className="flex items-center">
           <Link to="/" className="flex items-center space-x-2">
-            <Heart className="h-6 w-6 text-form-primary" />
+            <Stethoscope className="h-6 w-6 text-form-primary" />
             <span className="text-xl font-semibold text-form-primary">Smart Doctor</span>
           </Link>
         </div>
