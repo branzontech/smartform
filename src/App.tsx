@@ -21,6 +21,9 @@ import { SettingsPage } from "./components/config/settings";
 import AppointmentList from "./pages/appointments/AppointmentList";
 import AppointmentDetail from "./pages/appointments/AppointmentDetail";
 import AppointmentForm from "./pages/appointments/AppointmentForm";
+import Login from "./pages/auth/Login";
+import Register from "./pages/auth/Register";
+import ForgotPassword from "./pages/auth/ForgotPassword";
 
 export const BackButton = () => {
   const navigate = useNavigate();
@@ -53,6 +56,11 @@ function App() {
           <Routes>
             {/* Landing page route */}
             <Route path="/" element={<LandingPage />} />
+            
+            {/* Auth routes */}
+            <Route path="/app/login" element={<Login />} />
+            <Route path="/app/register" element={<Register />} />
+            <Route path="/app/forgot-password" element={<ForgotPassword />} />
             
             {/* Application routes */}
             <Route path="/app" element={<AppointmentList />} />
