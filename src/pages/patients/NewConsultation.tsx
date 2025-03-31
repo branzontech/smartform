@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Calendar as CalendarIcon, Clock, Save } from "lucide-react";
+import { Calendar as CalendarIcon, Clock, Save, FileText, PlusCircle } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -16,6 +16,9 @@ import { Label } from "@/components/ui/label";
 import { Patient, MedicalConsultation } from "@/types/patient-types";
 import { nanoid } from "nanoid";
 import { useToast } from "@/hooks/use-toast";
+import { Form as FormType } from '@/pages/Home';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
 const NewConsultation = () => {
   const navigate = useNavigate();
@@ -26,6 +29,7 @@ const NewConsultation = () => {
 
   const [patients, setPatients] = useState<Patient[]>([]);
   const [loading, setLoading] = useState(true);
+  const [availableForms, setAvailableForms] = useState<FormType[]>([]);
   
   // Form state
   const [selectedPatientId, setSelectedPatientId] = useState<string>(preselectedPatientId || "");
@@ -48,10 +52,13 @@ const NewConsultation = () => {
   const [notes, setNotes] = useState("");
   const [followUpDate, setFollowUpDate] = useState<Date | undefined>(undefined);
   const [status, setStatus] = useState<MedicalConsultation["status"]>("Programada");
+  const [selectedFormId, setSelectedFormId] = useState<string>("");
+  const [formDialogOpen, setFormDialogOpen] = useState(false);
   
-  // Carga de pacientes
+  // Carga de pacientes y formularios
   useEffect(() => {
     const timer = setTimeout(() => {
+      // Cargar pacientes
       const savedPatients = localStorage.getItem("patients");
       if (savedPatients) {
         try {
@@ -68,6 +75,25 @@ const NewConsultation = () => {
       } else {
         setPatients([]);
       }
+
+      // Cargar formularios
+      const savedForms = localStorage.getItem("forms");
+      if (savedForms) {
+        try {
+          const parsedForms = JSON.parse(savedForms).map((form: any) => ({
+            ...form,
+            createdAt: new Date(form.createdAt),
+            updatedAt: new Date(form.updatedAt)
+          }));
+          setAvailableForms(parsedForms);
+        } catch (error) {
+          console.error("Error parsing forms:", error);
+          setAvailableForms([]);
+        }
+      } else {
+        setAvailableForms([]);
+      }
+
       setLoading(false);
     }, 800);
 
@@ -119,7 +145,8 @@ const NewConsultation = () => {
       treatment: treatment || undefined,
       notes: notes || undefined,
       followUpDate: followUpDate || undefined,
-      status
+      status,
+      formId: selectedFormId || undefined
     };
     
     // Guardar la consulta
@@ -133,8 +160,42 @@ const NewConsultation = () => {
       title: "Consulta creada",
       description: "La consulta ha sido registrada correctamente",
     });
-    
-    navigate(`/pacientes/${patientId}`);
+
+    // Si hay un formulario seleccionado, redirigir al formulario
+    if (selectedFormId) {
+      navigate(`/ver/${selectedFormId}?patientId=${patientId}&consultationId=${newConsultation.id}`);
+    } else {
+      navigate(`/pacientes/${patientId}`);
+    }
+  };
+
+  const handleCreateFormClick = () => {
+    // Guardar el estado actual y redirigir al creador de formularios
+    if (selectedPatientId || (isNewPatient && newPatientData.name)) {
+      localStorage.setItem("pendingConsultation", JSON.stringify({
+        patientId: selectedPatientId,
+        isNewPatient,
+        newPatientData,
+        consultationDate,
+        reason,
+        diagnosis,
+        treatment,
+        notes,
+        followUpDate,
+        status
+      }));
+      navigate("/crear");
+    } else {
+      toast({
+        title: "Datos incompletos",
+        description: "Por favor seleccione un paciente o complete los datos del nuevo paciente primero.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const openFormPreview = (formId: string) => {
+    window.open(`/ver/${formId}`, '_blank');
   };
 
   return (
@@ -389,6 +450,173 @@ const NewConsultation = () => {
                   </Popover>
                 </div>
               </div>
+            </div>
+          </div>
+          
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-semibold">Formulario de consulta</h2>
+              <Button 
+                type="button" 
+                variant="outline" 
+                size="sm"
+                onClick={handleCreateFormClick}
+                className="flex items-center gap-2"
+              >
+                <PlusCircle size={16} />
+                Crear nuevo formulario
+              </Button>
+            </div>
+            
+            <div className="space-y-4">
+              {availableForms.length > 0 ? (
+                <div className="space-y-4">
+                  <Tabs defaultValue="all" className="w-full">
+                    <TabsList className="mb-4">
+                      <TabsTrigger value="all">Todos</TabsTrigger>
+                      <TabsTrigger value="forms">Forms</TabsTrigger>
+                      <TabsTrigger value="formato">Formatos</TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="all" className="space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {availableForms.map(form => (
+                          <div 
+                            key={form.id}
+                            className={`p-4 border rounded-lg cursor-pointer transition-all ${selectedFormId === form.id ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20' : 'border-gray-200 hover:border-purple-300'}`}
+                            onClick={() => setSelectedFormId(form.id)}
+                          >
+                            <div className="flex justify-between items-start">
+                              <div>
+                                <h3 className="font-medium">{form.title}</h3>
+                                <p className="text-sm text-gray-500 dark:text-gray-400">{form.description}</p>
+                              </div>
+                              <div className="flex items-center space-x-2">
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    openFormPreview(form.id);
+                                  }}
+                                >
+                                  <FileText size={14} className="mr-1" />
+                                  Vista previa
+                                </Button>
+                              </div>
+                            </div>
+                            <div className="flex items-center mt-2 text-xs">
+                              <span className="mr-2 px-2 py-0.5 bg-gray-100 dark:bg-gray-700 rounded">
+                                {form.formType === 'forms' ? 'Form' : 'Formato'}
+                              </span>
+                              <span className="text-gray-500">
+                                Última actualización: {format(new Date(form.updatedAt), 'dd/MM/yyyy')}
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </TabsContent>
+                    <TabsContent value="forms" className="space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {availableForms.filter(form => form.formType === 'forms').map(form => (
+                          <div 
+                            key={form.id}
+                            className={`p-4 border rounded-lg cursor-pointer transition-all ${selectedFormId === form.id ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20' : 'border-gray-200 hover:border-purple-300'}`}
+                            onClick={() => setSelectedFormId(form.id)}
+                          >
+                            <div className="flex justify-between items-start">
+                              <div>
+                                <h3 className="font-medium">{form.title}</h3>
+                                <p className="text-sm text-gray-500 dark:text-gray-400">{form.description}</p>
+                              </div>
+                              <div className="flex items-center space-x-2">
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    openFormPreview(form.id);
+                                  }}
+                                >
+                                  <FileText size={14} className="mr-1" />
+                                  Vista previa
+                                </Button>
+                              </div>
+                            </div>
+                            <div className="flex items-center mt-2 text-xs">
+                              <span className="mr-2 px-2 py-0.5 bg-gray-100 dark:bg-gray-700 rounded">Form</span>
+                              <span className="text-gray-500">
+                                Última actualización: {format(new Date(form.updatedAt), 'dd/MM/yyyy')}
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </TabsContent>
+                    <TabsContent value="formato" className="space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {availableForms.filter(form => form.formType === 'formato').map(form => (
+                          <div 
+                            key={form.id}
+                            className={`p-4 border rounded-lg cursor-pointer transition-all ${selectedFormId === form.id ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20' : 'border-gray-200 hover:border-purple-300'}`}
+                            onClick={() => setSelectedFormId(form.id)}
+                          >
+                            <div className="flex justify-between items-start">
+                              <div>
+                                <h3 className="font-medium">{form.title}</h3>
+                                <p className="text-sm text-gray-500 dark:text-gray-400">{form.description}</p>
+                              </div>
+                              <div className="flex items-center space-x-2">
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    openFormPreview(form.id);
+                                  }}
+                                >
+                                  <FileText size={14} className="mr-1" />
+                                  Vista previa
+                                </Button>
+                              </div>
+                            </div>
+                            <div className="flex items-center mt-2 text-xs">
+                              <span className="mr-2 px-2 py-0.5 bg-gray-100 dark:bg-gray-700 rounded">Formato</span>
+                              <span className="text-gray-500">
+                                Última actualización: {format(new Date(form.updatedAt), 'dd/MM/yyyy')}
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </TabsContent>
+                  </Tabs>
+
+                  {selectedFormId && (
+                    <div className="flex items-center mt-4 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-md">
+                      <FileText size={20} className="text-green-600 dark:text-green-400 mr-2" />
+                      <div className="text-sm">
+                        <p className="font-medium text-green-800 dark:text-green-300">
+                          Formulario seleccionado: {availableForms.find(f => f.id === selectedFormId)?.title}
+                        </p>
+                        <p className="text-green-600 dark:text-green-400">
+                          Al guardar la consulta será redirigido al formulario seleccionado.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="text-center py-10 border border-dashed rounded-lg">
+                  <FileText size={40} className="mx-auto text-gray-300 mb-4" />
+                  <h3 className="text-lg font-medium mb-2">No hay formularios disponibles</h3>
+                  <p className="text-gray-500 mb-4">Crea un nuevo formulario para usarlo en esta consulta</p>
+                  <Button onClick={handleCreateFormClick} variant="outline">
+                    <PlusCircle size={16} className="mr-2" />
+                    Crear formulario
+                  </Button>
+                </div>
+              )}
             </div>
           </div>
           

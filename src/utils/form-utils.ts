@@ -68,6 +68,10 @@ export const createDynamicSchema = (questions: QuestionData[]) => {
     }
   });
   
+  // Add fields for medical context
+  schemaFields._patientId = z.string().optional();
+  schemaFields._consultationId = z.string().optional();
+  
   return z.object(schemaFields);
 };
 
@@ -172,6 +176,31 @@ export const saveFormResponse = (formId: string, values: any) => {
     }
   }
   
+  // Si hay un consultationId, actualizar la consulta para marcarla como completada
+  if (values._consultationId) {
+    const savedConsultations = localStorage.getItem("consultations");
+    if (savedConsultations) {
+      try {
+        const consultations = JSON.parse(savedConsultations);
+        const updatedConsultations = consultations.map((consultation: any) => {
+          if (consultation.id === values._consultationId) {
+            return {
+              ...consultation,
+              status: "Completada",
+              formCompleted: true,
+              formCompletedAt: new Date().toISOString()
+            };
+          }
+          return consultation;
+        });
+        
+        localStorage.setItem("consultations", JSON.stringify(updatedConsultations));
+      } catch (error) {
+        console.error("Error updating consultation status:", error);
+      }
+    }
+  }
+  
   return true;
 };
 
@@ -207,4 +236,16 @@ export const getFormResponses = (formId: string) => {
     console.error("Error loading form responses:", error);
     return [];
   }
+};
+
+// Obtener respuestas de formulario por paciente
+export const getFormResponsesByPatient = (formId: string, patientId: string) => {
+  const allResponses = getFormResponses(formId);
+  return allResponses.filter(response => response.data._patientId === patientId);
+};
+
+// Obtener respuestas de formulario por consulta
+export const getFormResponsesByConsultation = (formId: string, consultationId: string) => {
+  const allResponses = getFormResponses(formId);
+  return allResponses.filter(response => response.data._consultationId === consultationId);
 };

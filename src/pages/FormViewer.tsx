@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -25,6 +25,7 @@ import { FormLoading } from '@/components/forms/form-viewer/form-loading';
 import { FormError } from '@/components/forms/form-viewer/form-error';
 import { FormSubmissionSuccess } from '@/components/forms/form-viewer/form-submission-success';
 import { createDynamicSchema, fetchFormById, saveFormResponse } from '@/utils/form-utils';
+import { useToast } from '@/hooks/use-toast';
 
 interface FormData {
   [key: string]: any;
@@ -33,6 +34,7 @@ interface FormData {
 const FormViewer = () => {
   const { id: formId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const [formData, setFormData] = useState<FormData>({});
   const [questions, setQuestions] = useState<QuestionData[]>([]);
   const [formTitle, setFormTitle] = useState("Formulario");
@@ -41,6 +43,12 @@ const FormViewer = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [submitted, setSubmitted] = useState(false);
+  const { toast: uiToast } = useToast();
+
+  // Get query parameters
+  const queryParams = new URLSearchParams(location.search);
+  const patientId = queryParams.get("patientId");
+  const consultationId = queryParams.get("consultationId");
 
   useEffect(() => {
     const loadForm = async () => {
@@ -64,6 +72,35 @@ const FormViewer = () => {
               setError(result.error);
             }
           }
+          
+          // If this is for a patient, load patient data
+          if (patientId) {
+            const savedPatients = localStorage.getItem("patients");
+            if (savedPatients) {
+              const patients = JSON.parse(savedPatients);
+              const patient = patients.find((p: any) => p.id === patientId);
+              
+              if (patient) {
+                // Pre-fill patient information into the form
+                const patientData: FormData = {};
+                questions.forEach(question => {
+                  if (question.type === "short" && question.title.includes("nombre")) {
+                    patientData[question.id] = patient.name;
+                  } else if (question.type === "short" && question.title.includes("identificación")) {
+                    patientData[question.id] = patient.documentId;
+                  } else if (question.type === "short" && question.title.includes("teléfono")) {
+                    patientData[question.id] = patient.contactNumber;
+                  } else if (question.type === "short" && question.title.includes("email")) {
+                    patientData[question.id] = patient.email;
+                  }
+                  // Add more mappings as needed
+                });
+                
+                setFormData(prevData => ({...prevData, ...patientData}));
+              }
+            }
+          }
+          
         } catch (error) {
           console.error('Error loading form:', error);
           setError("Error al cargar el formulario");
@@ -74,7 +111,7 @@ const FormViewer = () => {
     };
 
     loadForm();
-  }, [formId]);
+  }, [formId, patientId, questions]);
 
   const dynamicSchema = createDynamicSchema(questions);
   
@@ -126,6 +163,15 @@ const FormViewer = () => {
     
     console.log("Valores procesados antes de guardar:", processedValues);
     
+    // Add patient and consultation reference if applicable
+    if (patientId) {
+      processedValues._patientId = patientId;
+    }
+    
+    if (consultationId) {
+      processedValues._consultationId = consultationId;
+    }
+    
     // Guardar la respuesta en localStorage
     if (formId) {
       saveFormResponse(formId, processedValues);
@@ -136,6 +182,18 @@ const FormViewer = () => {
       description: "Gracias por completar el formulario",
       duration: 5000,
     });
+
+    // If this was part of a consultation, redirect back to patient detail
+    if (patientId && consultationId) {
+      uiToast({
+        title: "Formulario guardado",
+        description: "El formulario ha sido guardado correctamente para esta consulta.",
+      });
+      
+      setTimeout(() => {
+        navigate(`/pacientes/${patientId}`);
+      }, 2000);
+    }
   };
 
   const copyFormLinkToClipboard = () => {
@@ -201,6 +259,14 @@ const FormViewer = () => {
           </Button>
         </div>
       </div>
+      
+      {patientId && consultationId && (
+        <div className="bg-blue-50 dark:bg-blue-900/20 p-4 mb-6 rounded-lg border border-blue-200 dark:border-blue-800">
+          <p className="text-blue-700 dark:text-blue-300 font-medium">
+            Este formulario está siendo completado como parte de una consulta médica.
+          </p>
+        </div>
+      )}
       
       <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100 print:shadow-none print:border-none">
         <FormProvider {...form}>
