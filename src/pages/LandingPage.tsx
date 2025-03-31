@@ -1,8 +1,7 @@
-
 import React from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { FileText, Users, Calendar, BarChart, CheckCircle } from "lucide-react";
+import { FileText, Users, Calendar, BarChart, CheckCircle, Star } from "lucide-react";
 
 const LandingPage = () => {
   return (
@@ -53,7 +52,12 @@ const LandingPage = () => {
             </div>
           </div>
           <div className="md:w-1/2">
-            <img src="/placeholder.svg" alt="Smart Forms platform" className="rounded-lg shadow-xl" />
+            <img 
+              src="/placeholder.svg" 
+              alt="Smart Forms platform" 
+              className="rounded-lg shadow-xl"
+              data-component-name="img" 
+            />
           </div>
         </div>
       </section>
@@ -138,6 +142,82 @@ const LandingPage = () => {
                 <p className="text-gray-600 dark:text-gray-300">
                   Accede a los datos de tus pacientes y consultas desde cualquier dispositivo con conexión a internet.
                 </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Testimonials Section */}
+      <section id="testimonials" className="py-20 px-6 bg-white dark:bg-gray-900">
+        <div className="container mx-auto max-w-6xl">
+          <h2 className="text-3xl md:text-4xl font-bold text-center mb-16 text-gray-900 dark:text-white">
+            Lo que dicen nuestros usuarios
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="bg-gray-50 dark:bg-gray-800 p-8 rounded-lg shadow-sm hover:shadow-md transition-shadow">
+              <div className="flex items-center mb-4">
+                <Star className="text-yellow-400 h-5 w-5" fill="currentColor" />
+                <Star className="text-yellow-400 h-5 w-5" fill="currentColor" />
+                <Star className="text-yellow-400 h-5 w-5" fill="currentColor" />
+                <Star className="text-yellow-400 h-5 w-5" fill="currentColor" />
+                <Star className="text-yellow-400 h-5 w-5" fill="currentColor" />
+              </div>
+              <p className="text-gray-600 dark:text-gray-300 mb-6 italic">
+                "Smart Forms ha transformado la gestión de mi consulta. Ahora puedo dedicar más tiempo a mis pacientes y menos a la administración."
+              </p>
+              <div className="flex items-center">
+                <div className="h-12 w-12 rounded-full bg-form-primary/20 flex items-center justify-center mr-4">
+                  <span className="text-form-primary font-bold">DR</span>
+                </div>
+                <div>
+                  <p className="font-semibold text-gray-900 dark:text-white">Dra. María Rodríguez</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Médico de Familia</p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="bg-gray-50 dark:bg-gray-800 p-8 rounded-lg shadow-sm hover:shadow-md transition-shadow">
+              <div className="flex items-center mb-4">
+                <Star className="text-yellow-400 h-5 w-5" fill="currentColor" />
+                <Star className="text-yellow-400 h-5 w-5" fill="currentColor" />
+                <Star className="text-yellow-400 h-5 w-5" fill="currentColor" />
+                <Star className="text-yellow-400 h-5 w-5" fill="currentColor" />
+                <Star className="text-yellow-400 h-5 w-5" fill="currentColor" />
+              </div>
+              <p className="text-gray-600 dark:text-gray-300 mb-6 italic">
+                "La facilidad para crear formularios personalizados y hacer seguimiento a mis pacientes ha mejorado significativamente mi práctica clínica."
+              </p>
+              <div className="flex items-center">
+                <div className="h-12 w-12 rounded-full bg-form-primary/20 flex items-center justify-center mr-4">
+                  <span className="text-form-primary font-bold">JS</span>
+                </div>
+                <div>
+                  <p className="font-semibold text-gray-900 dark:text-white">Dr. Juan Sánchez</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Pediatra</p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="bg-gray-50 dark:bg-gray-800 p-8 rounded-lg shadow-sm hover:shadow-md transition-shadow">
+              <div className="flex items-center mb-4">
+                <Star className="text-yellow-400 h-5 w-5" fill="currentColor" />
+                <Star className="text-yellow-400 h-5 w-5" fill="currentColor" />
+                <Star className="text-yellow-400 h-5 w-5" fill="currentColor" />
+                <Star className="text-yellow-400 h-5 w-5" fill="currentColor" />
+                <Star className="text-yellow-400 h-5 w-5" fill="currentColor" />
+              </div>
+              <p className="text-gray-600 dark:text-gray-300 mb-6 italic">
+                "El sistema de alertas y seguimiento de pacientes ha reducido drásticamente las citas perdidas en mi clínica. Una herramienta imprescindible."
+              </p>
+              <div className="flex items-center">
+                <div className="h-12 w-12 rounded-full bg-form-primary/20 flex items-center justify-center mr-4">
+                  <span className="text-form-primary font-bold">CL</span>
+                </div>
+                <div>
+                  <p className="font-semibold text-gray-900 dark:text-white">Dra. Carmen López</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Dermatóloga</p>
+                </div>
               </div>
             </div>
           </div>
