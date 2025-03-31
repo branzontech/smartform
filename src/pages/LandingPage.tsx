@@ -3,6 +3,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { FileText, Users, Calendar, BarChart, CheckCircle, Star, Stethoscope, ClipboardList, Activity, FileDigit } from "lucide-react";
+import { Player } from "@lottiefiles/react-lottie-player";
 
 const LandingPage = () => {
   return (
@@ -55,12 +56,14 @@ const LandingPage = () => {
             </div>
           </div>
           <div className="md:w-1/2">
-            <img 
-              src="https://i.ibb.co/6Py7H7Z/medical-doctor-software.png" 
-              alt="Smart Doctor platform" 
-              className="rounded-lg shadow-xl"
-              data-component-name="img" 
-            />
+            <div className="rounded-lg shadow-xl overflow-hidden bg-white" data-component-name="img">
+              <Player
+                autoplay
+                loop
+                src="https://lottie.host/embed/eddd52fe-9a2a-4693-8a2b-a986641d5644/ar6IVwscXk.lottie"
+                style={{ height: '100%', width: '100%' }}
+              />
+            </div>
           </div>
         </div>
       </section>
@@ -408,4 +411,3 @@ const LandingPage = () => {
 };
 
 export default LandingPage;
-
