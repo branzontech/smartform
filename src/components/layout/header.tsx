@@ -1,3 +1,4 @@
+
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { FileText, Menu, Moon, Sun, Home, Users, BarChart, Settings as SettingsIcon, Calendar, Stethoscope } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -64,7 +65,7 @@ export const Header = ({ showCreate = true }: HeaderProps) => {
                   <Button 
                     variant="ghost"
                     onClick={goHome} 
-                    className="w-full justify-start hover:bg-purple-100 dark:hover:bg-purple-900/30"
+                    className="w-full justify-start hover:bg-violet-400/30 dark:hover:bg-violet-500/30"
                   >
                     <Home size={16} className="mr-2" />
                     Inicio
@@ -73,7 +74,7 @@ export const Header = ({ showCreate = true }: HeaderProps) => {
                   <Link to="/pacientes" className="w-full block">
                     <Button 
                       variant="ghost"
-                      className="w-full justify-start hover:bg-purple-100 dark:hover:bg-purple-900/30"
+                      className="w-full justify-start hover:bg-violet-400/30 dark:hover:bg-violet-500/30"
                     >
                       <Users size={16} className="mr-2" />
                       Pacientes
@@ -83,7 +84,7 @@ export const Header = ({ showCreate = true }: HeaderProps) => {
                   <Link to="/citas" className="w-full block">
                     <Button 
                       variant="ghost"
-                      className="w-full justify-start hover:bg-purple-100 dark:hover:bg-purple-900/30"
+                      className="w-full justify-start hover:bg-violet-400/30 dark:hover:bg-violet-500/30"
                     >
                       <Calendar size={16} className="mr-2" />
                       Citas
@@ -93,7 +94,7 @@ export const Header = ({ showCreate = true }: HeaderProps) => {
                   <Link to="/pacientes/dashboard" className="w-full block">
                     <Button 
                       variant="ghost"
-                      className="w-full justify-start hover:bg-purple-100 dark:hover:bg-purple-900/30"
+                      className="w-full justify-start hover:bg-violet-400/30 dark:hover:bg-violet-500/30"
                     >
                       <BarChart size={16} className="mr-2" />
                       Estadísticas
@@ -103,7 +104,7 @@ export const Header = ({ showCreate = true }: HeaderProps) => {
                   <Link to="/configuracion" className="w-full block">
                     <Button 
                       variant="ghost"
-                      className="w-full justify-start hover:bg-purple-100 dark:hover:bg-purple-900/30"
+                      className="w-full justify-start hover:bg-violet-400/30 dark:hover:bg-violet-500/30"
                     >
                       <SettingsIcon size={16} className="mr-2" />
                       Configuración
@@ -113,7 +114,7 @@ export const Header = ({ showCreate = true }: HeaderProps) => {
                   <Button 
                     variant="ghost" 
                     onClick={toggleTheme}
-                    className="w-full justify-start hover:bg-purple-100 dark:hover:bg-purple-900/30"
+                    className="w-full justify-start hover:bg-violet-400/30 dark:hover:bg-violet-500/30"
                   >
                     {theme === "light" ? (
                       <>
@@ -136,7 +137,7 @@ export const Header = ({ showCreate = true }: HeaderProps) => {
             <Button 
               variant="ghost"
               onClick={goHome}
-              className="p-2 flex items-center gap-2 hover:bg-purple-50 dark:hover:bg-purple-900/30"
+              className="p-2 flex items-center gap-2 hover:bg-violet-400/20 dark:hover:bg-violet-500/30"
             >
               <Home size={18} />
               Inicio
@@ -145,7 +146,7 @@ export const Header = ({ showCreate = true }: HeaderProps) => {
             <Link to="/pacientes">
               <Button 
                 variant="ghost"
-                className="p-2 flex items-center gap-2 hover:bg-purple-50 dark:hover:bg-purple-900/30"
+                className="p-2 flex items-center gap-2 hover:bg-violet-400/20 dark:hover:bg-violet-500/30"
               >
                 <Users size={18} />
                 Pacientes
@@ -155,7 +156,7 @@ export const Header = ({ showCreate = true }: HeaderProps) => {
             <Link to="/citas">
               <Button 
                 variant="ghost"
-                className="p-2 flex items-center gap-2 hover:bg-purple-50 dark:hover:bg-purple-900/30"
+                className="p-2 flex items-center gap-2 hover:bg-violet-400/20 dark:hover:bg-violet-500/30"
               >
                 <Calendar size={18} />
                 Citas
@@ -165,7 +166,7 @@ export const Header = ({ showCreate = true }: HeaderProps) => {
             <Link to="/pacientes/dashboard">
               <Button 
                 variant="ghost"
-                className="p-2 flex items-center gap-2 hover:bg-purple-50 dark:hover:bg-purple-900/30"
+                className="p-2 flex items-center gap-2 hover:bg-violet-400/20 dark:hover:bg-violet-500/30"
               >
                 <BarChart size={18} />
                 Estadísticas
@@ -175,7 +176,7 @@ export const Header = ({ showCreate = true }: HeaderProps) => {
             <Link to="/configuracion">
               <Button 
                 variant="ghost"
-                className="p-2 flex items-center gap-2 hover:bg-purple-50 dark:hover:bg-purple-900/30"
+                className="p-2 flex items-center gap-2 hover:bg-violet-400/20 dark:hover:bg-violet-500/30"
               >
                 <SettingsIcon size={18} />
                 Configuración
@@ -185,7 +186,7 @@ export const Header = ({ showCreate = true }: HeaderProps) => {
             <Button 
               variant="ghost"
               onClick={toggleTheme}
-              className="p-2 hover:bg-purple-50 dark:hover:bg-purple-900/30"
+              className="p-2 hover:bg-violet-400/20 dark:hover:bg-violet-500/30"
               size="icon"
             >
               {theme === "light" ? <Moon size={18} /> : <Sun size={18} />}
