@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { apiKeys } from "@/config/api-keys";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 const NutricionPlanPage = () => {
   const [apiKey, setApiKey] = useState<string>("");
@@ -179,7 +180,7 @@ const NutricionPlanPage = () => {
       ) : null}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div>
+        <div className="sticky top-24">
           <PlanAlimentacionForm 
             onSubmit={handleGenerarPlan}
             isLoading={isLoading}
@@ -187,13 +188,15 @@ const NutricionPlanPage = () => {
         </div>
         
         {planGenerado && pacienteActual ? (
-          <div>
-            <PlanAlimentacion 
-              plan={planGenerado}
-              nombrePaciente={pacienteActual.nombre}
-              onPrint={handleImprimir}
-              onDownload={handleDescargar}
-            />
+          <div className="max-h-[calc(100vh-150px)]">
+            <ScrollArea className="h-[calc(100vh-150px)]">
+              <PlanAlimentacion 
+                plan={planGenerado}
+                nombrePaciente={pacienteActual.nombre}
+                onPrint={handleImprimir}
+                onDownload={handleDescargar}
+              />
+            </ScrollArea>
           </div>
         ) : !showApiKeyInput ? (
           <div className="flex items-center justify-center h-full">
