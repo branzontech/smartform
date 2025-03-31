@@ -1,4 +1,3 @@
-
 import { z } from "zod";
 import { QuestionData } from '@/components/forms/question/types';
 import { Form } from '@/pages/Home';
@@ -248,4 +247,62 @@ export const getFormResponsesByPatient = (formId: string, patientId: string) => 
 export const getFormResponsesByConsultation = (formId: string, consultationId: string) => {
   const allResponses = getFormResponses(formId);
   return allResponses.filter(response => response.data._consultationId === consultationId);
+};
+
+// Function to get recent and frequently used forms
+export const getRecentAndFrequentForms = (patientId?: string) => {
+  // Get all consultations
+  const savedConsultations = localStorage.getItem("consultations");
+  const consultations = savedConsultations ? JSON.parse(savedConsultations) : [];
+  
+  // Get all forms
+  const savedForms = localStorage.getItem("forms");
+  const allForms = savedForms ? JSON.parse(savedForms) : [];
+  
+  // Track form usage
+  const formUsage: Record<string, { count: number, lastUsed: Date, formData?: any }> = {};
+  
+  // First, populate the formUsage object with all available forms
+  allForms.forEach((form: any) => {
+    formUsage[form.id] = { 
+      count: 0, 
+      lastUsed: new Date(0), 
+      formData: form 
+    };
+  });
+  
+  // Then count usage from consultations
+  consultations.forEach((consultation: any) => {
+    if (consultation.formId && (!patientId || consultation.patientId === patientId)) {
+      if (formUsage[consultation.formId]) {
+        formUsage[consultation.formId].count += 1;
+        const consultationDate = new Date(consultation.consultationDate);
+        if (consultationDate > formUsage[consultation.formId].lastUsed) {
+          formUsage[consultation.formId].lastUsed = consultationDate;
+        }
+      }
+    }
+  });
+  
+  // Convert to array and filter only forms that have actually been used
+  const usedForms = Object.entries(formUsage)
+    .filter(([_, data]) => data.count > 0)
+    .map(([formId, data]) => ({
+      id: formId,
+      usageCount: data.count,
+      lastUsed: data.lastUsed,
+      ...data.formData
+    }));
+  
+  // Sort by recency (most recent first)
+  const recentForms = [...usedForms].sort((a, b) => 
+    new Date(b.lastUsed).getTime() - new Date(a.lastUsed).getTime()
+  ).slice(0, 5); // Top 5 most recent
+  
+  // Sort by frequency (most used first)
+  const frequentForms = [...usedForms].sort((a, b) => 
+    b.usageCount - a.usageCount
+  ).slice(0, 5); // Top 5 most frequent
+  
+  return { recentForms, frequentForms };
 };

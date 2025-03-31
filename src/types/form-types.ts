@@ -1,4 +1,3 @@
-
 export interface FormResponse {
   timestamp: string;
   data: {
@@ -30,4 +29,9 @@ export interface FormComplexValue {
   
   // For any other complex type with custom fields
   [key: string]: any;
+}
+
+export interface FormWithUsage extends FormResponse {
+  usageCount: number;
+  lastUsed: Date;
 }
