@@ -1,10 +1,9 @@
 
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { FileText, Menu, Moon, Sun, Home, Users, BarChart } from "lucide-react";
+import { FileText, Menu, Moon, Sun, Home, Users, BarChart, Settings as SettingsIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useState, useEffect } from "react";
-import { SettingsDialog } from "@/components/config/settings";
 
 interface HeaderProps {
   showCreate?: boolean;
@@ -96,6 +95,16 @@ export const Header = ({ showCreate = true }: HeaderProps) => {
                     </Link>
                   )}
                   
+                  <Link to="/configuracion" className="w-full block">
+                    <Button 
+                      variant="ghost"
+                      className="w-full justify-start"
+                    >
+                      <SettingsIcon size={16} className="mr-2" />
+                      Configuración
+                    </Button>
+                  </Link>
+                  
                   <Button 
                     variant="ghost" 
                     onClick={toggleTheme}
@@ -150,7 +159,15 @@ export const Header = ({ showCreate = true }: HeaderProps) => {
               </Link>
             )}
             
-            <SettingsDialog />
+            <Link to="/configuracion">
+              <Button 
+                variant="ghost"
+                className="p-2 flex items-center gap-2"
+                size="icon"
+              >
+                <SettingsIcon size={18} />
+              </Button>
+            </Link>
             
             <Button 
               variant="ghost"
