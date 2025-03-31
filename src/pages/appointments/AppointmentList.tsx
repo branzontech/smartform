@@ -1,9 +1,8 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { format, startOfWeek, endOfWeek, eachDayOfInterval, isToday, isSameDay, addDays, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
-import { Calendar, ChevronLeft, ChevronRight, Plus, Clock, User, Filter, Search } from "lucide-react";
+import { Calendar, ChevronLeft, ChevronRight, Plus, Clock, User, Filter, Search, Stethoscope } from "lucide-react";
 import { Header } from "@/components/layout/header";
 import { BackButton } from "@/App";
 import { Button } from "@/components/ui/button";
@@ -14,8 +13,10 @@ import { Badge } from "@/components/ui/badge";
 import { Appointment, AppointmentStatus, AppointmentView } from "@/types/patient-types";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { EmptyState } from "@/components/ui/empty-state";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { MoreVertical } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
-// Datos de ejemplo para mostrar citas
 const mockAppointments: Appointment[] = [
   {
     id: "1",
@@ -87,7 +88,6 @@ const mockAppointments: Appointment[] = [
   },
 ];
 
-// Componente para mostrar el estado de la cita con un Badge
 const AppointmentStatusBadge = ({ status }: { status: AppointmentStatus }) => {
   const getStatusConfig = (status: AppointmentStatus) => {
     switch (status) {
@@ -115,14 +115,16 @@ const AppointmentStatusBadge = ({ status }: { status: AppointmentStatus }) => {
   );
 };
 
-// Componente para mostrar una cita individual
-const AppointmentCard = ({ appointment, onClick }: { appointment: Appointment, onClick: () => void }) => {
+const AppointmentCard = ({ appointment, onClick, onStartConsultation }: { 
+  appointment: Appointment, 
+  onClick: () => void,
+  onStartConsultation: () => void 
+}) => {
   return (
     <Card 
-      className="mb-2 hover:shadow-md transition-shadow cursor-pointer"
-      onClick={onClick}
+      className="mb-2 hover:shadow-md transition-shadow cursor-pointer relative"
     >
-      <CardContent className="p-3">
+      <CardContent className="p-3" onClick={onClick}>
         <div className="flex justify-between items-start">
           <div>
             <div className="font-medium">{appointment.patientName}</div>
@@ -132,17 +134,35 @@ const AppointmentCard = ({ appointment, onClick }: { appointment: Appointment, o
             </div>
             <div className="text-sm mt-1">{appointment.reason}</div>
           </div>
-          <AppointmentStatusBadge status={appointment.status} />
+          <div className="flex items-start gap-2">
+            <AppointmentStatusBadge status={appointment.status} />
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => e.stopPropagation()}>
+                  <MoreVertical size={16} />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={(e) => {
+                  e.stopPropagation();
+                  onStartConsultation();
+                }}>
+                  <Stethoscope className="mr-2 h-4 w-4" />
+                  <span>Iniciar consulta</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
       </CardContent>
     </Card>
   );
 };
 
-// Componente principal para la lista de citas
 const AppointmentList = () => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
+  const { toast } = useToast();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -150,13 +170,11 @@ const AppointmentList = () => {
   const [statusFilter, setStatusFilter] = useState<AppointmentStatus | 'Todas'>('Todas');
   const [viewMode, setViewMode] = useState<AppointmentView>('day');
 
-  // Cargar citas al iniciar
   useEffect(() => {
     const timer = setTimeout(() => {
       const savedAppointments = localStorage.getItem("appointments");
       if (savedAppointments) {
         try {
-          // Parsear las fechas de cadenas a objetos Date
           const parsedAppointments = JSON.parse(savedAppointments).map((app: any) => ({
             ...app,
             date: new Date(app.date),
@@ -178,33 +196,50 @@ const AppointmentList = () => {
     return () => clearTimeout(timer);
   }, []);
 
-  // Navegar a la página de detalle de cita
   const handleViewAppointment = (id: string) => {
     navigate(`/citas/${id}`);
   };
 
-  // Navegar a la página de creación de cita
   const handleCreateAppointment = () => {
     navigate("/citas/nueva");
   };
 
-  // Cambiar la semana seleccionada
+  const handleStartConsultation = (appointment: Appointment) => {
+    if (appointment.status === 'Cancelada') {
+      toast({
+        title: "No se puede iniciar consulta",
+        description: "No se puede iniciar una consulta para una cita cancelada",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    if (appointment.status !== 'Completada') {
+      const updatedAppointments = appointments.map(app => 
+        app.id === appointment.id 
+          ? { ...app, status: 'Completada' as AppointmentStatus, updatedAt: new Date() }
+          : app
+      );
+      setAppointments(updatedAppointments);
+      localStorage.setItem("appointments", JSON.stringify(updatedAppointments));
+    }
+    
+    navigate(`/pacientes/nueva-consulta?patientId=${appointment.patientId}`);
+  };
+
   const changeWeek = (amount: number) => {
     setSelectedDate(addDays(selectedDate, amount * 7));
   };
 
-  // Cambiar el día seleccionado
   const changeDay = (amount: number) => {
     setSelectedDate(addDays(selectedDate, amount));
   };
 
-  // Obtener los días de la semana actual
   const weekDays = eachDayOfInterval({
     start: startOfWeek(selectedDate, { weekStartsOn: 1 }),
     end: endOfWeek(selectedDate, { weekStartsOn: 1 }),
   });
 
-  // Filtrar citas por fecha, estado y término de búsqueda
   const filteredAppointments = appointments.filter(appointment => {
     const matchesSearch = appointment.patientName.toLowerCase().includes(searchTerm.toLowerCase()) || 
                           appointment.reason.toLowerCase().includes(searchTerm.toLowerCase());
@@ -225,7 +260,6 @@ const AppointmentList = () => {
     return matchesSearch && matchesStatus && matchesDate;
   });
 
-  // Agrupar citas por día para la vista semanal o mensual
   const appointmentsByDay = filteredAppointments.reduce((acc, appointment) => {
     const dateKey = format(appointment.date, 'yyyy-MM-dd');
     if (!acc[dateKey]) {
@@ -234,58 +268,6 @@ const AppointmentList = () => {
     acc[dateKey].push(appointment);
     return acc;
   }, {} as Record<string, Appointment[]>);
-
-  // Renderizar contenido según el modo de vista
-  const renderViewContent = () => {
-    if (filteredAppointments.length === 0) {
-      return (
-        <EmptyState
-          title="No hay citas programadas"
-          description={`No hay citas para ${viewMode === 'day' ? 'este día' : viewMode === 'week' ? 'esta semana' : 'este mes'}`}
-          buttonText="Crear nueva cita"
-          onClick={handleCreateAppointment}
-          icon={<Calendar size={48} className="text-gray-300" />}
-        />
-      );
-    }
-
-    if (viewMode === 'day') {
-      return (
-        <div className="space-y-1">
-          {filteredAppointments.sort((a, b) => a.time.localeCompare(b.time)).map(appointment => (
-            <AppointmentCard 
-              key={appointment.id} 
-              appointment={appointment} 
-              onClick={() => handleViewAppointment(appointment.id)}
-            />
-          ))}
-        </div>
-      );
-    } else {
-      return (
-        <div className="space-y-4">
-          {Object.entries(appointmentsByDay)
-            .sort(([dateA], [dateB]) => dateA.localeCompare(dateB))
-            .map(([dateKey, dayAppointments]) => (
-              <div key={dateKey}>
-                <h3 className="font-medium text-sm mb-2 px-1 bg-gray-100 dark:bg-gray-800 py-1 rounded">
-                  {format(parseISO(dateKey), "EEEE d 'de' MMMM", { locale: es })}
-                </h3>
-                <div className="space-y-1">
-                  {dayAppointments.sort((a, b) => a.time.localeCompare(b.time)).map(appointment => (
-                    <AppointmentCard
-                      key={appointment.id}
-                      appointment={appointment}
-                      onClick={() => handleViewAppointment(appointment.id)}
-                    />
-                  ))}
-                </div>
-              </div>
-            ))}
-        </div>
-      );
-    }
-  };
 
   if (loading) {
     return (
