@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Header } from "@/components/layout/header";
@@ -20,7 +19,6 @@ import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Badge } from "@/components/ui/badge";
 
-// Array of pastel colors for consultation cards
 const PASTEL_COLORS = [
   "bg-[#F2FCE2]", // Soft Green
   "bg-[#FEF7CD]", // Soft Yellow
@@ -39,7 +37,6 @@ const PatientDetail = () => {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("info");
   
-  // Filter states
   const [filterDate, setFilterDate] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredConsultations, setFilteredConsultations] = useState<MedicalConsultation[]>([]);
@@ -56,20 +53,17 @@ const PatientDetail = () => {
           const foundPatient = parsedPatients.find((p: any) => p.id === id);
           
           if (foundPatient) {
-            // Convertir fechas
             foundPatient.createdAt = new Date(foundPatient.createdAt);
             if (foundPatient.lastVisitAt) {
               foundPatient.lastVisitAt = new Date(foundPatient.lastVisitAt);
             }
             
-            // Obtener consultas del paciente
             let consultations: MedicalConsultation[] = [];
             if (savedConsultations) {
               const parsedConsultations = JSON.parse(savedConsultations);
               consultations = parsedConsultations
                 .filter((c: any) => c.patientId === id)
                 .map((c: any) => {
-                  // Add form title if formId exists
                   let formTitle = "";
                   if (c.formId && savedForms) {
                     const parsedForms = JSON.parse(savedForms);
@@ -103,12 +97,10 @@ const PatientDetail = () => {
     return () => clearTimeout(timer);
   }, [id]);
 
-  // Apply filters when filter state changes
   useEffect(() => {
     if (patient) {
       let filtered = [...patient.consultations];
       
-      // Apply date filter
       if (filterDate !== "all") {
         const today = new Date();
         let startDate;
@@ -137,7 +129,6 @@ const PatientDetail = () => {
         }
       }
       
-      // Apply search term filter
       if (searchTerm) {
         const term = searchTerm.toLowerCase();
         filtered = filtered.filter(c => 
@@ -147,7 +138,6 @@ const PatientDetail = () => {
         );
       }
       
-      // Sort by date (newest first)
       filtered.sort((a, b) => b.consultationDate.getTime() - a.consultationDate.getTime());
       
       setFilteredConsultations(filtered);
@@ -162,7 +152,6 @@ const PatientDetail = () => {
     navigate(`/ver/${formId}?consultationId=${consultationId}&readonly=true`);
   };
 
-  // Calcular edad
   const calculateAge = (dateOfBirth: string) => {
     const today = new Date();
     const birthDate = new Date(dateOfBirth);
@@ -408,7 +397,6 @@ const PatientDetail = () => {
                       const colorIndex = index % PASTEL_COLORS.length;
                       const cardColor = PASTEL_COLORS[colorIndex];
                       
-                      // Check if there's a form response for this consultation
                       const hasFormResponse = consultation.formCompleted;
                       
                       return (
@@ -485,7 +473,7 @@ const PatientDetail = () => {
                                       className="text-xs"
                                     >
                                       <ExternalLink size={14} className="mr-1" />
-                                      Ver formato
+                                      Consultar atención
                                     </Button>
                                   )}
                                 </div>
