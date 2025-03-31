@@ -37,8 +37,9 @@ MediForm es una plataforma diseñada para profesionales de la salud que permite 
 - **Almacenamiento**: Supabase Storage para documentos y archivos médicos
 - **APIs**: Supabase Edge Functions para la lógica de negocio
 
-### Integración de Pagos
+### Integraciones Externas
 
+- **Google Calendar**: Sincronización bidireccional de citas médicas
 - **Procesador de Pagos**: Stripe para gestión de suscripciones
 - **Webhooks**: Integración de Stripe Webhooks para actualización automática de estados de suscripción
 - **Facturación**: Generación automática de facturas y recibos
@@ -88,6 +89,10 @@ MediForm es una plataforma diseñada para profesionales de la salud que permite 
 - Recordatorios automáticos
 - Confirmación de asistencia
 - Reprogramación y cancelación
+- **Integración con Google Calendar**: 
+  - Sincronización bidireccional de citas
+  - Actualización automática en caso de cambios
+  - Control de acceso OAuth 2.0
 
 ## Flujos de Usuario
 
@@ -115,6 +120,14 @@ MediForm es una plataforma diseñada para profesionales de la salud que permite 
 4. Confirma la suscripción
 5. Recibe factura y confirmación de activación
 
+### Integración de Citas con Google Calendar
+
+1. El usuario conecta su cuenta de Google Calendar desde la configuración
+2. Activa la sincronización automática de citas
+3. Al crear una cita, esta se sincroniza automáticamente con Google Calendar
+4. Los cambios en las citas (hora, fecha, estado) se reflejan en ambos sistemas
+5. El usuario puede desactivar la sincronización en cualquier momento
+
 ## Infraestructura
 
 ### Alojamiento
@@ -128,6 +141,7 @@ MediForm es una plataforma diseñada para profesionales de la salud que permite 
 - **Encriptación**: Datos sensibles encriptados en reposo y en tránsito
 - **Cumplimiento**: HIPAA/GDPR para información médica protegida
 - **Auditoría**: Registro de accesos y modificaciones a datos sensibles
+- **OAuth 2.0**: Para integraciones seguras con servicios de terceros como Google
 
 ### Escalabilidad
 
@@ -186,6 +200,12 @@ MediForm es una plataforma diseñada para profesionales de la salud que permite 
 
 - Supabase (PostgreSQL, Auth, Storage, Edge Functions)
 - Stripe para pagos y suscripciones
+
+### Integraciones
+
+- Google Calendar API
+- API de notificaciones por correo electrónico
+- Pasarelas de pago locales según región
 
 ### DevOps
 

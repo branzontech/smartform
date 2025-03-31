@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { format } from "date-fns";
@@ -21,6 +20,8 @@ import {
   DialogClose
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import { CalendarSyncButton } from "@/components/google-calendar/CalendarSyncButton";
+import { isUserSignedIn } from "@/utils/google-calendar";
 
 const mockAppointments: Appointment[] = [
   {
@@ -93,7 +94,6 @@ const mockAppointments: Appointment[] = [
   },
 ];
 
-// Componente para mostrar el estado de la cita con un Badge
 const AppointmentStatusBadge = ({ status }: { status: AppointmentStatus }) => {
   const getStatusConfig = (status: AppointmentStatus) => {
     switch (status) {
@@ -126,6 +126,7 @@ const AppointmentDetail = () => {
   const navigate = useNavigate();
   const [appointment, setAppointment] = useState<Appointment | null>(null);
   const [loading, setLoading] = useState(true);
+  const [googleConnected, setGoogleConnected] = useState(false);
 
   useEffect(() => {
     const fetchAppointment = () => {
@@ -156,8 +157,17 @@ const AppointmentDetail = () => {
       }, 800);
     };
 
+    const checkGoogleConnection = async () => {
+      try {
+        setGoogleConnected(isUserSignedIn());
+      } catch (error) {
+        console.error("Error checking Google connection:", error);
+      }
+    };
+
     if (id) {
       fetchAppointment();
+      checkGoogleConnection();
     }
   }, [id]);
 
@@ -220,6 +230,39 @@ const AppointmentDetail = () => {
     }
   };
 
+  const handleGoogleSync = (eventId: string) => {
+    if (!appointment) return;
+    
+    // Actualizar en localStorage
+    const savedAppointments = localStorage.getItem("appointments");
+    if (savedAppointments) {
+      try {
+        const appointmentsList = JSON.parse(savedAppointments);
+        const updatedAppointments = appointmentsList.map((a: any) => {
+          if (a.id === id) {
+            return {
+              ...a,
+              googleEventId: eventId,
+              updatedAt: new Date().toISOString(),
+            };
+          }
+          return a;
+        });
+        
+        localStorage.setItem("appointments", JSON.stringify(updatedAppointments));
+        
+        // Actualizar el estado local
+        setAppointment({
+          ...appointment,
+          googleEventId: eventId,
+          updatedAt: new Date(),
+        });
+      } catch (error) {
+        console.error("Error updating appointment:", error);
+      }
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex flex-col">
@@ -272,6 +315,16 @@ const AppointmentDetail = () => {
             <CardHeader>
               <CardTitle className="flex justify-between items-center">
                 <span>Información de la Cita</span>
+                {googleConnected && (
+                  <div>
+                    <CalendarSyncButton 
+                      appointment={appointment}
+                      eventId={appointment.googleEventId}
+                      onSync={handleGoogleSync}
+                      action={appointment.googleEventId ? "update" : "create"}
+                    />
+                  </div>
+                )}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
@@ -404,6 +457,28 @@ const AppointmentDetail = () => {
               </div>
             </CardContent>
           </Card>
+
+          {appointment.googleEventId && googleConnected && (
+            <Card className="mt-4">
+              <CardHeader>
+                <CardTitle className="text-sm">Google Calendar</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center">
+                  <Badge className="bg-green-100 text-green-800 mr-2">
+                    <CalendarIcon className="h-3 w-3 mr-1" />
+                    Sincronizado
+                  </Badge>
+                  <CalendarSyncButton 
+                    appointment={appointment}
+                    eventId={appointment.googleEventId}
+                    onSync={handleGoogleSync}
+                    action="delete"
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </div>
       </main>
     </div>

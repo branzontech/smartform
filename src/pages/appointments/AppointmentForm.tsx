@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { format } from "date-fns";
@@ -26,6 +25,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { toast } from "sonner";
+import { Checkbox } from "@/components/ui/checkbox";
+import { isUserSignedIn, createGoogleCalendarEvent, updateGoogleCalendarEvent } from "@/utils/google-calendar";
 
 // Datos mock
 const mockAppointments: Appointment[] = [
@@ -142,6 +143,9 @@ const AppointmentForm = () => {
   const [patients, setPatients] = useState<Patient[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [googleEventId, setGoogleEventId] = useState<string | undefined>();
+  const [syncWithGoogle, setSyncWithGoogle] = useState(false);
+  const [googleConnected, setGoogleConnected] = useState(false);
   const isEditing = !!id;
   
   // Form con valores predeterminados
@@ -157,6 +161,26 @@ const AppointmentForm = () => {
       status: "Programada",
     },
   });
+
+  // Verificar si el usuario está conectado a Google al cargar
+  useEffect(() => {
+    const checkGoogleConnection = async () => {
+      try {
+        const connected = isUserSignedIn();
+        setGoogleConnected(connected);
+        
+        // Si está conectado y hay una sincronización preferida guardada
+        if (connected) {
+          const preferSync = localStorage.getItem('googleCalendarSync') === 'true';
+          setSyncWithGoogle(preferSync);
+        }
+      } catch (error) {
+        console.error("Error checking Google connection:", error);
+      }
+    };
+    
+    checkGoogleConnection();
+  }, []);
 
   // Cargar pacientes y cita existente al iniciar
   useEffect(() => {
@@ -203,6 +227,12 @@ const AppointmentForm = () => {
         const appointmentToEdit = appointmentsList.find(a => a.id === id);
         
         if (appointmentToEdit) {
+          // Guardar el ID del evento de Google si existe
+          if (appointmentToEdit.googleEventId) {
+            setGoogleEventId(appointmentToEdit.googleEventId);
+            setSyncWithGoogle(true);
+          }
+          
           // Cargar valores en el formulario
           form.reset({
             patientId: appointmentToEdit.patientId,
@@ -228,8 +258,46 @@ const AppointmentForm = () => {
     patient.documentId.includes(searchTerm)
   );
 
+  // Sincronizar con Google Calendar
+  const syncAppointmentWithGoogle = async (appointment: Appointment): Promise<string | undefined> => {
+    if (!syncWithGoogle || !googleConnected) return undefined;
+    
+    try {
+      // Calcular la fecha de inicio y fin
+      const startDate = new Date(`${appointment.date.toISOString().split('T')[0]}T${appointment.time}`);
+      const endDate = new Date(startDate.getTime() + appointment.duration * 60000);
+      
+      const appointmentData = {
+        title: `Cita con ${appointment.patientName}`,
+        description: `Motivo: ${appointment.reason}\n${appointment.notes ? `Notas: ${appointment.notes}` : ''}`,
+        start: startDate,
+        end: endDate
+      };
+      
+      let result;
+      if (isEditing && googleEventId) {
+        // Actualizar evento existente
+        result = await updateGoogleCalendarEvent(googleEventId, appointmentData);
+        toast.success("Cita actualizada en Google Calendar");
+        return googleEventId;
+      } else {
+        // Crear nuevo evento
+        result = await createGoogleCalendarEvent(appointmentData);
+        if (result && result.id) {
+          toast.success("Cita sincronizada con Google Calendar");
+          return result.id;
+        }
+      }
+    } catch (error) {
+      console.error("Error syncing with Google Calendar:", error);
+      toast.error("Error al sincronizar con Google Calendar, pero la cita fue guardada localmente");
+    }
+    
+    return undefined;
+  };
+
   // Manejar envío del formulario
-  const onSubmit = (values: FormValues) => {
+  const onSubmit = async (values: FormValues) => {
     console.log("Form values:", values);
     
     const selectedPatient = patients.find(p => p.id === values.patientId);
@@ -251,7 +319,16 @@ const AppointmentForm = () => {
       notes: values.notes,
       createdAt: isEditing ? new Date() : new Date(),
       updatedAt: isEditing ? new Date() : undefined,
+      googleEventId
     };
+    
+    // Sincronizar con Google Calendar si está habilitado
+    if (syncWithGoogle && googleConnected) {
+      const newEventId = await syncAppointmentWithGoogle(newAppointment);
+      if (newEventId) {
+        newAppointment.googleEventId = newEventId;
+      }
+    }
     
     // Guardar en localStorage
     const savedAppointments = localStorage.getItem("appointments");
@@ -512,6 +589,32 @@ const AppointmentForm = () => {
                 />
               </CardContent>
             </Card>
+
+            {googleConnected && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Integración con Google Calendar</CardTitle>
+                  <CardDescription>
+                    Sincroniza esta cita con tu calendario de Google
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox 
+                      id="sync-google"
+                      checked={syncWithGoogle}
+                      onCheckedChange={(checked) => setSyncWithGoogle(checked as boolean)}
+                    />
+                    <Label htmlFor="sync-google">
+                      {isEditing && googleEventId 
+                        ? "Actualizar esta cita en Google Calendar" 
+                        : "Agregar esta cita a Google Calendar"
+                      }
+                    </Label>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             <Card>
               <CardHeader>

@@ -71,6 +71,7 @@ export interface Appointment {
   notes?: string;
   createdAt: Date;
   updatedAt?: Date;
+  googleEventId?: string; // ID del evento en Google Calendar
 }
 
 export type AppointmentWithPatient = Appointment & {
