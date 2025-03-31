@@ -1,3 +1,4 @@
+
 export interface Patient {
   id: string;
   name: string;
@@ -79,3 +80,34 @@ export type AppointmentWithPatient = Appointment & {
 export type AppointmentStatus = 'Programada' | 'Reprogramada' | 'Cancelada' | 'Completada' | 'Pendiente';
 
 export type AppointmentView = 'day' | 'week' | 'month';
+
+// Nuevos tipos para el seguimiento de pacientes
+export interface FollowUp {
+  id: string;
+  patientId: string;
+  consultationId: string;
+  followUpDate: Date;
+  reason: string;
+  status: FollowUpStatus;
+  notes?: string;
+  createdAt: Date;
+  reminderSent: boolean;
+  reminderDate?: Date;
+}
+
+export type FollowUpStatus = 'Pendiente' | 'Completado' | 'Cancelado';
+
+export interface PatientAlert {
+  id: string;
+  patientId: string;
+  patientName: string;
+  consultationId?: string;
+  followUpId?: string;
+  type: 'Seguimiento' | 'Medicación' | 'Examen' | 'General';
+  message: string;
+  dueDate: Date;
+  status: 'Pendiente' | 'Completada' | 'Cancelada';
+  priority: 'Alta' | 'Media' | 'Baja';
+  createdAt: Date;
+  dismissedAt?: Date;
+}

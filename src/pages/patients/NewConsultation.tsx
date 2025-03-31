@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Header } from "@/components/layout/header";
@@ -6,21 +5,22 @@ import { BackButton } from "@/App";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Calendar as CalendarIcon, Clock, Save, FileText, ArrowRight } from "lucide-react";
+import { Calendar as CalendarIcon, Clock, Save, FileText, ArrowRight, Bell, AlertTriangle } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
-import { format } from "date-fns";
+import { format, addDays, isBefore } from "date-fns";
 import { es } from "date-fns/locale";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Label } from "@/components/ui/label";
-import { Patient } from "@/types/patient-types";
+import { Patient, PatientAlert, FollowUp } from "@/types/patient-types";
 import { nanoid } from "nanoid";
 import { useToast } from "@/hooks/use-toast";
 import { Form as FormType } from '@/pages/Home';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { getRecentAndFrequentForms } from "@/utils/form-utils";
+import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
 
-// Define workflow steps
 type WorkflowStep = 'select-patient' | 'select-form' | 'consultation-details';
 
 const NewConsultation = () => {
@@ -37,7 +37,6 @@ const NewConsultation = () => {
   const [recentForms, setRecentForms] = useState<any[]>([]);
   const [frequentForms, setFrequentForms] = useState<any[]>([]);
   
-  // Patient state
   const [selectedPatientId, setSelectedPatientId] = useState<string>(preselectedPatientId || "");
   const [isNewPatient, setIsNewPatient] = useState(!preselectedPatientId);
   const [newPatientData, setNewPatientData] = useState<Partial<Patient>>({
@@ -50,11 +49,9 @@ const NewConsultation = () => {
     address: ""
   });
   
-  // Form state
   const [selectedFormId, setSelectedFormId] = useState<string>("");
   const [selectedFormTitle, setSelectedFormTitle] = useState<string>("");
   
-  // Consultation data
   const [consultationDate, setConsultationDate] = useState<Date>(new Date());
   const [reason, setReason] = useState("");
   const [diagnosis, setDiagnosis] = useState("");
@@ -63,10 +60,15 @@ const NewConsultation = () => {
   const [followUpDate, setFollowUpDate] = useState<Date | undefined>(undefined);
   const [status, setStatus] = useState<"Programada" | "En curso" | "Completada" | "Cancelada">("Programada");
   
-  // Load patients, forms, and usage data
+  const [enableFollowUp, setEnableFollowUp] = useState(false);
+  const [followUpNotes, setFollowUpNotes] = useState("");
+  const [followUpReason, setFollowUpReason] = useState("");
+  const [createReminder, setCreateReminder] = useState(true);
+  const [reminderDays, setReminderDays] = useState(2);
+  const [followUpPriority, setFollowUpPriority] = useState<'Alta' | 'Media' | 'Baja'>('Media');
+
   useEffect(() => {
     const timer = setTimeout(() => {
-      // Load patients
       const savedPatients = localStorage.getItem("patients");
       if (savedPatients) {
         try {
@@ -84,7 +86,6 @@ const NewConsultation = () => {
         setPatients([]);
       }
 
-      // Load forms
       const savedForms = localStorage.getItem("forms");
       if (savedForms) {
         try {
@@ -102,13 +103,11 @@ const NewConsultation = () => {
         setAvailableForms([]);
       }
 
-      // If patient is already selected, load their form usage data
       if (selectedPatientId) {
         const { recentForms, frequentForms } = getRecentAndFrequentForms(selectedPatientId);
         setRecentForms(recentForms);
         setFrequentForms(frequentForms);
       } else {
-        // Load general usage data
         const { recentForms, frequentForms } = getRecentAndFrequentForms();
         setRecentForms(recentForms);
         setFrequentForms(frequentForms);
@@ -120,7 +119,6 @@ const NewConsultation = () => {
     return () => clearTimeout(timer);
   }, [selectedPatientId]);
 
-  // Step 1: Handle patient selection
   const handlePatientContinue = () => {
     let patientId = selectedPatientId;
     
@@ -134,7 +132,6 @@ const NewConsultation = () => {
         return;
       }
       
-      // Create new patient
       const newPatient: Patient = {
         id: nanoid(),
         name: newPatientData.name || "",
@@ -148,7 +145,6 @@ const NewConsultation = () => {
         lastVisitAt: new Date()
       };
       
-      // Save to localStorage
       const updatedPatients = [...patients, newPatient];
       localStorage.setItem("patients", JSON.stringify(updatedPatients));
       
@@ -163,16 +159,13 @@ const NewConsultation = () => {
       return;
     }
     
-    // Load form usage data for the selected patient
     const { recentForms, frequentForms } = getRecentAndFrequentForms(patientId);
     setRecentForms(recentForms);
     setFrequentForms(frequentForms);
     
-    // Advance to next step
     setCurrentStep('select-form');
   };
 
-  // Step 2: Handle form selection
   const handleFormContinue = () => {
     if (!selectedFormId) {
       toast({
@@ -183,11 +176,16 @@ const NewConsultation = () => {
       return;
     }
     
-    // Advance to next step
     setCurrentStep('consultation-details');
   };
 
-  // Step 3: Submit consultation
+  const calculateReminderDate = (date: Date | undefined, days: number): Date | undefined => {
+    if (!date) return undefined;
+    const reminderDate = new Date(date.getTime());
+    reminderDate.setDate(reminderDate.getDate() - days);
+    return reminderDate;
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -200,7 +198,6 @@ const NewConsultation = () => {
       return;
     }
     
-    // Create the new consultation
     const newConsultation = {
       id: nanoid(),
       patientId: selectedPatientId,
@@ -209,18 +206,17 @@ const NewConsultation = () => {
       diagnosis: diagnosis || undefined,
       treatment: treatment || undefined,
       notes: notes || undefined,
-      followUpDate: followUpDate || undefined,
+      followUpDate: enableFollowUp ? followUpDate : undefined,
       status,
-      formId: selectedFormId
+      formId: selectedFormId,
+      formTitle: selectedFormTitle
     };
     
-    // Save the consultation
     const savedConsultations = localStorage.getItem("consultations");
     const existingConsultations = savedConsultations ? JSON.parse(savedConsultations) : [];
     const updatedConsultations = [...existingConsultations, newConsultation];
     localStorage.setItem("consultations", JSON.stringify(updatedConsultations));
     
-    // Update patient's lastVisitAt
     const updatedPatients = patients.map(patient => 
       patient.id === selectedPatientId 
         ? { ...patient, lastVisitAt: new Date() }
@@ -228,16 +224,62 @@ const NewConsultation = () => {
     );
     localStorage.setItem("patients", JSON.stringify(updatedPatients));
     
-    // Redirect to form with context
-    toast({
-      title: "Consulta creada",
-      description: "Redirigiendo al formulario seleccionado...",
-    });
+    if (enableFollowUp && followUpDate) {
+      const newFollowUp: FollowUp = {
+        id: nanoid(),
+        patientId: selectedPatientId,
+        consultationId: newConsultation.id,
+        followUpDate: followUpDate,
+        reason: followUpReason || reason,
+        status: 'Pendiente',
+        notes: followUpNotes,
+        createdAt: new Date(),
+        reminderSent: false
+      };
+      
+      const savedFollowUps = localStorage.getItem("followUps");
+      const existingFollowUps = savedFollowUps ? JSON.parse(savedFollowUps) : [];
+      const updatedFollowUps = [...existingFollowUps, newFollowUp];
+      localStorage.setItem("followUps", JSON.stringify(updatedFollowUps));
+      
+      if (createReminder) {
+        const reminderDate = calculateReminderDate(followUpDate, reminderDays);
+        const patientName = patients.find(p => p.id === selectedPatientId)?.name || "";
+        
+        const newAlert: PatientAlert = {
+          id: nanoid(),
+          patientId: selectedPatientId,
+          patientName,
+          consultationId: newConsultation.id,
+          followUpId: newFollowUp.id,
+          type: 'Seguimiento',
+          message: `Próxima cita de seguimiento para ${patientName}: ${followUpReason || reason}`,
+          dueDate: followUpDate,
+          status: 'Pendiente',
+          priority: followUpPriority,
+          createdAt: new Date()
+        };
+        
+        const savedAlerts = localStorage.getItem("patientAlerts");
+        const existingAlerts = savedAlerts ? JSON.parse(savedAlerts) : [];
+        const updatedAlerts = [...existingAlerts, newAlert];
+        localStorage.setItem("patientAlerts", JSON.stringify(updatedAlerts));
+      }
+      
+      toast({
+        title: "Consulta y seguimiento creados",
+        description: `Se ha programado un seguimiento para el ${format(followUpDate, "d 'de' MMMM 'de' yyyy", { locale: es })}`,
+      });
+    } else {
+      toast({
+        title: "Consulta creada",
+        description: "Redirigiendo al formulario seleccionado...",
+      });
+    }
     
     navigate(`/ver/${selectedFormId}?patientId=${selectedPatientId}&consultationId=${newConsultation.id}`);
   };
 
-  // Preview form in new tab
   const openFormPreview = (formId: string) => {
     window.open(`/ver/${formId}`, '_blank');
   };
@@ -249,7 +291,6 @@ const NewConsultation = () => {
         <BackButton />
         <h1 className="text-2xl font-bold mb-6">Nueva consulta médica</h1>
         
-        {/* Step Indicator */}
         <div className="mb-8">
           <div className="flex items-center justify-between max-w-3xl mx-auto">
             <div className={`flex flex-col items-center ${currentStep === 'select-patient' ? 'text-purple-600' : 'text-gray-500'}`}>
@@ -279,7 +320,6 @@ const NewConsultation = () => {
           </div>
         </div>
         
-        {/* Step 1: Patient Selection */}
         {currentStep === 'select-patient' && (
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
             <h2 className="text-xl font-semibold mb-4">Información del paciente</h2>
@@ -421,12 +461,10 @@ const NewConsultation = () => {
           </div>
         )}
         
-        {/* Step 2: Form Selection */}
         {currentStep === 'select-form' && (
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
             <h2 className="text-xl font-semibold mb-4">Seleccionar formulario</h2>
             
-            {/* Recent and Frequent Forms */}
             {(recentForms.length > 0 || frequentForms.length > 0) && (
               <div className="mb-6">
                 <h3 className="font-medium text-lg mb-3">Formularios sugeridos</h3>
@@ -512,7 +550,6 @@ const NewConsultation = () => {
               </div>
             )}
             
-            {/* All Forms */}
             <div className="space-y-4">
               <h3 className="font-medium text-lg mt-6 mb-3">Todos los formularios</h3>
               
@@ -688,7 +725,6 @@ const NewConsultation = () => {
           </div>
         )}
         
-        {/* Step 3: Consultation Details */}
         {currentStep === 'consultation-details' && (
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
@@ -714,6 +750,7 @@ const NewConsultation = () => {
                           selected={consultationDate}
                           onSelect={(date) => date && setConsultationDate(date)}
                           locale={es}
+                          className="p-3 pointer-events-auto"
                         />
                       </PopoverContent>
                     </Popover>
@@ -747,30 +784,163 @@ const NewConsultation = () => {
                     />
                   </div>
                   
-                  <div className="space-y-2">
-                    <Label htmlFor="followUpDate">Fecha de seguimiento (opcional)</Label>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          className="w-full justify-start text-left font-normal"
-                        >
-                          <CalendarIcon className="mr-2 h-4 w-4" />
-                          {followUpDate 
-                            ? format(followUpDate, "PPP", { locale: es }) 
-                            : "Seleccionar fecha"
-                          }
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0">
-                        <Calendar
-                          mode="single"
-                          selected={followUpDate}
-                          onSelect={setFollowUpDate}
-                          locale={es}
-                        />
-                      </PopoverContent>
-                    </Popover>
+                  <div className="space-y-2 md:col-span-2">
+                    <Label htmlFor="diagnosis">Diagnóstico (opcional)</Label>
+                    <Input
+                      id="diagnosis"
+                      value={diagnosis}
+                      onChange={(e) => setDiagnosis(e.target.value)}
+                    />
+                  </div>
+                  
+                  <div className="space-y-2 md:col-span-2">
+                    <Label htmlFor="treatment">Tratamiento (opcional)</Label>
+                    <Input
+                      id="treatment"
+                      value={treatment}
+                      onChange={(e) => setTreatment(e.target.value)}
+                    />
+                  </div>
+                  
+                  <div className="space-y-2 md:col-span-2">
+                    <Label htmlFor="notes">Notas adicionales (opcional)</Label>
+                    <Textarea
+                      id="notes"
+                      value={notes}
+                      onChange={(e) => setNotes(e.target.value)}
+                      rows={3}
+                    />
+                  </div>
+                  
+                  <div className="space-y-4 md:col-span-2 border-t pt-4 mt-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        <Bell className="h-5 w-5 text-purple-500" />
+                        <Label htmlFor="enableFollowUp" className="text-lg font-medium">
+                          Programar seguimiento
+                        </Label>
+                      </div>
+                      <Switch
+                        id="enableFollowUp"
+                        checked={enableFollowUp}
+                        onCheckedChange={setEnableFollowUp}
+                      />
+                    </div>
+                    
+                    {enableFollowUp && (
+                      <div className="border border-purple-100 dark:border-purple-900/50 rounded-lg p-4 bg-purple-50 dark:bg-purple-900/20">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="followUpDate">Fecha de seguimiento *</Label>
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <Button
+                                  variant="outline"
+                                  className="w-full justify-start text-left font-normal"
+                                >
+                                  <CalendarIcon className="mr-2 h-4 w-4" />
+                                  {followUpDate 
+                                    ? format(followUpDate, "PPP", { locale: es }) 
+                                    : "Seleccionar fecha"
+                                  }
+                                </Button>
+                              </PopoverTrigger>
+                              <PopoverContent className="w-auto p-0">
+                                <Calendar
+                                  mode="single"
+                                  selected={followUpDate}
+                                  onSelect={setFollowUpDate}
+                                  locale={es}
+                                  disabled={(date) => isBefore(date, new Date())}
+                                  className="p-3 pointer-events-auto"
+                                />
+                              </PopoverContent>
+                            </Popover>
+                          </div>
+                          
+                          <div className="space-y-2">
+                            <Label htmlFor="followUpReason">Motivo del seguimiento</Label>
+                            <Input
+                              id="followUpReason"
+                              value={followUpReason}
+                              onChange={(e) => setFollowUpReason(e.target.value)}
+                              placeholder="Dejar en blanco para usar el motivo de consulta"
+                            />
+                          </div>
+                          
+                          <div className="space-y-2 md:col-span-2">
+                            <Label htmlFor="followUpNotes">Notas de seguimiento</Label>
+                            <Textarea
+                              id="followUpNotes"
+                              value={followUpNotes}
+                              onChange={(e) => setFollowUpNotes(e.target.value)}
+                              rows={2}
+                              placeholder="Instrucciones o notas para el seguimiento"
+                            />
+                          </div>
+                          
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                              <Label htmlFor="createReminder">Crear recordatorio</Label>
+                              <Switch
+                                id="createReminder"
+                                checked={createReminder}
+                                onCheckedChange={setCreateReminder}
+                              />
+                            </div>
+                          </div>
+                          
+                          {createReminder && (
+                            <>
+                              <div className="space-y-2">
+                                <Label htmlFor="reminderDays">Días de anticipación</Label>
+                                <div className="flex items-center gap-2">
+                                  <Input
+                                    id="reminderDays"
+                                    type="number"
+                                    min={1}
+                                    max={30}
+                                    value={reminderDays}
+                                    onChange={(e) => setReminderDays(parseInt(e.target.value) || 2)}
+                                  />
+                                  <span className="text-sm">días antes</span>
+                                </div>
+                              </div>
+                              
+                              <div className="space-y-2">
+                                <Label htmlFor="followUpPriority">Prioridad</Label>
+                                <Select 
+                                  value={followUpPriority}
+                                  onValueChange={(value) => setFollowUpPriority(value as 'Alta' | 'Media' | 'Baja')}
+                                >
+                                  <SelectTrigger id="followUpPriority">
+                                    <SelectValue placeholder="Seleccionar prioridad" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="Alta">Alta</SelectItem>
+                                    <SelectItem value="Media">Media</SelectItem>
+                                    <SelectItem value="Baja">Baja</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              
+                              {followUpDate && (
+                                <div className="md:col-span-2 flex items-center p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+                                  <AlertTriangle className="h-5 w-5 text-yellow-500 mr-2" />
+                                  <p className="text-sm text-yellow-700">
+                                    Se creará un recordatorio para el {
+                                      calculateReminderDate(followUpDate, reminderDays) ? 
+                                      format(calculateReminderDate(followUpDate, reminderDays)!, "d 'de' MMMM 'de' yyyy", { locale: es }) :
+                                      "fecha inválida"
+                                    }
+                                  </p>
+                                </div>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
                 
@@ -798,7 +968,7 @@ const NewConsultation = () => {
                 <Button 
                   type="submit"
                   className="bg-purple-600 hover:bg-purple-700"
-                  disabled={!reason}
+                  disabled={!reason || (enableFollowUp && !followUpDate)}
                 >
                   <Save className="mr-2" size={16} />
                   Guardar y continuar al formulario
