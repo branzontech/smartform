@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -55,12 +56,15 @@ const LandingPage = () => {
             </div>
           </div>
           <div className="md:w-1/2">
-            <div className="overflow-hidden" data-component-name="img">
+            <div 
+              className="overflow-hidden transition-all duration-300 transform hover:scale-110 hover:shadow-[0_0_25px_rgba(103,58,183,0.3)] rounded-lg p-2" 
+              data-component-name="img"
+            >
               <DotLottieReact
                 src="https://lottie.host/eddd52fe-9a2a-4693-8a2b-a986641d5644/ar6IVwscXk.lottie"
                 loop
                 autoplay
-                style={{ height: '100%', width: '100%', background: 'transparent' }}
+                style={{ height: '110%', width: '110%', background: 'transparent' }}
               />
             </div>
           </div>
