@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { EspecialidadLayout } from "@/components/especialidades/EspecialidadLayout";
 import { PlanAlimentacionForm } from "@/components/nutricion/PlanAlimentacionForm";
 import { PlanAlimentacion } from "@/components/nutricion/PlanAlimentacion";
@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { apiKeys } from "@/config/api-keys";
 
 const NutricionPlanPage = () => {
   const [apiKey, setApiKey] = useState<string>("");
@@ -18,17 +19,37 @@ const NutricionPlanPage = () => {
   const [planGenerado, setPlanGenerado] = useState<string>("");
   const [pacienteActual, setPacienteActual] = useState<PacienteInfo | null>(null);
 
+  // Verificar si ya tenemos una clave API almacenada
+  useEffect(() => {
+    if (apiKeys.hasKey('anthropic')) {
+      setShowApiKeyInput(false);
+      toast.success("API Key de Anthropic ya configurada");
+    }
+  }, []);
+
   const handleSubmitApiKey = () => {
     if (!apiKey.trim()) {
       toast.error("Por favor ingresa una API Key válida");
       return;
     }
-    setShowApiKeyInput(false);
-    toast.success("API Key guardada correctamente");
+    
+    if (!apiKey.startsWith('sk-ant')) {
+      toast.error("La API Key de Anthropic debe comenzar con 'sk-ant'");
+      return;
+    }
+    
+    // Guardar la clave API en nuestro gestor
+    if (apiKeys.setKey('anthropic', apiKey)) {
+      setShowApiKeyInput(false);
+      apiKeys.setupKeyExpiration('anthropic', 60); // Expira en 60 minutos
+      toast.success("API Key guardada correctamente");
+      // Limpiar el estado para no mantener la clave en memoria
+      setApiKey("");
+    }
   };
 
   const handleGenerarPlan = async (datosPaciente: PacienteInfo) => {
-    if (showApiKeyInput) {
+    if (!apiKeys.hasKey('anthropic') && showApiKeyInput) {
       toast.error("Por favor configura primero la API Key de Anthropic");
       return;
     }
@@ -37,14 +58,27 @@ const NutricionPlanPage = () => {
     setPacienteActual(datosPaciente);
 
     try {
-      const plan = await generarPlanAlimentacion(apiKey, datosPaciente);
+      // Usar la clave API almacenada en nuestro gestor
+      const apiKeyToUse = apiKeys.getKey('anthropic') || "";
+      const plan = await generarPlanAlimentacion(apiKeyToUse, datosPaciente);
       setPlanGenerado(plan);
       toast.success("Plan de alimentación generado correctamente");
     } catch (error) {
       console.error("Error al generar plan:", error);
-      toast.error("Error al generar el plan de alimentación. Verifica tu API Key e intenta nuevamente.");
+      
+      // Manejo seguro de errores
+      let mensajeError = "Error al generar el plan de alimentación.";
+      if (error instanceof Error) {
+        mensajeError = error.message.includes("API") 
+          ? "Error con la API Key. Verifica que sea válida e intenta nuevamente." 
+          : error.message;
+      }
+      
+      toast.error(mensajeError);
+      
       // Si hay un error de API Key, mostramos nuevamente el input
       if (error instanceof Error && error.message.includes("API")) {
+        apiKeys.removeKey('anthropic');
         setShowApiKeyInput(true);
       }
     } finally {
@@ -119,6 +153,8 @@ const NutricionPlanPage = () => {
                   value={apiKey}
                   onChange={(e) => setApiKey(e.target.value)}
                   className="flex-grow"
+                  autoComplete="off"
+                  aria-autocomplete="none"
                 />
                 <TooltipProvider>
                   <Tooltip>
@@ -134,7 +170,8 @@ const NutricionPlanPage = () => {
               
               <p className="text-sm text-gray-500 dark:text-gray-500">
                 Nota: La API Key se almacena localmente solo en tu navegador durante esta sesión 
-                y no se envía a ningún servidor excepto a Anthropic para procesar tu solicitud.
+                y no se envía a ningún servidor excepto a Anthropic para procesar tu solicitud. 
+                Por seguridad, la clave expirará después de 60 minutos de inactividad.
               </p>
             </div>
           </CardContent>

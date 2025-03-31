@@ -14,22 +14,52 @@ export interface PacienteInfo {
   preferenciasAlimentarias?: string;
 }
 
+import { apiKeys } from "@/config/api-keys";
+import { toast } from "sonner";
+
+// Función para validar que una clave API tenga el formato correcto
+const validarClaveAPI = (apiKey: string): boolean => {
+  // Validación básica - en producción sería más robusta
+  return apiKey.startsWith('sk-ant') && apiKey.length > 30;
+};
+
 // Function to generate a nutrition plan based on patient data
 export const generarPlanAlimentacion = async (apiKey: string, paciente: PacienteInfo): Promise<string> => {
-  if (!apiKey) {
-    throw new Error("API Key de Anthropic no proporcionada");
+  // Si no se proporciona una clave, intentamos usar la almacenada
+  let claveAPI = apiKey;
+  
+  if (!claveAPI || !claveAPI.trim()) {
+    claveAPI = apiKeys.getKey('anthropic') || '';
+    if (!claveAPI) {
+      throw new Error("API Key de Anthropic no proporcionada");
+    }
+  } else {
+    // Si se proporciona una nueva clave, la guardamos para futuras solicitudes
+    if (validarClaveAPI(claveAPI)) {
+      apiKeys.setKey('anthropic', claveAPI);
+      apiKeys.setupKeyExpiration('anthropic', 60); // Expira en 60 minutos
+    } else {
+      throw new Error("La clave API proporcionada no tiene el formato correcto");
+    }
   }
 
   try {
-    // In a real implementation, this would call the Anthropic API
-    // For demo purposes, we'll simulate a response after a delay
+    // En una implementación real, aquí llamaríamos a la API de Anthropic
+    // Para demostraciones, simulamos una respuesta después de un retraso
     await new Promise(resolve => setTimeout(resolve, 1500));
 
-    // Generate a sample plan based on patient data
+    // Generamos un plan de ejemplo basado en los datos del paciente
     return generarPlanEjemplo(paciente);
   } catch (error) {
     console.error("Error al generar plan de alimentación:", error);
-    throw new Error("Error al comunicarse con la API de Anthropic. Verifica tu API Key e intenta nuevamente.");
+    // Manejo seguro de errores sin exponer datos sensibles
+    if (error instanceof Error) {
+      const errorMsg = error.message || "Error desconocido";
+      // Sanitizamos cualquier mensaje que pudiera contener la clave API
+      const safeErrorMsg = errorMsg.replace(/sk-[a-zA-Z0-9-]+/g, "[API_KEY_REDACTED]");
+      throw new Error(`Error: ${safeErrorMsg}`);
+    }
+    throw new Error("Error al comunicarse con la API. Verifica tu conexión e intenta nuevamente.");
   }
 };
 
