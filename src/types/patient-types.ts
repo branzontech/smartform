@@ -53,3 +53,25 @@ export interface PatientStatistics {
     visits: number;
   }[];
 }
+
+export interface Appointment {
+  id: string;
+  patientId: string;
+  patientName: string;
+  date: Date;
+  time: string;
+  duration: number; // minutos
+  reason: string;
+  status: 'Programada' | 'Reprogramada' | 'Cancelada' | 'Completada' | 'Pendiente';
+  notes?: string;
+  createdAt: Date;
+  updatedAt?: Date;
+}
+
+export type AppointmentWithPatient = Appointment & {
+  patient: Patient;
+};
+
+export type AppointmentStatus = 'Programada' | 'Reprogramada' | 'Cancelada' | 'Completada' | 'Pendiente';
+
+export type AppointmentView = 'day' | 'week' | 'month';

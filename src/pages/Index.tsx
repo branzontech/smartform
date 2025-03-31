@@ -3,7 +3,7 @@ import React from "react";
 import { Header } from "@/components/layout/header";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import { FileText, ArrowRight } from "lucide-react";
+import { FileText, ArrowRight, Calendar, Users } from "lucide-react";
 
 const Index = () => {
   return (
@@ -18,16 +18,30 @@ const Index = () => {
             La plataforma que simplifica la creación y gestión de formularios para profesionales de la salud.
           </p>
           
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-8 max-w-2xl mx-auto">
             <Link to="/crear">
-              <Button size="lg" className="bg-form-primary hover:bg-form-primary/90">
+              <Button size="lg" className="w-full bg-form-primary hover:bg-form-primary/90">
                 <FileText className="mr-2 h-5 w-5" />
                 Crear nuevo formulario
               </Button>
             </Link>
             <Link to="/pacientes">
-              <Button size="lg" variant="outline" className="group">
+              <Button size="lg" variant="outline" className="w-full group">
+                <Users className="mr-2 h-5 w-5" />
                 Ver pacientes
+                <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+              </Button>
+            </Link>
+            <Link to="/citas">
+              <Button size="lg" className="w-full bg-purple-600 hover:bg-purple-700">
+                <Calendar className="mr-2 h-5 w-5" />
+                Gestionar citas
+              </Button>
+            </Link>
+            <Link to="/pacientes/dashboard">
+              <Button size="lg" variant="outline" className="w-full group">
+                <BarChart className="mr-2 h-5 w-5" />
+                Ver estadísticas
                 <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
               </Button>
             </Link>

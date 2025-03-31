@@ -17,6 +17,9 @@ import NewConsultation from "./pages/patients/NewConsultation";
 import PatientDashboard from "./pages/patients/PatientDashboard";
 import NotFound from "./pages/NotFound";
 import { SettingsPage } from "./components/config/settings";
+import AppointmentList from "./pages/appointments/AppointmentList";
+import AppointmentDetail from "./pages/appointments/AppointmentDetail";
+import AppointmentForm from "./pages/appointments/AppointmentForm";
 
 export const BackButton = () => {
   const navigate = useNavigate();
@@ -56,6 +59,10 @@ function App() {
             <Route path="/pacientes/dashboard" element={<PatientDashboard />} />
             <Route path="/pacientes/:id" element={<PatientDetail />} />
             <Route path="/pacientes/nueva-consulta" element={<NewConsultation />} />
+            <Route path="/citas" element={<AppointmentList />} />
+            <Route path="/citas/:id" element={<AppointmentDetail />} />
+            <Route path="/citas/nueva" element={<AppointmentForm />} />
+            <Route path="/citas/editar/:id" element={<AppointmentForm />} />
             <Route path="/configuracion" element={<SettingsPage />} />
             <Route path="*" element={<NotFound />} />
           </Routes>

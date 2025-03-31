@@ -1,6 +1,6 @@
 
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { FileText, Menu, Moon, Sun, Home, Users, BarChart, Settings as SettingsIcon } from "lucide-react";
+import { FileText, Menu, Moon, Sun, Home, Users, BarChart, Settings as SettingsIcon, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useState, useEffect } from "react";
@@ -82,6 +82,16 @@ export const Header = ({ showCreate = true }: HeaderProps) => {
                     </Button>
                   </Link>
                   
+                  <Link to="/citas" className="w-full block">
+                    <Button 
+                      variant="ghost"
+                      className="w-full justify-start"
+                    >
+                      <Calendar size={16} className="mr-2" />
+                      Citas
+                    </Button>
+                  </Link>
+                  
                   <Link to="/pacientes/dashboard" className="w-full block">
                     <Button 
                       variant="ghost"
@@ -141,6 +151,16 @@ export const Header = ({ showCreate = true }: HeaderProps) => {
               >
                 <Users size={18} />
                 Pacientes
+              </Button>
+            </Link>
+            
+            <Link to="/citas">
+              <Button 
+                variant="ghost"
+                className="p-2 flex items-center gap-2"
+              >
+                <Calendar size={18} />
+                Citas
               </Button>
             </Link>
             
