@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Header } from "@/components/layout/header";
@@ -29,6 +30,69 @@ const PASTEL_COLORS = [
   "bg-[#D3E4FD]", // Soft Blue
   "bg-[#F1F0FB]", // Soft Gray
 ];
+
+// Mock consultation data generator function
+const generateMockConsultations = (patientId: string): MedicalConsultation[] => {
+  const today = new Date();
+  
+  return [
+    {
+      id: "mock-cons-1",
+      patientId,
+      consultationDate: new Date(today.getFullYear(), today.getMonth() - 1, 15),
+      reason: "Dolor de cabeza y mareos frecuentes",
+      diagnosis: "Migraña tensional",
+      treatment: "Ibuprofeno 400mg c/8h por 5 días. Técnicas de relajación.",
+      notes: "Paciente refiere estrés laboral intenso en las últimas semanas.",
+      status: "Completada",
+      formId: "mock-form-1",
+      formTitle: "Historia Clínica General",
+      formCompleted: true,
+      formCompletedAt: new Date(today.getFullYear(), today.getMonth() - 1, 15).toISOString()
+    },
+    {
+      id: "mock-cons-2",
+      patientId,
+      consultationDate: new Date(today.getFullYear(), today.getMonth() - 2, 5),
+      reason: "Control rutinario",
+      diagnosis: "Paciente sano",
+      treatment: "N/A",
+      notes: "Se realizaron exámenes de laboratorio de rutina",
+      status: "Completada",
+      formId: "mock-form-2",
+      formTitle: "Examen Físico Completo",
+      formCompleted: true,
+      formCompletedAt: new Date(today.getFullYear(), today.getMonth() - 2, 5).toISOString()
+    },
+    {
+      id: "mock-cons-3",
+      patientId,
+      consultationDate: new Date(today.getFullYear(), today.getMonth() - 4, 22),
+      reason: "Dolor en articulaciones",
+      diagnosis: "Artritis leve",
+      treatment: "Diclofenaco 50mg c/12h por 7 días. Compresas calientes.",
+      followUpDate: new Date(today.getFullYear(), today.getMonth() - 3, 20),
+      status: "Completada",
+      formId: "mock-form-3",
+      formTitle: "Evaluación Reumatológica",
+      formCompleted: true,
+      formCompletedAt: new Date(today.getFullYear(), today.getMonth() - 4, 22).toISOString()
+    },
+    {
+      id: "mock-cons-4",
+      patientId,
+      consultationDate: new Date(today.getFullYear(), today.getMonth(), today.getDate() - 2),
+      reason: "Seguimiento de migraña",
+      diagnosis: "Migraña en remisión",
+      treatment: "Continuar con técnicas de manejo del estrés",
+      status: "Completada",
+      formId: "mock-form-4",
+      formTitle: "Seguimiento Neurológico",
+      formCompleted: true,
+      formCompletedAt: new Date(today.getFullYear(), today.getMonth(), today.getDate() - 2).toISOString()
+    }
+  ];
+};
 
 const PatientDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -81,6 +145,12 @@ const PatientDetail = () => {
                     formCompletedAt: c.formCompletedAt ? c.formCompletedAt : undefined
                   };
                 });
+            }
+            
+            // Add mock consultations if there are fewer than 4 consultations
+            if (consultations.length < 4) {
+              const mockConsultations = generateMockConsultations(id);
+              consultations = [...consultations, ...mockConsultations];
             }
             
             setPatient({ ...foundPatient, consultations });
