@@ -10,8 +10,12 @@ const Index = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Redirect to the new home page path
-    navigate("/app/home");
+    // Redirect to the new home page path after a slight delay to ensure hooks are properly initialized
+    const timer = setTimeout(() => {
+      navigate("/app/home");
+    }, 100);
+    
+    return () => clearTimeout(timer);
   }, [navigate]);
 
   return (
