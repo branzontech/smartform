@@ -1,7 +1,8 @@
+
 import React from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { FileText, Users, Calendar, BarChart, CheckCircle, Star } from "lucide-react";
+import { FileText, Users, Calendar, BarChart, CheckCircle, Star, Stethoscope, ClipboardList, Activity, FileDigit } from "lucide-react";
 
 const LandingPage = () => {
   return (
@@ -10,11 +11,13 @@ const LandingPage = () => {
       <nav className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 py-4 px-6 sticky top-0 z-10">
         <div className="container mx-auto flex justify-between items-center">
           <div className="flex items-center">
-            <span className="text-2xl font-bold text-form-primary dark:text-white">Smart Forms</span>
+            <Stethoscope className="h-6 w-6 text-form-primary mr-2" />
+            <span className="text-2xl font-bold text-form-primary dark:text-white">Smart Doctor</span>
           </div>
           <div className="space-x-4 hidden md:flex">
             <a href="#features" className="text-gray-700 dark:text-gray-300 hover:text-form-primary dark:hover:text-white transition-colors">Características</a>
             <a href="#benefits" className="text-gray-700 dark:text-gray-300 hover:text-form-primary dark:hover:text-white transition-colors">Beneficios</a>
+            <a href="#testimonials" className="text-gray-700 dark:text-gray-300 hover:text-form-primary dark:hover:text-white transition-colors">Testimonios</a>
             <a href="#pricing" className="text-gray-700 dark:text-gray-300 hover:text-form-primary dark:hover:text-white transition-colors">Precios</a>
           </div>
           <div>
@@ -33,10 +36,10 @@ const LandingPage = () => {
         <div className="container mx-auto max-w-6xl flex flex-col md:flex-row items-center">
           <div className="md:w-1/2 mb-10 md:mb-0 md:pr-10">
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 text-gray-900 dark:text-white">
-              Gestión inteligente de formularios médicos
+              Software médico completo y fácil de usar
             </h1>
             <p className="text-xl text-gray-600 dark:text-gray-300 mb-8">
-              Simplifica la administración de pacientes, citas y formularios médicos en una única plataforma intuitiva.
+              Optimiza la gestión de tu consulta con nuestra plataforma integral para profesionales de la salud.
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
               <Link to="/app">
@@ -54,7 +57,7 @@ const LandingPage = () => {
           <div className="md:w-1/2">
             <img 
               src="/placeholder.svg" 
-              alt="Smart Forms platform" 
+              alt="Smart Doctor platform" 
               className="rounded-lg shadow-xl"
               data-component-name="img" 
             />
@@ -66,15 +69,15 @@ const LandingPage = () => {
       <section id="features" className="py-20 px-6 bg-white dark:bg-gray-900">
         <div className="container mx-auto max-w-6xl">
           <h2 className="text-3xl md:text-4xl font-bold text-center mb-16 text-gray-900 dark:text-white">
-            Características principales
+            Funcionalidades diseñadas para profesionales de la salud
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             <div className="bg-gray-50 dark:bg-gray-800 p-6 rounded-lg hover:shadow-lg transition-shadow">
               <div className="bg-form-primary/10 p-3 rounded-full w-14 h-14 flex items-center justify-center mb-4">
-                <FileText className="w-8 h-8 text-form-primary" />
+                <Calendar className="w-8 h-8 text-form-primary" />
               </div>
-              <h3 className="text-xl font-semibold mb-3 text-gray-900 dark:text-white">Formularios personalizables</h3>
-              <p className="text-gray-600 dark:text-gray-300">Crea formularios adaptados a tus necesidades específicas con una interfaz intuitiva.</p>
+              <h3 className="text-xl font-semibold mb-3 text-gray-900 dark:text-white">Gestión de citas</h3>
+              <p className="text-gray-600 dark:text-gray-300">Organiza tu agenda médica con recordatorios automáticos y minimiza las ausencias de pacientes.</p>
             </div>
             <div className="bg-gray-50 dark:bg-gray-800 p-6 rounded-lg hover:shadow-lg transition-shadow">
               <div className="bg-form-primary/10 p-3 rounded-full w-14 h-14 flex items-center justify-center mb-4">
@@ -85,17 +88,31 @@ const LandingPage = () => {
             </div>
             <div className="bg-gray-50 dark:bg-gray-800 p-6 rounded-lg hover:shadow-lg transition-shadow">
               <div className="bg-form-primary/10 p-3 rounded-full w-14 h-14 flex items-center justify-center mb-4">
-                <Calendar className="w-8 h-8 text-form-primary" />
+                <ClipboardList className="w-8 h-8 text-form-primary" />
               </div>
-              <h3 className="text-xl font-semibold mb-3 text-gray-900 dark:text-white">Sistema de citas</h3>
-              <p className="text-gray-600 dark:text-gray-300">Programa y gestiona citas médicas con recordatorios automatizados.</p>
+              <h3 className="text-xl font-semibold mb-3 text-gray-900 dark:text-white">Historias clínicas digitales</h3>
+              <p className="text-gray-600 dark:text-gray-300">Mantén un registro completo de cada paciente con acceso rápido a su información médica.</p>
+            </div>
+            <div className="bg-gray-50 dark:bg-gray-800 p-6 rounded-lg hover:shadow-lg transition-shadow">
+              <div className="bg-form-primary/10 p-3 rounded-full w-14 h-14 flex items-center justify-center mb-4">
+                <FileText className="w-8 h-8 text-form-primary" />
+              </div>
+              <h3 className="text-xl font-semibold mb-3 text-gray-900 dark:text-white">Formularios personalizados</h3>
+              <p className="text-gray-600 dark:text-gray-300">Crea formularios adaptados a tus necesidades específicas con una interfaz intuitiva.</p>
             </div>
             <div className="bg-gray-50 dark:bg-gray-800 p-6 rounded-lg hover:shadow-lg transition-shadow">
               <div className="bg-form-primary/10 p-3 rounded-full w-14 h-14 flex items-center justify-center mb-4">
                 <BarChart className="w-8 h-8 text-form-primary" />
               </div>
-              <h3 className="text-xl font-semibold mb-3 text-gray-900 dark:text-white">Análisis y estadísticas</h3>
-              <p className="text-gray-600 dark:text-gray-300">Visualiza datos importantes con gráficos y paneles intuitivos.</p>
+              <h3 className="text-xl font-semibold mb-3 text-gray-900 dark:text-white">Estadísticas de atención</h3>
+              <p className="text-gray-600 dark:text-gray-300">Visualiza datos importantes de tu consulta con gráficos y paneles intuitivos.</p>
+            </div>
+            <div className="bg-gray-50 dark:bg-gray-800 p-6 rounded-lg hover:shadow-lg transition-shadow">
+              <div className="bg-form-primary/10 p-3 rounded-full w-14 h-14 flex items-center justify-center mb-4">
+                <FileDigit className="w-8 h-8 text-form-primary" />
+              </div>
+              <h3 className="text-xl font-semibold mb-3 text-gray-900 dark:text-white">Generación de RIPS</h3>
+              <p className="text-gray-600 dark:text-gray-300">Genera automáticamente el Registro Individual de Prestación de Servicios de salud para reportes oficiales.</p>
             </div>
           </div>
         </div>
@@ -113,34 +130,34 @@ const LandingPage = () => {
               <div>
                 <h3 className="text-xl font-semibold mb-2 text-gray-900 dark:text-white">Ahorro de tiempo</h3>
                 <p className="text-gray-600 dark:text-gray-300">
-                  Reduce el tiempo dedicado a tareas administrativas automatizando la gestión de formularios y citas.
+                  Reduce el tiempo dedicado a tareas administrativas automatizando la gestión de citas y documentación clínica.
                 </p>
               </div>
             </div>
             <div className="flex items-start">
               <CheckCircle className="text-form-primary mr-4 mt-1 flex-shrink-0" />
               <div>
-                <h3 className="text-xl font-semibold mb-2 text-gray-900 dark:text-white">Menos errores</h3>
+                <h3 className="text-xl font-semibold mb-2 text-gray-900 dark:text-white">Mejor seguimiento clínico</h3>
                 <p className="text-gray-600 dark:text-gray-300">
-                  Minimiza errores de transcripción con formularios digitales y validación automática.
+                  Garantiza un seguimiento adecuado de cada paciente con alertas automáticas y recordatorios de control.
                 </p>
               </div>
             </div>
             <div className="flex items-start">
               <CheckCircle className="text-form-primary mr-4 mt-1 flex-shrink-0" />
               <div>
-                <h3 className="text-xl font-semibold mb-2 text-gray-900 dark:text-white">Mejor experiencia</h3>
+                <h3 className="text-xl font-semibold mb-2 text-gray-900 dark:text-white">Historias clínicas completas</h3>
                 <p className="text-gray-600 dark:text-gray-300">
-                  Ofrece una experiencia más fluida a tus pacientes con formularios digitales accesibles.
+                  Mantén un registro digital completo de cada paciente, fácilmente accesible en todo momento.
                 </p>
               </div>
             </div>
             <div className="flex items-start">
               <CheckCircle className="text-form-primary mr-4 mt-1 flex-shrink-0" />
               <div>
-                <h3 className="text-xl font-semibold mb-2 text-gray-900 dark:text-white">Acceso desde cualquier lugar</h3>
+                <h3 className="text-xl font-semibold mb-2 text-gray-900 dark:text-white">Generación automática de RIPS</h3>
                 <p className="text-gray-600 dark:text-gray-300">
-                  Accede a los datos de tus pacientes y consultas desde cualquier dispositivo con conexión a internet.
+                  Cumple con los requisitos legales fácilmente generando automáticamente los RIPS necesarios para reportes oficiales.
                 </p>
               </div>
             </div>
@@ -164,7 +181,7 @@ const LandingPage = () => {
                 <Star className="text-yellow-400 h-5 w-5" fill="currentColor" />
               </div>
               <p className="text-gray-600 dark:text-gray-300 mb-6 italic">
-                "Smart Forms ha transformado la gestión de mi consulta. Ahora puedo dedicar más tiempo a mis pacientes y menos a la administración."
+                "Smart Doctor ha transformado la gestión de mi consulta. Ahora puedo dedicar más tiempo a mis pacientes y menos a la administración."
               </p>
               <div className="flex items-center">
                 <div className="h-12 w-12 rounded-full bg-form-primary/20 flex items-center justify-center mr-4">
@@ -186,7 +203,7 @@ const LandingPage = () => {
                 <Star className="text-yellow-400 h-5 w-5" fill="currentColor" />
               </div>
               <p className="text-gray-600 dark:text-gray-300 mb-6 italic">
-                "La facilidad para crear formularios personalizados y hacer seguimiento a mis pacientes ha mejorado significativamente mi práctica clínica."
+                "La facilidad para gestionar historias clínicas digitales y hacer seguimiento a mis pacientes ha mejorado significativamente mi práctica clínica."
               </p>
               <div className="flex items-center">
                 <div className="h-12 w-12 rounded-full bg-form-primary/20 flex items-center justify-center mr-4">
@@ -208,7 +225,7 @@ const LandingPage = () => {
                 <Star className="text-yellow-400 h-5 w-5" fill="currentColor" />
               </div>
               <p className="text-gray-600 dark:text-gray-300 mb-6 italic">
-                "El sistema de alertas y seguimiento de pacientes ha reducido drásticamente las citas perdidas en mi clínica. Una herramienta imprescindible."
+                "La generación automática de RIPS me ahorra horas de trabajo administrativo cada mes. Una herramienta imprescindible para cualquier consultorio médico."
               </p>
               <div className="flex items-center">
                 <div className="h-12 w-12 rounded-full bg-form-primary/20 flex items-center justify-center mr-4">
@@ -237,15 +254,15 @@ const LandingPage = () => {
               <ul className="space-y-3 mb-8">
                 <li className="flex items-center text-gray-600 dark:text-gray-300">
                   <CheckCircle className="text-green-500 mr-2 h-5 w-5" />
-                  <span>50 formularios mensuales</span>
-                </li>
-                <li className="flex items-center text-gray-600 dark:text-gray-300">
-                  <CheckCircle className="text-green-500 mr-2 h-5 w-5" />
-                  <span>Hasta 100 pacientes</span>
+                  <span>50 pacientes activos</span>
                 </li>
                 <li className="flex items-center text-gray-600 dark:text-gray-300">
                   <CheckCircle className="text-green-500 mr-2 h-5 w-5" />
                   <span>Gestión de citas básica</span>
+                </li>
+                <li className="flex items-center text-gray-600 dark:text-gray-300">
+                  <CheckCircle className="text-green-500 mr-2 h-5 w-5" />
+                  <span>Historias clínicas digitales</span>
                 </li>
                 <li className="flex items-center text-gray-600 dark:text-gray-300">
                   <CheckCircle className="text-green-500 mr-2 h-5 w-5" />
@@ -263,10 +280,6 @@ const LandingPage = () => {
               <ul className="space-y-3 mb-8">
                 <li className="flex items-center text-gray-600 dark:text-gray-300">
                   <CheckCircle className="text-green-500 mr-2 h-5 w-5" />
-                  <span>Formularios ilimitados</span>
-                </li>
-                <li className="flex items-center text-gray-600 dark:text-gray-300">
-                  <CheckCircle className="text-green-500 mr-2 h-5 w-5" />
                   <span>Hasta 500 pacientes</span>
                 </li>
                 <li className="flex items-center text-gray-600 dark:text-gray-300">
@@ -275,7 +288,11 @@ const LandingPage = () => {
                 </li>
                 <li className="flex items-center text-gray-600 dark:text-gray-300">
                   <CheckCircle className="text-green-500 mr-2 h-5 w-5" />
-                  <span>Análisis y estadísticas</span>
+                  <span>Historias clínicas completas</span>
+                </li>
+                <li className="flex items-center text-gray-600 dark:text-gray-300">
+                  <CheckCircle className="text-green-500 mr-2 h-5 w-5" />
+                  <span>Generación de RIPS</span>
                 </li>
                 <li className="flex items-center text-gray-600 dark:text-gray-300">
                   <CheckCircle className="text-green-500 mr-2 h-5 w-5" />
@@ -292,10 +309,6 @@ const LandingPage = () => {
               <ul className="space-y-3 mb-8">
                 <li className="flex items-center text-gray-600 dark:text-gray-300">
                   <CheckCircle className="text-green-500 mr-2 h-5 w-5" />
-                  <span>Formularios ilimitados</span>
-                </li>
-                <li className="flex items-center text-gray-600 dark:text-gray-300">
-                  <CheckCircle className="text-green-500 mr-2 h-5 w-5" />
                   <span>Pacientes ilimitados</span>
                 </li>
                 <li className="flex items-center text-gray-600 dark:text-gray-300">
@@ -304,7 +317,11 @@ const LandingPage = () => {
                 </li>
                 <li className="flex items-center text-gray-600 dark:text-gray-300">
                   <CheckCircle className="text-green-500 mr-2 h-5 w-5" />
-                  <span>Análisis y reportes personalizados</span>
+                  <span>Historias clínicas personalizables</span>
+                </li>
+                <li className="flex items-center text-gray-600 dark:text-gray-300">
+                  <CheckCircle className="text-green-500 mr-2 h-5 w-5" />
+                  <span>Generación de RIPS avanzada</span>
                 </li>
                 <li className="flex items-center text-gray-600 dark:text-gray-300">
                   <CheckCircle className="text-green-500 mr-2 h-5 w-5" />
@@ -327,10 +344,10 @@ const LandingPage = () => {
       <section className="py-20 px-6 bg-form-primary">
         <div className="container mx-auto max-w-4xl text-center">
           <h2 className="text-3xl md:text-4xl font-bold mb-6 text-white">
-            Empieza a optimizar tu consulta hoy mismo
+            Optimiza tu práctica médica hoy mismo
           </h2>
           <p className="text-xl text-white/80 mb-8 max-w-2xl mx-auto">
-            Únete a miles de profesionales de la salud que ya están optimizando su tiempo y mejorando la atención de sus pacientes.
+            Únete a miles de profesionales de la salud que ya están mejorando la atención de sus pacientes con Smart Doctor.
           </p>
           <Link to="/app">
             <Button size="lg" className="bg-white text-form-primary hover:bg-gray-100">
@@ -345,8 +362,8 @@ const LandingPage = () => {
         <div className="container mx-auto max-w-6xl">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div>
-              <h3 className="text-lg font-bold mb-4">Smart Forms</h3>
-              <p className="text-gray-400">La solución integral para la gestión de formularios y pacientes en el ámbito médico.</p>
+              <h3 className="text-lg font-bold mb-4">Smart Doctor</h3>
+              <p className="text-gray-400">La solución integral para profesionales de la salud que buscan optimizar la gestión de su práctica médica.</p>
             </div>
             <div>
               <h3 className="text-lg font-bold mb-4">Producto</h3>
@@ -377,7 +394,7 @@ const LandingPage = () => {
             </div>
           </div>
           <div className="border-t border-gray-800 mt-12 pt-8 flex flex-col md:flex-row justify-between items-center">
-            <p className="text-gray-400 mb-4 md:mb-0">© 2023 Smart Forms. Todos los derechos reservados.</p>
+            <p className="text-gray-400 mb-4 md:mb-0">© 2023 Smart Doctor. Todos los derechos reservados.</p>
             <div className="space-x-4">
               <a href="#" className="text-gray-400 hover:text-white transition-colors">Términos</a>
               <a href="#" className="text-gray-400 hover:text-white transition-colors">Privacidad</a>

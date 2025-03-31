@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { Header } from "@/components/layout/header";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import { FileText, ArrowRight, Calendar, Users, BarChart } from "lucide-react";
+import { FileText, ArrowRight, Calendar, Users, BarChart, Stethoscope, ClipboardList } from "lucide-react";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -20,17 +20,17 @@ const Index = () => {
       <main className="flex-1 flex items-center justify-center p-6">
         <div className="max-w-4xl w-full text-center space-y-8">
           <h1 className="text-4xl md:text-5xl font-bold mb-4">
-            Bienvenido a Smart Forms
+            Bienvenido a Smart Doctor
           </h1>
           <p className="text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
-            La plataforma que simplifica la creación y gestión de formularios para profesionales de la salud.
+            La plataforma integral para profesionales de la salud que facilita la gestión de pacientes, citas y registros médicos.
           </p>
           
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-8 max-w-2xl mx-auto">
-            <Link to="/app/crear">
+            <Link to="/app/citas">
               <Button size="lg" className="w-full bg-form-primary hover:bg-form-primary/90">
-                <FileText className="mr-2 h-5 w-5" />
-                Crear nuevo formulario
+                <Calendar className="mr-2 h-5 w-5" />
+                Gestionar citas
               </Button>
             </Link>
             <Link to="/app/pacientes">
@@ -40,10 +40,10 @@ const Index = () => {
                 <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
               </Button>
             </Link>
-            <Link to="/app/citas">
+            <Link to="/app/crear">
               <Button size="lg" className="w-full bg-purple-600 hover:bg-purple-700">
-                <Calendar className="mr-2 h-5 w-5" />
-                Gestionar citas
+                <ClipboardList className="mr-2 h-5 w-5" />
+                Historias clínicas
               </Button>
             </Link>
             <Link to="/app/pacientes/dashboard">

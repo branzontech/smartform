@@ -1,6 +1,6 @@
 
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { FileText, Menu, Moon, Sun, Home, Users, BarChart, Settings as SettingsIcon, Calendar, Stethoscope } from "lucide-react";
+import { FileText, Menu, Moon, Sun, Home, Users, BarChart, Settings as SettingsIcon, Calendar, Stethoscope, ClipboardList, Activity } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useState, useEffect } from "react";
@@ -37,14 +37,14 @@ export const Header = ({ showCreate = true }: HeaderProps) => {
   };
 
   const goHome = () => {
-    navigate('/');
+    navigate('/app/home');
   };
 
   return (
     <header className="border-b border-gray-200 dark:border-gray-800 sticky top-0 bg-gradient-to-r from-purple-50/90 via-white/90 to-purple-50/90 dark:from-gray-900/90 dark:via-gray-900/95 dark:to-purple-900/90 backdrop-blur-md z-10 shadow-sm">
       <div className="container mx-auto flex items-center justify-between h-16">
         <div className="flex items-center">
-          <Link to="/" className="flex items-center space-x-2">
+          <Link to="/app/home" className="flex items-center space-x-2">
             <Stethoscope className="h-6 w-6 text-form-primary" />
             <span className="text-xl font-semibold bg-gradient-to-r from-form-primary to-form-secondary bg-clip-text text-transparent">Smart Doctor</span>
           </Link>
@@ -71,7 +71,7 @@ export const Header = ({ showCreate = true }: HeaderProps) => {
                     <span className="group-hover:bg-gradient-to-r group-hover:from-form-primary group-hover:to-form-secondary group-hover:bg-clip-text group-hover:text-transparent transition-all duration-300">Inicio</span>
                   </Button>
                   
-                  <Link to="/pacientes" className="w-full block">
+                  <Link to="/app/pacientes" className="w-full block">
                     <Button 
                       variant="ghost"
                       className="w-full justify-start hover:bg-violet-400/30 dark:hover:bg-violet-500/30 group"
@@ -81,7 +81,7 @@ export const Header = ({ showCreate = true }: HeaderProps) => {
                     </Button>
                   </Link>
                   
-                  <Link to="/citas" className="w-full block">
+                  <Link to="/app/citas" className="w-full block">
                     <Button 
                       variant="ghost"
                       className="w-full justify-start hover:bg-violet-400/30 dark:hover:bg-violet-500/30 group"
@@ -91,7 +91,17 @@ export const Header = ({ showCreate = true }: HeaderProps) => {
                     </Button>
                   </Link>
                   
-                  <Link to="/pacientes/dashboard" className="w-full block">
+                  <Link to="/app/crear" className="w-full block">
+                    <Button 
+                      variant="ghost"
+                      className="w-full justify-start hover:bg-violet-400/30 dark:hover:bg-violet-500/30 group"
+                    >
+                      <ClipboardList size={16} className="mr-2 group-hover:text-form-primary" />
+                      <span className="group-hover:bg-gradient-to-r group-hover:from-form-primary group-hover:to-form-secondary group-hover:bg-clip-text group-hover:text-transparent transition-all duration-300">Historias clínicas</span>
+                    </Button>
+                  </Link>
+                  
+                  <Link to="/app/pacientes/dashboard" className="w-full block">
                     <Button 
                       variant="ghost"
                       className="w-full justify-start hover:bg-violet-400/30 dark:hover:bg-violet-500/30 group"
@@ -101,7 +111,7 @@ export const Header = ({ showCreate = true }: HeaderProps) => {
                     </Button>
                   </Link>
                   
-                  <Link to="/configuracion" className="w-full block">
+                  <Link to="/app/configuracion" className="w-full block">
                     <Button 
                       variant="ghost"
                       className="w-full justify-start hover:bg-violet-400/30 dark:hover:bg-violet-500/30 group"
@@ -143,7 +153,7 @@ export const Header = ({ showCreate = true }: HeaderProps) => {
               <span className="group-hover:bg-gradient-to-r group-hover:from-form-primary group-hover:to-form-secondary group-hover:bg-clip-text group-hover:text-transparent transition-all duration-300">Inicio</span>
             </Button>
             
-            <Link to="/pacientes">
+            <Link to="/app/pacientes">
               <Button 
                 variant="ghost"
                 className="p-2 flex items-center gap-2 hover:bg-violet-400/20 dark:hover:bg-violet-500/30 group"
@@ -153,7 +163,7 @@ export const Header = ({ showCreate = true }: HeaderProps) => {
               </Button>
             </Link>
             
-            <Link to="/citas">
+            <Link to="/app/citas">
               <Button 
                 variant="ghost"
                 className="p-2 flex items-center gap-2 hover:bg-violet-400/20 dark:hover:bg-violet-500/30 group"
@@ -163,7 +173,17 @@ export const Header = ({ showCreate = true }: HeaderProps) => {
               </Button>
             </Link>
             
-            <Link to="/pacientes/dashboard">
+            <Link to="/app/crear">
+              <Button 
+                variant="ghost"
+                className="p-2 flex items-center gap-2 hover:bg-violet-400/20 dark:hover:bg-violet-500/30 group"
+              >
+                <ClipboardList size={18} className="group-hover:text-form-primary" />
+                <span className="group-hover:bg-gradient-to-r group-hover:from-form-primary group-hover:to-form-secondary group-hover:bg-clip-text group-hover:text-transparent transition-all duration-300">Historias</span>
+              </Button>
+            </Link>
+            
+            <Link to="/app/pacientes/dashboard">
               <Button 
                 variant="ghost"
                 className="p-2 flex items-center gap-2 hover:bg-violet-400/20 dark:hover:bg-violet-500/30 group"
@@ -173,7 +193,7 @@ export const Header = ({ showCreate = true }: HeaderProps) => {
               </Button>
             </Link>
             
-            <Link to="/configuracion">
+            <Link to="/app/configuracion">
               <Button 
                 variant="ghost"
                 className="p-2 flex items-center gap-2 hover:bg-violet-400/20 dark:hover:bg-violet-500/30 group"
