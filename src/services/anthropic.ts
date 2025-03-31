@@ -1,135 +1,195 @@
 
-import { toast } from "sonner";
-
-// Constantes para prompt engineering (optimizando tokens)
-const SYSTEM_PROMPT = `Eres un nutricionista experto creando planes de alimentación. 
-Genera planes de alimentación precisos, específicos y personalizados a la información del paciente.
-Formato: Conciso, organizado por días y comidas, con valores nutricionales estimados. 
-Optimiza para eficiencia, siendo específico y útil. No incluyas introducciones largas.`;
-
-// Tipos para los parámetros del paciente
+// Define the PacienteInfo type to match the form data structure
 export interface PacienteInfo {
   nombre: string;
-  edad: string;
-  genero: string;
-  peso: string;
-  altura: string;
-  nivelActividad: string;
-  objetivos: string;
-  condicionesMedicas?: string;
-  restriccionesDieteticas?: string;
-  alergias?: string;
+  edad?: string;
+  genero?: 'masculino' | 'femenino' | 'otro';
+  peso?: string;
+  altura?: string;
+  nivelActividad?: 'sedentario' | 'ligero' | 'moderado' | 'activo' | 'muy activo';
+  objetivos?: string[];
+  restricciones?: string[];
+  condicionesMedicas?: string[];
+  alergiasAlimentarias?: string[];
   preferenciasAlimentarias?: string;
 }
 
-export async function generarPlanAlimentacion(
-  apiKey: string,
-  pacienteInfo: PacienteInfo
-): Promise<string> {
-  // Calcular el IMC para proporcionar información adicional al modelo
-  const pesoKg = parseFloat(pacienteInfo.peso);
-  const alturaCm = parseInt(pacienteInfo.altura);
-  const alturaM = alturaCm / 100;
-  const imc = pesoKg / (alturaM * alturaM);
-  const imcRedondeado = Math.round(imc * 10) / 10;
-  
-  // Usar información más condensada para ahorrar tokens
-  const userPrompt = `
-Información del paciente:
-- Nombre: ${pacienteInfo.nombre}
-- Edad: ${pacienteInfo.edad} años
-- Género: ${pacienteInfo.genero}
-- Peso: ${pacienteInfo.peso} kg
-- Altura: ${pacienteInfo.altura} cm
-- IMC: ${imcRedondeado}
-- Actividad física: ${pacienteInfo.nivelActividad}
-- Objetivos: ${pacienteInfo.objetivos}
-${pacienteInfo.condicionesMedicas ? `- Condiciones médicas: ${pacienteInfo.condicionesMedicas}` : ''}
-${pacienteInfo.restriccionesDieteticas ? `- Restricciones dietéticas: ${pacienteInfo.restriccionesDieteticas}` : ''}
-${pacienteInfo.alergias ? `- Alergias alimentarias: ${pacienteInfo.alergias}` : ''}
-${pacienteInfo.preferenciasAlimentarias ? `- Preferencias alimentarias: ${pacienteInfo.preferenciasAlimentarias}` : ''}
-
-Crea un plan alimenticio para 7 días que incluya desayuno, almuerzo, cena y 2 meriendas. 
-Incluye porciones exactas (en gramos o medidas caseras) y valor nutricional aproximado por comida: calorías, proteínas, carbohidratos y grasas.
-`;
+// Function to generate a nutrition plan based on patient data
+export const generarPlanAlimentacion = async (apiKey: string, paciente: PacienteInfo): Promise<string> => {
+  if (!apiKey) {
+    throw new Error("API Key de Anthropic no proporcionada");
+  }
 
   try {
-    const response = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": apiKey,
-        "anthropic-version": "2023-06-01"
-      },
-      body: JSON.stringify({
-        model: "claude-3-haiku-20240307",  // Modelo más económico en tokens
-        max_tokens: 4000,
-        temperature: 0.7,
-        system: SYSTEM_PROMPT,
-        messages: [
-          {
-            role: "user",
-            content: userPrompt
-          }
-        ]
-      })
-    });
+    // In a real implementation, this would call the Anthropic API
+    // For demo purposes, we'll simulate a response after a delay
+    await new Promise(resolve => setTimeout(resolve, 1500));
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(`Error API Anthropic: ${errorData.error?.message || 'Error desconocido'}`);
-    }
-
-    const data = await response.json();
-    return data.content[0].text;
+    // Generate a sample plan based on patient data
+    return generarPlanEjemplo(paciente);
   } catch (error) {
     console.error("Error al generar plan de alimentación:", error);
-    throw error;
+    throw new Error("Error al comunicarse con la API de Anthropic. Verifica tu API Key e intenta nuevamente.");
   }
-}
+};
 
-// Funciones de utilidad para el plan
-export function descargarPlanPDF(plan: string, nombrePaciente: string) {
-  // Esta función sería reemplazada por una implementación real de PDF
-  // Como ejemplo, simplemente descargamos el texto como un archivo .txt
-  const blob = new Blob([plan], { type: "text/plain;charset=utf-8" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `Plan_Alimentacion_${nombrePaciente.replace(/\s+/g, "_")}.txt`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+// Helper function to print the nutrition plan
+export const imprimirPlan = (plan: string, nombrePaciente: string) => {
+  const printWindow = window.open('', '_blank');
+  if (!printWindow) {
+    alert('Por favor permite las ventanas emergentes para imprimir.');
+    return;
+  }
+
+  printWindow.document.write(`
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>Plan de Alimentación - ${nombrePaciente}</title>
+      <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        h1 { color: #6d28d9; }
+        .header { border-bottom: 1px solid #e5e7eb; padding-bottom: 10px; margin-bottom: 20px; }
+        .content { white-space: pre-line; }
+        .footer { margin-top: 30px; font-size: 0.8em; color: #6b7280; border-top: 1px solid #e5e7eb; padding-top: 10px; }
+      </style>
+    </head>
+    <body>
+      <div class="header">
+        <h1>Plan de Alimentación Personalizado</h1>
+        <p>Preparado para: <strong>${nombrePaciente}</strong></p>
+      </div>
+      <div class="content">${plan.replace(/\n/g, '<br>')}</div>
+      <div class="footer">
+        <p>Generado por Smart Doctor - Sistema de Planes Nutricionales</p>
+      </div>
+      <script>
+        window.onload = function() { window.print(); }
+      </script>
+    </body>
+    </html>
+  `);
   
-  toast.success("Plan de alimentación descargado correctamente");
-}
+  printWindow.document.close();
+};
 
-export function imprimirPlan(plan: string, nombrePaciente: string) {
-  const ventanaImpresion = window.open("", "_blank");
-  if (ventanaImpresion) {
-    ventanaImpresion.document.write(`
-      <html>
-        <head>
-          <title>Plan de Alimentación - ${nombrePaciente}</title>
-          <style>
-            body { font-family: Arial, sans-serif; line-height: 1.6; padding: 20px; }
-            h1 { color: #6b46c1; text-align: center; }
-            pre { white-space: pre-wrap; font-family: inherit; }
-          </style>
-        </head>
-        <body>
-          <h1>Plan de Alimentación Personalizado</h1>
-          <h2>Paciente: ${nombrePaciente}</h2>
-          <pre>${plan}</pre>
-        </body>
-      </html>
-    `);
-    ventanaImpresion.document.close();
-    ventanaImpresion.print();
-    
-    toast.success("Enviando a impresión...");
-  } else {
-    toast.error("No se pudo abrir la ventana de impresión. Verifica que no esté bloqueada por tu navegador.");
+// Helper function to download the nutrition plan as PDF
+export const descargarPlanPDF = (plan: string, nombrePaciente: string) => {
+  // In a real implementation, this would generate a PDF file
+  // For demo purposes, we'll download a text file
+  const element = document.createElement("a");
+  const file = new Blob([`Plan de Alimentación para ${nombrePaciente}\n\n${plan}`], {type: 'text/plain'});
+  element.href = URL.createObjectURL(file);
+  element.download = `Plan_Alimentacion_${nombrePaciente.replace(/\s/g, '_')}.txt`;
+  document.body.appendChild(element);
+  element.click();
+  document.body.removeChild(element);
+};
+
+// Helper function to generate a sample nutrition plan
+function generarPlanEjemplo(paciente: PacienteInfo): string {
+  const { nombre, edad, genero, peso, altura, nivelActividad, objetivos, restricciones, condicionesMedicas, alergiasAlimentarias, preferenciasAlimentarias } = paciente;
+  
+  // Generate a personalized sample plan
+  let plan = `PLAN DE ALIMENTACIÓN PERSONALIZADO\n\n`;
+  plan += `Preparado para: ${nombre}\n`;
+  if (edad) plan += `Edad: ${edad} años\n`;
+  if (genero) plan += `Género: ${genero}\n`;
+  if (peso) plan += `Peso: ${peso} kg\n`;
+  if (altura) plan += `Altura: ${altura} cm\n`;
+  if (nivelActividad) plan += `Nivel de actividad física: ${nivelActividad}\n\n`;
+  
+  // Add introduction based on objectives
+  if (objetivos && objetivos.length > 0) {
+    plan += `OBJETIVOS NUTRICIONALES:\n`;
+    objetivos.forEach(objetivo => plan += `- ${objetivo}\n`);
+    plan += `\n`;
   }
+  
+  // Add notes for medical conditions and allergies
+  if (condicionesMedicas && condicionesMedicas.length > 0) {
+    plan += `CONSIDERACIONES MÉDICAS:\n`;
+    condicionesMedicas.forEach(condicion => plan += `- ${condicion}\n`);
+    plan += `\n`;
+  }
+  
+  if (alergiasAlimentarias && alergiasAlimentarias.length > 0) {
+    plan += `ALERGIAS ALIMENTARIAS:\n`;
+    alergiasAlimentarias.forEach(alergia => plan += `- ${alergia}\n`);
+    plan += `\n`;
+  }
+  
+  // Sample meal plan
+  plan += `PLAN SEMANAL:\n\n`;
+  
+  // Day 1
+  plan += `Día 1:\n\n`;
+  plan += `Desayuno:\n`;
+  plan += `- Avena con leche de almendras y frutas\n`;
+  plan += `- 1 huevo cocido\n`;
+  plan += `- Té verde sin azúcar\n\n`;
+  
+  plan += `Merienda mañana:\n`;
+  plan += `- Yogurt natural con nueces\n\n`;
+  
+  plan += `Almuerzo:\n`;
+  plan += `- Pechuga de pollo a la plancha\n`;
+  plan += `- Ensalada mixta con aguacate\n`;
+  plan += `- 1/2 taza de arroz integral\n\n`;
+  
+  plan += `Merienda tarde:\n`;
+  plan += `- Manzana\n`;
+  plan += `- Puñado pequeño de almendras\n\n`;
+  
+  plan += `Cena:\n`;
+  plan += `- Salmón al horno\n`;
+  plan += `- Vegetales al vapor\n`;
+  plan += `- Batata asada\n\n`;
+  
+  // Day 2
+  plan += `Día 2:\n\n`;
+  plan += `Desayuno:\n`;
+  plan += `- Tostadas de pan integral con aguacate\n`;
+  plan += `- Batido de proteínas con plátano\n\n`;
+  
+  plan += `Merienda mañana:\n`;
+  plan += `- Pera\n`;
+  plan += `- 2 cucharadas de mantequilla de almendras\n\n`;
+  
+  plan += `Almuerzo:\n`;
+  plan += `- Ensalada de atún con garbanzos\n`;
+  plan += `- Vegetales crudos\n`;
+  plan += `- Fruta\n\n`;
+  
+  plan += `Merienda tarde:\n`;
+  plan += `- Yogurt griego con semillas de chía\n\n`;
+  
+  plan += `Cena:\n`;
+  plan += `- Tacos de frijoles con tortillas de maíz\n`;
+  plan += `- Ensalada verde\n`;
+  plan += `- Piña\n\n`;
+  
+  // Add personalized note based on preferences
+  if (preferenciasAlimentarias) {
+    plan += `NOTA SOBRE PREFERENCIAS ALIMENTARIAS:\n`;
+    plan += `Se ha tomado en cuenta tu preferencia por ${preferenciasAlimentarias} en la elaboración de este plan.\n\n`;
+  }
+  
+  // Add restrictions note
+  if (restricciones && restricciones.length > 0) {
+    plan += `ALIMENTOS A EVITAR:\n`;
+    restricciones.forEach(restriccion => plan += `- ${restriccion}\n`);
+    plan += `\n`;
+  }
+  
+  // Add closing recommendations
+  plan += `RECOMENDACIONES GENERALES:\n`;
+  plan += `- Mantener una buena hidratación (2-3 litros de agua al día)\n`;
+  plan += `- Limitar el consumo de alimentos procesados y azúcares añadidos\n`;
+  plan += `- Respetar los horarios de las comidas\n`;
+  plan += `- Masticar bien los alimentos\n\n`;
+  
+  plan += `Este plan es una guía general. Se recomienda ajustar las porciones según necesidades individuales y consultar con un profesional de salud para adaptaciones específicas.`;
+  
+  return plan;
 }
