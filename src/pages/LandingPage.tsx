@@ -1,9 +1,8 @@
-
 import React from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { FileText, Users, Calendar, BarChart, CheckCircle, Star, Stethoscope, ClipboardList, Activity, FileDigit } from "lucide-react";
-import { Player } from "@lottiefiles/react-lottie-player";
+import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 
 const LandingPage = () => {
   return (
@@ -57,10 +56,10 @@ const LandingPage = () => {
           </div>
           <div className="md:w-1/2">
             <div className="rounded-lg shadow-xl overflow-hidden bg-white" data-component-name="img">
-              <Player
-                autoplay
+              <DotLottieReact
+                src="https://lottie.host/eddd52fe-9a2a-4693-8a2b-a986641d5644/ar6IVwscXk.lottie"
                 loop
-                src="https://lottie.host/embed/eddd52fe-9a2a-4693-8a2b-a986641d5644/ar6IVwscXk.lottie"
+                autoplay
                 style={{ height: '100%', width: '100%' }}
               />
             </div>
