@@ -40,8 +40,7 @@ export const Header = ({ showCreate = true }: HeaderProps) => {
     navigate('/');
   };
 
-  const isPatientRoute = location.pathname.startsWith('/pacientes');
-
+  // Always show all navigation items regardless of route
   return (
     <header className="border-b border-gray-200 dark:border-gray-800 sticky top-0 bg-background/80 backdrop-blur-md z-10">
       <div className="container mx-auto flex items-center justify-between h-16">
@@ -83,17 +82,15 @@ export const Header = ({ showCreate = true }: HeaderProps) => {
                     </Button>
                   </Link>
                   
-                  {isPatientRoute && (
-                    <Link to="/pacientes/dashboard" className="w-full block">
-                      <Button 
-                        variant="ghost"
-                        className="w-full justify-start"
-                      >
-                        <BarChart size={16} className="mr-2" />
-                        Estadísticas
-                      </Button>
-                    </Link>
-                  )}
+                  <Link to="/pacientes/dashboard" className="w-full block">
+                    <Button 
+                      variant="ghost"
+                      className="w-full justify-start"
+                    >
+                      <BarChart size={16} className="mr-2" />
+                      Estadísticas
+                    </Button>
+                  </Link>
                   
                   <Link to="/configuracion" className="w-full block">
                     <Button 
@@ -147,25 +144,23 @@ export const Header = ({ showCreate = true }: HeaderProps) => {
               </Button>
             </Link>
             
-            {isPatientRoute && (
-              <Link to="/pacientes/dashboard">
-                <Button 
-                  variant="ghost"
-                  className="p-2 flex items-center gap-2"
-                >
-                  <BarChart size={18} />
-                  Estadísticas
-                </Button>
-              </Link>
-            )}
+            <Link to="/pacientes/dashboard">
+              <Button 
+                variant="ghost"
+                className="p-2 flex items-center gap-2"
+              >
+                <BarChart size={18} />
+                Estadísticas
+              </Button>
+            </Link>
             
             <Link to="/configuracion">
               <Button 
                 variant="ghost"
                 className="p-2 flex items-center gap-2"
-                size="icon"
               >
                 <SettingsIcon size={18} />
+                Configuración
               </Button>
             </Link>
             
