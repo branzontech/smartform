@@ -56,7 +56,7 @@ const LandingPage = () => {
           </div>
           <div className="md:w-1/2">
             <img 
-              src="/placeholder.svg" 
+              src="https://i.ibb.co/6Py7H7Z/medical-doctor-software.png" 
               alt="Smart Doctor platform" 
               className="rounded-lg shadow-xl"
               data-component-name="img" 
@@ -408,3 +408,4 @@ const LandingPage = () => {
 };
 
 export default LandingPage;
+
