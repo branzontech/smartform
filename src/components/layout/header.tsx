@@ -1,5 +1,6 @@
-import { Link, useNavigate } from "react-router-dom";
-import { FileText, Menu, Moon, Sun, Home, Users } from "lucide-react";
+
+import { Link, useNavigate, useLocation } from "react-router-dom";
+import { FileText, Menu, Moon, Sun, Home, Users, BarChart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useState, useEffect } from "react";
@@ -12,6 +13,7 @@ interface HeaderProps {
 export const Header = ({ showCreate = true }: HeaderProps) => {
   const isMobile = useIsMobile();
   const navigate = useNavigate();
+  const location = useLocation();
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -38,6 +40,8 @@ export const Header = ({ showCreate = true }: HeaderProps) => {
   const goHome = () => {
     navigate('/');
   };
+
+  const isPatientRoute = location.pathname.startsWith('/pacientes');
 
   return (
     <header className="border-b border-gray-200 dark:border-gray-800 sticky top-0 bg-background/80 backdrop-blur-md z-10">
@@ -79,6 +83,18 @@ export const Header = ({ showCreate = true }: HeaderProps) => {
                       Pacientes
                     </Button>
                   </Link>
+                  
+                  {isPatientRoute && (
+                    <Link to="/pacientes/dashboard" className="w-full block">
+                      <Button 
+                        variant="ghost"
+                        className="w-full justify-start"
+                      >
+                        <BarChart size={16} className="mr-2" />
+                        Estadísticas
+                      </Button>
+                    </Link>
+                  )}
                   
                   <Button 
                     variant="ghost" 
@@ -129,6 +145,18 @@ export const Header = ({ showCreate = true }: HeaderProps) => {
                 Pacientes
               </Button>
             </Link>
+            
+            {isPatientRoute && (
+              <Link to="/pacientes/dashboard">
+                <Button 
+                  variant="ghost"
+                  className="p-2 flex items-center gap-2"
+                >
+                  <BarChart size={18} />
+                  Estadísticas
+                </Button>
+              </Link>
+            )}
             
             <SettingsDialog />
             

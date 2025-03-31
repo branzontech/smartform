@@ -27,3 +27,29 @@ export interface MedicalConsultation {
 export type PatientWithConsultations = Patient & {
   consultations: MedicalConsultation[];
 };
+
+export interface PatientStatistics {
+  totalPatients: number;
+  newPatientsLastMonth: number;
+  patientsByGender: {
+    name: string;
+    value: number;
+  }[];
+  consultationsScheduled: number;
+  consultationsCompleted: number;
+  consultationsCancelled: number;
+  consultationsInProgress: number;
+  topDiagnoses: {
+    name: string;
+    value: number;
+  }[];
+  consultationsByMonth: {
+    name: string;
+    scheduled: number;
+    completed: number;
+  }[];
+  recurringPatients: {
+    name: string;
+    visits: number;
+  }[];
+}

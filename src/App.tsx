@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -13,6 +14,7 @@ import FormResponses from "./pages/FormResponses";
 import PatientList from "./pages/patients/PatientList";
 import PatientDetail from "./pages/patients/PatientDetail";
 import NewConsultation from "./pages/patients/NewConsultation";
+import PatientDashboard from "./pages/patients/PatientDashboard";
 import NotFound from "./pages/NotFound";
 
 export const BackButton = () => {
@@ -50,6 +52,7 @@ function App() {
             <Route path="/ver/:id" element={<FormViewer />} />
             <Route path="/respuestas/:id" element={<FormResponses />} />
             <Route path="/pacientes" element={<PatientList />} />
+            <Route path="/pacientes/dashboard" element={<PatientDashboard />} />
             <Route path="/pacientes/:id" element={<PatientDetail />} />
             <Route path="/pacientes/nueva-consulta" element={<NewConsultation />} />
             <Route path="*" element={<NotFound />} />
