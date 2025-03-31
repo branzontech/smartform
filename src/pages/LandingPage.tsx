@@ -55,12 +55,12 @@ const LandingPage = () => {
             </div>
           </div>
           <div className="md:w-1/2">
-            <div className="rounded-lg shadow-xl overflow-hidden bg-white" data-component-name="img">
+            <div className="overflow-hidden" data-component-name="img">
               <DotLottieReact
                 src="https://lottie.host/eddd52fe-9a2a-4693-8a2b-a986641d5644/ar6IVwscXk.lottie"
                 loop
                 autoplay
-                style={{ height: '100%', width: '100%' }}
+                style={{ height: '100%', width: '100%', background: 'transparent' }}
               />
             </div>
           </div>
