@@ -1,7 +1,7 @@
-
 import React from "react";
 import { BackButton } from "@/App";
 import { Header } from "@/components/layout/header";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { 
   Card, 
   CardContent, 
@@ -58,42 +58,44 @@ const patientStatsData: PatientStatistics = {
 };
 
 const PatientDashboard = () => {
+  const isMobile = useIsMobile();
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <Header showCreate={false} />
-      <div className="container mx-auto px-4 py-8">
-        <div className="flex items-center justify-between mb-6">
+      <div className="container mx-auto px-4 py-6 md:py-8">
+        <div className="flex items-center justify-between mb-4 md:mb-6">
           <div>
             <BackButton />
-            <h1 className="text-3xl font-bold mt-2">Dashboard de Pacientes</h1>
-            <p className="text-gray-500 dark:text-gray-400 mt-1">
+            <h1 className="text-2xl md:text-3xl font-bold mt-2">Dashboard de Pacientes</h1>
+            <p className="text-gray-500 dark:text-gray-400 mt-1 text-sm md:text-base">
               Visualización de estadísticas y métricas de pacientes
             </p>
           </div>
         </div>
 
-        <Tabs defaultValue="general" className="space-y-6">
-          <TabsList className="mb-4">
+        <Tabs defaultValue="general" className="space-y-4 md:space-y-6">
+          <TabsList className="mb-4 w-full overflow-x-auto flex-nowrap">
             <TabsTrigger value="general">General</TabsTrigger>
             <TabsTrigger value="consultas">Consultas</TabsTrigger>
             <TabsTrigger value="diagnosticos">Diagnósticos</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="general" className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <TabsContent value="general" className="space-y-4 md:space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
               <PatientsOverviewCard stats={patientStatsData} />
               <ConsultationsStatusChart stats={patientStatsData} />
               <PatientsByGenderChart data={patientStatsData.patientsByGender} />
             </div>
             
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
               <ConsultationsTrendChart data={patientStatsData.consultationsByMonth} />
               <RecurringPatientsChart data={patientStatsData.recurringPatients} />
             </div>
           </TabsContent>
 
-          <TabsContent value="consultas" className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <TabsContent value="consultas" className="space-y-4 md:space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
               <ConsultationsStatusChart stats={patientStatsData} />
               <ConsultationsTrendChart data={patientStatsData.consultationsByMonth} />
             </div>
@@ -106,29 +108,17 @@ const PatientDashboard = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="h-[400px]">
+                <div className="h-[300px] md:h-[400px]">
                   <ConsultationsStatusChart stats={patientStatsData} expanded={true} />
                 </div>
               </CardContent>
             </Card>
           </TabsContent>
 
-          <TabsContent value="diagnosticos" className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <TabsContent value="diagnosticos" className="space-y-4 md:space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
               <TopDiagnosesChart data={patientStatsData.topDiagnoses} />
-              <Card>
-                <CardHeader>
-                  <CardTitle>Pacientes Recurrentes</CardTitle>
-                  <CardDescription>
-                    Pacientes con visitas frecuentes a la clínica
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="h-[400px]">
-                    <RecurringPatientsChart data={patientStatsData.recurringPatients} />
-                  </div>
-                </CardContent>
-              </Card>
+              <RecurringPatientsChart data={patientStatsData.recurringPatients} />
             </div>
           </TabsContent>
         </Tabs>

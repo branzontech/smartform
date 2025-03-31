@@ -3,6 +3,7 @@ import React from "react";
 import { PatientStatistics } from "@/types/patient-types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChartContainer, ChartLegend, ChartLegendContent } from "@/components/ui/chart";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 
 interface ConsultationsStatusChartProps {
@@ -14,6 +15,8 @@ const COLORS = ['#10B981', '#3B82F6', '#F59E0B', '#EF4444'];
 const RADIAN = Math.PI / 180;
 
 export const ConsultationsStatusChart = ({ stats, expanded = false }: ConsultationsStatusChartProps) => {
+  const isMobile = useIsMobile();
+  
   const data = [
     { name: 'Completadas', value: stats.consultationsCompleted },
     { name: 'Programadas', value: stats.consultationsScheduled },
@@ -35,7 +38,8 @@ export const ConsultationsStatusChart = ({ stats, expanded = false }: Consultati
     const y = cy + radius * Math.sin(-midAngle * RADIAN);
 
     if (percent < 0.05) return null;
-
+    
+    // En dispositivos móviles, mostrar etiquetas más pequeñas o solo el porcentaje
     return (
       <text 
         x={x} 
@@ -43,7 +47,7 @@ export const ConsultationsStatusChart = ({ stats, expanded = false }: Consultati
         fill="white" 
         textAnchor={x > cx ? 'start' : 'end'} 
         dominantBaseline="central"
-        fontSize={12}
+        fontSize={isMobile ? 10 : 12}
         fontWeight="bold"
       >
         {`${(percent * 100).toFixed(0)}%`}
@@ -61,7 +65,7 @@ export const ConsultationsStatusChart = ({ stats, expanded = false }: Consultati
             cy="50%"
             labelLine={false}
             label={renderCustomizedLabel}
-            outerRadius="80%"
+            outerRadius={isMobile ? "70%" : "80%"}
             fill="#8884d8"
             dataKey="value"
           >
@@ -76,6 +80,7 @@ export const ConsultationsStatusChart = ({ stats, expanded = false }: Consultati
               type: 'circle',
               color: COLORS[index % COLORS.length],
             }))}
+            verticalAlign={isMobile ? "bottom" : "middle"}
           />
         </PieChart>
       </ResponsiveContainer>
@@ -88,34 +93,37 @@ export const ConsultationsStatusChart = ({ stats, expanded = false }: Consultati
         <CardTitle className="text-xl">Estado de Consultas</CardTitle>
       </CardHeader>
       <CardContent>
-        <ChartContainer className="h-[200px]" config={config}>
-          <PieChart>
-            <Pie
-              data={data}
-              cx="50%"
-              cy="50%"
-              labelLine={false}
-              label={renderCustomizedLabel}
-              outerRadius={80}
-              fill="#8884d8"
-              dataKey="value"
-            >
-              {data.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-              ))}
-            </Pie>
-            <Tooltip />
-            <ChartLegend>
-              <ChartLegendContent 
-                payload={data.map((item, index) => ({
-                  value: item.name,
-                  type: 'circle',
-                  color: COLORS[index % COLORS.length],
-                }))}
-              />
-            </ChartLegend>
-          </PieChart>
-        </ChartContainer>
+        <div className="h-[180px] md:h-[200px]">
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              <Pie
+                data={data}
+                cx="50%"
+                cy="50%"
+                labelLine={false}
+                label={renderCustomizedLabel}
+                outerRadius={isMobile ? 60 : 80}
+                fill="#8884d8"
+                dataKey="value"
+              >
+                {data.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                ))}
+              </Pie>
+              <Tooltip />
+              <ChartLegend>
+                <ChartLegendContent 
+                  payload={data.map((item, index) => ({
+                    value: item.name,
+                    type: 'circle',
+                    color: COLORS[index % COLORS.length],
+                  }))}
+                  verticalAlign={isMobile ? "bottom" : "middle"}
+                />
+              </ChartLegend>
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
       </CardContent>
     </Card>
   );
