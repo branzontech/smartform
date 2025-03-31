@@ -3,7 +3,7 @@ import React from "react";
 import { Header } from "@/components/layout/header";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import { FileText, ArrowRight, Calendar, Users } from "lucide-react";
+import { FileText, ArrowRight, Calendar, Users, BarChart } from "lucide-react";
 
 const Index = () => {
   return (
