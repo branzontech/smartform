@@ -275,7 +275,9 @@ const AppointmentList = () => {
         <EmptyState
           title="No hay citas para mostrar"
           description="No se encontraron citas que coincidan con los criterios de búsqueda."
-          icon={Calendar}
+          icon={<Calendar size={48} className="text-gray-300" />}
+          buttonText="Nueva cita"
+          onClick={handleCreateAppointment}
         />
       );
     }
