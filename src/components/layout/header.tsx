@@ -1,6 +1,5 @@
-
 import { Link, useNavigate } from "react-router-dom";
-import { FileText, Menu, Moon, Sun, Home } from "lucide-react";
+import { FileText, Menu, Moon, Sun, Home, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useState, useEffect } from "react";
@@ -71,6 +70,16 @@ export const Header = ({ showCreate = true }: HeaderProps) => {
                     Inicio
                   </Button>
                   
+                  <Link to="/pacientes" className="w-full block">
+                    <Button 
+                      variant="ghost"
+                      className="w-full justify-start"
+                    >
+                      <Users size={16} className="mr-2" />
+                      Pacientes
+                    </Button>
+                  </Link>
+                  
                   <Button 
                     variant="ghost" 
                     onClick={toggleTheme}
@@ -110,6 +119,16 @@ export const Header = ({ showCreate = true }: HeaderProps) => {
               <Home size={18} />
               Inicio
             </Button>
+            
+            <Link to="/pacientes">
+              <Button 
+                variant="ghost"
+                className="p-2 flex items-center gap-2"
+              >
+                <Users size={18} />
+                Pacientes
+              </Button>
+            </Link>
             
             <SettingsDialog />
             

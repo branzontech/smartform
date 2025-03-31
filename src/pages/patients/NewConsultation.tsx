@@ -1,0 +1,422 @@
+
+import React, { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import { Header } from "@/components/layout/header";
+import { BackButton } from "@/App";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Calendar as CalendarIcon, Clock, Save } from "lucide-react";
+import { Calendar } from "@/components/ui/calendar";
+import { format } from "date-fns";
+import { es } from "date-fns/locale";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Label } from "@/components/ui/label";
+import { Patient, MedicalConsultation } from "@/types/patient-types";
+import { nanoid } from "nanoid";
+import { useToast } from "@/hooks/use-toast";
+
+const NewConsultation = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { toast } = useToast();
+  const queryParams = new URLSearchParams(location.search);
+  const preselectedPatientId = queryParams.get("patientId");
+
+  const [patients, setPatients] = useState<Patient[]>([]);
+  const [loading, setLoading] = useState(true);
+  
+  // Form state
+  const [selectedPatientId, setSelectedPatientId] = useState<string>(preselectedPatientId || "");
+  const [isNewPatient, setIsNewPatient] = useState(!preselectedPatientId);
+  const [newPatientData, setNewPatientData] = useState<Partial<Patient>>({
+    name: "",
+    documentId: "",
+    dateOfBirth: "",
+    gender: "Masculino",
+    contactNumber: "",
+    email: "",
+    address: ""
+  });
+  
+  // Consultation data
+  const [consultationDate, setConsultationDate] = useState<Date>(new Date());
+  const [reason, setReason] = useState("");
+  const [diagnosis, setDiagnosis] = useState("");
+  const [treatment, setTreatment] = useState("");
+  const [notes, setNotes] = useState("");
+  const [followUpDate, setFollowUpDate] = useState<Date | undefined>(undefined);
+  const [status, setStatus] = useState<MedicalConsultation["status"]>("Programada");
+  
+  // Carga de pacientes
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const savedPatients = localStorage.getItem("patients");
+      if (savedPatients) {
+        try {
+          const parsedPatients = JSON.parse(savedPatients).map((patient: any) => ({
+            ...patient,
+            createdAt: new Date(patient.createdAt),
+            lastVisitAt: patient.lastVisitAt ? new Date(patient.lastVisitAt) : undefined,
+          }));
+          setPatients(parsedPatients);
+        } catch (error) {
+          console.error("Error parsing patients:", error);
+          setPatients([]);
+        }
+      } else {
+        setPatients([]);
+      }
+      setLoading(false);
+    }, 800);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    let patientId = selectedPatientId;
+    
+    // Si es un nuevo paciente, lo guardamos primero
+    if (isNewPatient) {
+      const newPatient: Patient = {
+        id: nanoid(),
+        name: newPatientData.name || "",
+        documentId: newPatientData.documentId || "",
+        dateOfBirth: newPatientData.dateOfBirth || new Date().toISOString().split('T')[0],
+        gender: newPatientData.gender as "Masculino" | "Femenino" | "Otro" || "Masculino",
+        contactNumber: newPatientData.contactNumber || "",
+        email: newPatientData.email,
+        address: newPatientData.address,
+        createdAt: new Date(),
+        lastVisitAt: new Date()
+      };
+      
+      // Guardar en localStorage
+      const updatedPatients = [...patients, newPatient];
+      localStorage.setItem("patients", JSON.stringify(updatedPatients));
+      
+      patientId = newPatient.id;
+    } else {
+      // Actualizar lastVisitAt del paciente existente
+      const updatedPatients = patients.map(patient => 
+        patient.id === patientId 
+          ? { ...patient, lastVisitAt: new Date() }
+          : patient
+      );
+      localStorage.setItem("patients", JSON.stringify(updatedPatients));
+    }
+    
+    // Crear la nueva consulta
+    const newConsultation: MedicalConsultation = {
+      id: nanoid(),
+      patientId,
+      consultationDate,
+      reason,
+      diagnosis: diagnosis || undefined,
+      treatment: treatment || undefined,
+      notes: notes || undefined,
+      followUpDate: followUpDate || undefined,
+      status
+    };
+    
+    // Guardar la consulta
+    const savedConsultations = localStorage.getItem("consultations");
+    const existingConsultations = savedConsultations ? JSON.parse(savedConsultations) : [];
+    const updatedConsultations = [...existingConsultations, newConsultation];
+    localStorage.setItem("consultations", JSON.stringify(updatedConsultations));
+    
+    // Notificar y redirigir
+    toast({
+      title: "Consulta creada",
+      description: "La consulta ha sido registrada correctamente",
+    });
+    
+    navigate(`/pacientes/${patientId}`);
+  };
+
+  return (
+    <div className="min-h-screen flex flex-col">
+      <Header />
+      <main className="flex-1 container mx-auto py-8 px-4">
+        <BackButton />
+        <h1 className="text-2xl font-bold mb-6">Nueva consulta médica</h1>
+        
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
+            <h2 className="text-xl font-semibold mb-4">Información del paciente</h2>
+            
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="patient-type">Tipo de paciente</Label>
+                <div className="flex space-x-4 mt-1">
+                  <Button
+                    type="button"
+                    variant={!isNewPatient ? "default" : "outline"}
+                    className={!isNewPatient ? "bg-purple-600 hover:bg-purple-700" : ""}
+                    onClick={() => setIsNewPatient(false)}
+                  >
+                    Paciente existente
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={isNewPatient ? "default" : "outline"}
+                    className={isNewPatient ? "bg-purple-600 hover:bg-purple-700" : ""}
+                    onClick={() => setIsNewPatient(true)}
+                  >
+                    Nuevo paciente
+                  </Button>
+                </div>
+              </div>
+              
+              {isNewPatient ? (
+                <>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="name">Nombre completo *</Label>
+                      <Input
+                        id="name"
+                        value={newPatientData.name}
+                        onChange={(e) => setNewPatientData({...newPatientData, name: e.target.value})}
+                        required
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="documentId">Documento de identidad *</Label>
+                      <Input
+                        id="documentId"
+                        value={newPatientData.documentId}
+                        onChange={(e) => setNewPatientData({...newPatientData, documentId: e.target.value})}
+                        required
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="dateOfBirth">Fecha de nacimiento *</Label>
+                      <Input
+                        id="dateOfBirth"
+                        type="date"
+                        value={newPatientData.dateOfBirth}
+                        onChange={(e) => setNewPatientData({...newPatientData, dateOfBirth: e.target.value})}
+                        required
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="gender">Género *</Label>
+                      <Select 
+                        value={newPatientData.gender}
+                        onValueChange={(value) => setNewPatientData({...newPatientData, gender: value as any})}
+                      >
+                        <SelectTrigger id="gender">
+                          <SelectValue placeholder="Seleccionar género" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Masculino">Masculino</SelectItem>
+                          <SelectItem value="Femenino">Femenino</SelectItem>
+                          <SelectItem value="Otro">Otro</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="contactNumber">Teléfono *</Label>
+                      <Input
+                        id="contactNumber"
+                        value={newPatientData.contactNumber}
+                        onChange={(e) => setNewPatientData({...newPatientData, contactNumber: e.target.value})}
+                        required
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="email">Correo electrónico</Label>
+                      <Input
+                        id="email"
+                        type="email"
+                        value={newPatientData.email || ""}
+                        onChange={(e) => setNewPatientData({...newPatientData, email: e.target.value})}
+                      />
+                    </div>
+                    
+                    <div className="space-y-2 md:col-span-2">
+                      <Label htmlFor="address">Dirección</Label>
+                      <Input
+                        id="address"
+                        value={newPatientData.address || ""}
+                        onChange={(e) => setNewPatientData({...newPatientData, address: e.target.value})}
+                      />
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <div className="space-y-2">
+                  <Label htmlFor="patientId">Seleccionar paciente *</Label>
+                  <Select 
+                    value={selectedPatientId}
+                    onValueChange={setSelectedPatientId}
+                    required
+                  >
+                    <SelectTrigger id="patientId">
+                      <SelectValue placeholder="Seleccionar paciente" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {patients.map((patient) => (
+                        <SelectItem key={patient.id} value={patient.id}>
+                          {patient.name} - {patient.documentId}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+            </div>
+          </div>
+          
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
+            <h2 className="text-xl font-semibold mb-4">Detalles de la consulta</h2>
+            
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="consultationDate">Fecha de consulta *</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className="w-full justify-start text-left font-normal"
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {consultationDate ? format(consultationDate, "PPP", { locale: es }) : "Seleccionar fecha"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                      <Calendar
+                        mode="single"
+                        selected={consultationDate}
+                        onSelect={(date) => date && setConsultationDate(date)}
+                        locale={es}
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="status">Estado de la consulta *</Label>
+                  <Select 
+                    value={status}
+                    onValueChange={(value) => setStatus(value as MedicalConsultation["status"])}
+                  >
+                    <SelectTrigger id="status">
+                      <SelectValue placeholder="Seleccionar estado" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Programada">Programada</SelectItem>
+                      <SelectItem value="En curso">En curso</SelectItem>
+                      <SelectItem value="Completada">Completada</SelectItem>
+                      <SelectItem value="Cancelada">Cancelada</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2 md:col-span-2">
+                  <Label htmlFor="reason">Motivo de consulta *</Label>
+                  <Textarea
+                    id="reason"
+                    value={reason}
+                    onChange={(e) => setReason(e.target.value)}
+                    rows={3}
+                    required
+                  />
+                </div>
+                
+                <div className="space-y-2 md:col-span-2">
+                  <Label htmlFor="diagnosis">Diagnóstico</Label>
+                  <Textarea
+                    id="diagnosis"
+                    value={diagnosis}
+                    onChange={(e) => setDiagnosis(e.target.value)}
+                    rows={3}
+                  />
+                </div>
+                
+                <div className="space-y-2 md:col-span-2">
+                  <Label htmlFor="treatment">Tratamiento</Label>
+                  <Textarea
+                    id="treatment"
+                    value={treatment}
+                    onChange={(e) => setTreatment(e.target.value)}
+                    rows={3}
+                  />
+                </div>
+                
+                <div className="space-y-2 md:col-span-2">
+                  <Label htmlFor="notes">Notas adicionales</Label>
+                  <Textarea
+                    id="notes"
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    rows={3}
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="followUpDate">Fecha de seguimiento</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className="w-full justify-start text-left font-normal"
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {followUpDate 
+                          ? format(followUpDate, "PPP", { locale: es }) 
+                          : "Seleccionar fecha (opcional)"
+                        }
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                      <Calendar
+                        mode="single"
+                        selected={followUpDate}
+                        onSelect={setFollowUpDate}
+                        locale={es}
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div className="flex justify-end space-x-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => navigate(-1)}
+            >
+              Cancelar
+            </Button>
+            <Button 
+              type="submit"
+              className="bg-purple-600 hover:bg-purple-700"
+              disabled={
+                (isNewPatient && (!newPatientData.name || !newPatientData.documentId || !newPatientData.dateOfBirth || !newPatientData.contactNumber)) ||
+                (!isNewPatient && !selectedPatientId) ||
+                !reason
+              }
+            >
+              <Save className="mr-2" size={16} />
+              Guardar consulta
+            </Button>
+          </div>
+        </form>
+      </main>
+    </div>
+  );
+};
+
+export default NewConsultation;
