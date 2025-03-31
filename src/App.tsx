@@ -1,117 +1,148 @@
-
-import React from "react";
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, useNavigate, Navigate } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
+import React from 'react';
+import {
+  createBrowserRouter,
+  RouterProvider,
+  Route,
+  Link,
+  Outlet,
+  useNavigate,
+} from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import LandingPage from "./pages/LandingPage";
-import Home from "./pages/Home";
-import FormCreator from "./pages/FormCreator";
-import FormViewer from "./pages/FormViewer";
-import FormResponses from "./pages/FormResponses";
-import PatientList from "./pages/patients/PatientList";
-import PatientDetail from "./pages/patients/PatientDetail";
-import NewConsultation from "./pages/patients/NewConsultation";
-import PatientDashboard from "./pages/patients/PatientDashboard";
-import NotFound from "./pages/NotFound";
-import { SettingsPage } from "./components/config/settings";
-import AppointmentList from "./pages/appointments/AppointmentList";
-import AppointmentDetail from "./pages/appointments/AppointmentDetail";
-import AppointmentForm from "./pages/appointments/AppointmentForm";
-import Login from "./pages/auth/Login";
-import Register from "./pages/auth/Register";
-import ForgotPassword from "./pages/auth/ForgotPassword";
+import {
+  CalendarDays,
+  ClipboardList,
+  FileText,
+  Home,
+  LayoutDashboard,
+  Settings,
+  User2,
+  Users,
+  ArrowLeft,
+} from "lucide-react";
+import { MainNav } from "@/components/layout/main-nav";
+import { SiteHeader } from "@/components/layout/site-header";
+import { SidebarNav } from "@/components/layout/sidebar-nav";
+import { DashboardPage } from "@/pages/DashboardPage";
+import { PacientesPage } from "@/pages/PacientesPage";
+import { HistoriaClinicaForm } from "@/pages/HistoriaClinicaForm";
+import { SettingsPage } from "@/pages/SettingsPage";
+import { CitasPage } from "@/pages/CitasPage";
+import { EspecialidadesPage } from "@/pages/EspecialidadesPage";
+import NutricionistaPage from "@/pages/especialidades/NutricionistaPage";
+import NutricionPlanPage from "@/pages/especialidades/NutricionPlanPage";
 
-// Importamos las páginas de especialidades
-import CirujanoPage from "./pages/especialidades/CirujanoPage";
-import PsicologoPage from "./pages/especialidades/PsicologoPage";
-import NutricionistaPage from "./pages/especialidades/NutricionistaPage";
-import TerapiasPage from "./pages/especialidades/TerapiasPage";
+const routes = [
+  {
+    path: "/home",
+    icon: <Home className="mr-2 h-4 w-4" />,
+    label: "Inicio",
+  },
+  {
+    path: "/dashboard",
+    icon: <LayoutDashboard className="mr-2 h-4 w-4" />,
+    label: "Dashboard",
+  },
+  {
+    path: "/citas",
+    icon: <CalendarDays className="mr-2 h-4 w-4" />,
+    label: "Citas",
+  },
+  {
+    path: "/pacientes",
+    icon: <Users className="mr-2 h-4 w-4" />,
+    label: "Pacientes",
+  },
+  {
+    path: "/crear",
+    icon: <ClipboardList className="mr-2 h-4 w-4" />,
+    label: "Historias Clinicas",
+  },
+  {
+    path: "/especialidades",
+    icon: <FileText className="mr-2 h-4 w-4" />,
+    label: "Especialidades",
+  },
+  {
+    path: "/account",
+    icon: <User2 className="mr-2 h-4 w-4" />,
+    label: "Cuenta",
+  },
+  {
+    path: "/settings",
+    icon: <Settings className="mr-2 h-4 w-4" />,
+    label: "Ajustes",
+  },
+];
 
-export const BackButton = () => {
+export function BackButton() {
   const navigate = useNavigate();
-  
-  const handleBack = () => {
-    navigate(-1); // Vuelve a la página anterior
-  };
-  
+
   return (
-    <Button 
-      variant="back" 
-      onClick={handleBack}
-      className="mb-4"
-    >
-      <ArrowLeft className="mr-1" size={18} />
-      Volver
+    <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>
+      <ArrowLeft className="mr-2 h-4 w-4" />
+      Atrás
     </Button>
   );
-};
+}
 
-const queryClient = new QueryClient();
+function AppLayout() {
+  return (
+    <div className="flex h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
+      <SidebarNav className="w-64 shrink-0 border-r bg-secondary p-0 flex-col">
+        <div className="border-b px-4 pb-6 pt-8">
+          <Link to="/app/home">
+            <SiteHeader />
+          </Link>
+        </div>
+        <MainNav className="flex-1 px-4 py-6" routes={routes} />
+      </SidebarNav>
+      <div className="flex-1">
+        <SiteHeader className="sticky top-0 border-b bg-background z-50" />
+        <main className="container relative py-10">
+          <Outlet />
+        </main>
+      </div>
+    </div>
+  );
+}
+
+// Rutas de la aplicación
+const router = createBrowserRouter([
+  {
+    path: "/app",
+    element: <AppLayout />,
+    children: [
+      { path: "home", element: <div>Home content</div> },
+      { path: "dashboard", element: <DashboardPage /> },
+      { path: "pacientes", element: <PacientesPage /> },
+      { path: "pacientes/dashboard", element: <div>Pacientes Dashboard</div> },
+      { path: "citas", element: <CitasPage /> },
+      { path: "crear", element: <HistoriaClinicaForm /> },
+      { path: "account", element: <div>Account Settings</div> },
+      { path: "settings", element: <SettingsPage /> },
+      { path: "especialidades", element: <EspecialidadesPage /> },
+    ],
+  },
+  
+  // Rutas de especialidades
+  {
+    path: "/app/especialidades/nutricionista",
+    element: <NutricionistaPage />,
+  },
+  {
+    path: "/app/especialidades/nutricion/planes",
+    element: <NutricionPlanPage />,
+  },
+  
+  {
+    path: "*",
+    element: <div>404 Not Found</div>,
+  },
+]);
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            {/* Landing page route */}
-            <Route path="/" element={<LandingPage />} />
-            
-            {/* Auth routes */}
-            <Route path="/app/login" element={<Login />} />
-            <Route path="/app/register" element={<Register />} />
-            <Route path="/app/forgot-password" element={<ForgotPassword />} />
-            
-            {/* Application routes */}
-            <Route path="/app" element={<AppointmentList />} />
-            <Route path="/app/home" element={<Home />} />
-            <Route path="/app/crear" element={<FormCreator />} />
-            <Route path="/app/editar/:id" element={<FormCreator />} />
-            <Route path="/app/ver/:id" element={<FormViewer />} />
-            <Route path="/app/respuestas/:id" element={<FormResponses />} />
-            <Route path="/app/pacientes" element={<PatientList />} />
-            <Route path="/app/pacientes/dashboard" element={<PatientDashboard />} />
-            <Route path="/app/pacientes/:id" element={<PatientDetail />} />
-            <Route path="/app/pacientes/nueva-consulta" element={<NewConsultation />} />
-            <Route path="/app/citas" element={<AppointmentList />} />
-            <Route path="/app/citas/:id" element={<AppointmentDetail />} />
-            <Route path="/app/citas/nueva" element={<AppointmentForm />} />
-            <Route path="/app/citas/editar/:id" element={<AppointmentForm />} />
-            <Route path="/app/configuracion" element={<SettingsPage />} />
-            
-            {/* Rutas de especialidades */}
-            <Route path="/app/especialidades/cirujano" element={<CirujanoPage />} />
-            <Route path="/app/especialidades/psicologo" element={<PsicologoPage />} />
-            <Route path="/app/especialidades/nutricionista" element={<NutricionistaPage />} />
-            <Route path="/app/especialidades/terapias" element={<TerapiasPage />} />
-            
-            {/* Support legacy routes */}
-            <Route path="/crear" element={<Navigate to="/app/crear" replace />} />
-            <Route path="/editar/:id" element={<Navigate to="/app/editar/:id" replace />} />
-            <Route path="/ver/:id" element={<Navigate to="/app/ver/:id" replace />} />
-            <Route path="/respuestas/:id" element={<Navigate to="/app/respuestas/:id" replace />} />
-            <Route path="/pacientes" element={<Navigate to="/app/pacientes" replace />} />
-            <Route path="/pacientes/dashboard" element={<Navigate to="/app/pacientes/dashboard" replace />} />
-            <Route path="/pacientes/:id" element={<Navigate to="/app/pacientes/:id" replace />} />
-            <Route path="/pacientes/nueva-consulta" element={<Navigate to="/app/pacientes/nueva-consulta" replace />} />
-            <Route path="/citas" element={<Navigate to="/app/citas" replace />} />
-            <Route path="/citas/:id" element={<Navigate to="/app/citas/:id" replace />} />
-            <Route path="/citas/nueva" element={<Navigate to="/app/citas/nueva" replace />} />
-            <Route path="/citas/editar/:id" element={<Navigate to="/app/citas/editar/:id" replace />} />
-            <Route path="/configuracion" element={<Navigate to="/app/configuracion" replace />} />
-            
-            {/* 404 route */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </TooltipProvider>
-    </QueryClientProvider>
+    <RouterProvider router={router} />
   );
 }
 
