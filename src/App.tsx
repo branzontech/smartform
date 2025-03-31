@@ -30,6 +30,9 @@ import { CitasPage } from "@/pages/CitasPage";
 import { EspecialidadesPage } from "@/pages/EspecialidadesPage";
 import NutricionistaPage from "@/pages/especialidades/NutricionistaPage";
 import NutricionPlanPage from "@/pages/especialidades/NutricionPlanPage";
+import PsicologoPage from "@/pages/especialidades/PsicologoPage";
+import PsicologiaPlanPage from "@/pages/especialidades/PsicologiaPlanPage";
+import PsicologiaEvaluacionesPage from "@/pages/especialidades/PsicologiaEvaluacionesPage";
 
 const routes = [
   {
@@ -106,7 +109,6 @@ function AppLayout() {
   );
 }
 
-// Rutas de la aplicación
 const router = createBrowserRouter([
   {
     path: "/app",
@@ -124,7 +126,6 @@ const router = createBrowserRouter([
     ],
   },
   
-  // Rutas de especialidades
   {
     path: "/app/especialidades/nutricionista",
     element: <NutricionistaPage />,
@@ -132,6 +133,18 @@ const router = createBrowserRouter([
   {
     path: "/app/especialidades/nutricion/planes",
     element: <NutricionPlanPage />,
+  },
+  {
+    path: "/app/especialidades/psicologo",
+    element: <PsicologoPage />,
+  },
+  {
+    path: "/app/especialidades/psicologia/planes",
+    element: <PsicologiaPlanPage />,
+  },
+  {
+    path: "/app/especialidades/psicologia/evaluaciones",
+    element: <PsicologiaEvaluacionesPage />,
   },
   
   {
