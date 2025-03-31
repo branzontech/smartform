@@ -6,7 +6,11 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { useState, useEffect } from "react";
 import { SettingsDialog } from "@/components/config/settings";
 
-export const Header = () => {
+interface HeaderProps {
+  showCreate?: boolean;
+}
+
+export const Header = ({ showCreate = true }: HeaderProps) => {
   const isMobile = useIsMobile();
   const navigate = useNavigate();
   const location = useLocation();
