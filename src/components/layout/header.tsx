@@ -1,3 +1,4 @@
+
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { FileText, Menu, Moon, Sun, Home, Users, BarChart, Settings as SettingsIcon, Calendar, Stethoscope } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -40,12 +41,12 @@ export const Header = ({ showCreate = true }: HeaderProps) => {
   };
 
   return (
-    <header className="border-b border-gray-200 dark:border-gray-800 sticky top-0 bg-background/80 backdrop-blur-md z-10">
+    <header className="border-b border-gray-200 dark:border-gray-800 sticky top-0 bg-gradient-to-r from-purple-50/90 via-white/90 to-purple-50/90 dark:from-gray-900/90 dark:via-gray-900/95 dark:to-purple-900/90 backdrop-blur-md z-10 shadow-sm">
       <div className="container mx-auto flex items-center justify-between h-16">
         <div className="flex items-center">
           <Link to="/" className="flex items-center space-x-2">
             <Stethoscope className="h-6 w-6 text-form-primary" />
-            <span className="text-xl font-semibold text-form-primary">Smart Doctor</span>
+            <span className="text-xl font-semibold bg-gradient-to-r from-form-primary to-form-secondary bg-clip-text text-transparent">Smart Doctor</span>
           </Link>
         </div>
 
@@ -59,7 +60,7 @@ export const Header = ({ showCreate = true }: HeaderProps) => {
             </button>
             
             {mobileMenuOpen && (
-              <div className="absolute top-16 left-0 right-0 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 shadow-lg animate-slide-down">
+              <div className="absolute top-16 left-0 right-0 bg-white/95 dark:bg-gray-900/95 border-b border-gray-200 dark:border-gray-800 shadow-lg animate-slide-down backdrop-blur-sm">
                 <div className="p-4 space-y-3">
                   <Button 
                     variant="ghost"
