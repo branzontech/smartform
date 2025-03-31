@@ -1,9 +1,18 @@
 
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { FileText, Menu, Moon, Sun, Home, Users, BarChart, Settings as SettingsIcon, Calendar, Stethoscope, ClipboardList, Activity } from "lucide-react";
+import { FileText, Menu, Moon, Sun, Home, Users, BarChart, Settings as SettingsIcon, Calendar, Stethoscope, ClipboardList, Activity, Scissors, Brain, Apple, Activity as TherapyIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useState, useEffect } from "react";
+import {
+  NavigationMenu,
+  NavigationMenuContent,
+  NavigationMenuItem,
+  NavigationMenuLink,
+  NavigationMenuList,
+  NavigationMenuTrigger,
+  navigationMenuTriggerStyle,
+} from "@/components/ui/navigation-menu";
 
 interface HeaderProps {
   showCreate?: boolean;
@@ -39,6 +48,8 @@ export const Header = ({ showCreate = true }: HeaderProps) => {
   const goHome = () => {
     navigate('/app/home');
   };
+
+  const navMenuItemClass = "p-2 block rounded hover:bg-violet-400/30 dark:hover:bg-violet-500/30 hover:text-form-primary";
 
   return (
     <header className="border-b border-gray-200 dark:border-gray-800 sticky top-0 bg-gradient-to-r from-purple-50/90 via-white/90 to-purple-50/90 dark:from-gray-900/90 dark:via-gray-900/95 dark:to-purple-900/90 backdrop-blur-md z-10 shadow-sm">
@@ -90,6 +101,51 @@ export const Header = ({ showCreate = true }: HeaderProps) => {
                       <span className="group-hover:bg-gradient-to-r group-hover:from-form-primary group-hover:to-form-secondary group-hover:bg-clip-text group-hover:text-transparent transition-all duration-300">Citas</span>
                     </Button>
                   </Link>
+                  
+                  <NavigationMenu>
+                    <NavigationMenuList>
+                      <NavigationMenuItem>
+                        <Button
+                          variant="ghost"
+                          className="w-full justify-start hover:bg-violet-400/30 dark:hover:bg-violet-500/30 group"
+                          asChild
+                        >
+                          <NavigationMenuTrigger>
+                            <Activity size={16} className="mr-2 group-hover:text-form-primary" />
+                            <span className="group-hover:bg-gradient-to-r group-hover:from-form-primary group-hover:to-form-secondary group-hover:bg-clip-text group-hover:text-transparent transition-all duration-300">Especialidades</span>
+                          </NavigationMenuTrigger>
+                        </Button>
+                        <NavigationMenuContent className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-2">
+                          <div className="w-full min-w-[200px]">
+                            <Link to="/app/especialidades/cirujano" className={navMenuItemClass}>
+                              <div className="flex items-center">
+                                <Scissors size={16} className="mr-2" />
+                                <span>Cirujano</span>
+                              </div>
+                            </Link>
+                            <Link to="/app/especialidades/psicologo" className={navMenuItemClass}>
+                              <div className="flex items-center">
+                                <Brain size={16} className="mr-2" />
+                                <span>Psicólogo</span>
+                              </div>
+                            </Link>
+                            <Link to="/app/especialidades/nutricionista" className={navMenuItemClass}>
+                              <div className="flex items-center">
+                                <Apple size={16} className="mr-2" />
+                                <span>Nutricionista</span>
+                              </div>
+                            </Link>
+                            <Link to="/app/especialidades/terapias" className={navMenuItemClass}>
+                              <div className="flex items-center">
+                                <TherapyIcon size={16} className="mr-2" />
+                                <span>Terapias</span>
+                              </div>
+                            </Link>
+                          </div>
+                        </NavigationMenuContent>
+                      </NavigationMenuItem>
+                    </NavigationMenuList>
+                  </NavigationMenu>
                   
                   <Link to="/app/crear" className="w-full block">
                     <Button 
@@ -172,6 +228,45 @@ export const Header = ({ showCreate = true }: HeaderProps) => {
                 <span className="group-hover:bg-gradient-to-r group-hover:from-form-primary group-hover:to-form-secondary group-hover:bg-clip-text group-hover:text-transparent transition-all duration-300">Citas</span>
               </Button>
             </Link>
+            
+            <NavigationMenu>
+              <NavigationMenuList>
+                <NavigationMenuItem>
+                  <NavigationMenuTrigger className="p-2 flex items-center gap-2 hover:bg-violet-400/20 dark:hover:bg-violet-500/30 group">
+                    <Activity size={18} className="group-hover:text-form-primary" />
+                    <span className="group-hover:bg-gradient-to-r group-hover:from-form-primary group-hover:to-form-secondary group-hover:bg-clip-text group-hover:text-transparent transition-all duration-300">Especialidades</span>
+                  </NavigationMenuTrigger>
+                  <NavigationMenuContent className="bg-white dark:bg-gray-900">
+                    <div className="p-2 w-[220px]">
+                      <Link to="/app/especialidades/cirujano" className={navMenuItemClass}>
+                        <div className="flex items-center">
+                          <Scissors size={16} className="mr-2" />
+                          <span>Cirujano</span>
+                        </div>
+                      </Link>
+                      <Link to="/app/especialidades/psicologo" className={navMenuItemClass}>
+                        <div className="flex items-center">
+                          <Brain size={16} className="mr-2" />
+                          <span>Psicólogo</span>
+                        </div>
+                      </Link>
+                      <Link to="/app/especialidades/nutricionista" className={navMenuItemClass}>
+                        <div className="flex items-center">
+                          <Apple size={16} className="mr-2" />
+                          <span>Nutricionista</span>
+                        </div>
+                      </Link>
+                      <Link to="/app/especialidades/terapias" className={navMenuItemClass}>
+                        <div className="flex items-center">
+                          <TherapyIcon size={16} className="mr-2" />
+                          <span>Terapias</span>
+                        </div>
+                      </Link>
+                    </div>
+                  </NavigationMenuContent>
+                </NavigationMenuItem>
+              </NavigationMenuList>
+            </NavigationMenu>
             
             <Link to="/app/crear">
               <Button 

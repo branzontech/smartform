@@ -25,6 +25,12 @@ import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
 import ForgotPassword from "./pages/auth/ForgotPassword";
 
+// Importamos las páginas de especialidades
+import CirujanoPage from "./pages/especialidades/CirujanoPage";
+import PsicologoPage from "./pages/especialidades/PsicologoPage";
+import NutricionistaPage from "./pages/especialidades/NutricionistaPage";
+import TerapiasPage from "./pages/especialidades/TerapiasPage";
+
 export const BackButton = () => {
   const navigate = useNavigate();
   
@@ -78,6 +84,12 @@ function App() {
             <Route path="/app/citas/nueva" element={<AppointmentForm />} />
             <Route path="/app/citas/editar/:id" element={<AppointmentForm />} />
             <Route path="/app/configuracion" element={<SettingsPage />} />
+            
+            {/* Rutas de especialidades */}
+            <Route path="/app/especialidades/cirujano" element={<CirujanoPage />} />
+            <Route path="/app/especialidades/psicologo" element={<PsicologoPage />} />
+            <Route path="/app/especialidades/nutricionista" element={<NutricionistaPage />} />
+            <Route path="/app/especialidades/terapias" element={<TerapiasPage />} />
             
             {/* Support legacy routes */}
             <Route path="/crear" element={<Navigate to="/app/crear" replace />} />
