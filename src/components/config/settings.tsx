@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { Header } from "@/components/layout/header";
 import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, FileText, PlusSquare, Palette, Bell, Database, Save, User, UserCog, Shield, Plus, Cog } from "lucide-react";
