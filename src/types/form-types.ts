@@ -1,3 +1,4 @@
+
 export interface FormResponse {
   timestamp: string;
   data: {
@@ -34,4 +35,12 @@ export interface FormComplexValue {
 export interface FormWithUsage extends FormResponse {
   usageCount: number;
   lastUsed: Date;
+}
+
+// New interface for form summary display in patient detail
+export interface FormSummary {
+  id: string;
+  title: string;
+  responseCount: number;
+  lastUpdated: Date;
 }

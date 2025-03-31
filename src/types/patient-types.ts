@@ -1,4 +1,3 @@
-
 export interface Patient {
   id: string;
   name: string;
@@ -23,7 +22,10 @@ export interface MedicalConsultation {
   followUpDate?: Date;
   status: "Programada" | "En curso" | "Completada" | "Cancelada";
   formId?: string;
+  formTitle?: string;
   recentlyUsedForms?: string[];
+  formCompleted?: boolean;
+  formCompletedAt?: string;
 }
 
 export type PatientWithConsultations = Patient & {

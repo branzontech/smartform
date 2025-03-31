@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { QuestionData } from '@/components/forms/question/types';
 import { Form } from '@/pages/Home';
+import { FormResponse, FormWithUsage } from "@/types/form-types";
 
 // Ejemplo de formulario para desarrollo (solo se usa si no se encuentra el formulario en localStorage)
 export const mockForm = {
@@ -244,13 +245,13 @@ export const getFormResponsesByPatient = (formId: string, patientId: string) => 
 };
 
 // Obtener respuestas de formulario por consulta
-export const getFormResponsesByConsultation = (formId: string, consultationId: string) => {
+export const getFormResponsesByConsultation = (formId: string, consultationId: string): FormResponse[] => {
   const allResponses = getFormResponses(formId);
   return allResponses.filter(response => response.data._consultationId === consultationId);
 };
 
 // Function to get recent and frequently used forms
-export const getRecentAndFrequentForms = (patientId?: string) => {
+export const getRecentAndFrequentForms = (patientId?: string): { recentForms: FormWithUsage[], frequentForms: FormWithUsage[] } => {
   // Get all consultations
   const savedConsultations = localStorage.getItem("consultations");
   const consultations = savedConsultations ? JSON.parse(savedConsultations) : [];
@@ -306,3 +307,132 @@ export const getRecentAndFrequentForms = (patientId?: string) => {
   
   return { recentForms, frequentForms };
 };
+
+// Mock function to add sample form responses for demo purposes
+export const addMockFormResponses = () => {
+  // Check if we've already added mock data
+  if (localStorage.getItem("mockFormResponsesAdded")) {
+    return;
+  }
+  
+  const savedConsultations = localStorage.getItem("consultations");
+  const savedForms = localStorage.getItem("forms");
+  
+  if (!savedConsultations || !savedForms) {
+    return;
+  }
+  
+  try {
+    const consultations = JSON.parse(savedConsultations);
+    const forms = JSON.parse(savedForms);
+    
+    // Mark some consultations as having completed forms
+    const updatedConsultations = consultations.map((consultation: any) => {
+      // Only mark some consultations (approximately 70%)
+      if (Math.random() > 0.3 && consultation.formId) {
+        const completedDate = new Date(consultation.consultationDate);
+        completedDate.setHours(completedDate.getHours() + Math.floor(Math.random() * 3));
+        
+        return {
+          ...consultation,
+          status: "Completada",
+          formCompleted: true,
+          formCompletedAt: completedDate.toISOString()
+        };
+      }
+      return consultation;
+    });
+    
+    localStorage.setItem("consultations", JSON.stringify(updatedConsultations));
+    
+    // Create mock form responses for consultations with forms
+    updatedConsultations.forEach((consultation: any) => {
+      if (consultation.formCompleted && consultation.formId) {
+        const form = forms.find((f: any) => f.id === consultation.formId);
+        if (!form) return;
+        
+        // Create a mock response
+        const mockResponse: FormResponse = {
+          timestamp: consultation.formCompletedAt,
+          data: {
+            _patientId: consultation.patientId,
+            _consultationId: consultation.id
+          }
+        };
+        
+        // Add random data for each question
+        form.questions.forEach((question: any) => {
+          switch (question.type) {
+            case "short":
+              mockResponse.data[question.id] = `Respuesta a "${question.title}"`;
+              break;
+            case "paragraph":
+              mockResponse.data[question.id] = `Esta es una respuesta de párrafo para la pregunta "${question.title}". La información del paciente es confidencial y se utiliza únicamente con fines médicos.`;
+              break;
+            case "multiple":
+              if (question.options && question.options.length > 0) {
+                const randomIndex = Math.floor(Math.random() * question.options.length);
+                mockResponse.data[question.id] = question.options[randomIndex];
+              }
+              break;
+            case "checkbox":
+              if (question.options && question.options.length > 0) {
+                const numToSelect = Math.floor(Math.random() * question.options.length) + 1;
+                const selectedOptions = [];
+                for (let i = 0; i < numToSelect; i++) {
+                  selectedOptions.push(question.options[i]);
+                }
+                mockResponse.data[question.id] = selectedOptions;
+              }
+              break;
+            case "vitals":
+              if (question.vitalType === "TA") {
+                mockResponse.data[question.id] = {
+                  sys: 120 + Math.floor(Math.random() * 30),
+                  dia: 70 + Math.floor(Math.random() * 20)
+                };
+              } else if (question.vitalType === "IMC") {
+                const weight = 60 + Math.floor(Math.random() * 40);
+                const height = 150 + Math.floor(Math.random() * 40);
+                const bmi = Math.round((weight / ((height / 100) ** 2)) * 10) / 10;
+                mockResponse.data[question.id] = {
+                  weight,
+                  height,
+                  bmi
+                };
+              }
+              break;
+            case "clinical":
+              mockResponse.data[question.id] = {
+                title: "Hallazgo clínico",
+                detail: "Se observa mejoría notable en el paciente después del tratamiento prescrito."
+              };
+              break;
+            default:
+              mockResponse.data[question.id] = "Respuesta de ejemplo";
+          }
+        });
+        
+        // Save the mock response
+        const existingResponses = localStorage.getItem(`formResponses_${consultation.formId}`);
+        let responses = [];
+        
+        if (existingResponses) {
+          responses = JSON.parse(existingResponses);
+        }
+        
+        responses.push(mockResponse);
+        localStorage.setItem(`formResponses_${consultation.formId}`, JSON.stringify(responses));
+      }
+    });
+    
+    // Mark that we've added mock data
+    localStorage.setItem("mockFormResponsesAdded", "true");
+    
+  } catch (error) {
+    console.error("Error adding mock form responses:", error);
+  }
+};
+
+// Call the function to add mock data when the app loads
+addMockFormResponses();
