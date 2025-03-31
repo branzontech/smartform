@@ -6,11 +6,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { useState, useEffect } from "react";
 import { SettingsDialog } from "@/components/config/settings";
 
-interface HeaderProps {
-  showCreate?: boolean;
-}
-
-export const Header = ({ showCreate = true }: HeaderProps) => {
+export const Header = () => {
   const isMobile = useIsMobile();
   const navigate = useNavigate();
   const location = useLocation();
@@ -113,14 +109,6 @@ export const Header = ({ showCreate = true }: HeaderProps) => {
                       </>
                     )}
                   </Button>
-                  
-                  {showCreate && (
-                    <Link to="/crear" className="block w-full">
-                      <Button className="w-full bg-form-primary hover:bg-form-primary/90">
-                        Crear formulario
-                      </Button>
-                    </Link>
-                  )}
                 </div>
               </div>
             )}
@@ -168,14 +156,6 @@ export const Header = ({ showCreate = true }: HeaderProps) => {
             >
               {theme === "light" ? <Moon size={18} /> : <Sun size={18} />}
             </Button>
-            
-            {showCreate && (
-              <Link to="/crear">
-                <Button className="bg-form-primary hover:bg-form-primary/90">
-                  Crear formulario
-                </Button>
-              </Link>
-            )}
           </div>
         )}
       </div>

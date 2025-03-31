@@ -9,17 +9,115 @@ import {
   DialogTrigger,
   DialogFooter
 } from "@/components/ui/dialog";
-import { Settings as SettingsIcon } from "lucide-react";
+import { 
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from "@/components/ui/drawer";
+import { Link, useNavigate } from "react-router-dom";
+import { Settings as SettingsIcon, FileText, PlusSquare, Palette, Globe, Bell, Database, Languages, Save, User, UserCog, Shield, Plus, Cog } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { toast } from "sonner";
+
+// Schema for the form creation
+const formCreationSchema = z.object({
+  title: z.string().min(3, {
+    message: "El título debe tener al menos 3 caracteres.",
+  }),
+  description: z.string().optional(),
+});
+
+// Settings categories
+const categories = [
+  { id: "general", label: "General", icon: <Cog size={18} /> },
+  { id: "appearance", label: "Apariencia", icon: <Palette size={18} /> },
+  { id: "forms", label: "Formularios", icon: <FileText size={18} /> },
+  { id: "notifications", label: "Notificaciones", icon: <Bell size={18} /> },
+  { id: "account", label: "Cuenta", icon: <User size={18} /> },
+  { id: "advanced", label: "Avanzado", icon: <Shield size={18} /> },
+];
 
 export const SettingsDialog = () => {
+  const isMobile = useIsMobile();
+  const navigate = useNavigate();
+  
   const [autoSave, setAutoSave] = useState(true);
   const [notifications, setNotifications] = useState(true);
   const [darkPrint, setDarkPrint] = useState(false);
   const [language, setLanguage] = useState("es");
+
+  // Form creation
+  const form = useForm<z.infer<typeof formCreationSchema>>({
+    resolver: zodResolver(formCreationSchema),
+    defaultValues: {
+      title: "",
+      description: "",
+    },
+  });
+
+  const onSubmitForm = (values: z.infer<typeof formCreationSchema>) => {
+    console.log(values);
+    toast.success("Formulario creado con éxito");
+    navigate("/crear");
+  };
+
+  // Use a drawer for mobile and a dialog for desktop
+  if (isMobile) {
+    return (
+      <Drawer>
+        <DrawerTrigger asChild>
+          <Button variant="ghost" className="p-2 flex items-center gap-2" size="icon">
+            <SettingsIcon size={18} />
+          </Button>
+        </DrawerTrigger>
+        <DrawerContent className="h-[85vh]">
+          <DrawerHeader>
+            <DrawerTitle>Configuración</DrawerTitle>
+            <DrawerDescription>
+              Personaliza la aplicación según tus preferencias
+            </DrawerDescription>
+          </DrawerHeader>
+          
+          <div className="px-4">
+            <SettingsContent 
+              autoSave={autoSave}
+              setAutoSave={setAutoSave}
+              notifications={notifications}
+              setNotifications={setNotifications}
+              darkPrint={darkPrint}
+              setDarkPrint={setDarkPrint}
+              language={language}
+              setLanguage={setLanguage}
+              form={form}
+              onSubmitForm={onSubmitForm}
+            />
+          </div>
+          
+          <DrawerFooter className="pt-2">
+            <DrawerClose asChild>
+              <Button variant="outline">Cerrar</Button>
+            </DrawerClose>
+          </DrawerFooter>
+        </DrawerContent>
+      </Drawer>
+    );
+  }
 
   return (
     <Dialog>
@@ -28,7 +126,7 @@ export const SettingsDialog = () => {
           <SettingsIcon size={18} />
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[900px] max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Configuración</DialogTitle>
           <DialogDescription>
@@ -36,14 +134,81 @@ export const SettingsDialog = () => {
           </DialogDescription>
         </DialogHeader>
         
-        <Tabs defaultValue="general" className="mt-4">
-          <TabsList className="grid grid-cols-3 mb-4">
-            <TabsTrigger value="general">General</TabsTrigger>
-            <TabsTrigger value="appearance">Apariencia</TabsTrigger>
-            <TabsTrigger value="advanced">Avanzado</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="general" className="space-y-4">
+        <SettingsContent 
+          autoSave={autoSave}
+          setAutoSave={setAutoSave}
+          notifications={notifications}
+          setNotifications={setNotifications}
+          darkPrint={darkPrint}
+          setDarkPrint={setDarkPrint}
+          language={language}
+          setLanguage={setLanguage}
+          form={form}
+          onSubmitForm={onSubmitForm}
+        />
+        
+        <DialogFooter className="mt-4">
+          <Button type="button" onClick={() => form.handleSubmit(onSubmitForm)()}>
+            <Save className="mr-2 h-4 w-4" />
+            Guardar cambios
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+interface SettingsContentProps {
+  autoSave: boolean;
+  setAutoSave: (value: boolean) => void;
+  notifications: boolean;
+  setNotifications: (value: boolean) => void;
+  darkPrint: boolean;
+  setDarkPrint: (value: boolean) => void;
+  language: string;
+  setLanguage: (value: string) => void;
+  form: any;
+  onSubmitForm: (values: z.infer<typeof formCreationSchema>) => void;
+}
+
+const SettingsContent = ({ 
+  autoSave, 
+  setAutoSave, 
+  notifications, 
+  setNotifications, 
+  darkPrint, 
+  setDarkPrint, 
+  language, 
+  setLanguage,
+  form,
+  onSubmitForm
+}: SettingsContentProps) => {
+  const isMobile = useIsMobile();
+  
+  return (
+    <Tabs defaultValue="general" className={`${isMobile ? 'mt-2' : 'mt-4'}`}>
+      <TabsList className="grid grid-cols-3 mb-4 sm:grid-cols-6">
+        {categories.map(category => (
+          <TabsTrigger 
+            key={category.id} 
+            value={category.id}
+            className="flex flex-col items-center gap-1 py-2 h-auto"
+          >
+            {category.icon}
+            <span className="text-xs">{category.label}</span>
+          </TabsTrigger>
+        ))}
+      </TabsList>
+      
+      <TabsContent value="general" className="space-y-4">
+        <Card>
+          <CardHeader>
+            <CardTitle>Configuración General</CardTitle>
+            <CardDescription>
+              Configura las opciones básicas de la aplicación
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
             <div className="flex items-center justify-between">
               <div>
                 <Label htmlFor="auto-save" className="font-medium">Autoguardado</Label>
@@ -53,18 +218,6 @@ export const SettingsDialog = () => {
                 id="auto-save" 
                 checked={autoSave}
                 onCheckedChange={setAutoSave}
-              />
-            </div>
-            
-            <div className="flex items-center justify-between">
-              <div>
-                <Label htmlFor="notifications" className="font-medium">Notificaciones</Label>
-                <p className="text-sm text-muted-foreground">Recibir notificaciones de actividad</p>
-              </div>
-              <Switch 
-                id="notifications" 
-                checked={notifications}
-                onCheckedChange={setNotifications}
               />
             </div>
             
@@ -80,11 +233,23 @@ export const SettingsDialog = () => {
               >
                 <option value="es">Español</option>
                 <option value="en">English</option>
+                <option value="pt">Português</option>
+                <option value="fr">Français</option>
               </select>
             </div>
-          </TabsContent>
-          
-          <TabsContent value="appearance" className="space-y-4">
+          </CardContent>
+        </Card>
+      </TabsContent>
+      
+      <TabsContent value="appearance" className="space-y-4">
+        <Card>
+          <CardHeader>
+            <CardTitle>Apariencia</CardTitle>
+            <CardDescription>
+              Personaliza la apariencia de la aplicación
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
             <div className="flex items-center justify-between">
               <div>
                 <Label htmlFor="dark-print" className="font-medium">Impresión en modo oscuro</Label>
@@ -96,9 +261,192 @@ export const SettingsDialog = () => {
                 onCheckedChange={setDarkPrint}
               />
             </div>
-          </TabsContent>
-          
-          <TabsContent value="advanced" className="space-y-4">
+            
+            <div>
+              <Label className="font-medium">Tema de colores</Label>
+              <p className="text-sm text-muted-foreground mb-2">Selecciona un tema para la aplicación</p>
+              <div className="grid grid-cols-3 gap-2">
+                <Button variant="outline" className="h-10 border-2 border-primary">
+                  <div className="w-4 h-4 rounded-full bg-blue-500 mr-2"></div>
+                  Azul
+                </Button>
+                <Button variant="outline" className="h-10">
+                  <div className="w-4 h-4 rounded-full bg-green-500 mr-2"></div>
+                  Verde
+                </Button>
+                <Button variant="outline" className="h-10">
+                  <div className="w-4 h-4 rounded-full bg-purple-500 mr-2"></div>
+                  Púrpura
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </TabsContent>
+      
+      <TabsContent value="forms" className="space-y-4">
+        <Card>
+          <CardHeader>
+            <CardTitle>Gestión de formularios</CardTitle>
+            <CardDescription>
+              Crea y gestiona tus formularios
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmitForm)} className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="title"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Título del formulario</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Ingresa un título" {...field} />
+                      </FormControl>
+                      <FormDescription>
+                        Este será el título visible de tu formulario.
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="description"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Descripción</FormLabel>
+                      <FormControl>
+                        <Textarea
+                          placeholder="Describe brevemente el propósito del formulario"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        Una descripción ayuda a los usuarios a entender el propósito del formulario.
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <Button type="submit" className="w-full">
+                  <Plus className="mr-2 h-4 w-4" />
+                  Crear nuevo formulario
+                </Button>
+              </form>
+            </Form>
+            
+            <div>
+              <Label className="font-medium">Ajustes de creación</Label>
+              <p className="text-sm text-muted-foreground mb-2">Configura cómo se crean los formularios</p>
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label htmlFor="default-type" className="text-sm">Tipo predeterminado</Label>
+                </div>
+                <select 
+                  id="default-type"
+                  className="rounded-md border border-input bg-background px-3 py-1"
+                >
+                  <option value="form">Formulario</option>
+                  <option value="formatted">Formato clínico</option>
+                </select>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </TabsContent>
+      
+      <TabsContent value="notifications" className="space-y-4">
+        <Card>
+          <CardHeader>
+            <CardTitle>Notificaciones</CardTitle>
+            <CardDescription>
+              Configura cómo y cuándo recibir notificaciones
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <Label htmlFor="notifications" className="font-medium">Notificaciones</Label>
+                <p className="text-sm text-muted-foreground">Recibir notificaciones de actividad</p>
+              </div>
+              <Switch 
+                id="notifications" 
+                checked={notifications}
+                onCheckedChange={setNotifications}
+              />
+            </div>
+            
+            <div className="flex items-center justify-between">
+              <div>
+                <Label htmlFor="email-notifications" className="font-medium">Notificaciones por email</Label>
+                <p className="text-sm text-muted-foreground">Recibir notificaciones por email</p>
+              </div>
+              <Switch id="email-notifications" />
+            </div>
+            
+            <div>
+              <Label className="font-medium">Frecuencia de resumen</Label>
+              <p className="text-sm text-muted-foreground mb-2">¿Con qué frecuencia quieres recibir resúmenes?</p>
+              <select className="w-full rounded-md border border-input bg-background px-3 py-2">
+                <option value="daily">Diario</option>
+                <option value="weekly">Semanal</option>
+                <option value="monthly">Mensual</option>
+                <option value="never">Nunca</option>
+              </select>
+            </div>
+          </CardContent>
+        </Card>
+      </TabsContent>
+      
+      <TabsContent value="account" className="space-y-4">
+        <Card>
+          <CardHeader>
+            <CardTitle>Cuenta</CardTitle>
+            <CardDescription>
+              Gestiona tu cuenta y perfil
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center space-x-4">
+              <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center">
+                <UserCog size={24} className="text-gray-500" />
+              </div>
+              <div>
+                <h3 className="text-sm font-medium">Usuario Médico</h3>
+                <p className="text-xs text-muted-foreground">usuario@hospital.com</p>
+              </div>
+            </div>
+            
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="name">Nombre completo</Label>
+                <Input id="name" defaultValue="Usuario Médico" />
+              </div>
+              
+              <div>
+                <Label htmlFor="email">Correo electrónico</Label>
+                <Input id="email" defaultValue="usuario@hospital.com" />
+              </div>
+              
+              <Button variant="outline" className="w-full">Cambiar contraseña</Button>
+            </div>
+          </CardContent>
+        </Card>
+      </TabsContent>
+      
+      <TabsContent value="advanced" className="space-y-4">
+        <Card>
+          <CardHeader>
+            <CardTitle>Configuración avanzada</CardTitle>
+            <CardDescription>
+              Configuraciones avanzadas y opciones de desarrollador
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
             <div>
               <h4 className="text-sm font-medium mb-2">Datos guardados</h4>
               <p className="text-sm text-muted-foreground mb-4">
@@ -106,13 +454,34 @@ export const SettingsDialog = () => {
               </p>
               <Button variant="destructive" size="sm">Eliminar datos</Button>
             </div>
-          </TabsContent>
-        </Tabs>
-        
-        <DialogFooter className="mt-4">
-          <Button type="submit">Guardar cambios</Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+            
+            <div className="pt-4 border-t">
+              <h4 className="text-sm font-medium mb-2">Exportar/Importar</h4>
+              <p className="text-sm text-muted-foreground mb-4">
+                Exporta tus configuraciones o importa desde un archivo.
+              </p>
+              <div className="flex space-x-2">
+                <Button variant="outline" size="sm">Exportar configuración</Button>
+                <Button variant="outline" size="sm">Importar configuración</Button>
+              </div>
+            </div>
+            
+            <div className="pt-4 border-t">
+              <h4 className="text-sm font-medium mb-2">Configuración de desarrollador</h4>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="debug-mode" className="text-sm">Modo debug</Label>
+                  <Switch id="debug-mode" />
+                </div>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="api-logs" className="text-sm">Mostrar logs de API</Label>
+                  <Switch id="api-logs" />
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </TabsContent>
+    </Tabs>
   );
 };
