@@ -19,7 +19,6 @@ const PsicologiaPlanPage = () => {
   const [planGenerado, setPlanGenerado] = useState<string>("");
   const [pacienteActual, setPacienteActual] = useState<PacienteTratamientoInfo | null>(null);
 
-  // Verificar si ya tenemos una clave API almacenada
   useEffect(() => {
     if (apiKeys.hasKey('anthropic')) {
       setShowApiKeyInput(false);
@@ -38,12 +37,10 @@ const PsicologiaPlanPage = () => {
       return;
     }
     
-    // Guardar la clave API en nuestro gestor
     if (apiKeys.setKey('anthropic', apiKey)) {
       setShowApiKeyInput(false);
-      apiKeys.setupKeyExpiration('anthropic', 60); // Expira en 60 minutos
+      apiKeys.setupKeyExpiration('anthropic', 60);
       toast.success("API Key guardada correctamente");
-      // Limpiar el estado para no mantener la clave en memoria
       setApiKey("");
     }
   };
@@ -58,14 +55,12 @@ const PsicologiaPlanPage = () => {
     setPacienteActual(datosPaciente);
 
     try {
-      // Usar el servicio Anthropic para generar el plan de tratamiento
       const plan = await generarPlanTratamiento(datosPaciente);
       setPlanGenerado(plan);
       toast.success("Plan de tratamiento generado correctamente");
     } catch (error) {
       console.error("Error al generar plan:", error);
       
-      // Manejo seguro de errores
       let mensajeError = "Error al generar el plan de tratamiento.";
       if (error instanceof Error) {
         mensajeError = error.message.includes("API") 
@@ -75,7 +70,6 @@ const PsicologiaPlanPage = () => {
       
       toast.error(mensajeError);
       
-      // Si hay un error de API Key, mostramos nuevamente el input
       if (error instanceof Error && error.message.includes("API")) {
         apiKeys.removeKey('anthropic');
         setShowApiKeyInput(true);
