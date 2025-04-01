@@ -3,9 +3,7 @@ import React from "react";
 import { EspecialidadLayout } from "@/components/especialidades/EspecialidadLayout";
 import { EspecialidadCard } from "@/components/especialidades/EspecialidadCard";
 import { ProcedimientoCard } from "@/components/especialidades/ProcedimientoCard";
-import { Brain, UserRound, CalendarClock, FileCheck, ClipboardList, FileText } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
+import { Brain, UserRound, CalendarClock, FileCheck } from "lucide-react";
 
 const PsicologoPage = () => {
   return (
@@ -40,48 +38,19 @@ const PsicologoPage = () => {
         </EspecialidadCard>
         
         <EspecialidadCard
-          title="Planes de tratamiento"
-          description="Tratamientos personalizados con asistencia de IA"
-          icon={<ClipboardList className="h-5 w-5 text-purple-700" />}
-          linkText="Crear plan"
-          linkUrl="/app/especialidades/psicologia/planes"
-        >
-          <p className="text-gray-600 dark:text-gray-400">
-            Genera planes de tratamiento personalizados para cada paciente, basados en sus necesidades específicas y objetivos terapéuticos.
-          </p>
-        </EspecialidadCard>
-        
-        <EspecialidadCard
           title="Evaluaciones psicológicas"
           description="Diagnóstico preciso y plan de tratamiento personalizado"
           icon={<FileCheck className="h-5 w-5 text-purple-700" />}
-          linkText="Gestionar evaluaciones"
-          linkUrl="/app/especialidades/psicologia/evaluaciones"
+          linkText="Más información"
+          linkUrl="/app/servicios/evaluaciones-psicologicas"
         >
           <p className="text-gray-600 dark:text-gray-400">
-            Administra y realiza seguimiento de evaluaciones psicológicas estandarizadas para crear planes de tratamiento efectivos.
+            Realizamos evaluaciones completas utilizando herramientas estandarizadas para crear un plan de tratamiento efectivo y personalizado.
           </p>
         </EspecialidadCard>
       </div>
       
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Servicios de psicología</h2>
-        <div className="flex space-x-2">
-          <Button variant="outline" size="sm" asChild>
-            <Link to="/app/especialidades/psicologia/planes">
-              <ClipboardList className="mr-2 h-4 w-4" />
-              Planes de tratamiento
-            </Link>
-          </Button>
-          <Button variant="outline" size="sm" asChild>
-            <Link to="/app/especialidades/psicologia/evaluaciones">
-              <FileText className="mr-2 h-4 w-4" />
-              Evaluaciones
-            </Link>
-          </Button>
-        </div>
-      </div>
-      
+      <h2 className="text-2xl font-bold mb-4 text-gray-900 dark:text-white">Servicios de psicología</h2>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
         <ProcedimientoCard
           title="Terapia individual"
