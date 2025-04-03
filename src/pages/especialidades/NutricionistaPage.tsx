@@ -3,9 +3,7 @@ import React from "react";
 import { EspecialidadLayout } from "@/components/especialidades/EspecialidadLayout";
 import { EspecialidadCard } from "@/components/especialidades/EspecialidadCard";
 import { ProcedimientoCard } from "@/components/especialidades/ProcedimientoCard";
-import { Apple, UserRound, CalendarClock, FileCheck, LineChart, ChefHat, Brain } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
+import { Apple, UserRound, CalendarClock, FileCheck, LineChart } from "lucide-react";
 
 const NutricionistaPage = () => {
   return (
@@ -14,30 +12,6 @@ const NutricionistaPage = () => {
       description="Servicios de nutrición clínica y asesoría alimentaria"
       icon={<Apple className="h-6 w-6 text-purple-700" />}
     >
-      <div className="bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 rounded-lg border border-purple-100 dark:border-purple-800 p-6 mb-8">
-        <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <div className="bg-purple-100 dark:bg-purple-900/40 p-3 rounded-full">
-              <Brain className="h-6 w-6 text-purple-700 dark:text-purple-400" />
-            </div>
-            <div>
-              <h2 className="text-xl font-bold text-purple-800 dark:text-purple-300">
-                Nueva funcionalidad: Planes de alimentación con IA
-              </h2>
-              <p className="text-gray-600 dark:text-gray-400">
-                Crea planes de alimentación personalizados en segundos con inteligencia artificial
-              </p>
-            </div>
-          </div>
-          <Link to="/app/especialidades/nutricion/planes">
-            <Button className="bg-purple-600 hover:bg-purple-700">
-              <ChefHat className="mr-2 h-5 w-5" />
-              Crear plan de alimentación
-            </Button>
-          </Link>
-        </div>
-      </div>
-      
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
         <EspecialidadCard
           title="Nutricionistas clínicos"
@@ -60,18 +34,6 @@ const NutricionistaPage = () => {
         >
           <p className="text-gray-600 dark:text-gray-400">
             Ofrecemos consultas completas con evaluación antropométrica, análisis de hábitos alimentarios y plan nutricional personalizado.
-          </p>
-        </EspecialidadCard>
-        
-        <EspecialidadCard
-          title="Planes de alimentación"
-          description="Diseñados con inteligencia artificial"
-          icon={<ChefHat className="h-5 w-5 text-purple-700" />}
-          linkText="Crear plan"
-          linkUrl="/app/especialidades/nutricion/planes"
-        >
-          <p className="text-gray-600 dark:text-gray-400">
-            Genera planes de alimentación personalizados utilizando IA, adaptados a las necesidades específicas, restricciones y objetivos de cada paciente.
           </p>
         </EspecialidadCard>
         
