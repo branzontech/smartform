@@ -10,6 +10,12 @@ import { toast } from "@/hooks/use-toast";
 import { formatDistance } from "date-fns";
 import { es } from "date-fns/locale";
 
+// Define the missing interface
+export interface PatientSearchProps {
+  onSelectPatient: (patient: Patient) => void;
+  onCreateNew: () => void;
+}
+
 const MOCK_PATIENTS: Patient[] = [
   {
     id: "1",
