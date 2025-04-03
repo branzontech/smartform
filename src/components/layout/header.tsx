@@ -1,7 +1,6 @@
-
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ChevronDown, Menu, Stethoscope, Moon, Sun, Search } from "lucide-react";
+import { ChevronDown, Menu, Stethoscope, Moon, Sun, Search, Bell, UserCircle, LogOut } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { MobileMenu } from "./mobile-menu";
 import { DesktopMenu } from "./desktop-menu";
@@ -12,6 +11,7 @@ import {
   DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { mainNavItems } from "@/config/navigation";
@@ -23,6 +23,12 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
+import { 
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 interface HeaderProps {
   showCreate?: boolean;
@@ -95,6 +101,17 @@ export const Header = ({ showCreate = true }: HeaderProps) => {
     navigate(path);
   };
 
+  const [user] = useState({
+    name: "Dr. Martínez",
+    initials: "DM",
+    unreadNotifications: 3
+  });
+
+  const handleLogout = () => {
+    console.log("Cerrando sesión...");
+    // navigate("/login");
+  };
+
   return (
     <TooltipProvider>
       <header className="border-b border-gray-200 dark:border-gray-800 sticky top-0 bg-gradient-to-r from-purple-50/90 via-white/90 to-purple-50/90 dark:from-gray-900/90 dark:via-gray-900/95 dark:to-purple-900/90 backdrop-blur-md z-10 shadow-sm">
@@ -122,7 +139,6 @@ export const Header = ({ showCreate = true }: HeaderProps) => {
           </div>
 
           <div className="flex items-center space-x-4">
-            {/* Navigation Toggle Dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="p-2 flex items-center gap-2 hover:bg-violet-400/20 dark:hover:bg-violet-500/30 group">
@@ -167,7 +183,56 @@ export const Header = ({ showCreate = true }: HeaderProps) => {
               </DropdownMenuContent>
             </DropdownMenu>
 
-            {/* Theme Toggle Button */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button 
+                  variant="ghost"
+                  className="p-2 hover:bg-violet-400/20 dark:hover:bg-violet-500/30 group relative"
+                  size="icon"
+                >
+                  <Bell size={18} className="group-hover:text-form-primary" />
+                  {user.unreadNotifications > 0 && (
+                    <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-red-500 flex items-center justify-center text-white text-xs font-bold">
+                      {user.unreadNotifications}
+                    </span>
+                  )}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Notificaciones</p>
+              </TooltipContent>
+            </Tooltip>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button 
+                  variant="ghost"
+                  className="p-1 hover:bg-violet-400/20 dark:hover:bg-violet-500/30 group flex items-center gap-2"
+                >
+                  <Avatar className="h-8 w-8 bg-purple-100 dark:bg-purple-900/60">
+                    <AvatarFallback className="text-sm text-purple-700 dark:text-purple-200">
+                      {user.initials}
+                    </AvatarFallback>
+                  </Avatar>
+                  <span className="hidden md:block text-sm font-medium">{user.name}</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuItem className="flex items-center gap-2">
+                  <UserCircle className="h-4 w-4" />
+                  <span>Mi perfil</span>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem 
+                  className="flex items-center gap-2 text-red-600 dark:text-red-400 focus:text-red-700 dark:focus:text-red-300"
+                  onClick={handleLogout}
+                >
+                  <LogOut className="h-4 w-4" />
+                  <span>Cerrar sesión</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
             {isMobile ? (
               <Button 
                 variant="ghost"
@@ -194,7 +259,6 @@ export const Header = ({ showCreate = true }: HeaderProps) => {
               </Button>
             )}
 
-            {/* Mobile menu button */}
             {isMobile && (
               <button 
                 onClick={toggleMobileMenu}
@@ -205,7 +269,6 @@ export const Header = ({ showCreate = true }: HeaderProps) => {
             )}
           </div>
 
-          {/* Mobile menu */}
           {isMobile && mobileMenuOpen && (
             <MobileMenu 
               isOpen={mobileMenuOpen} 
@@ -220,7 +283,6 @@ export const Header = ({ showCreate = true }: HeaderProps) => {
       <CommandDialog 
         open={searchOpen} 
         onOpenChange={setSearchOpen}
-        className="rounded-3xl"  // Add more rounded corners to the dialog
       >
         <CommandInput 
           placeholder="Buscar en toda la navegación..." 
