@@ -1,6 +1,6 @@
 
 import { Link, useNavigate } from "react-router-dom";
-import { ChevronDown, Menu, Stethoscope } from "lucide-react";
+import { ChevronDown, Menu, Stethoscope, Moon, Sun } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { MobileMenu } from "./mobile-menu";
