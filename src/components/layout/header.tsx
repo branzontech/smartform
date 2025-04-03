@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ChevronDown, Menu, Stethoscope, Moon, Sun, Search, Bell, UserCircle, LogOut } from "lucide-react";
@@ -29,6 +30,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { toast } from "@/hooks/use-toast";
 
 interface HeaderProps {
   showCreate?: boolean;
@@ -40,6 +42,36 @@ export const Header = ({ showCreate = true }: HeaderProps) => {
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+
+  // Example notification data
+  const [notifications, setNotifications] = useState([
+    {
+      id: 1,
+      title: "Cita confirmada",
+      message: "Su cita con el Dr. García ha sido confirmada para mañana a las 10:00 AM",
+      time: "Hace 5 minutos",
+      read: false,
+      type: "appointment"
+    },
+    {
+      id: 2,
+      title: "Recordatorio de medicación",
+      message: "Recuerde tomar su medicación a las 14:00 horas",
+      time: "Hace 30 minutos",
+      read: false,
+      type: "medication"
+    },
+    {
+      id: 3,
+      title: "Resultado de laboratorio",
+      message: "Sus resultados de laboratorio ya están disponibles",
+      time: "Ayer",
+      read: true,
+      type: "lab"
+    }
+  ]);
+
+  const unreadNotificationsCount = notifications.filter(n => !n.read).length;
 
   useEffect(() => {
     const savedTheme = localStorage.getItem("theme") as "light" | "dark" | null;
@@ -104,12 +136,30 @@ export const Header = ({ showCreate = true }: HeaderProps) => {
   const [user] = useState({
     name: "Dr. Martínez",
     initials: "DM",
-    unreadNotifications: 3
+    unreadNotifications: unreadNotificationsCount
   });
 
   const handleLogout = () => {
     console.log("Cerrando sesión...");
     // navigate("/login");
+  };
+
+  const handleMarkAsRead = (id: number) => {
+    setNotifications(notifications.map(notification => 
+      notification.id === id ? { ...notification, read: true } : notification
+    ));
+    toast({
+      title: "Notificación marcada como leída",
+      description: "La notificación ha sido marcada como leída",
+    });
+  };
+
+  const handleMarkAllAsRead = () => {
+    setNotifications(notifications.map(notification => ({ ...notification, read: true })));
+    toast({
+      title: "Notificaciones",
+      description: "Todas las notificaciones han sido marcadas como leídas",
+    });
   };
 
   return (
@@ -183,25 +233,78 @@ export const Header = ({ showCreate = true }: HeaderProps) => {
               </DropdownMenuContent>
             </DropdownMenu>
 
-            <Tooltip>
-              <TooltipTrigger asChild>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
                 <Button 
                   variant="ghost"
                   className="p-2 hover:bg-violet-400/20 dark:hover:bg-violet-500/30 group relative"
                   size="icon"
                 >
                   <Bell size={18} className="group-hover:text-form-primary" />
-                  {user.unreadNotifications > 0 && (
+                  {unreadNotificationsCount > 0 && (
                     <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-red-500 flex items-center justify-center text-white text-xs font-bold">
-                      {user.unreadNotifications}
+                      {unreadNotificationsCount}
                     </span>
                   )}
                 </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Notificaciones</p>
-              </TooltipContent>
-            </Tooltip>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-80 p-0 bg-white/95 dark:bg-gray-900/95 backdrop-blur-md border-purple-100 dark:border-purple-900/30">
+                <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-gray-800">
+                  <h3 className="font-medium text-gray-900 dark:text-gray-100">Notificaciones</h3>
+                  {unreadNotificationsCount > 0 && (
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={handleMarkAllAsRead} 
+                      className="text-xs text-purple-600 hover:text-purple-700 dark:text-purple-400 dark:hover:text-purple-300"
+                    >
+                      Marcar todas como leídas
+                    </Button>
+                  )}
+                </div>
+                <div className="max-h-[50vh] overflow-y-auto divide-y divide-gray-100 dark:divide-gray-800">
+                  {notifications.length > 0 ? (
+                    notifications.map((notification) => (
+                      <div 
+                        key={notification.id}
+                        className={`p-4 flex hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors ${notification.read ? '' : 'bg-purple-50/50 dark:bg-purple-900/20'}`}
+                      >
+                        <div className="flex-1">
+                          <div className="flex items-start justify-between">
+                            <p className="font-medium text-gray-900 dark:text-gray-100">{notification.title}</p>
+                            <span className="text-xs text-gray-500 dark:text-gray-400">{notification.time}</span>
+                          </div>
+                          <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-2 mt-1">{notification.message}</p>
+                          {!notification.read && (
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              onClick={() => handleMarkAsRead(notification.id)} 
+                              className="text-xs text-purple-600 hover:text-purple-700 dark:text-purple-400 dark:hover:text-purple-300 mt-2 px-0"
+                            >
+                              Marcar como leída
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="p-4 text-center text-gray-500 dark:text-gray-400">
+                      No hay notificaciones
+                    </div>
+                  )}
+                </div>
+                <div className="border-t border-gray-100 dark:border-gray-800 p-2">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="w-full text-sm text-center text-purple-600 hover:text-purple-700 dark:text-purple-400 dark:hover:text-purple-300"
+                  >
+                    Ver todas las notificaciones
+                  </Button>
+                </div>
+              </DropdownMenuContent>
+            </DropdownMenu>
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -283,6 +386,7 @@ export const Header = ({ showCreate = true }: HeaderProps) => {
       <CommandDialog 
         open={searchOpen} 
         onOpenChange={setSearchOpen}
+        className="rounded-3xl overflow-hidden"
       >
         <CommandInput 
           placeholder="Buscar en toda la navegación..." 
