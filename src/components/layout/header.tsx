@@ -1,11 +1,20 @@
 
 import { Link, useNavigate } from "react-router-dom";
-import { Menu, Stethoscope } from "lucide-react";
+import { ChevronDown, Menu, Stethoscope } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { MobileMenu } from "./mobile-menu";
 import { DesktopMenu } from "./desktop-menu";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
+import { mainNavItems } from "@/config/navigation";
 
 interface HeaderProps {
   showCreate?: boolean;
@@ -52,27 +61,73 @@ export const Header = ({ showCreate = true }: HeaderProps) => {
             </Link>
           </div>
 
-          {isMobile ? (
-            <>
+          <div className="flex items-center space-x-4">
+            {/* Navigation Toggle Dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="p-2 flex items-center gap-2 hover:bg-violet-400/20 dark:hover:bg-violet-500/30 group">
+                  Navegación <ChevronDown className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-56">
+                <DropdownMenuGroup>
+                  {mainNavItems.map((item) => (
+                    <DropdownMenuItem key={item.title} asChild>
+                      <Link to={item.path || "#"} className="flex items-center gap-2">
+                        {item.icon && <item.icon className="h-4 w-4" />}
+                        <span>{item.title}</span>
+                      </Link>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuGroup>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            {/* Theme Toggle Button */}
+            {isMobile ? (
+              <Button 
+                variant="ghost"
+                onClick={toggleTheme}
+                className="p-2 hover:bg-violet-400/20 dark:hover:bg-violet-500/30 group"
+                size="icon"
+              >
+                {theme === "light" ? 
+                  <Moon size={18} className="group-hover:text-form-primary" /> : 
+                  <Sun size={18} className="group-hover:text-form-primary" />
+                }
+              </Button>
+            ) : (
+              <Button 
+                variant="ghost"
+                onClick={toggleTheme}
+                className="p-2 hover:bg-violet-400/20 dark:hover:bg-violet-500/30 group"
+                size="icon"
+              >
+                {theme === "light" ? 
+                  <Moon size={18} className="group-hover:text-form-primary" /> : 
+                  <Sun size={18} className="group-hover:text-form-primary" />
+                }
+              </Button>
+            )}
+
+            {/* Mobile menu button (only for legacy support) */}
+            {isMobile && (
               <button 
                 onClick={toggleMobileMenu}
-                className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-300 dark:hover:text-white"
+                className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-300 dark:hover:text-white ml-2"
               >
                 <Menu size={24} />
               </button>
-              
-              <MobileMenu 
-                isOpen={mobileMenuOpen} 
-                theme={theme} 
-                toggleTheme={toggleTheme} 
-                toggleMobileMenu={toggleMobileMenu} 
-              />
-            </>
-          ) : (
-            <DesktopMenu 
+            )}
+          </div>
+
+          {/* Only render the mobile menu if it's actually open */}
+          {isMobile && mobileMenuOpen && (
+            <MobileMenu 
+              isOpen={mobileMenuOpen} 
               theme={theme} 
               toggleTheme={toggleTheme} 
-              goHome={goHome} 
+              toggleMobileMenu={toggleMobileMenu} 
             />
           )}
         </div>
