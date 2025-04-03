@@ -12,10 +12,9 @@ import {
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
-  SidebarTrigger,
   SidebarMenuSub,
-  SidebarMenuSubButton,
   SidebarMenuSubItem,
+  SidebarMenuSubButton,
 } from "@/components/ui/sidebar";
 import { Moon, Sun, Stethoscope } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -57,14 +56,15 @@ export const AppSidebar = ({ theme, toggleTheme }: AppSidebarProps) => {
                       <SidebarMenuSub>
                         {item.items.map((subItem) => (
                           <SidebarMenuSubItem key={subItem.title}>
-                            <SidebarMenuSubButton
-                              as={Link}
-                              to={subItem.path}
-                              isActive={location.pathname === subItem.path}
-                            >
-                              <subItem.icon className="mr-2" size={18} />
-                              <span>{subItem.title}</span>
-                            </SidebarMenuSubButton>
+                            {/* Fixed: Removed the 'as' prop and wrapped Link around SidebarMenuSubButton */}
+                            <Link to={subItem.path}>
+                              <SidebarMenuSubButton
+                                isActive={location.pathname === subItem.path}
+                              >
+                                <subItem.icon className="mr-2" size={18} />
+                                <span>{subItem.title}</span>
+                              </SidebarMenuSubButton>
+                            </Link>
                           </SidebarMenuSubItem>
                         ))}
                       </SidebarMenuSub>
