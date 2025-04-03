@@ -1,4 +1,3 @@
-
 // Define the PacienteInfo type to match the form data structure
 export interface PacienteInfo {
   nombre: string;
@@ -12,6 +11,18 @@ export interface PacienteInfo {
   condicionesMedicas?: string[];
   alergiasAlimentarias?: string[];
   preferenciasAlimentarias?: string;
+}
+
+// Define the PacienteTratamientoInfo type for psychology treatment plans
+export interface PacienteTratamientoInfo {
+  nombre: string;
+  edad?: string;
+  motivo?: string;
+  diagnostico?: string;
+  antecedentes?: string;
+  duracion?: string;
+  enfoque?: string;
+  objetivos?: string;
 }
 
 import { apiKeys } from "@/config/api-keys";
@@ -52,6 +63,46 @@ export const generarPlanAlimentacion = async (apiKey: string, paciente: Paciente
     return generarPlanEjemplo(paciente);
   } catch (error) {
     console.error("Error al generar plan de alimentación:", error);
+    // Manejo seguro de errores sin exponer datos sensibles
+    if (error instanceof Error) {
+      const errorMsg = error.message || "Error desconocido";
+      // Sanitizamos cualquier mensaje que pudiera contener la clave API
+      const safeErrorMsg = errorMsg.replace(/sk-[a-zA-Z0-9-]+/g, "[API_KEY_REDACTED]");
+      throw new Error(`Error: ${safeErrorMsg}`);
+    }
+    throw new Error("Error al comunicarse con la API. Verifica tu conexión e intenta nuevamente.");
+  }
+};
+
+// Function to generate a psychology treatment plan
+export const generarPlanTratamiento = async (apiKey: string, paciente: PacienteTratamientoInfo): Promise<string> => {
+  // Si no se proporciona una clave, intentamos usar la almacenada
+  let claveAPI = apiKey;
+  
+  if (!claveAPI || !claveAPI.trim()) {
+    claveAPI = apiKeys.getKey('anthropic') || '';
+    if (!claveAPI) {
+      throw new Error("API Key de Anthropic no proporcionada");
+    }
+  } else {
+    // Si se proporciona una nueva clave, la guardamos para futuras solicitudes
+    if (validarClaveAPI(claveAPI)) {
+      apiKeys.setKey('anthropic', claveAPI);
+      apiKeys.setupKeyExpiration('anthropic', 60); // Expira en 60 minutos
+    } else {
+      throw new Error("La clave API proporcionada no tiene el formato correcto");
+    }
+  }
+
+  try {
+    // En una implementación real, aquí llamaríamos a la API de Anthropic
+    // Para demostraciones, simulamos una respuesta después de un retraso
+    await new Promise(resolve => setTimeout(resolve, 1500));
+
+    // Generamos un plan de ejemplo basado en los datos del paciente
+    return generarPlanTratamientoEjemplo(paciente);
+  } catch (error) {
+    console.error("Error al generar plan de tratamiento:", error);
     // Manejo seguro de errores sin exponer datos sensibles
     if (error instanceof Error) {
       const errorMsg = error.message || "Error desconocido";
@@ -105,8 +156,6 @@ export const imprimirPlan = (plan: string, nombrePaciente: string) => {
 
 // Helper function to download the nutrition plan as PDF
 export const descargarPlanPDF = (plan: string, nombrePaciente: string) => {
-  // In a real implementation, this would generate a PDF file
-  // For demo purposes, we'll download a text file
   const element = document.createElement("a");
   const file = new Blob([`Plan de Alimentación para ${nombrePaciente}\n\n${plan}`], {type: 'text/plain'});
   element.href = URL.createObjectURL(file);
@@ -220,6 +269,79 @@ function generarPlanEjemplo(paciente: PacienteInfo): string {
   plan += `- Masticar bien los alimentos\n\n`;
   
   plan += `Este plan es una guía general. Se recomienda ajustar las porciones según necesidades individuales y consultar con un profesional de salud para adaptaciones específicas.`;
+  
+  return plan;
+}
+
+// Helper function to generate a sample psychology treatment plan
+function generarPlanTratamientoEjemplo(paciente: PacienteTratamientoInfo): string {
+  const { nombre, edad, motivo, diagnostico, antecedentes, duracion, enfoque, objetivos } = paciente;
+  
+  // Generate a personalized sample treatment plan
+  let plan = `PLAN DE TRATAMIENTO PSICOLÓGICO\n\n`;
+  plan += `Paciente: ${nombre}\n`;
+  if (edad) plan += `Edad: ${edad} años\n\n`;
+  
+  plan += `MOTIVO DE CONSULTA:\n`;
+  plan += motivo ? `${motivo}\n\n` : "No especificado.\n\n";
+  
+  if (diagnostico) {
+    plan += `DIAGNÓSTICO PRELIMINAR:\n`;
+    plan += `${diagnostico}\n\n`;
+  }
+  
+  if (antecedentes) {
+    plan += `ANTECEDENTES RELEVANTES:\n`;
+    plan += `${antecedentes}\n\n`;
+  }
+  
+  plan += `PLAN DE TRATAMIENTO:\n\n`;
+  
+  plan += `1. OBJETIVOS TERAPÉUTICOS:\n`;
+  if (objetivos) {
+    plan += `${objetivos}\n\n`;
+  } else {
+    plan += `- Evaluar y tratar síntomas presentes\n`;
+    plan += `- Desarrollar estrategias de afrontamiento\n`;
+    plan += `- Mejorar calidad de vida\n\n`;
+  }
+  
+  plan += `2. ENFOQUE TERAPÉUTICO:\n`;
+  if (enfoque) {
+    plan += `${enfoque}\n\n`;
+  } else {
+    plan += `Se utilizará un enfoque integrador, principalmente basado en Terapia Cognitivo-Conductual, adaptado a las necesidades específicas del paciente.\n\n`;
+  }
+  
+  plan += `3. DURACIÓN ESTIMADA:\n`;
+  if (duracion) {
+    plan += `${duracion}\n\n`;
+  } else {
+    plan += `Inicialmente se programan 12 sesiones semanales con evaluación continua de progreso.\n\n`;
+  }
+  
+  plan += `4. INTERVENCIONES PRINCIPALES:\n`;
+  plan += `- Psicoeducación sobre la condición y proceso terapéutico\n`;
+  plan += `- Reestructuración cognitiva de pensamientos disfuncionales\n`;
+  plan += `- Técnicas de manejo de estrés y regulación emocional\n`;
+  plan += `- Entrenamiento en habilidades sociales y comunicación asertiva\n\n`;
+  
+  plan += `5. TAREAS ENTRE SESIONES:\n`;
+  plan += `- Registro de pensamientos y emociones\n`;
+  plan += `- Práctica de técnicas aprendidas en sesión\n`;
+  plan += `- Lectura de material complementario\n\n`;
+  
+  plan += `6. EVALUACIÓN DE PROGRESO:\n`;
+  plan += `- Revisión regular de objetivos terapéuticos\n`;
+  plan += `- Aplicación de instrumentos de evaluación estandarizados\n`;
+  plan += `- Retroalimentación continua del paciente\n\n`;
+  
+  plan += `NOTAS ADICIONALES:\n`;
+  plan += `Este plan es flexible y será ajustado según las necesidades emergentes durante el proceso terapéutico. Se recomienda asistencia constante para obtener mejores resultados.\n\n`;
+  
+  plan += `Fecha de elaboración: ${new Date().toLocaleDateString('es-ES')}\n\n`;
+  
+  plan += `Este plan fue elaborado por Smart Doctor - Sistema de Planes de Tratamiento Psicológico`;
   
   return plan;
 }
