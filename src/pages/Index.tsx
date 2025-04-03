@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Header } from "@/components/layout/header";
 import { Button } from "@/components/ui/button";
@@ -9,11 +9,20 @@ import { FileText, ArrowRight, Calendar, Users, BarChart, Stethoscope, Clipboard
 const Index = () => {
   const navigate = useNavigate();
 
+  useEffect(() => {
+    // Redirect to the new home page path after a slight delay to ensure hooks are properly initialized
+    const timer = setTimeout(() => {
+      navigate("/app/home");
+    }, 100);
+    
+    return () => clearTimeout(timer);
+  }, [navigate]);
+
   return (
     <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900">
       <Header />
-      <main className="flex-1 p-6">
-        <div className="max-w-4xl w-full text-center space-y-8 mx-auto">
+      <main className="flex-1 flex items-center justify-center p-6">
+        <div className="max-w-4xl w-full text-center space-y-8">
           <h1 className="text-4xl md:text-5xl font-bold mb-4">
             Bienvenido a Smart Doctor
           </h1>
