@@ -1,6 +1,5 @@
-
 import { Link, useNavigate } from "react-router-dom";
-import { ChevronDown, Menu, Stethoscope, Moon, Sun, Bell, Shield, Link as LinkIcon } from "lucide-react";
+import { ChevronDown, Menu, Stethoscope, Moon, Sun, Search } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { MobileMenu } from "./mobile-menu";
@@ -15,6 +14,14 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { mainNavItems } from "@/config/navigation";
+import {
+  CommandDialog,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 
 interface HeaderProps {
   showCreate?: boolean;
@@ -25,6 +32,7 @@ export const Header = ({ showCreate = true }: HeaderProps) => {
   const navigate = useNavigate();
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
 
   useEffect(() => {
     const savedTheme = localStorage.getItem("theme") as "light" | "dark" | null;
@@ -33,6 +41,18 @@ export const Header = ({ showCreate = true }: HeaderProps) => {
     const initialTheme = savedTheme || (prefersDark ? "dark" : "light");
     setTheme(initialTheme);
     document.documentElement.classList.toggle("dark", initialTheme === "dark");
+  }, []);
+
+  useEffect(() => {
+    const down = (e: KeyboardEvent) => {
+      if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        setSearchOpen((open) => !open);
+      }
+    };
+
+    document.addEventListener("keydown", down);
+    return () => document.removeEventListener("keydown", down);
   }, []);
 
   const toggleTheme = () => {
@@ -50,6 +70,30 @@ export const Header = ({ showCreate = true }: HeaderProps) => {
     navigate('/app/home');
   };
 
+  const getAllNavigationItems = () => {
+    const items: Array<{ title: string; path: string; icon: React.ElementType; group?: string }> = [];
+    
+    mainNavItems.forEach((item) => {
+      if (item.items) {
+        item.items.forEach((subItem) => {
+          items.push({
+            ...subItem,
+            group: item.title
+          });
+        });
+      } else {
+        items.push(item);
+      }
+    });
+    
+    return items;
+  };
+
+  const handleSelect = (path: string) => {
+    setSearchOpen(false);
+    navigate(path);
+  };
+
   return (
     <TooltipProvider>
       <header className="border-b border-gray-200 dark:border-gray-800 sticky top-0 bg-gradient-to-r from-purple-50/90 via-white/90 to-purple-50/90 dark:from-gray-900/90 dark:via-gray-900/95 dark:to-purple-900/90 backdrop-blur-md z-10 shadow-sm">
@@ -59,6 +103,20 @@ export const Header = ({ showCreate = true }: HeaderProps) => {
               <Stethoscope className="h-6 w-6 text-form-primary" />
               <span className="text-xl font-semibold bg-gradient-to-r from-form-primary to-form-secondary bg-clip-text text-transparent">Smart Doctor</span>
             </Link>
+          </div>
+
+          <div className="flex-1 flex items-center justify-center px-4">
+            <Button
+              variant="outline"
+              className="relative h-9 w-full max-w-sm justify-start text-sm text-muted-foreground sm:pr-12 md:w-40 lg:w-64"
+              onClick={() => setSearchOpen(true)}
+            >
+              <span className="hidden lg:inline-flex">Buscar en la navegación...</span>
+              <span className="inline-flex lg:hidden">Buscar...</span>
+              <kbd className="pointer-events-none absolute right-1.5 top-2 hidden h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium opacity-100 sm:flex">
+                <span className="text-xs">⌘</span>K
+              </kbd>
+            </Button>
           </div>
 
           <div className="flex items-center space-x-4">
@@ -134,7 +192,7 @@ export const Header = ({ showCreate = true }: HeaderProps) => {
               </Button>
             )}
 
-            {/* Mobile menu button (only for legacy support) */}
+            {/* Mobile menu button */}
             {isMobile && (
               <button 
                 onClick={toggleMobileMenu}
@@ -145,7 +203,7 @@ export const Header = ({ showCreate = true }: HeaderProps) => {
             )}
           </div>
 
-          {/* Only render the mobile menu if it's actually open */}
+          {/* Mobile menu */}
           {isMobile && mobileMenuOpen && (
             <MobileMenu 
               isOpen={mobileMenuOpen} 
@@ -156,6 +214,41 @@ export const Header = ({ showCreate = true }: HeaderProps) => {
           )}
         </div>
       </header>
+
+      <CommandDialog open={searchOpen} onOpenChange={setSearchOpen}>
+        <CommandInput placeholder="Buscar en toda la navegación..." />
+        <CommandList>
+          <CommandEmpty>No se encontraron resultados.</CommandEmpty>
+          {mainNavItems.map((section) => (
+            section.items ? (
+              <CommandGroup key={section.title} heading={section.title}>
+                {section.items.map((item) => (
+                  <CommandItem
+                    key={item.path}
+                    value={`${section.title} ${item.title}`}
+                    onSelect={() => handleSelect(item.path)}
+                    className="flex items-center gap-2 cursor-pointer"
+                  >
+                    <item.icon className="h-4 w-4" />
+                    {item.title}
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            ) : (
+              <CommandGroup key={section.title}>
+                <CommandItem
+                  value={section.title}
+                  onSelect={() => handleSelect(section.path)}
+                  className="flex items-center gap-2 cursor-pointer"
+                >
+                  <section.icon className="h-4 w-4" />
+                  {section.title}
+                </CommandItem>
+              </CommandGroup>
+            )
+          ))}
+        </CommandList>
+      </CommandDialog>
     </TooltipProvider>
   );
 };
