@@ -27,7 +27,8 @@ import {
   Network,
   Bell,  // Added Bell icon
   Link,  // Added Link icon
-  Shield  // Added Shield icon
+  Shield,  // Added Shield icon
+  UserCheck  // Added UserCheck icon for admissions
 } from "lucide-react";
 
 export type MenuItem = {
@@ -50,6 +51,11 @@ export const mainNavItems: SubmenuItem[] = [
     title: "Pacientes",
     path: "/app/pacientes",
     icon: Users,
+  },
+  {
+    title: "Admisiones",
+    path: "/app/admisiones",
+    icon: UserCheck,
   },
   {
     title: "Citas",
@@ -187,4 +193,3 @@ export const mainNavItems: SubmenuItem[] = [
     icon: SettingsIcon,
   },
 ];
-

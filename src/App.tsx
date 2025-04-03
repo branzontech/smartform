@@ -24,6 +24,7 @@ import AppointmentForm from "./pages/appointments/AppointmentForm";
 import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
 import ForgotPassword from "./pages/auth/ForgotPassword";
+import AdmissionPage from "./pages/admissions/AdmissionPage";
 
 // Importamos las páginas de especialidades
 import CirujanoPage from "./pages/especialidades/CirujanoPage";
@@ -85,6 +86,9 @@ function App() {
             <Route path="/app/citas/editar/:id" element={<AppointmentForm />} />
             <Route path="/app/configuracion" element={<SettingsPage />} />
             
+            {/* Nueva ruta para admisiones */}
+            <Route path="/app/admisiones" element={<AdmissionPage />} />
+            
             {/* Rutas de especialidades */}
             <Route path="/app/especialidades/cirujano" element={<CirujanoPage />} />
             <Route path="/app/especialidades/psicologo" element={<PsicologoPage />} />
@@ -105,6 +109,7 @@ function App() {
             <Route path="/citas/nueva" element={<Navigate to="/app/citas/nueva" replace />} />
             <Route path="/citas/editar/:id" element={<Navigate to="/app/citas/editar/:id" replace />} />
             <Route path="/configuracion" element={<Navigate to="/app/configuracion" replace />} />
+            <Route path="/admisiones" element={<Navigate to="/app/admisiones" replace />} />
             
             {/* 404 route */}
             <Route path="*" element={<NotFound />} />
