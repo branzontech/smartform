@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { format } from "date-fns";
@@ -199,10 +200,16 @@ const AppointmentForm = () => {
           setPatients(parsedPatients);
         } catch (error) {
           console.error("Error parsing patients:", error);
+          // Si hay error al parsear, usar datos mock
           setPatients(mockPatients);
+          // Guardar los pacientes mock en localStorage para facilitar pruebas
+          localStorage.setItem("patients", JSON.stringify(mockPatients));
         }
       } else {
+        // Si no hay pacientes guardados, usar datos mock
         setPatients(mockPatients);
+        // Guardar los pacientes mock en localStorage para facilitar pruebas
+        localStorage.setItem("patients", JSON.stringify(mockPatients));
       }
       
       // Si estamos editando, cargar la cita
@@ -378,6 +385,9 @@ const AppointmentForm = () => {
     );
   }
 
+  console.log("Pacientes disponibles:", patients);
+  console.log("Pacientes filtrados:", filteredPatients);
+
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
@@ -430,25 +440,28 @@ const AppointmentForm = () => {
                         value={field.value}
                       >
                         <FormControl>
-                          <SelectTrigger>
+                          <SelectTrigger className="w-full">
                             <SelectValue placeholder="Selecciona un paciente" />
                           </SelectTrigger>
                         </FormControl>
-                        <SelectContent>
-                          {filteredPatients.map((patient) => (
-                            <SelectItem
-                              key={patient.id}
-                              value={patient.id}
-                              className="flex justify-between"
-                            >
-                              <div className="flex items-center">
-                                <User className="mr-2 h-4 w-4" />
-                                <span>
-                                  {patient.name} - {patient.documentId}
-                                </span>
-                              </div>
-                            </SelectItem>
-                          ))}
+                        <SelectContent className="max-h-[200px] overflow-y-auto bg-white dark:bg-gray-800">
+                          {filteredPatients.length > 0 ? (
+                            filteredPatients.map((patient) => (
+                              <SelectItem
+                                key={patient.id}
+                                value={patient.id}
+                              >
+                                <div className="flex items-center">
+                                  <User className="mr-2 h-4 w-4" />
+                                  <span>{patient.name} - {patient.documentId}</span>
+                                </div>
+                              </SelectItem>
+                            ))
+                          ) : (
+                            <div className="px-2 py-4 text-center text-sm text-gray-500">
+                              {searchTerm ? "No se encontraron pacientes" : "No hay pacientes disponibles"}
+                            </div>
+                          )}
                         </SelectContent>
                       </Select>
                       <FormMessage />
