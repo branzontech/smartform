@@ -1,6 +1,6 @@
 
 import { Link, useNavigate } from "react-router-dom";
-import { ChevronDown, Menu, Stethoscope, Moon, Sun } from "lucide-react";
+import { ChevronDown, Menu, Stethoscope, Moon, Sun, Bell, Shield, Link as LinkIcon } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { MobileMenu } from "./mobile-menu";
@@ -69,15 +69,39 @@ export const Header = ({ showCreate = true }: HeaderProps) => {
                   Navegación <ChevronDown className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-56">
+              <DropdownMenuContent className="w-56 max-h-[70vh] overflow-y-auto">
                 <DropdownMenuGroup>
                   {mainNavItems.map((item) => (
-                    <DropdownMenuItem key={item.title} asChild>
-                      <Link to={item.path || "#"} className="flex items-center gap-2">
-                        {item.icon && <item.icon className="h-4 w-4" />}
-                        <span>{item.title}</span>
-                      </Link>
-                    </DropdownMenuItem>
+                    item.items ? (
+                      <DropdownMenu key={item.title}>
+                        <DropdownMenuTrigger asChild className="w-full">
+                          <DropdownMenuItem className="flex items-center justify-between cursor-default">
+                            <div className="flex items-center gap-2">
+                              {item.icon && <item.icon className="h-4 w-4" />}
+                              <span>{item.title}</span>
+                            </div>
+                            <ChevronDown className="h-4 w-4" />
+                          </DropdownMenuItem>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent className="w-56">
+                          {item.items.map((subItem) => (
+                            <DropdownMenuItem key={subItem.title} asChild>
+                              <Link to={subItem.path || "#"} className="flex items-center gap-2">
+                                {subItem.icon && <subItem.icon className="h-4 w-4" />}
+                                <span>{subItem.title}</span>
+                              </Link>
+                            </DropdownMenuItem>
+                          ))}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    ) : (
+                      <DropdownMenuItem key={item.title} asChild>
+                        <Link to={item.path || "#"} className="flex items-center gap-2">
+                          {item.icon && <item.icon className="h-4 w-4" />}
+                          <span>{item.title}</span>
+                        </Link>
+                      </DropdownMenuItem>
+                    )
                   ))}
                 </DropdownMenuGroup>
               </DropdownMenuContent>
