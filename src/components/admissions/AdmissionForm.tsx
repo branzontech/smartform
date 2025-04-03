@@ -19,42 +19,63 @@ export const AdmissionForm = ({ patient, isNewPatient, onBack }: AdmissionFormPr
   const [newPatientData, setNewPatientData] = useState<Patient | null>(null);
   
   const handlePatientSubmit = (data: PatientFormValues) => {
-    // Create a new patient object with the form data
-    const newPatient: Patient = {
-      id: nanoid(),
-      name: data.name,
-      documentId: data.documentId,
-      dateOfBirth: data.dateOfBirth,
-      gender: data.gender,
-      contactNumber: data.contactNumber,
-      email: data.email || undefined,
-      address: data.address || undefined,
-      createdAt: new Date(),
-    };
-    
-    setNewPatientData(newPatient);
-    toast({
-      title: "Paciente creado",
-      description: "Los datos del paciente han sido guardados. Ahora puede continuar con la admisión.",
-    });
-    
-    // Move to admission step
-    setStep("admission");
+    try {
+      // Create a new patient object with the form data
+      const newPatient: Patient = {
+        id: nanoid(),
+        name: data.name,
+        documentId: data.documentId,
+        dateOfBirth: data.dateOfBirth,
+        gender: data.gender,
+        contactNumber: data.contactNumber,
+        email: data.email || undefined,
+        address: data.address || undefined,
+        createdAt: new Date(),
+      };
+      
+      setNewPatientData(newPatient);
+      toast({
+        title: "Paciente creado",
+        description: "Los datos del paciente han sido guardados. Ahora puede continuar con la admisión.",
+      });
+      
+      // Move to admission step
+      setStep("admission");
+    } catch (error) {
+      console.error("Error creating patient:", error);
+      toast({
+        title: "Error al crear paciente",
+        description: "Ha ocurrido un error al crear el paciente.",
+        variant: "destructive"
+      });
+    }
   };
 
   const handleAdmissionSubmit = (data: AdmissionFormValues) => {
-    // Combine patient data with admission data
-    const finalPatient = newPatientData || patient;
-    
-    console.log("Patient data:", finalPatient);
-    console.log("Admission data:", data);
-    
-    toast({
-      title: "Admisión completada",
-      description: isNewPatient 
-        ? "Paciente creado y admisión registrada correctamente." 
-        : "Admisión registrada correctamente.",
-    });
+    try {
+      // Combine patient data with admission data
+      const finalPatient = newPatientData || patient;
+      
+      console.log("Patient data:", finalPatient);
+      console.log("Admission data:", data);
+      
+      toast({
+        title: "Admisión completada",
+        description: isNewPatient 
+          ? "Paciente creado y admisión registrada correctamente." 
+          : "Admisión registrada correctamente.",
+      });
+      
+      // Return to admission list after successful submission
+      onBack();
+    } catch (error) {
+      console.error("Error submitting admission:", error);
+      toast({
+        title: "Error al completar la admisión",
+        description: "Ha ocurrido un error al registrar la admisión.",
+        variant: "destructive"
+      });
+    }
   };
 
   // If creating a new patient, show patient form first

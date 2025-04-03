@@ -26,7 +26,7 @@ const admissionSchema = z.object({
   priorityLevel: z.enum(["Normal", "Urgente", "Emergencia"]),
   notes: z.string().optional().or(z.literal("")),
   appointmentType: z.string(),
-  assignedTo: z.string().optional().or(z.literal("")),
+  assignedTo: z.string().optional(),
   scheduledTime: z.string(),
 });
 
@@ -52,7 +52,7 @@ export const AdmissionDetailsForm = ({
       priorityLevel: "Normal",
       notes: "",
       appointmentType: "Consulta",
-      assignedTo: "",
+      assignedTo: "no_assigned", // Changed from empty string to a valid value
       scheduledTime: new Date().toISOString().substring(0, 16),
     },
   });
@@ -199,7 +199,7 @@ export const AdmissionDetailsForm = ({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="">Sin asignar</SelectItem>
+                        <SelectItem value="no_assigned">Sin asignar</SelectItem>
                         <SelectItem value="Dr. Juan Pérez">Dr. Juan Pérez</SelectItem>
                         <SelectItem value="Dra. María González">Dra. María González</SelectItem>
                         <SelectItem value="Dr. Carlos Rodríguez">Dr. Carlos Rodríguez</SelectItem>
@@ -268,3 +268,4 @@ export const AdmissionDetailsForm = ({
 };
 
 export default AdmissionDetailsForm;
+
