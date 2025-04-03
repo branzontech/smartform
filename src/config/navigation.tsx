@@ -24,7 +24,10 @@ import {
   GraduationCap,
   Heart,
   Map,
-  Network
+  Network,
+  Bell,  // Added Bell icon
+  Link,  // Added Link icon
+  Shield  // Added Shield icon
 } from "lucide-react";
 
 export type MenuItem = {
