@@ -1,5 +1,5 @@
 
-import React, { useEffect } from "react";
+import React from "react";
 import { useNavigate } from "react-router-dom";
 import { Header } from "@/components/layout/header";
 import { Button } from "@/components/ui/button";
@@ -8,15 +8,6 @@ import { FileText, ArrowRight, Calendar, Users, BarChart, Stethoscope, Clipboard
 
 const Index = () => {
   const navigate = useNavigate();
-
-  useEffect(() => {
-    // Redirect to the new home page path after a slight delay to ensure hooks are properly initialized
-    const timer = setTimeout(() => {
-      navigate("/app/home");
-    }, 100);
-    
-    return () => clearTimeout(timer);
-  }, [navigate]);
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900">
