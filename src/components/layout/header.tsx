@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ChevronDown, Menu, Stethoscope, Moon, Sun, Search, Bell, UserCircle, LogOut } from "lucide-react";
@@ -386,7 +385,6 @@ export const Header = ({ showCreate = true }: HeaderProps) => {
       <CommandDialog 
         open={searchOpen} 
         onOpenChange={setSearchOpen}
-        className="rounded-3xl overflow-hidden"
       >
         <CommandInput 
           placeholder="Buscar en toda la navegación..." 
