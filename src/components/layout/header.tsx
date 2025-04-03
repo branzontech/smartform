@@ -1,6 +1,7 @@
+
+import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ChevronDown, Menu, Stethoscope, Moon, Sun, Search } from "lucide-react";
-import { useState, useEffect } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { MobileMenu } from "./mobile-menu";
 import { DesktopMenu } from "./desktop-menu";
@@ -108,12 +109,13 @@ export const Header = ({ showCreate = true }: HeaderProps) => {
           <div className="flex-1 flex items-center justify-center px-4">
             <Button
               variant="outline"
-              className="relative h-9 w-full max-w-sm justify-start text-sm text-muted-foreground sm:pr-12 md:w-40 lg:w-64"
+              className="relative h-10 w-full max-w-sm justify-start text-sm text-muted-foreground sm:pr-12 md:w-40 lg:w-64 rounded-full bg-white/20 backdrop-blur-sm border border-white/30 hover:border-purple-200 dark:bg-gray-800/20 dark:border-gray-700/30"
               onClick={() => setSearchOpen(true)}
             >
+              <Search className="mr-2 h-4 w-4 opacity-50" />
               <span className="hidden lg:inline-flex">Buscar en la navegación...</span>
               <span className="inline-flex lg:hidden">Buscar...</span>
-              <kbd className="pointer-events-none absolute right-1.5 top-2 hidden h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium opacity-100 sm:flex">
+              <kbd className="pointer-events-none absolute right-1.5 top-2 hidden h-5 select-none items-center gap-1 rounded-full border bg-white/20 px-1.5 font-mono text-[10px] font-medium opacity-100 sm:flex">
                 <span className="text-xs">⌘</span>K
               </kbd>
             </Button>
@@ -215,22 +217,31 @@ export const Header = ({ showCreate = true }: HeaderProps) => {
         </div>
       </header>
 
-      <CommandDialog open={searchOpen} onOpenChange={setSearchOpen}>
-        <CommandInput placeholder="Buscar en toda la navegación..." />
-        <CommandList>
+      <CommandDialog 
+        open={searchOpen} 
+        onOpenChange={setSearchOpen}
+        className="rounded-3xl"  // Add more rounded corners to the dialog
+      >
+        <CommandInput 
+          placeholder="Buscar en toda la navegación..." 
+          className="rounded-full border-none focus:ring-2 focus:ring-purple-300 dark:focus:ring-purple-700"
+        />
+        <CommandList className="rounded-b-3xl">
           <CommandEmpty>No se encontraron resultados.</CommandEmpty>
           {mainNavItems.map((section) => (
             section.items ? (
-              <CommandGroup key={section.title} heading={section.title}>
+              <CommandGroup key={section.title} heading={section.title} className="hover:bg-purple-50/30 dark:hover:bg-purple-900/20">
                 {section.items.map((item) => (
                   <CommandItem
                     key={item.path}
                     value={`${section.title} ${item.title}`}
                     onSelect={() => handleSelect(item.path)}
-                    className="flex items-center gap-2 cursor-pointer"
+                    className="rounded-xl hover:bg-purple-100 dark:hover:bg-purple-800/50 cursor-pointer transition-colors duration-200"
                   >
-                    <item.icon className="h-4 w-4" />
-                    {item.title}
+                    <div className="flex items-center gap-3">
+                      <item.icon className="h-5 w-5 text-purple-600 dark:text-purple-300" />
+                      <span className="text-gray-700 dark:text-gray-200">{item.title}</span>
+                    </div>
                   </CommandItem>
                 ))}
               </CommandGroup>
@@ -239,10 +250,12 @@ export const Header = ({ showCreate = true }: HeaderProps) => {
                 <CommandItem
                   value={section.title}
                   onSelect={() => handleSelect(section.path)}
-                  className="flex items-center gap-2 cursor-pointer"
+                  className="rounded-xl hover:bg-purple-100 dark:hover:bg-purple-800/50 cursor-pointer transition-colors duration-200"
                 >
-                  <section.icon className="h-4 w-4" />
-                  {section.title}
+                  <div className="flex items-center gap-3">
+                    <section.icon className="h-5 w-5 text-purple-600 dark:text-purple-300" />
+                    <span className="text-gray-700 dark:text-gray-200">{section.title}</span>
+                  </div>
                 </CommandItem>
               </CommandGroup>
             )
