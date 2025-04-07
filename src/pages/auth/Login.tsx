@@ -134,7 +134,7 @@ const Login = () => {
       <div className="w-full md:w-1/2 p-6 flex items-center justify-center">
         <div className="transition-all duration-300 transform hover:scale-105 hover:shadow-[0_0_35px_rgba(103,58,183,0.4)] rounded-lg max-w-lg">
           <DotLottieReact
-            src="https://lottie.host/18109434-2cc7-404a-bd11-35b0494244ba/fRSQ1gwZWk.lottie"
+            src="https://lottie.host/b530c689-fd0b-4480-81fc-35787d19cf21/0TLDc13MfP.lottie"
             loop
             autoplay
             style={{ width: '100%', height: '100%', background: 'transparent' }}
