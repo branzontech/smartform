@@ -42,7 +42,6 @@ export const Header = ({ showCreate = true }: HeaderProps) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
 
-  // Example notification data
   const [notifications, setNotifications] = useState([
     {
       id: 1,
@@ -191,10 +190,13 @@ export const Header = ({ showCreate = true }: HeaderProps) => {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="p-2 flex items-center gap-2 hover:bg-violet-400/20 dark:hover:bg-violet-500/30 group">
-                  Navegación <ChevronDown className="h-4 w-4" />
+                  Menú <ChevronDown className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-56 max-h-[70vh] overflow-y-auto">
+              <DropdownMenuContent 
+                className="w-56 max-h-[70vh] overflow-y-auto bg-white/20 dark:bg-gray-900/30 backdrop-blur-lg border border-white/20 dark:border-gray-700/30 shadow-lg" 
+                align="end"
+              >
                 <DropdownMenuGroup>
                   {mainNavItems.map((item) => (
                     item.items ? (
