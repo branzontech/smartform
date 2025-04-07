@@ -41,7 +41,9 @@ import {
   DollarSign,
   PieChart,
   FileBarChart,
-  Clock
+  Clock,
+  UserCircle,
+  Send
 } from "lucide-react";
 
 export type MenuItem = {
@@ -64,6 +66,11 @@ export const mainNavItems: SubmenuItem[] = [
     title: "Pacientes",
     path: "/app/pacientes",
     icon: Users,
+  },
+  {
+    title: "Clientes",
+    path: "/app/clientes",
+    icon: UserCircle,
   },
   {
     title: "Médicos",
@@ -111,6 +118,11 @@ export const mainNavItems: SubmenuItem[] = [
         icon: DollarSign,
       },
     ],
+  },
+  {
+    title: "Notificaciones",
+    path: "/app/clientes/notificaciones/nueva",
+    icon: Send,
   },
   {
     title: "Inventario",

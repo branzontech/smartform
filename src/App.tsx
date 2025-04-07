@@ -54,6 +54,11 @@ import BillingDashboard from "./pages/billing/BillingDashboard";
 import InvoiceDetail from "./pages/billing/InvoiceDetail";
 import InvoiceForm from "./pages/billing/InvoiceForm";
 
+// Importamos las páginas de clientes
+import CustomerList from "./pages/customers/CustomerList";
+import CustomerDetail from "./pages/customers/CustomerDetail";
+import NotificationForm from "./pages/customers/NotificationForm";
+
 export const BackButton = () => {
   const navigate = useNavigate();
   
@@ -140,6 +145,11 @@ function App() {
             <Route path="/app/facturacion/:id" element={<InvoiceDetail />} />
             <Route path="/app/facturacion/nueva" element={<InvoiceForm />} />
             <Route path="/app/facturacion/editar/:id" element={<InvoiceForm />} />
+            
+            {/* Rutas para clientes */}
+            <Route path="/app/clientes" element={<CustomerList />} />
+            <Route path="/app/clientes/:id" element={<CustomerDetail />} />
+            <Route path="/app/clientes/notificaciones/nueva" element={<NotificationForm />} />
             
             {/* Support legacy routes */}
             <Route path="/crear" element={<Navigate to="/app/crear" replace />} />
