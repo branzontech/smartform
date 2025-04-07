@@ -1,7 +1,7 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Brain, Sparkles, X } from "lucide-react";
+import { Brain, Sparkles, X, HistoryIcon, Trash2 } from "lucide-react";
 import {
   Drawer,
   DrawerContent,
@@ -18,17 +18,28 @@ import { AssistantMessage } from "@/types/ai-assistant-types";
 export const AIAssistant = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState("");
-  const [messages, setMessages] = useState<AssistantMessage[]>([
-    {
-      id: "welcome",
-      content: "Hola, soy Nexus. Puedo ayudarte con información del sistema. ¿Qué necesitas saber?",
-      sender: "assistant",
-      timestamp: new Date(),
-    },
-  ]);
+  const [messages, setMessages] = useState<AssistantMessage[]>(() => {
+    // Cargar historial desde localStorage al inicializar
+    const savedMessages = localStorage.getItem('nexusAssistantHistory');
+    return savedMessages 
+      ? JSON.parse(savedMessages) 
+      : [
+          {
+            id: "welcome",
+            content: "Hola, soy Nexus. Puedo ayudarte con información del sistema. ¿Qué necesitas saber?",
+            sender: "assistant",
+            timestamp: new Date(),
+          }
+        ];
+  });
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+
+  // Guardar historial en localStorage cada vez que cambian los mensajes
+  useEffect(() => {
+    localStorage.setItem('nexusAssistantHistory', JSON.stringify(messages));
+  }, [messages]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -98,6 +109,12 @@ export const AIAssistant = () => {
     }
   };
 
+  const handleClearHistory = () => {
+    const welcomeMessage = messages.find(m => m.id === "welcome");
+    setMessages(welcomeMessage ? [welcomeMessage] : []);
+    localStorage.removeItem('nexusAssistantHistory');
+  };
+
   return (
     <>
       <Button
@@ -120,14 +137,25 @@ export const AIAssistant = () => {
                 </Avatar>
                 <DrawerTitle className="text-xl font-semibold">Nexus</DrawerTitle>
               </div>
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                onClick={() => setIsOpen(false)}
-                className="hover:bg-gray-200 dark:hover:bg-gray-800 rounded-full h-8 w-8"
-              >
-                <X size={18} />
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  onClick={handleClearHistory}
+                  className="hover:bg-gray-200 dark:hover:bg-gray-800 rounded-full h-8 w-8"
+                  title="Limpiar historial"
+                >
+                  <Trash2 size={18} />
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  onClick={() => setIsOpen(false)}
+                  className="hover:bg-gray-200 dark:hover:bg-gray-800 rounded-full h-8 w-8"
+                >
+                  <X size={18} />
+                </Button>
+              </div>
             </div>
             <p className="text-sm text-muted-foreground mt-1">Tu asistente virtual inteligente</p>
           </DrawerHeader>
@@ -162,10 +190,15 @@ export const AIAssistant = () => {
                           : "text-gray-500"
                       )}
                     >
-                      {message.timestamp.toLocaleTimeString([], {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
+                      {message.timestamp instanceof Date 
+                        ? message.timestamp.toLocaleTimeString([], {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })
+                        : new Date(message.timestamp).toLocaleTimeString([], {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
                     </p>
                   </div>
                 </div>
