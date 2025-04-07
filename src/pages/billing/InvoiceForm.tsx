@@ -9,15 +9,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { DatePicker } from "@/components/ui/calendar";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { FilePlus, Plus, Trash2, Save, X, Calendar, SkipForward } from "lucide-react";
+import { FilePlus, Plus, Trash2, Save, X, Calendar as CalendarIcon, SkipForward } from "lucide-react";
 import { mockInvoices } from "@/utils/billing-utils";
 import { nanoid } from "nanoid";
-import { format } from "date-fns";
+import { InvoiceStatus, PaymentMethod } from "@/types/billing-types";
 
 const InvoiceForm = () => {
   const { id } = useParams();
@@ -34,14 +34,14 @@ const InvoiceForm = () => {
     doctorName: "",
     issueDate: new Date(),
     dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 días después
-    status: "pending",
+    status: "pending" as InvoiceStatus,
     total: 0,
     subtotal: 0,
     tax: 0,
     discount: 0,
     items: [{ id: nanoid(), description: "", quantity: 1, unitPrice: 0, total: 0 }],
     notes: "",
-    paymentMethod: "credit_card"
+    paymentMethod: "credit_card" as PaymentMethod
   });
 
   // Cargar datos si estamos editando
@@ -49,8 +49,12 @@ const InvoiceForm = () => {
     if (isEditing) {
       const foundInvoice = mockInvoices.find(inv => inv.id === id);
       if (foundInvoice) {
+        // Ensure all required properties are set with default values if they're missing
         setInvoice({
+          ...invoice,
           ...foundInvoice,
+          doctorId: foundInvoice.doctorId || "",
+          doctorName: foundInvoice.doctorName || "",
           issueDate: new Date(foundInvoice.issueDate),
           dueDate: new Date(foundInvoice.dueDate),
         });
@@ -191,7 +195,7 @@ const InvoiceForm = () => {
                   <Label htmlFor="status">Estado</Label>
                   <Select 
                     value={invoice.status}
-                    onValueChange={value => setInvoice({...invoice, status: value as any})}
+                    onValueChange={value => setInvoice({...invoice, status: value as InvoiceStatus})}
                   >
                     <SelectTrigger id="status">
                       <SelectValue placeholder="Seleccionar estado" />
@@ -207,8 +211,7 @@ const InvoiceForm = () => {
 
                 <div className="space-y-2">
                   <Label>Fecha de emisión</Label>
-                  <div className="flex items-center border rounded-md px-3 py-2">
-                    <Calendar className="h-4 w-4 text-muted-foreground mr-2" />
+                  <div className="flex items-center">
                     <DatePicker
                       value={invoice.issueDate}
                       onChange={date => setInvoice({...invoice, issueDate: date || new Date()})}
@@ -218,8 +221,7 @@ const InvoiceForm = () => {
                 
                 <div className="space-y-2">
                   <Label>Fecha de vencimiento</Label>
-                  <div className="flex items-center border rounded-md px-3 py-2">
-                    <SkipForward className="h-4 w-4 text-muted-foreground mr-2" />
+                  <div className="flex items-center">
                     <DatePicker
                       value={invoice.dueDate}
                       onChange={date => setInvoice({...invoice, dueDate: date || new Date()})}
@@ -260,8 +262,8 @@ const InvoiceForm = () => {
                 <div className="space-y-2">
                   <Label htmlFor="paymentMethod">Método de pago</Label>
                   <Select 
-                    value={invoice.paymentMethod || "credit_card"}
-                    onValueChange={value => setInvoice({...invoice, paymentMethod: value as any})}
+                    value={invoice.paymentMethod}
+                    onValueChange={value => setInvoice({...invoice, paymentMethod: value as PaymentMethod})}
                   >
                     <SelectTrigger id="paymentMethod">
                       <SelectValue placeholder="Seleccionar método" />
