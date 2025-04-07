@@ -1,4 +1,3 @@
-
 import { nanoid } from "nanoid";
 import { Office, Site, OfficeFormValues, SiteFormValues } from "@/types/location-types";
 
@@ -242,9 +241,21 @@ export const addOffice = (officeData: OfficeFormValues): Office => {
   const offices = getAllOffices();
   const sites = getAllSites();
   
+  // Ensure equipment is properly formatted as string[]
+  const formattedEquipment = Array.isArray(officeData.equipment) 
+    ? officeData.equipment 
+    : officeData.equipment ? officeData.equipment.split(',').map(item => item.trim()) : [];
+    
+  // Ensure specialties is properly formatted as string[]
+  const formattedSpecialties = Array.isArray(officeData.specialties) 
+    ? officeData.specialties 
+    : officeData.specialties ? officeData.specialties.split(',').map(item => item.trim()) : [];
+  
   const newOffice: Office = {
     id: `office-${nanoid(8)}`,
     ...officeData,
+    equipment: formattedEquipment,
+    specialties: formattedSpecialties,
     currentPatients: 0
   };
   
@@ -271,9 +282,22 @@ export const updateOffice = (id: string, officeData: OfficeFormValues): Office |
   if (officeIndex === -1) return undefined;
   
   const existingOffice = offices[officeIndex];
+  
+  // Ensure equipment is properly formatted as string[]
+  const formattedEquipment = Array.isArray(officeData.equipment) 
+    ? officeData.equipment 
+    : officeData.equipment ? officeData.equipment.split(',').map(item => item.trim()) : [];
+    
+  // Ensure specialties is properly formatted as string[]
+  const formattedSpecialties = Array.isArray(officeData.specialties) 
+    ? officeData.specialties 
+    : officeData.specialties ? officeData.specialties.split(',').map(item => item.trim()) : [];
+  
   const updatedOffice: Office = {
     ...existingOffice,
     ...officeData,
+    equipment: formattedEquipment,
+    specialties: formattedSpecialties,
     id
   };
   
