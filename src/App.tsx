@@ -25,6 +25,7 @@ import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
 import ForgotPassword from "./pages/auth/ForgotPassword";
 import AdmissionPage from "./pages/admissions/AdmissionPage";
+import AIAssistant from "./components/ai-assistant/AIAssistant";
 
 // Importamos las páginas de especialidades
 import CirujanoPage from "./pages/especialidades/CirujanoPage";
@@ -148,6 +149,9 @@ function App() {
             {/* 404 route */}
             <Route path="*" element={<NotFound />} />
           </Routes>
+          
+          {/* Asistente de IA flotante */}
+          <AIAssistant />
         </BrowserRouter>
       </TooltipProvider>
     </QueryClientProvider>
