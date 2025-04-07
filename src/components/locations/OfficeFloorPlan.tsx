@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Office } from '@/types/location-types';
 import { updateOfficeStatus } from '@/utils/location-utils';
@@ -8,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
-import { PlusCircle, MinusCircle, Users } from "lucide-react";
+import { PlusCircle, MinusCircle, Users, Clipboard } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
 interface OfficeCardProps {
@@ -36,7 +35,6 @@ const getStatusVariant = (status: Office['status']) => {
   }
 };
 
-// Componente para la tarjeta de consultorio en el plano
 const OfficeCard = ({ office, onClick }: OfficeCardProps) => {
   const occupancyPercentage = (office.currentPatients / office.maxPatients) * 100;
   
@@ -97,10 +95,8 @@ export const OfficeFloorPlan = ({ offices, onOfficeUpdate }: OfficeFloorPlanProp
   const [selectedOffice, setSelectedOffice] = useState<Office | null>(null);
   const [selectedFloor, setSelectedFloor] = useState<number>(1);
   
-  // Agrupar oficinas por piso
   const floorOffices = offices.filter(office => office.floor === selectedFloor);
   
-  // Obtener lista de pisos únicos
   const floors = [...new Set(offices.map(office => office.floor))].sort((a, b) => a - b);
   
   const handleOfficeClick = (office: Office) => {
@@ -138,7 +134,6 @@ export const OfficeFloorPlan = ({ offices, onOfficeUpdate }: OfficeFloorPlanProp
 
   return (
     <div className="w-full">
-      {/* Selector de piso */}
       <div className="flex flex-wrap gap-2 mb-4">
         {floors.map(floor => (
           <Button
@@ -152,16 +147,13 @@ export const OfficeFloorPlan = ({ offices, onOfficeUpdate }: OfficeFloorPlanProp
         ))}
       </div>
       
-      {/* Plano de consultorios */}
       <div className="relative w-full h-[70vh] overflow-hidden bg-slate-100 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800">
-        {/* Cuadrícula de referencia */}
         <div className="absolute inset-0 grid grid-cols-10 grid-rows-10 opacity-10">
           {Array.from({ length: 100 }).map((_, i) => (
             <div key={i} className="border border-gray-400 dark:border-gray-700"></div>
           ))}
         </div>
         
-        {/* Consultorios */}
         {floorOffices.map(office => (
           <OfficeCard 
             key={office.id} 
@@ -170,7 +162,6 @@ export const OfficeFloorPlan = ({ offices, onOfficeUpdate }: OfficeFloorPlanProp
           />
         ))}
         
-        {/* Leyenda de estados */}
         <div className="absolute bottom-2 right-2 bg-white dark:bg-gray-800 rounded-lg shadow-md p-2 flex flex-col gap-1 text-xs">
           <div className="text-xs font-semibold mb-1">Estados:</div>
           <div className="flex items-center"><span className="h-3 w-3 rounded-full bg-green-500 inline-block mr-1"></span> Disponible</div>
@@ -180,7 +171,6 @@ export const OfficeFloorPlan = ({ offices, onOfficeUpdate }: OfficeFloorPlanProp
         </div>
       </div>
       
-      {/* Diálogo de detalles y acciones */}
       <Dialog open={!!selectedOffice} onOpenChange={() => closeDialog()}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>

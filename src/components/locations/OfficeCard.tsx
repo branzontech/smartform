@@ -4,7 +4,7 @@ import { Office } from '@/types/location-types';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Building2, Users, SquareFeet, Edit, Trash, Clipboard } from "lucide-react";
+import { Building2, Users, Edit, Trash, Square, Clipboard } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 
 interface OfficeCardProps {
@@ -46,7 +46,7 @@ export const OfficeCard = ({ office, onEdit, onDelete }: OfficeCardProps) => {
       <CardContent className="text-sm space-y-4 pb-4">
         <div className="grid grid-cols-2 gap-x-4 gap-y-2">
           <div className="flex items-center text-gray-600 dark:text-gray-400">
-            <SquareFeet size={14} className="mr-2 flex-shrink-0" />
+            <Square size={14} className="mr-2 flex-shrink-0" />
             <span>Área: {office.area} m²</span>
           </div>
           

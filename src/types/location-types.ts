@@ -45,9 +45,9 @@ export interface OfficeFormValues {
   capacity: number;
   area: number;
   status: LocationStatus;
-  equipment?: string[];
+  equipment?: string | string[];
   maxPatients: number;
-  specialties?: string[];
+  specialties?: string | string[];
   assignedDoctor?: string;
   location?: { x: number; y: number };
   siteId: string;

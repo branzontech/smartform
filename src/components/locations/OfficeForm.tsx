@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -78,7 +77,7 @@ export const OfficeForm = ({ initialData, onSubmit, onCancel, siteId }: OfficeFo
       floor: 1,
       capacity: 4,
       area: 20,
-      status: "Disponible",
+      status: "Disponible" as LocationStatus,
       equipment: "",
       maxPatients: 15,
       specialties: "",
@@ -88,12 +87,12 @@ export const OfficeForm = ({ initialData, onSubmit, onCancel, siteId }: OfficeFo
     }
   });
   
-  const handleSubmit = (data: OfficeFormValues) => {
+  const handleSubmit = (data: any) => {
     // Procesar los datos de arrays que vienen como strings
     const formattedData: OfficeFormValues = {
       ...data,
-      equipment: data.equipment ? data.equipment.split(',').map(item => item.trim()) : undefined,
-      specialties: data.specialties ? data.specialties.split(',').map(item => item.trim()) : undefined
+      equipment: data.equipment && typeof data.equipment === 'string' ? data.equipment.split(',').map((item: string) => item.trim()) : [],
+      specialties: data.specialties && typeof data.specialties === 'string' ? data.specialties.split(',').map((item: string) => item.trim()) : []
     };
     
     onSubmit(formattedData);
