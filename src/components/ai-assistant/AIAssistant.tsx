@@ -1,7 +1,6 @@
-
 import React, { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Bot, X, Send, Sparkles, Brain } from "lucide-react";
+import { Brain } from "lucide-react";
 import {
   Drawer,
   DrawerContent,
@@ -13,26 +12,19 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
-
-type Message = {
-  id: string;
-  content: string;
-  sender: "user" | "assistant";
-  timestamp: Date;
-};
+import { AssistantMessage } from "@/types/ai-assistant-types";
 
 export const AIAssistant = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState("");
-  const [messages, setMessages] = useState<Message[]>([
+  const [messages, setMessages] = useState<AssistantMessage[]>([
     {
       id: "welcome",
-      content: "Hola! Soy Nexus, tu asistente virtual. ¿En qué puedo ayudarte hoy?",
+      content: "Hola, soy Nexus. Puedo ayudarte con información del sistema. ¿Qué necesitas saber?",
       sender: "assistant",
       timestamp: new Date(),
     },
   ]);
-  const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -50,11 +42,42 @@ export const AIAssistant = () => {
     }
   }, [isOpen]);
 
+  const generateContextualResponse = (query: string) => {
+    const lowerQuery = query.toLowerCase();
+    
+    const responses: { [key: string]: string } = {
+      // System-wide queries
+      "cuántos pacientes hay": "Actualmente hay 127 pacientes registrados en el sistema.",
+      "pacientes activos": "Tenemos 89 pacientes activos en este momento.",
+      "total facturado": "El total facturado hasta la fecha es de $356,890.00 MXN.",
+      
+      // Doctors and medical staff
+      "médicos disponibles": "Hay 8 doctores disponibles para consultas hoy.",
+      "consultorios": "El Consultorio 3 tiene actualmente un 87% de ocupación.",
+      
+      // Appointments and statistics
+      "citas": "El departamento de cardiología ha atendido 43 pacientes este mes.",
+      "tiempo de espera": "El tiempo promedio de espera para citas es de 18 minutos.",
+      
+      // Default response
+      "default": "Lo siento, no tengo información específica sobre esa consulta. ¿Podrías ser más específico?"
+    };
+
+    // Find the most relevant response
+    const matchingResponses = Object.entries(responses)
+      .filter(([key]) => lowerQuery.includes(key))
+      .map(([_, response]) => response);
+
+    return matchingResponses.length > 0 
+      ? matchingResponses[0] 
+      : responses["default"];
+  };
+
   const handleSend = () => {
     if (input.trim() === "") return;
 
     // Add user message
-    const userMessage: Message = {
+    const userMessage: AssistantMessage = {
       id: Date.now().toString(),
       content: input,
       sender: "user",
@@ -62,30 +85,20 @@ export const AIAssistant = () => {
     };
     
     setMessages((prev) => [...prev, userMessage]);
+    
+    // Generate instant AI response
+    const assistantMessage: AssistantMessage = {
+      id: (Date.now() + 1).toString(),
+      content: generateContextualResponse(input),
+      sender: "assistant",
+      timestamp: new Date(),
+    };
+
+    // Add assistant response immediately
+    setMessages((prev) => [...prev, assistantMessage]);
+    
+    // Clear input
     setInput("");
-    setIsTyping(true);
-
-    // Simulate AI response
-    setTimeout(() => {
-      const responses = [
-        "Según los datos actuales, tenemos 127 pacientes activos en el sistema.",
-        "El departamento de cardiología ha atendido 43 pacientes este mes, un 15% más que el mes anterior.",
-        "El total facturado hasta la fecha es de $356,890.00 MXN.",
-        "Actualmente hay 8 doctores disponibles para consultas hoy.",
-        "El tiempo promedio de espera para citas es de 18 minutos.",
-        "El consultorio más ocupado es Consultorio 3 con un 87% de ocupación.",
-      ];
-
-      const assistantMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        content: responses[Math.floor(Math.random() * responses.length)],
-        sender: "assistant",
-        timestamp: new Date(),
-      };
-
-      setMessages((prev) => [...prev, assistantMessage]);
-      setIsTyping(false);
-    }, 1500);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -164,18 +177,6 @@ export const AIAssistant = () => {
                 </div>
               ))}
               
-              {isTyping && (
-                <div className="flex justify-start">
-                  <div className="bg-gray-100 dark:bg-gray-800 rounded-lg rounded-bl-none p-3 max-w-[80%]">
-                    <div className="flex space-x-1">
-                      <div className="w-2 h-2 rounded-full bg-gray-400 animate-bounce" style={{ animationDelay: "0ms" }}></div>
-                      <div className="w-2 h-2 rounded-full bg-gray-400 animate-bounce" style={{ animationDelay: "150ms" }}></div>
-                      <div className="w-2 h-2 rounded-full bg-gray-400 animate-bounce" style={{ animationDelay: "300ms" }}></div>
-                    </div>
-                  </div>
-                </div>
-              )}
-              
               <div ref={messagesEndRef} />
             </div>
           </ScrollArea>
@@ -195,11 +196,11 @@ export const AIAssistant = () => {
                 className="bg-purple-600 hover:bg-purple-700"
                 size="icon"
               >
-                <Send size={18} />
+                <Brain size={18} />
               </Button>
             </div>
             <p className="text-xs text-center text-muted-foreground mt-2">
-              Puedo ayudarte con estadísticas, información de pacientes y más.
+              Puedo ayudarte con estadísticas, información del sistema y más.
             </p>
           </DrawerFooter>
         </DrawerContent>
