@@ -4,6 +4,8 @@ export type CustomerFrequency = 'Frecuente' | 'Regular' | 'Esporádico' | 'Nuevo
 export type CustomerLoyalty = 'Alta' | 'Media' | 'Baja' | 'Sin historial';
 export type NotificationType = 'Recordatorio' | 'Felicitación' | 'Promoción' | 'General';
 export type NotificationChannel = 'WhatsApp' | 'Email' | 'Ambos';
+export type ReminderStatus = 'Pendiente' | 'Enviado' | 'Cancelado' | 'Recurrente';
+export type ReminderFrequency = 'Una vez' | 'Diario' | 'Semanal' | 'Mensual' | 'Anual' | 'Personalizado';
 
 export interface Customer {
   id: string;
@@ -42,6 +44,25 @@ export interface CustomerNotification {
   status: 'Pendiente' | 'Enviado' | 'Fallido';
   createdAt: Date;
   updatedAt?: Date;
+}
+
+export interface CustomerReminder {
+  id: string;
+  customerId: string;
+  customerName: string;
+  title: string;
+  message: string;
+  reminderDate: Date;
+  status: ReminderStatus;
+  frequency: ReminderFrequency;
+  channel: NotificationChannel;
+  createdAt: Date;
+  updatedAt?: Date;
+  completedAt?: Date;
+  customFrequencyDays?: number; // Para frecuencia personalizada en días
+  customFrequencyMonths?: number; // Para frecuencia personalizada en meses
+  customMessage?: boolean; // Si el mensaje debe ser personalizado cada vez
+  tags?: string[];
 }
 
 export interface CustomerStats {

@@ -1,40 +1,44 @@
 
 import React from "react";
-import { useParams } from "react-router-dom";
 import { Header } from "@/components/layout/header";
 import { BackButton } from "@/App";
 import { CustomerHeader } from "@/components/customers/CustomerHeader";
 import { CustomerContact } from "@/components/customers/CustomerContact";
 import { CustomerHistory } from "@/components/customers/CustomerHistory";
 import { CustomerNotifications } from "@/components/customers/CustomerNotifications";
+import { CustomerReminders } from "@/components/customers/CustomerReminders";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Clock, MessageCircle, History, BadgeInfo } from "lucide-react";
+import { useParams } from "react-router-dom";
+import { Customer } from "@/types/customer-types";
+
+// Mock data for a single customer
+const mockCustomer: Customer = {
+  id: "1",
+  name: "Ana García Martínez",
+  email: "ana.garcia@example.com",
+  phone: "+34 611 234 567",
+  whatsapp: "+34 611 234 567",
+  status: "Activo",
+  frequency: "Frecuente",
+  loyalty: "Alta",
+  lastContact: new Date(2023, 3, 15),
+  nextContactDate: new Date(2023, 5, 1),
+  notes: "Cliente muy satisfecha con los servicios. Prefiere comunicación por WhatsApp.",
+  createdAt: new Date(2020, 6, 10),
+  updatedAt: new Date(2023, 3, 15),
+  tags: ["VIP", "Fidelizado", "Referido"],
+  appointmentCount: 24,
+  totalSpent: 1850,
+  lastAppointment: new Date(2023, 3, 12),
+  birthday: new Date(1985, 7, 15),
+  address: "Calle Principal 23, 28001 Madrid",
+  profileImage: "https://i.pravatar.cc/150?img=45"
+};
 
 const CustomerDetail = () => {
   const { id } = useParams<{ id: string }>();
+  const customer = mockCustomer; // In real app, fetch customer by id
   
-  // In a real app, you would fetch customer data here
-  const customer = {
-    id: id || "1",
-    name: "Ana García Martínez",
-    email: "ana.garcia@example.com",
-    phone: "+34 612 345 678",
-    whatsapp: "+34 612 345 678",
-    status: "Activo" as const,
-    frequency: "Frecuente" as const,
-    loyalty: "Alta" as const,
-    lastContact: new Date(2023, 2, 15),
-    nextContactDate: new Date(2023, 4, 1),
-    notes: "Cliente habitual desde 2020. Prefiere citas por la tarde.",
-    createdAt: new Date(2020, 5, 10),
-    appointmentCount: 24,
-    totalSpent: 1850,
-    lastAppointment: new Date(2023, 3, 20),
-    birthday: new Date(1985, 8, 15),
-    profileImage: "https://i.pravatar.cc/150?img=29",
-    tags: ["VIP", "Tratamiento mensual", "Pago anticipado"]
-  };
-
   return (
     <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900">
       <Header />
@@ -43,45 +47,36 @@ const CustomerDetail = () => {
         
         <CustomerHeader customer={customer} />
         
-        <Tabs defaultValue="info" className="mt-8">
-          <TabsList className="mb-6">
-            <TabsTrigger value="info" className="flex items-center gap-2">
-              <BadgeInfo size={16} />
-              Información
-            </TabsTrigger>
-            <TabsTrigger value="history" className="flex items-center gap-2">
-              <History size={16} />
-              Historial
-            </TabsTrigger>
-            <TabsTrigger value="notifications" className="flex items-center gap-2">
-              <MessageCircle size={16} />
-              Notificaciones
-            </TabsTrigger>
-            <TabsTrigger value="appointments" className="flex items-center gap-2">
-              <Clock size={16} />
-              Citas
-            </TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="info">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+          <div className="lg:col-span-1">
             <CustomerContact customer={customer} />
-          </TabsContent>
+          </div>
           
-          <TabsContent value="history">
-            <CustomerHistory customerId={customer.id} />
-          </TabsContent>
-          
-          <TabsContent value="notifications">
-            <CustomerNotifications customerId={customer.id} />
-          </TabsContent>
-          
-          <TabsContent value="appointments">
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
-              <h3 className="text-lg font-medium mb-4">Historial de Citas</h3>
-              <p className="text-muted-foreground">Próximamente: historial de citas del cliente.</p>
-            </div>
-          </TabsContent>
-        </Tabs>
+          <div className="lg:col-span-2">
+            <Tabs defaultValue="history" className="w-full">
+              <TabsList>
+                <TabsTrigger value="history">Historial</TabsTrigger>
+                <TabsTrigger value="notifications">Notificaciones</TabsTrigger>
+                <TabsTrigger value="reminders">Recordatorios</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="history">
+                <CustomerHistory customerId={customer.id} />
+              </TabsContent>
+              
+              <TabsContent value="notifications">
+                <CustomerNotifications customerId={customer.id} />
+              </TabsContent>
+              
+              <TabsContent value="reminders">
+                <CustomerReminders 
+                  customerId={customer.id} 
+                  customerName={customer.name} 
+                />
+              </TabsContent>
+            </Tabs>
+          </div>
+        </div>
       </main>
     </div>
   );
