@@ -62,6 +62,8 @@ export interface CustomerStats {
   customerRetentionRate: number;
   customersByMonth: {
     month: string;
-    count: number;
+    nuevos?: number;
+    activos?: number;
+    count?: number;
   }[];
 }

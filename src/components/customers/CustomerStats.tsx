@@ -1,4 +1,3 @@
-
 import React from "react";
 import {
   Card,
@@ -50,6 +49,7 @@ const customersByFrequency = [
   { name: "Nuevos", value: 56 },
 ];
 
+// This data now matches our updated type in the interface
 const customersByMonth = [
   { month: "Ene", nuevos: 12, activos: 85 },
   { month: "Feb", nuevos: 18, activos: 90 },
@@ -82,7 +82,7 @@ const notificationStats = [
 
 const COLORS = ['#8b5cf6', '#ec4899', '#06b6d4', '#ef4444', '#22c55e', '#f59e0b'];
 
-// Mock data for the customer stats
+// Mock data for the customer stats, matching our updated interface
 const mockCustomerStats: CustomerStatsType = {
   totalCustomers: 260,
   activeCustomers: 156,
@@ -93,7 +93,7 @@ const mockCustomerStats: CustomerStatsType = {
   appointmentsBooked: 486,
   revenueGenerated: 28500,
   customerRetentionRate: 78,
-  customersByMonth,
+  customersByMonth: customersByMonth,
 };
 
 export const CustomerStats = () => {
