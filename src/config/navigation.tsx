@@ -35,7 +35,8 @@ import {
   List,
   Building,
   Building2,
-  MapPin
+  MapPin,
+  Stethoscope
 } from "lucide-react";
 
 export type MenuItem = {
@@ -58,6 +59,11 @@ export const mainNavItems: SubmenuItem[] = [
     title: "Pacientes",
     path: "/app/pacientes",
     icon: Users,
+  },
+  {
+    title: "Médicos",
+    path: "/app/medicos",
+    icon: Stethoscope,
   },
   {
     title: "Admisiones",
@@ -174,8 +180,8 @@ export const mainNavItems: SubmenuItem[] = [
     items: [
       {
         title: "Médicos",
-        path: "/app/personal/medicos",
-        icon: UserPlus,
+        path: "/app/medicos",
+        icon: Stethoscope,
       },
       {
         title: "Enfermeros",

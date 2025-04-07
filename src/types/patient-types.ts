@@ -112,3 +112,61 @@ export interface PatientAlert {
   createdAt: Date;
   dismissedAt?: Date;
 }
+
+// Nuevos tipos para médicos y profesionales
+export interface Doctor {
+  id: string;
+  name: string;
+  specialty: string;
+  documentId: string;
+  licenseNumber: string;
+  contactNumber: string;
+  email: string;
+  profileImage?: string;
+  officeIds?: string[];
+  bio?: string;
+  createdAt: Date;
+  status: 'Activo' | 'Inactivo' | 'Vacaciones';
+  schedule?: WeeklySchedule;
+  specialties?: string[];
+}
+
+export interface WeeklySchedule {
+  monday?: DaySchedule;
+  tuesday?: DaySchedule;
+  wednesday?: DaySchedule;
+  thursday?: DaySchedule;
+  friday?: DaySchedule;
+  saturday?: DaySchedule;
+  sunday?: DaySchedule;
+}
+
+export interface DaySchedule {
+  isWorking: boolean;
+  startTime?: string;
+  endTime?: string;
+  breaks?: TimeRange[];
+}
+
+export interface TimeRange {
+  startTime: string;
+  endTime: string;
+}
+
+export interface DoctorStatistics {
+  totalPatients: number;
+  activePatients: number;
+  appointmentsCompleted: number;
+  appointmentsScheduled: number;
+  appointmentsCancelled: number;
+  consultationsByMonth: {
+    month: string;
+    count: number;
+  }[];
+  satisfactionRate?: number;
+}
+
+export type DoctorWithPatients = Doctor & {
+  assignedPatients: Patient[];
+  upcomingAppointments: Appointment[];
+}

@@ -43,6 +43,10 @@ import SiteListPage from "./pages/locations/SiteListPage";
 import SiteDetailPage from "./pages/locations/SiteDetailPage";
 import OfficeListPage from "./pages/locations/OfficeListPage";
 
+// Importamos las páginas de médicos y profesionales
+import DoctorList from "./pages/doctors/DoctorList";
+import DoctorProfile from "./pages/doctors/DoctorProfile";
+
 export const BackButton = () => {
   const navigate = useNavigate();
   
@@ -99,6 +103,10 @@ function App() {
             
             {/* Nueva ruta para admisiones */}
             <Route path="/app/admisiones" element={<AdmissionPage />} />
+            
+            {/* Rutas de médicos y profesionales */}
+            <Route path="/app/medicos" element={<DoctorList />} />
+            <Route path="/app/medicos/:id" element={<DoctorProfile />} />
             
             {/* Rutas de especialidades */}
             <Route path="/app/especialidades/cirujano" element={<CirujanoPage />} />
