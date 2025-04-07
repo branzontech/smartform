@@ -36,7 +36,12 @@ import {
   Building,
   Building2,
   MapPin,
-  Stethoscope
+  Stethoscope,
+  Receipt,
+  DollarSign,
+  PieChart,
+  FileBarChart,
+  Clock
 } from "lucide-react";
 
 export type MenuItem = {
@@ -74,6 +79,38 @@ export const mainNavItems: SubmenuItem[] = [
     title: "Citas",
     path: "/app/citas",
     icon: Calendar,
+  },
+  {
+    title: "Facturación",
+    path: "#",
+    icon: CreditCard,
+    items: [
+      {
+        title: "Dashboard",
+        path: "/app/facturacion",
+        icon: PieChart,
+      },
+      {
+        title: "Facturas",
+        path: "/app/facturacion",
+        icon: Receipt,
+      },
+      {
+        title: "Pagos Pendientes",
+        path: "/app/facturacion?tab=pending",
+        icon: Clock,
+      },
+      {
+        title: "Reportes",
+        path: "/app/facturacion?tab=reports",
+        icon: FileBarChart,
+      },
+      {
+        title: "Generar Factura",
+        path: "/app/facturacion/nueva",
+        icon: DollarSign,
+      },
+    ],
   },
   {
     title: "Inventario",
@@ -192,28 +229,6 @@ export const mainNavItems: SubmenuItem[] = [
         title: "Administrativos",
         path: "/app/personal/administrativos",
         icon: Briefcase,
-      },
-    ],
-  },
-  {
-    title: "Facturación",
-    path: "#",
-    icon: CreditCard,
-    items: [
-      {
-        title: "Pagos",
-        path: "/app/facturacion/pagos",
-        icon: CreditCard,
-      },
-      {
-        title: "Seguros",
-        path: "/app/facturacion/seguros",
-        icon: Shield,
-      },
-      {
-        title: "Reportes",
-        path: "/app/facturacion/reportes",
-        icon: BarChart,
       },
     ],
   },

@@ -49,6 +49,11 @@ import DoctorList from "./pages/doctors/DoctorList";
 import DoctorProfile from "./pages/doctors/DoctorProfile";
 import DoctorForm from "./pages/doctors/DoctorForm";
 
+// Importamos las páginas de facturación
+import BillingDashboard from "./pages/billing/BillingDashboard";
+import InvoiceDetail from "./pages/billing/InvoiceDetail";
+import InvoiceForm from "./pages/billing/InvoiceForm";
+
 export const BackButton = () => {
   const navigate = useNavigate();
   
@@ -129,6 +134,12 @@ function App() {
             <Route path="/app/locations/sites/:siteId" element={<SiteDetailPage />} />
             <Route path="/app/locations/offices" element={<OfficeListPage />} />
             <Route path="/app/locations/map" element={<SiteListPage />} />
+            
+            {/* Rutas para facturación */}
+            <Route path="/app/facturacion" element={<BillingDashboard />} />
+            <Route path="/app/facturacion/:id" element={<InvoiceDetail />} />
+            <Route path="/app/facturacion/nueva" element={<InvoiceForm />} />
+            <Route path="/app/facturacion/editar/:id" element={<InvoiceForm />} />
             
             {/* Support legacy routes */}
             <Route path="/crear" element={<Navigate to="/app/crear" replace />} />
