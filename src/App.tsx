@@ -38,6 +38,11 @@ import InventoryForm from "./pages/inventory/InventoryForm";
 import InventorySearch from "./pages/inventory/InventorySearch";
 import InventoryDetail from "./pages/inventory/InventoryDetail";
 
+// Importamos las páginas de consultorios y sedes
+import SiteListPage from "./pages/locations/SiteListPage";
+import SiteDetailPage from "./pages/locations/SiteDetailPage";
+import OfficeListPage from "./pages/locations/OfficeListPage";
+
 export const BackButton = () => {
   const navigate = useNavigate();
   
@@ -101,12 +106,18 @@ function App() {
             <Route path="/app/especialidades/nutricionista" element={<NutricionistaPage />} />
             <Route path="/app/especialidades/terapias" element={<TerapiasPage />} />
             
-            {/* Nuevas rutas para inventario */}
+            {/* Rutas para inventario */}
             <Route path="/app/inventario/articulos" element={<InventoryList />} />
             <Route path="/app/inventario/nuevo" element={<InventoryForm />} />
             <Route path="/app/inventario/editar/:id" element={<InventoryForm />} />
             <Route path="/app/inventario/buscar" element={<InventorySearch />} />
             <Route path="/app/inventario/:id" element={<InventoryDetail />} />
+            
+            {/* Rutas para consultorios y sedes */}
+            <Route path="/app/locations/sites" element={<SiteListPage />} />
+            <Route path="/app/locations/sites/:siteId" element={<SiteDetailPage />} />
+            <Route path="/app/locations/offices" element={<OfficeListPage />} />
+            <Route path="/app/locations/map" element={<SiteListPage />} />
             
             {/* Support legacy routes */}
             <Route path="/crear" element={<Navigate to="/app/crear" replace />} />

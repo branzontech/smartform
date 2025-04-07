@@ -1,3 +1,4 @@
+
 import { 
   Home, 
   Users, 
@@ -30,8 +31,11 @@ import {
   UserCheck,
   PackageOpen,
   PackagePlus,
+  PackageSearch,
   List,
-  PackageSearch
+  Building,
+  Building2,
+  MapPin
 } from "lucide-react";
 
 export type MenuItem = {
@@ -84,6 +88,28 @@ export const mainNavItems: SubmenuItem[] = [
         title: "Buscar",
         path: "/app/inventario/buscar",
         icon: PackageSearch,
+      },
+    ],
+  },
+  {
+    title: "Consultorios",
+    path: "#",
+    icon: Building,
+    items: [
+      {
+        title: "Sedes",
+        path: "/app/locations/sites",
+        icon: Building,
+      },
+      {
+        title: "Consultorios",
+        path: "/app/locations/offices",
+        icon: Building2,
+      },
+      {
+        title: "Mapa de Instalaciones",
+        path: "/app/locations/map",
+        icon: MapPin,
       },
     ],
   },
