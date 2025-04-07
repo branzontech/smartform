@@ -46,6 +46,7 @@ import OfficeListPage from "./pages/locations/OfficeListPage";
 // Importamos las páginas de médicos y profesionales
 import DoctorList from "./pages/doctors/DoctorList";
 import DoctorProfile from "./pages/doctors/DoctorProfile";
+import DoctorForm from "./pages/doctors/DoctorForm";
 
 export const BackButton = () => {
   const navigate = useNavigate();
@@ -106,6 +107,7 @@ function App() {
             
             {/* Rutas de médicos y profesionales */}
             <Route path="/app/medicos" element={<DoctorList />} />
+            <Route path="/app/medicos/nuevo" element={<DoctorForm />} />
             <Route path="/app/medicos/:id" element={<DoctorProfile />} />
             
             {/* Rutas de especialidades */}
