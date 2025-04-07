@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Brain } from "lucide-react";
+import { Brain, Sparkles, X } from "lucide-react";
 import {
   Drawer,
   DrawerContent,
@@ -28,12 +28,10 @@ export const AIAssistant = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Scroll to bottom when messages change
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // Focus input when drawer opens
   useEffect(() => {
     if (isOpen) {
       setTimeout(() => {
@@ -46,24 +44,19 @@ export const AIAssistant = () => {
     const lowerQuery = query.toLowerCase();
     
     const responses: { [key: string]: string } = {
-      // System-wide queries
       "cuántos pacientes hay": "Actualmente hay 127 pacientes registrados en el sistema.",
       "pacientes activos": "Tenemos 89 pacientes activos en este momento.",
       "total facturado": "El total facturado hasta la fecha es de $356,890.00 MXN.",
       
-      // Doctors and medical staff
       "médicos disponibles": "Hay 8 doctores disponibles para consultas hoy.",
       "consultorios": "El Consultorio 3 tiene actualmente un 87% de ocupación.",
       
-      // Appointments and statistics
       "citas": "El departamento de cardiología ha atendido 43 pacientes este mes.",
       "tiempo de espera": "El tiempo promedio de espera para citas es de 18 minutos.",
       
-      // Default response
       "default": "Lo siento, no tengo información específica sobre esa consulta. ¿Podrías ser más específico?"
     };
 
-    // Find the most relevant response
     const matchingResponses = Object.entries(responses)
       .filter(([key]) => lowerQuery.includes(key))
       .map(([_, response]) => response);
@@ -76,7 +69,6 @@ export const AIAssistant = () => {
   const handleSend = () => {
     if (input.trim() === "") return;
 
-    // Add user message
     const userMessage: AssistantMessage = {
       id: Date.now().toString(),
       content: input,
@@ -86,7 +78,6 @@ export const AIAssistant = () => {
     
     setMessages((prev) => [...prev, userMessage]);
     
-    // Generate instant AI response
     const assistantMessage: AssistantMessage = {
       id: (Date.now() + 1).toString(),
       content: generateContextualResponse(input),
@@ -94,10 +85,8 @@ export const AIAssistant = () => {
       timestamp: new Date(),
     };
 
-    // Add assistant response immediately
     setMessages((prev) => [...prev, assistantMessage]);
     
-    // Clear input
     setInput("");
   };
 
