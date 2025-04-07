@@ -1,4 +1,3 @@
-
 import { 
   Home, 
   Users, 
@@ -25,10 +24,14 @@ import {
   Heart,
   Map,
   Network,
-  Bell,  // Added Bell icon
-  Link,  // Added Link icon
-  Shield,  // Added Shield icon
-  UserCheck  // Added UserCheck icon for admissions
+  Bell,
+  Link,
+  Shield,
+  UserCheck,
+  PackageOpen,
+  PackagePlus,
+  List,
+  PackageSearch
 } from "lucide-react";
 
 export type MenuItem = {
@@ -63,29 +66,24 @@ export const mainNavItems: SubmenuItem[] = [
     icon: Calendar,
   },
   {
-    title: "Especialidades",
+    title: "Inventario",
     path: "#",
-    icon: Activity,
+    icon: PackageOpen,
     items: [
       {
-        title: "Cirujano",
-        path: "/app/especialidades/cirujano",
-        icon: Scissors,
+        title: "Artículos",
+        path: "/app/inventario/articulos",
+        icon: List,
       },
       {
-        title: "Psicólogo",
-        path: "/app/especialidades/psicologo",
-        icon: Brain,
+        title: "Nuevo Artículo",
+        path: "/app/inventario/nuevo",
+        icon: PackagePlus,
       },
       {
-        title: "Nutricionista",
-        path: "/app/especialidades/nutricionista",
-        icon: Apple,
-      },
-      {
-        title: "Terapias",
-        path: "/app/especialidades/terapias",
-        icon: TherapyIcon,
+        title: "Buscar",
+        path: "/app/inventario/buscar",
+        icon: PackageSearch,
       },
     ],
   },

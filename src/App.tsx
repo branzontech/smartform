@@ -32,6 +32,12 @@ import PsicologoPage from "./pages/especialidades/PsicologoPage";
 import NutricionistaPage from "./pages/especialidades/NutricionistaPage";
 import TerapiasPage from "./pages/especialidades/TerapiasPage";
 
+// Importamos las páginas de inventario
+import InventoryList from "./pages/inventory/InventoryList";
+import InventoryForm from "./pages/inventory/InventoryForm";
+import InventorySearch from "./pages/inventory/InventorySearch";
+import InventoryDetail from "./pages/inventory/InventoryDetail";
+
 export const BackButton = () => {
   const navigate = useNavigate();
   
@@ -94,6 +100,13 @@ function App() {
             <Route path="/app/especialidades/psicologo" element={<PsicologoPage />} />
             <Route path="/app/especialidades/nutricionista" element={<NutricionistaPage />} />
             <Route path="/app/especialidades/terapias" element={<TerapiasPage />} />
+            
+            {/* Nuevas rutas para inventario */}
+            <Route path="/app/inventario/articulos" element={<InventoryList />} />
+            <Route path="/app/inventario/nuevo" element={<InventoryForm />} />
+            <Route path="/app/inventario/editar/:id" element={<InventoryForm />} />
+            <Route path="/app/inventario/buscar" element={<InventorySearch />} />
+            <Route path="/app/inventario/:id" element={<InventoryDetail />} />
             
             {/* Support legacy routes */}
             <Route path="/crear" element={<Navigate to="/app/crear" replace />} />
