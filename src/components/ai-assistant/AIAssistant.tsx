@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Brain, Sparkles, X } from "lucide-react";
@@ -27,6 +28,7 @@ export const AIAssistant = () => {
   ]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -130,8 +132,11 @@ export const AIAssistant = () => {
             <p className="text-sm text-muted-foreground mt-1">Tu asistente virtual inteligente</p>
           </DrawerHeader>
           
-          <ScrollArea className="flex-1 p-4 h-[50vh]">
-            <div className="space-y-4">
+          <ScrollArea 
+            className="flex-1 p-4 h-[50vh] overflow-y-auto" 
+            ref={scrollAreaRef}
+          >
+            <div className="space-y-4 pb-2">
               {messages.map((message) => (
                 <div
                   key={message.id}
