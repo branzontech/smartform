@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { EmptyState } from "@/components/ui/empty-state";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import { Search, Plus, Users, Calendar, Eye } from "lucide-react";
+import { Search, Plus, Users, Calendar, Eye, FileText } from "lucide-react";
 import { Patient } from "@/types/patient-types";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -251,15 +251,26 @@ const PatientList = () => {
                           : "Sin consultas previas"}
                       </div>
                     </div>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={() => handleViewPatient(patient.id)}
-                      className="flex items-center gap-1"
-                    >
-                      <Eye size={14} />
-                      Detalle
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => handleViewPatient(patient.id)}
+                        className="flex items-center gap-1"
+                      >
+                        <Eye size={14} />
+                        Detalle
+                      </Button>
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => navigate(`/pacientes/${patient.id}?tab=consultations`)}
+                        className="flex items-center gap-1"
+                      >
+                        <FileText size={14} />
+                        Historial
+                      </Button>
+                    </div>
                   </div>
                 </Card>
               ))}

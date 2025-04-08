@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { Header } from "@/components/layout/header";
 import { BackButton } from "@/App";
 import { Button } from "@/components/ui/button";
@@ -31,7 +30,6 @@ const PASTEL_COLORS = [
   "bg-[#F1F0FB]", // Soft Gray
 ];
 
-// Mock consultation data generator function
 const generateMockConsultations = (patientId: string): MedicalConsultation[] => {
   const today = new Date();
   
@@ -97,9 +95,13 @@ const generateMockConsultations = (patientId: string): MedicalConsultation[] => 
 const PatientDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+  const initialTab = searchParams.get('tab') || "info";
+  
   const [patient, setPatient] = useState<PatientWithConsultations | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState("info");
+  const [activeTab, setActiveTab] = useState(initialTab);
   
   const [filterDate, setFilterDate] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState("");
@@ -147,7 +149,6 @@ const PatientDetail = () => {
                 });
             }
             
-            // Add mock consultations if there are fewer than 4 consultations
             if (consultations.length < 4) {
               const mockConsultations = generateMockConsultations(id);
               consultations = [...consultations, ...mockConsultations];
@@ -323,7 +324,10 @@ const PatientDetail = () => {
         <Tabs 
           defaultValue="info" 
           value={activeTab}
-          onValueChange={(value) => setActiveTab(value)}
+          onValueChange={(value) => {
+            setActiveTab(value);
+            navigate(`/pacientes/${id}?tab=${value}`, { replace: true });
+          }}
           className="w-full"
         >
           <TabsList className="mb-4">
