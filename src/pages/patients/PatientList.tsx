@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Header } from "@/components/layout/header";
@@ -170,11 +169,11 @@ const PatientList = () => {
   }, [loadingMore, page, filteredPatients, displayedPatients.length]);
 
   const handleCreateConsultation = () => {
-    navigate("/pacientes/nueva-consulta");
+    navigate("/app/pacientes/nueva-consulta");
   };
 
   const handleViewPatient = (id: string) => {
-    navigate(`/pacientes/${id}`);
+    navigate(`/app/pacientes/${id}`);
   };
 
   if (loading) {
@@ -264,7 +263,7 @@ const PatientList = () => {
                       <Button
                         variant="secondary"
                         size="sm"
-                        onClick={() => navigate(`/pacientes/${patient.id}?tab=consultations`)}
+                        onClick={() => navigate(`/app/pacientes/${patient.id}?tab=consultations`)}
                         className="flex items-center gap-1"
                       >
                         <FileText size={14} />

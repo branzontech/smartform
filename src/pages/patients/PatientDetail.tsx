@@ -216,11 +216,11 @@ const PatientDetail = () => {
   }, [filterDate, searchTerm, patient]);
 
   const handleCreateConsultation = () => {
-    navigate(`/pacientes/nueva-consulta?patientId=${id}`);
+    navigate(`/app/pacientes/nueva-consulta?patientId=${id}`);
   };
 
   const handleViewForm = (formId: string, consultationId: string) => {
-    navigate(`/ver/${formId}?consultationId=${consultationId}&readonly=true`);
+    navigate(`/app/ver/${formId}?consultationId=${consultationId}&readonly=true`);
   };
 
   const calculateAge = (dateOfBirth: string) => {
@@ -258,7 +258,7 @@ const PatientDetail = () => {
             <h2 className="text-2xl font-bold mb-2">Paciente no encontrado</h2>
             <p className="text-gray-500 mb-6">El paciente que estás buscando no existe o ha sido eliminado.</p>
             <Button 
-              onClick={() => navigate("/pacientes")}
+              onClick={() => navigate("/app/pacientes")}
               className="bg-purple-600 hover:bg-purple-700"
             >
               Volver a la lista de pacientes
@@ -326,7 +326,7 @@ const PatientDetail = () => {
           value={activeTab}
           onValueChange={(value) => {
             setActiveTab(value);
-            navigate(`/pacientes/${id}?tab=${value}`, { replace: true });
+            navigate(`/app/pacientes/${id}?tab=${value}`, { replace: true });
           }}
           className="w-full"
         >
