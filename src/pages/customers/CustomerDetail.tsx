@@ -42,19 +42,19 @@ const CustomerDetail = () => {
   return (
     <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900">
       <Header />
-      <main className="flex-1 container mx-auto p-6">
+      <main className="flex-1 container mx-auto p-4 sm:p-6">
         <BackButton />
         
         <CustomerHeader customer={customer} />
         
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
-          <div className="lg:col-span-1">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mt-6">
+          <div className="lg:col-span-4">
             <CustomerContact customer={customer} />
           </div>
           
-          <div className="lg:col-span-2">
+          <div className="lg:col-span-8">
             <Tabs defaultValue="history" className="w-full">
-              <TabsList>
+              <TabsList className="w-full sm:w-auto">
                 <TabsTrigger value="history">Historial</TabsTrigger>
                 <TabsTrigger value="notifications">Notificaciones</TabsTrigger>
                 <TabsTrigger value="reminders">Recordatorios</TabsTrigger>
