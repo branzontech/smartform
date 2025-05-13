@@ -43,7 +43,8 @@ import {
   FileBarChart,
   Clock,
   UserCircle,
-  Send
+  Send,
+  Video
 } from "lucide-react";
 
 export type MenuItem = {
@@ -86,6 +87,11 @@ export const mainNavItems: SubmenuItem[] = [
     title: "Citas",
     path: "/app/citas",
     icon: Calendar,
+  },
+  {
+    title: "Telemedicina",
+    path: "/app/telemedicina",
+    icon: Video,
   },
   {
     title: "Facturación",

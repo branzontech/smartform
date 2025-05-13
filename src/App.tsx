@@ -26,6 +26,7 @@ import Register from "./pages/auth/Register";
 import ForgotPassword from "./pages/auth/ForgotPassword";
 import AdmissionPage from "./pages/admissions/AdmissionPage";
 import AIAssistant from "./components/ai-assistant/AIAssistant";
+import TelemedicinePage from "./pages/telemedicine/TelemedicinePage";
 
 // Importamos las páginas de especialidades
 import CirujanoPage from "./pages/especialidades/CirujanoPage";
@@ -113,6 +114,9 @@ function App() {
             <Route path="/app/citas/editar/:id" element={<AppointmentForm />} />
             <Route path="/app/configuracion" element={<SettingsPage />} />
             
+            {/* Nueva ruta para telemedicina */}
+            <Route path="/app/telemedicina" element={<TelemedicinePage />} />
+            
             {/* Nueva ruta para admisiones */}
             <Route path="/app/admisiones" element={<AdmissionPage />} />
             
@@ -166,6 +170,7 @@ function App() {
             <Route path="/citas/editar/:id" element={<Navigate to="/app/citas/editar/:id" replace />} />
             <Route path="/configuracion" element={<Navigate to="/app/configuracion" replace />} />
             <Route path="/admisiones" element={<Navigate to="/app/admisiones" replace />} />
+            <Route path="/telemedicina" element={<Navigate to="/app/telemedicina" replace />} />
             
             {/* 404 route */}
             <Route path="*" element={<NotFound />} />
