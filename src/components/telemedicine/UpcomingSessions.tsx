@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Calendar, Clock, User, Video } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { toast } from "@/components/ui/toast";
+import { toast } from "@/components/ui/use-toast";
 
 // Datos de ejemplo - en una implementación real estos vendrían de una API o base de datos
 const MOCK_SESSIONS = [

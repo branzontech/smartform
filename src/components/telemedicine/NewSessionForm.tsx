@@ -14,7 +14,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
-import { toast } from "@/components/ui/toast";
+import { toast } from "@/components/ui/use-toast";
 
 // Esquema de validación
 const formSchema = z.object({
@@ -166,7 +166,6 @@ const NewSessionForm = () => {
                       onSelect={field.onChange}
                       disabled={(date) => date < new Date()}
                       initialFocus
-                      className={cn("p-3 pointer-events-auto")}
                     />
                   </PopoverContent>
                 </Popover>
