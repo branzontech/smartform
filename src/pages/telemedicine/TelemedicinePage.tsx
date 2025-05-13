@@ -23,6 +23,11 @@ const TelemedicinePage = () => {
     navigate("/app/telemedicina?tab=upcoming", { replace: true });
   };
   
+  // Función para cambiar de pestaña evitando recargas
+  const handleTabChange = (value: string) => {
+    navigate(`/app/telemedicina?tab=${value}`, { replace: true });
+  };
+  
   if (sessionId) {
     return (
       <Layout>
@@ -50,9 +55,11 @@ const TelemedicinePage = () => {
           <p className="text-muted-foreground">Gestione sus consultas médicas por videollamada</p>
         </div>
         
-        <Tabs defaultValue={activeTab} value={activeTab} onValueChange={(value) => {
-          navigate(`/app/telemedicina?tab=${value}`, { replace: true });
-        }}>
+        <Tabs 
+          defaultValue={activeTab} 
+          value={activeTab} 
+          onValueChange={handleTabChange}
+        >
           <TabsList className="w-full max-w-md mx-auto grid grid-cols-3 mb-8">
             <TabsTrigger value="upcoming">Próximas sesiones</TabsTrigger>
             <TabsTrigger value="new">Nueva sesión</TabsTrigger>

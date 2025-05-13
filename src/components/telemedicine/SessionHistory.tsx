@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -10,7 +9,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
 
 // Datos de ejemplo - en una implementación real estos vendrían de una API
-const MOCK_HISTORY: TelemedicineSession[] = [
+const MOCK_HISTORY = [
   {
     id: "h1",
     patientId: "p1",

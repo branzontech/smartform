@@ -84,7 +84,7 @@ const UpcomingSessions = () => {
         description="No tienes sesiones de telemedicina programadas actualmente."
         icon={<Video size={48} className="text-gray-300" />}
         buttonText="Programar nueva sesión"
-        onClick={() => navigate("/app/telemedicina?tab=new")}
+        onClick={() => navigate("/app/telemedicina?tab=new", { replace: true })}
       />
     );
   }
