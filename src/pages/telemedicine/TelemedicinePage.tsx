@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React from "react";
 import { Header } from "@/components/layout/header";
 import { BackButton } from "@/App";
 import { Layout } from "@/components/layout";
@@ -20,7 +20,7 @@ const TelemedicinePage = () => {
   
   // Return to sessions list when ending a call
   const handleEndCall = () => {
-    navigate("/app/telemedicina?tab=upcoming");
+    navigate("/app/telemedicina?tab=upcoming", { replace: true });
   };
   
   if (sessionId) {
@@ -29,7 +29,7 @@ const TelemedicinePage = () => {
         <div className="container mx-auto py-8 px-4">
           <Button 
             variant="back" 
-            onClick={() => navigate("/app/telemedicina?tab=upcoming")}
+            onClick={() => navigate("/app/telemedicina?tab=upcoming", { replace: true })}
             className="mb-4"
           >
             Volver a sesiones
@@ -51,7 +51,7 @@ const TelemedicinePage = () => {
         </div>
         
         <Tabs defaultValue={activeTab} value={activeTab} onValueChange={(value) => {
-          navigate(`/app/telemedicina?tab=${value}`);
+          navigate(`/app/telemedicina?tab=${value}`, { replace: true });
         }}>
           <TabsList className="w-full max-w-md mx-auto grid grid-cols-3 mb-8">
             <TabsTrigger value="upcoming">Próximas sesiones</TabsTrigger>

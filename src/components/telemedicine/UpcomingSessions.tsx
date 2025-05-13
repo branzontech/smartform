@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -52,6 +53,7 @@ const UpcomingSessions = () => {
   const [sessions, setSessions] = useState(MOCK_SESSIONS);
   
   const handleJoinSession = (sessionId: string) => {
+    // Utilizamos useNavigate en lugar de window.location para evitar recargas
     navigate(`/app/telemedicina?sessionId=${sessionId}`);
   };
   

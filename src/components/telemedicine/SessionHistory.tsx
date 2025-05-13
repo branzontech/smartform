@@ -1,16 +1,16 @@
-import React, { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { EmptyState } from "@/components/ui/empty-state";
-import { Calendar, Clock, Download, FileText, Search, User, Video } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useNavigate } from "react-router-dom";
 
-// Datos de ejemplo
-const MOCK_HISTORY = [
+import React, { useState } from "react";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Calendar, Clock, Download, FileText, User, Video } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/empty-state";
+import { TelemedicineSession } from "@/types/telemedicine-types";
+import { useNavigate } from "react-router-dom";
+import { toast } from "@/components/ui/use-toast";
+
+// Datos de ejemplo - en una implementación real estos vendrían de una API
+const MOCK_HISTORY: TelemedicineSession[] = [
   {
     id: "h1",
     patientId: "p1",
@@ -59,23 +59,10 @@ const MOCK_HISTORY = [
 ];
 
 const SessionHistory = () => {
-  const [sessions, setSessions] = useState(MOCK_HISTORY);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [filterStatus, setFilterStatus] = useState("all");
   const navigate = useNavigate();
+  const [sessions] = useState<TelemedicineSession[]>(MOCK_HISTORY);
   
-  const filteredSessions = sessions.filter(session => {
-    const matchesSearch = 
-      session.patientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      session.doctorName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      session.specialty.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesStatus = filterStatus === "all" || session.status === filterStatus;
-    
-    return matchesSearch && matchesStatus;
-  });
-  
-  const getStatusBadge = (status) => {
+  const getStatusBadge = (status: string) => {
     switch (status) {
       case "completed":
         return <Badge className="bg-green-500">Completada</Badge>;
@@ -86,102 +73,100 @@ const SessionHistory = () => {
     }
   };
   
+  const handleViewRecording = (session: TelemedicineSession) => {
+    if (session.recordingUrl) {
+      toast({
+        title: "Grabación disponible",
+        description: "Iniciando reproducción de la grabación",
+      });
+      // En una implementación real, esto lanzaría un reproductor de video
+      console.log("Ver grabación de sesión:", session.id);
+    }
+  };
+  
+  const handleViewPrescription = (sessionId: string) => {
+    // En una implementación real, esto cargaría un documento
+    toast({
+      title: "Receta disponible",
+      description: "Abriendo documento de receta médica",
+    });
+    console.log("Ver receta de sesión:", sessionId);
+  };
+  
   if (sessions.length === 0) {
     return (
       <EmptyState
-        title="Sin historial"
-        description="No hay registro de sesiones anteriores de telemedicina."
+        title="No hay sesiones previas"
+        description="Aún no ha realizado ninguna sesión de telemedicina."
         icon={<Video size={48} className="text-gray-300" />}
         buttonText="Programar nueva sesión"
-        onClick={() => navigate("/app/telemedicina?tab=new")}
+        onClick={() => navigate("/app/telemedicina?tab=new", { replace: true })}
       />
     );
   }
   
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col md:flex-row gap-4">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-          <Input 
-            placeholder="Buscar por paciente, médico o especialidad" 
-            className="pl-10"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
-        <Select 
-          value={filterStatus} 
-          onValueChange={setFilterStatus}
-        >
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Filtrar por estado" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todas</SelectItem>
-            <SelectItem value="completed">Completadas</SelectItem>
-            <SelectItem value="cancelled">Canceladas</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-      
-      {filteredSessions.length === 0 ? (
-        <div className="text-center p-8">
-          <p className="text-gray-500">No se encontraron sesiones que coincidan con su búsqueda.</p>
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {filteredSessions.map((session) => (
-            <Card key={session.id}>
-              <CardHeader className="flex flex-row items-center justify-between">
-                <div>
-                  <CardTitle className="text-xl font-semibold">{session.doctorName}</CardTitle>
-                  <p className="text-sm text-purple-600">{session.specialty}</p>
+    <div className="space-y-4">
+      {sessions.map((session) => (
+        <Card key={session.id} className="overflow-hidden">
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+              <CardTitle className="text-xl font-semibold">{session.doctorName}</CardTitle>
+              <p className="text-sm text-purple-600">{session.specialty}</p>
+            </div>
+            {getStatusBadge(session.status)}
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <User size={16} className="text-gray-500" />
+                  <span>Paciente: {session.patientName}</span>
                 </div>
-                {getStatusBadge(session.status)}
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <div className="flex items-center gap-2 mb-2">
-                      <User size={16} className="text-gray-500" />
-                      <span>Paciente: {session.patientName}</span>
-                    </div>
-                    <div className="flex items-center gap-2 mb-2">
-                      <Calendar size={16} className="text-gray-500" />
-                      <span>Fecha: {new Date(session.date).toLocaleDateString()}</span>
-                    </div>
-                    <div className="flex items-center gap-2 mb-2">
-                      <Clock size={16} className="text-gray-500" />
-                      <span>Hora: {session.time}</span>
-                    </div>
-                  </div>
-                  <div>
-                    <p className="text-gray-600 mb-2">
-                      <strong>Notas:</strong> {session.notes}
-                    </p>
-                    
-                    <div className="flex flex-wrap gap-2 mt-4">
-                      {session.recordingUrl && (
-                        <Button size="sm" variant="outline" className="flex items-center gap-1">
-                          <Download size={14} />
-                          Descargar grabación
-                        </Button>
-                      )}
-                      {session.prescription && (
-                        <Button size="sm" variant="outline" className="flex items-center gap-1">
-                          <FileText size={14} />
-                          Ver receta
-                        </Button>
-                      )}
-                    </div>
-                  </div>
+                <div className="flex items-center gap-2 mb-2">
+                  <Calendar size={16} className="text-gray-500" />
+                  <span>Fecha: {new Date(session.date).toLocaleDateString()}</span>
                 </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
+                <div className="flex items-center gap-2">
+                  <Clock size={16} className="text-gray-500" />
+                  <span>Hora: {session.time}</span>
+                </div>
+              </div>
+              <div>
+                <p className="text-gray-600">
+                  <strong>Notas:</strong> {session.notes}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+          {session.status === "completed" && (
+            <CardFooter className="flex justify-end gap-2 bg-gray-50 dark:bg-gray-800">
+              {session.recordingUrl && (
+                <Button
+                  variant="outline"
+                  onClick={() => handleViewRecording(session)}
+                >
+                  <Video className="mr-2" size={16} />
+                  Ver grabación
+                </Button>
+              )}
+              {session.prescription && (
+                <Button
+                  variant="outline"
+                  onClick={() => handleViewPrescription(session.id)}
+                >
+                  <FileText className="mr-2" size={16} />
+                  Ver receta
+                </Button>
+              )}
+              <Button variant="outline">
+                <Download className="mr-2" size={16} />
+                Descargar informe
+              </Button>
+            </CardFooter>
+          )}
+        </Card>
+      ))}
     </div>
   );
 };
