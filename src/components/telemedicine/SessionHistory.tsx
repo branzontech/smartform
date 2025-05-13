@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -9,7 +10,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
 
 // Datos de ejemplo - en una implementación real estos vendrían de una API
-const MOCK_HISTORY = [
+const MOCK_HISTORY: TelemedicineSession[] = [
   {
     id: "h1",
     patientId: "p1",
@@ -18,7 +19,7 @@ const MOCK_HISTORY = [
     doctorName: "Dr. Carlos Jiménez",
     date: "2025-05-01",
     time: "10:00",
-    status: "completed",
+    status: "completed", // Explicitly using the correct literal type
     specialty: "Cardiología",
     notes: "Paciente presenta mejora significativa en la presión arterial.",
     recordingUrl: "/recordings/session-h1.mp4",
@@ -33,7 +34,7 @@ const MOCK_HISTORY = [
     doctorName: "Dra. Ana Martínez",
     date: "2025-04-25",
     time: "15:30",
-    status: "completed",
+    status: "completed", // Explicitly using the correct literal type
     specialty: "Dermatología",
     notes: "Se recomienda continuar tratamiento por 2 semanas más.",
     recordingUrl: "/recordings/session-h2.mp4",
@@ -48,7 +49,7 @@ const MOCK_HISTORY = [
     doctorName: "Dr. Carlos Jiménez",
     date: "2025-04-20",
     time: "09:15",
-    status: "cancelled",
+    status: "cancelled", // Explicitly using the correct literal type
     specialty: "Cardiología",
     notes: "El paciente canceló la cita.",
     recordingUrl: null,
