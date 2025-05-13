@@ -16,7 +16,7 @@ import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
 import { toast } from "@/components/ui/use-toast";
 
-// Esquema de validación
+// Update schema to include date field
 const formSchema = z.object({
   patientId: z.string({ required_error: "Seleccione un paciente" }),
   doctorId: z.string({ required_error: "Seleccione un médico" }),
@@ -24,6 +24,9 @@ const formSchema = z.object({
   time: z.string({ required_error: "Seleccione una hora" }),
   reason: z.string().min(5, "La razón debe tener al menos 5 caracteres").max(500, "La razón no debe exceder los 500 caracteres"),
 });
+
+// Define the type for the form data
+type FormValues = z.infer<typeof formSchema>;
 
 // Datos de ejemplo
 const mockPatients = [
@@ -47,9 +50,9 @@ const timeSlots = [
 
 const NewSessionForm = () => {
   const navigate = useNavigate();
-  const [selectedDoctor, setSelectedDoctor] = useState(null);
+  const [selectedDoctor, setSelectedDoctor] = useState<{ id: string; name: string; specialty: string } | null>(null);
   
-  const form = useForm({
+  const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       patientId: "",
@@ -59,7 +62,7 @@ const NewSessionForm = () => {
     },
   });
   
-  const onSubmit = (data) => {
+  const onSubmit = (data: FormValues) => {
     // En una implementación real, esto sería una llamada a la API
     console.log("Datos de nueva sesión:", data);
     
@@ -110,7 +113,7 @@ const NewSessionForm = () => {
                 <Select 
                   onValueChange={(value) => {
                     field.onChange(value);
-                    setSelectedDoctor(mockDoctors.find(doctor => doctor.id === value));
+                    setSelectedDoctor(mockDoctors.find(doctor => doctor.id === value) || null);
                   }} 
                   defaultValue={field.value}
                 >
@@ -164,8 +167,9 @@ const NewSessionForm = () => {
                       mode="single"
                       selected={field.value}
                       onSelect={field.onChange}
-                      disabled={(date) => date < new Date()}
+                      disabled={(date: Date) => date < new Date()}
                       initialFocus
+                      className="pointer-events-auto"
                     />
                   </PopoverContent>
                 </Popover>
