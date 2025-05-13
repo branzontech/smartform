@@ -1,50 +1,109 @@
 
-# Arquitectura del Software MediForm
+# Arquitectura del Software MediForm SaaS
 
 ## Visión General
 
-MediForm es una plataforma diseñada para profesionales de la salud que permite la gestión digital de formularios médicos, citas, pacientes y consultas médicas. El sistema incorpora un modelo de negocio basado en suscripciones con período de prueba y una estrategia de lanzamiento con lista de espera.
+MediForm SaaS es una plataforma diseñada para profesionales de la salud que permite la gestión digital de formularios médicos, citas, pacientes y consultas médicas. El sistema implementa un modelo de negocio SaaS basado en suscripciones con período de prueba y una estrategia de lanzamiento con lista de espera.
 
-## Modelos de Negocio
+## Modelo de Negocio SaaS
 
-### Plan de Suscripción
+### Planes de Suscripción
 
-- **Período de Prueba**: 7 días gratuitos con acceso completo a todas las funcionalidades.
-- **Plan Básico**: Acceso a formularios estándar, gestión básica de pacientes.
-- **Plan Profesional**: Acceso completo a todas las funcionalidades.
-- **Plan Institucional**: Para clínicas y hospitales con múltiples profesionales.
+- **Período de Prueba**: 14 días gratuitos con acceso completo a todas las funcionalidades.
+- **Plan Básico**: Acceso a formularios estándar, gestión básica de pacientes, hasta 100 pacientes.
+- **Plan Profesional**: Acceso completo a todas las funcionalidades, pacientes ilimitados, telemedicina, facturación.
+- **Plan Institucional**: Para clínicas y hospitales con múltiples profesionales, soporte prioritario y personalización.
 
-### Lista de Espera
+### Precios SaaS
 
-- Implementación de un sistema de lista de espera para gestionar el lanzamiento inicial limitado a 1,000 profesionales de la salud.
-- Sistema de invitaciones escalonadas para controlar el crecimiento y asegurar la calidad del servicio.
+- **Plan Básico**: $19.99/mes por usuario - Ideal para profesionales individuales
+- **Plan Profesional**: $39.99/mes por usuario - Para consultorios con necesidades avanzadas
+- **Plan Institucional**: Desde $99.99/mes - Para clínicas con múltiples profesionales
 
-## Arquitectura Técnica
+### Estrategia de Adquisición de Clientes
+
+- **Lista de Espera**: Implementación de un sistema de lista de espera para gestionar el lanzamiento inicial limitado.
+- **Invitaciones Escalonadas**: Control de crecimiento para asegurar la calidad del servicio.
+- **Programa de Referidos**: Incentivos para que los usuarios actuales refieran a nuevos usuarios.
+- **Período de Prueba**: Conversión de usuarios de prueba a usuarios de pago con onboarding efectivo.
+
+## Arquitectura Técnica Multi-tenant
+
+### Enfoque de Multi-tenancy
+
+MediForm implementa una arquitectura multi-tenant para servir a múltiples clientes desde una única instalación del software:
+
+- **Aislamiento a Nivel de Schema**: Cada cliente (tenant) tiene su propio schema en la base de datos PostgreSQL.
+- **Middleware de Tenant**: Un middleware identifica el tenant actual basado en subdominios o tokens JWT.
+- **Row-Level Security (RLS)**: Policies en Supabase que garantizan el aislamiento de datos entre tenants.
 
 ### Frontend
 
 - **Framework**: React con TypeScript
 - **Estilos**: Tailwind CSS con componentes de Shadcn UI
 - **Gestión de Estado**: React Query para peticiones y cacheo de datos
-- **Enrutamiento**: React Router para navegación entre páginas
+- **Enrutamiento**: React Router con sistema de rutas protegidas según suscripción
 - **Animaciones**: Lottie para animaciones interactivas
 - **Formularios**: React Hook Form para validación de formularios
+- **Personalización por Tenant**: Configuración de temas, logos y colores por tenant
 
 ### Backend
 
-- **Base de Datos**: PostgreSQL a través de Supabase
+- **Base de Datos**: PostgreSQL a través de Supabase con esquemas separados para cada tenant
 - **Autenticación**: Sistema de autenticación con Supabase Auth
-- **Almacenamiento**: Supabase Storage para documentos y archivos médicos
+  - Roles diferenciados: admin, profesional, asistente, recepcionista
+  - SSO (Single Sign-On) para instituciones mediante OAuth
+- **Almacenamiento**: Supabase Storage para documentos y archivos médicos con aislamiento por tenant
 - **APIs**: Supabase Edge Functions para la lógica de negocio
+- **Cache**: Redis para mejora de performance en datos frecuentemente accedidos
+- **Cola de Tareas**: Sistema de colas para procesos asíncronos como notificaciones masivas
 
 ### Integraciones Externas
 
 - **Google Calendar**: Sincronización bidireccional de citas médicas
-- **Procesador de Pagos**: Stripe para gestión de suscripciones
+- **Procesador de Pagos**: Stripe para gestión de suscripciones y pagos recurrentes
 - **Webhooks**: Integración de Stripe Webhooks para actualización automática de estados de suscripción
 - **Facturación**: Generación automática de facturas y recibos
+- **Email**: Integración con servicios como SendGrid o AWS SES para comunicaciones
+- **SMS**: Servicios de notificaciones SMS para recordatorios de citas
 
-## Módulos Principales
+## Infraestructura Cloud y DevOps
+
+### Alojamiento y Escalabilidad
+
+- **Frontend**: Vercel para despliegue continuo con CDN global
+- **Backend**: Supabase para base de datos, autenticación y funciones serverless
+- **Escalabilidad Horizontal**: Arquitectura serverless que escala automáticamente según demanda
+- **CDN**: Distribución global de contenidos para baja latencia
+
+### Entornos de Despliegue
+
+- **Desarrollo**: Entorno para desarrollo activo
+- **Staging**: Entorno de pruebas pre-producción
+- **Producción**: Entorno final para clientes
+
+### Monitorización y Observabilidad
+
+- **APM (Application Performance Monitoring)**: Monitoreo en tiempo real del rendimiento
+- **Logging**: Sistema centralizado de logs con búsqueda y alertas
+- **Alertas**: Notificaciones automáticas para incidentes críticos
+- **Dashboard de Estado**: Panel de control para visualización de métricas clave
+
+### Seguridad y Cumplimiento
+
+- **Encriptación**: Datos sensibles encriptados en reposo y en tránsito
+- **Cumplimiento**: HIPAA/GDPR para información médica protegida
+- **Auditoría**: Registro detallado de accesos y modificaciones a datos sensibles
+- **Backups**: Copias de seguridad automáticas con retención configurable
+- **Análisis de Vulnerabilidades**: Escaneos periódicos de seguridad
+
+## Módulos Principales del SaaS
+
+### Sistema de Gestión de Tenants
+
+- **Onboarding de Nuevos Clientes**: Proceso automatizado de creación de tenant
+- **Panel de Administración**: Interfaz para gestionar tenants, suscripciones y configuraciones
+- **Configuración por Tenant**: Personalización de la experiencia para cada cliente
 
 ### Sistema de Autenticación y Autorización
 
@@ -52,22 +111,24 @@ MediForm es una plataforma diseñada para profesionales de la salud que permite 
 - Verificación de correo electrónico
 - Recuperación de contraseña
 - Control de acceso basado en roles y planes de suscripción
+- Autenticación de dos factores (2FA) para mayor seguridad
 
-### Sistema de Lista de Espera
+### Sistema de Lista de Espera y Onboarding
 
 - **Registro de Interesados**: Captura de datos básicos de profesionales interesados
 - **Sistema de Prioridad**: Algoritmo para determinar el orden de invitación
 - **Notificaciones**: Envío automático de invitaciones por lotes
-- **Dashboard de Administración**: Para gestionar la lista de espera
+- **Onboarding Guiado**: Tutorial interactivo para nuevos usuarios
 - **Métricas**: Análisis de conversión de lista de espera a usuarios activos
 
 ### Gestión de Suscripciones
 
 - **Checkout**: Proceso de suscripción con Stripe Checkout
 - **Gestión de Planes**: Cambio de plan, cancelación, pausa
-- **Período de Prueba**: Automatización del período de prueba de 7 días
+- **Período de Prueba**: Automatización del período de prueba de 14 días
 - **Recordatorios**: Notificaciones previas a la finalización del período de prueba
 - **Renovaciones**: Procesamiento automático de renovaciones
+- **Facturación**: Sistema de facturación automática para suscripciones
 
 ### Formularios Médicos
 
@@ -75,6 +136,7 @@ MediForm es una plataforma diseñada para profesionales de la salud que permite 
 - Plantillas predefinidas para especialidades médicas
 - Sistema de llenado de formularios para pacientes
 - Almacenamiento y organización de respuestas
+- Exportación a formatos estándar (PDF, CSV)
 
 ### Gestión de Pacientes
 
@@ -82,35 +144,48 @@ MediForm es una plataforma diseñada para profesionales de la salud que permite 
 - Historia clínica digital
 - Seguimiento de consultas
 - Alertas y recordatorios de seguimiento
+- Segmentación de pacientes para campañas
 
-### Sistema de Citas
+### Sistema de Citas y Telemedicina
 
-- Calendario de citas
-- Recordatorios automáticos
+- Calendario de citas con múltiples vistas
+- Recordatorios automáticos multicanalales (email, SMS)
 - Confirmación de asistencia
 - Reprogramación y cancelación
-- **Integración con Google Calendar**: 
-  - Sincronización bidireccional de citas
-  - Actualización automática en caso de cambios
-  - Control de acceso OAuth 2.0
+- Videoconsultas integradas
+- Grabación opcional de sesiones
 
-## Flujos de Usuario
+### Módulo de Facturación y Pagos
+
+- Generación automática de facturas para servicios médicos
+- Integración con procesadores de pago
+- Seguimiento de pagos pendientes
+- Reportes financieros
+
+### Sistema de Reportes y Analítica
+
+- Dashboard personalizable para métricas clave
+- Reportes predefinidos por especialidades
+- Análisis de tendencias de pacientes y consultas
+- Exportación de datos para análisis externo
+
+## Flujos de Usuario SaaS
 
 ### Registro de Interés y Lista de Espera
 
-1. El profesional de la salud visita la landing page
+1. El profesional visita la landing page
 2. Proporciona su correo electrónico y datos básicos
 3. Recibe confirmación de ingreso a la lista de espera
 4. Obtiene actualizaciones periódicas sobre su posición
 5. Recibe invitación para registrarse cuando sea su turno
 
-### Registro e Inicio del Período de Prueba
+### Creación de Cuenta y Configuración de Tenant
 
 1. El profesional recibe invitación con código de acceso
 2. Completa el registro con sus datos profesionales
-3. Accede inmediatamente a su período de prueba de 7 días
-4. Recibe onboarding guiado sobre las funcionalidades
-5. Recibe recordatorios sobre la finalización del período de prueba
+3. Selecciona plan (o inicia período de prueba)
+4. Configura perfil de consultorio o clínica
+5. Personaliza opciones (logo, colores, dominio)
 
 ### Conversión a Suscripción Pagada
 
@@ -120,105 +195,70 @@ MediForm es una plataforma diseñada para profesionales de la salud que permite 
 4. Confirma la suscripción
 5. Recibe factura y confirmación de activación
 
-### Integración de Citas con Google Calendar
+### Gestión de Equipo (Plan Institucional)
 
-1. El usuario conecta su cuenta de Google Calendar desde la configuración
-2. Activa la sincronización automática de citas
-3. Al crear una cita, esta se sincroniza automáticamente con Google Calendar
-4. Los cambios en las citas (hora, fecha, estado) se reflejan en ambos sistemas
-5. El usuario puede desactivar la sincronización en cualquier momento
+1. El administrador accede a la sección de gestión de equipo
+2. Invita a nuevos miembros con roles específicos
+3. Asigna permisos y accesos según rol
+4. Gestiona cuentas de usuarios
+5. Monitorea actividad y uso de recursos
 
-## Infraestructura
+## Sistema de Métricas SaaS
 
-### Alojamiento
+### KPIs de Negocio
 
-- **Frontend**: Vercel o Netlify para despliegue continuo
-- **Backend**: Supabase para base de datos, autenticación y funciones serverless
-- **CDN**: Distribución global de contenidos para baja latencia
-
-### Seguridad
-
-- **Encriptación**: Datos sensibles encriptados en reposo y en tránsito
-- **Cumplimiento**: HIPAA/GDPR para información médica protegida
-- **Auditoría**: Registro de accesos y modificaciones a datos sensibles
-- **OAuth 2.0**: Para integraciones seguras con servicios de terceros como Google
-
-### Escalabilidad
-
-- Arquitectura serverless para escalar automáticamente
-- Optimización de consultas para alto volumen de usuarios
-- Cacheo estratégico para reducir carga en base de datos
-
-## Estrategia de Lanzamiento
-
-### Fase 1: Pre-lanzamiento
-
-- Implementación de landing page con formulario de lista de espera
-- Campaña de marketing para captar los primeros 1,000 profesionales interesados
-- Preparación del sistema de invitaciones escalonadas
-
-### Fase 2: Lanzamiento Controlado
-
-- Invitación a los primeros 100 profesionales para validar el producto
-- Recolección de feedback y ajustes rápidos
-- Monitoreo de métricas de conversión de prueba a suscripción
-
-### Fase 3: Escalamiento
-
-- Invitaciones graduales al resto de la lista de espera
-- Optimización basada en datos de uso y conversión
-- Ampliación de capacidades técnicas según demanda
-
-## Métricas Clave
-
-- **Tasa de Conversión**: De lista de espera a registro
-- **Retención durante Prueba**: Uso durante los 7 días de prueba
-- **Tasa de Conversión a Pago**: Usuarios que se suscriben después de la prueba
+- **MRR (Monthly Recurring Revenue)**: Ingresos mensuales recurrentes
+- **ARR (Annual Recurring Revenue)**: Ingresos anuales recurrentes
 - **Churn Rate**: Tasa de cancelación de suscripciones
-- **LTV (Lifetime Value)**: Valor promedio de un cliente durante su tiempo como suscriptor
-- **CAC (Customer Acquisition Cost)**: Costo de adquisición de nuevos usuarios
+- **Customer Acquisition Cost (CAC)**: Costo de adquisición de clientes
+- **Customer Lifetime Value (LTV)**: Valor del cliente durante su ciclo de vida
+- **Conversion Rate**: Porcentaje de conversión de prueba gratuita a pago
 
-## Estrategia de Precios Sugerida
+### Métricas de Engagement
 
-- **Plan Básico**: $19.99/mes - Gestión de hasta 100 pacientes, 10 formularios personalizados
-- **Plan Profesional**: $39.99/mes - Pacientes ilimitados, formularios ilimitados, análisis avanzados
-- **Plan Institucional**: Desde $99.99/mes - Múltiples profesionales, personalización, soporte prioritario
+- **Active Users**: Usuarios activos diarios/mensuales
+- **Feature Adoption**: Uso de características principales
+- **Session Duration**: Duración promedio de sesiones
+- **Retention Rate**: Tasa de retención de usuarios
+- **NPS (Net Promoter Score)**: Satisfacción del cliente
 
-## Tecnologías Específicas
+## Estrategia de Escalabilidad y Crecimiento
 
-### Frontend
+### Optimización Técnica
 
-- React + TypeScript
-- Tailwind CSS
-- Shadcn UI
-- React Query
-- React Router
-- Lottie para animaciones
-- React Hook Form
+- **Cacheo Inteligente**: Reducción de carga en base de datos mediante cacheo estratégico
+- **Consultas Optimizadas**: Índices y consultas eficientes para alto volumen de datos
+- **Servicio de Workers**: Procesamiento en background para tareas intensivas
+- **Particionamiento de Datos**: Estrategias para manejar grandes volúmenes de datos
 
-### Backend
+### Expansión de Mercado
 
-- Supabase (PostgreSQL, Auth, Storage, Edge Functions)
-- Stripe para pagos y suscripciones
+- **Internacionalización**: Soporte multiidioma y adaptación a normativas locales
+- **Verticales por Especialidad**: Versiones especializadas para nichos médicos específicos
+- **Integraciones con Sistemas Locales**: Conectores para sistemas de salud por país
+- **Programa de Partners**: Red de revendedores y consultores certificados
 
-### Integraciones
+## Roadmap de Desarrollo
 
-- Google Calendar API
-- API de notificaciones por correo electrónico
-- Pasarelas de pago locales según región
+### Fase 1: MVP SaaS (3 meses)
 
-### DevOps
+- Implementación de arquitectura multi-tenant básica
+- Sistema de suscripciones con Stripe
+- Dashboard de administración para tenants
+- Migración de funcionalidades core al modelo SaaS
 
-- CI/CD con GitHub Actions
-- Despliegue automático en Vercel/Netlify
-- Monitoreo y alertas con Sentry
+### Fase 2: Escalabilidad (3 meses)
 
-## Recomendaciones de Implementación
+- Optimización de rendimiento para múltiples tenants
+- Mejoras en el sistema de monitoreo y alertas
+- Implementación de cache distribuido
+- Ampliación de opciones de personalización por tenant
 
-1. **Enfoque MVP**: Comenzar con las funcionalidades esenciales para validar el producto rápidamente.
-2. **Arquitectura Modular**: Diseñar componentes independientes que faciliten cambios y mejoras.
-3. **Pruebas Continuas**: Implementar testing automático para garantizar calidad.
-4. **Feedback Temprano**: Establecer canales directos para recoger opiniones de los primeros usuarios.
-5. **Monitoreo en Tiempo Real**: Implementar dashboards para seguir métricas clave desde el inicio.
+### Fase 3: Expansión (6 meses)
 
-Este documento proporciona una visión general de la arquitectura propuesta para MediForm. Las tecnologías y estrategias pueden ajustarse según necesidades específicas del negocio y feedback de usuarios durante el desarrollo y lanzamiento.
+- Internacionalización completa
+- Nuevas integraciones con sistemas de salud regionales
+- API pública para desarrolladores externos
+- Marketplace de extensiones y plugins
+
+Esta arquitectura proporciona una visión general del enfoque SaaS para MediForm, adaptando la aplicación existente para servir a múltiples clientes desde una infraestructura compartida pero segura, con un modelo de negocio basado en suscripciones recurrentes.
