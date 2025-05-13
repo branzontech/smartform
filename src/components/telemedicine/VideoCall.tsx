@@ -1,10 +1,10 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Mic, MicOff, Phone, Video, VideoOff, Users, Monitor, FileText } from "lucide-react";
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { useNavigate } from "react-router-dom";
 
 interface VideoCallProps {
   sessionId: string;
@@ -17,6 +17,7 @@ const VideoCall: React.FC<VideoCallProps> = ({ sessionId, onEndCall }) => {
   const [isScreenSharing, setIsScreenSharing] = useState(false);
   const [sessionInfo, setSessionInfo] = useState<any>(null);
   const [isConnecting, setIsConnecting] = useState(true);
+  const navigate = useNavigate();
   
   // En una implementación real, esto sería obtenido de una API
   useEffect(() => {

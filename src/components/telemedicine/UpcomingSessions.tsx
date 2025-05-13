@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Calendar, Clock, User, Video } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "@/hooks/use-toast";
 
 // Datos de ejemplo - en una implementación real estos vendrían de una API o base de datos
 const MOCK_SESSIONS = [
@@ -53,8 +53,8 @@ const UpcomingSessions = () => {
   const [sessions, setSessions] = useState(MOCK_SESSIONS);
   
   const handleJoinSession = (sessionId: string) => {
-    // Utilizamos useNavigate en lugar de window.location para evitar recargas
-    navigate(`/app/telemedicina?sessionId=${sessionId}`);
+    // Utilizamos useNavigate con un objeto de opciones con replace: true para evitar recargas
+    navigate(`/app/telemedicina?sessionId=${sessionId}`, { replace: true });
   };
   
   const handleCancelSession = (sessionId: string) => {

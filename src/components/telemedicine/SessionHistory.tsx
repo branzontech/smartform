@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { TelemedicineSession } from "@/types/telemedicine-types";
 import { useNavigate } from "react-router-dom";
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "@/hooks/use-toast";
 
 // Datos de ejemplo - en una implementación real estos vendrían de una API
 const MOCK_HISTORY: TelemedicineSession[] = [
