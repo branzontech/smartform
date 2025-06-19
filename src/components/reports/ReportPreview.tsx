@@ -6,6 +6,7 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/
 import { Bar, BarChart, Line, LineChart, Pie, PieChart, Cell, Area, AreaChart, Scatter, ScatterChart, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Legend } from "recharts";
 import { ChartConfig, ReportVariable } from "@/types/report-types";
 import { Calendar, FileText } from "lucide-react";
+import { DataTable } from "./DataTable";
 
 interface ReportPreviewProps {
   title: string;
@@ -133,44 +134,44 @@ const renderChart = (chart: ChartConfig) => {
 
 export const ReportPreview = ({ title, description, charts, variables }: ReportPreviewProps) => {
   return (
-    <div className="space-y-6">
+    <div className="w-full max-w-full space-y-6">
       {/* Encabezado del informe */}
-      <div className="border-b pb-4">
-        <h1 className="text-2xl font-bold mb-2">{title || "Informe Sin Título"}</h1>
-        {description && (
-          <p className="text-gray-600 dark:text-gray-300 mb-3">{description}</p>
-        )}
-        <div className="flex items-center space-x-4 text-sm text-gray-500">
-          <div className="flex items-center space-x-1">
-            <Calendar className="h-4 w-4" />
-            <span>Generado: {new Date().toLocaleDateString()}</span>
-          </div>
-          <div className="flex items-center space-x-1">
-            <FileText className="h-4 w-4" />
-            <span>{charts.length} gráfico{charts.length !== 1 ? 's' : ''}</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Variables seleccionadas */}
       <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Variables Incluidas</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-wrap gap-2">
-            {variables.map((variable) => (
-              <Badge key={variable.id} variant="secondary" className="text-sm">
-                {variable.displayName}
-                <span className="ml-1 text-xs opacity-75">({variable.dataSource})</span>
-              </Badge>
-            ))}
+        <CardContent className="pt-6">
+          <div className="border-b pb-4 mb-4">
+            <h1 className="text-2xl font-bold mb-2">{title || "Informe Sin Título"}</h1>
+            {description && (
+              <p className="text-gray-600 dark:text-gray-300 mb-3">{description}</p>
+            )}
+            <div className="flex items-center space-x-4 text-sm text-gray-500">
+              <div className="flex items-center space-x-1">
+                <Calendar className="h-4 w-4" />
+                <span>Generado: {new Date().toLocaleDateString()}</span>
+              </div>
+              <div className="flex items-center space-x-1">
+                <FileText className="h-4 w-4" />
+                <span>{charts.length} gráfico{charts.length !== 1 ? 's' : ''}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Variables seleccionadas */}
+          <div className="mb-4">
+            <h3 className="text-lg font-semibold mb-3">Variables Incluidas</h3>
+            <div className="flex flex-wrap gap-2">
+              {variables.map((variable) => (
+                <Badge key={variable.id} variant="secondary" className="text-sm">
+                  {variable.displayName}
+                  <span className="ml-1 text-xs opacity-75">({variable.dataSource})</span>
+                </Badge>
+              ))}
+            </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Gráficos */}
-      <div className="space-y-6">
+      {/* Gráficos y tablas */}
+      <div className="space-y-8">
         {charts.length === 0 ? (
           <Card>
             <CardContent className="py-12 text-center">
@@ -180,37 +181,45 @@ export const ReportPreview = ({ title, description, charts, variables }: ReportP
           </Card>
         ) : (
           charts.map((chart) => (
-            <Card key={chart.id}>
-              <CardHeader>
-                <CardTitle>{chart.title}</CardTitle>
-                <div className="flex items-center space-x-2">
-                  <Badge variant="outline" className="text-xs">
-                    {chart.type}
-                  </Badge>
-                  {chart.xAxis && (
-                    <Badge variant="secondary" className="text-xs">
-                      X: {variables.find(v => v.id === chart.xAxis)?.displayName || chart.xAxis}
+            <div key={chart.id} className="space-y-4">
+              {/* Gráfico */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>{chart.title}</CardTitle>
+                  <div className="flex items-center space-x-2">
+                    <Badge variant="outline" className="text-xs">
+                      {chart.type}
                     </Badge>
-                  )}
-                  {chart.yAxis && (
-                    <Badge variant="secondary" className="text-xs">
-                      Y: {variables.find(v => v.id === chart.yAxis)?.displayName || chart.yAxis}
-                    </Badge>
-                  )}
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="h-64">
-                  {chart.xAxis && chart.yAxis ? (
-                    renderChart(chart)
-                  ) : (
-                    <div className="flex items-center justify-center h-full text-gray-500">
-                      <p>Configura los ejes X e Y para mostrar el gráfico</p>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
+                    {chart.xAxis && (
+                      <Badge variant="secondary" className="text-xs">
+                        X: {variables.find(v => v.id === chart.xAxis)?.displayName || chart.xAxis}
+                      </Badge>
+                    )}
+                    {chart.yAxis && (
+                      <Badge variant="secondary" className="text-xs">
+                        Y: {variables.find(v => v.id === chart.yAxis)?.displayName || chart.yAxis}
+                      </Badge>
+                    )}
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-64 w-full">
+                    {chart.xAxis && chart.yAxis ? (
+                      renderChart(chart)
+                    ) : (
+                      <div className="flex items-center justify-center h-full text-gray-500">
+                        <p>Configura los ejes X e Y para mostrar el gráfico</p>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Tabla de datos correspondiente */}
+              {chart.xAxis && chart.yAxis && (
+                <DataTable chart={chart} variables={variables} />
+              )}
+            </div>
           ))
         )}
       </div>
