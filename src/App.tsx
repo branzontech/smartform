@@ -67,6 +67,11 @@ import NotificationForm from "./pages/customers/NotificationForm";
 import ReportsPage from "./pages/reports/ReportsPage";
 import CreateReportPage from "./pages/reports/CreateReportPage";
 
+// Importamos las páginas de turnos
+import ShiftManagement from "./pages/shifts/ShiftManagement";
+import ShiftAssignment from "./pages/shifts/ShiftAssignment";
+import ShiftModification from "./pages/shifts/ShiftModification";
+
 export const BackButton = () => {
   const navigate = useNavigate();
   
@@ -135,6 +140,11 @@ function App() {
               <Route path="/app/informes" element={<ReportsPage />} />
               <Route path="/app/informes/crear" element={<CreateReportPage />} />
               <Route path="/app/informes/plantillas" element={<ReportsPage />} />
+              
+              {/* Rutas de turnos */}
+              <Route path="/app/turnos" element={<ShiftManagement />} />
+              <Route path="/app/turnos/asignar" element={<ShiftAssignment />} />
+              <Route path="/app/turnos/modificar" element={<ShiftModification />} />
               
               {/* Rutas de médicos y profesionales */}
               <Route path="/app/medicos" element={<DoctorList />} />

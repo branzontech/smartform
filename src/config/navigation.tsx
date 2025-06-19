@@ -48,7 +48,10 @@ import {
   Download,
   ChartBar,
   ChartPie,
-  TrendingUp
+  TrendingUp,
+  CalendarRange,
+  CalendarCheck,
+  CalendarClock
 } from "lucide-react";
 
 export type MenuItem = {
@@ -91,6 +94,28 @@ export const mainNavItems: SubmenuItem[] = [
     title: "Citas",
     path: "/app/citas",
     icon: Calendar,
+  },
+  {
+    title: "Gestión de Turnos",
+    path: "#",
+    icon: CalendarRange,
+    items: [
+      {
+        title: "Asignar Turnos",
+        path: "/app/turnos/asignar",
+        icon: CalendarCheck,
+      },
+      {
+        title: "Consultar Turnos",
+        path: "/app/turnos",
+        icon: CalendarClock,
+      },
+      {
+        title: "Modificar Turnos",
+        path: "/app/turnos/modificar",
+        icon: Clock,
+      },
+    ],
   },
   {
     title: "Telemedicina",
