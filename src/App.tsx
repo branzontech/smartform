@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -62,6 +63,10 @@ import CustomerList from "./pages/customers/CustomerList";
 import CustomerDetail from "./pages/customers/CustomerDetail";
 import NotificationForm from "./pages/customers/NotificationForm";
 
+// Importamos las páginas de informes
+import ReportsPage from "./pages/reports/ReportsPage";
+import CreateReportPage from "./pages/reports/CreateReportPage";
+
 export const BackButton = () => {
   const navigate = useNavigate();
   
@@ -125,6 +130,11 @@ function App() {
               
               {/* Nueva ruta para admisiones */}
               <Route path="/app/admisiones" element={<AdmissionPage />} />
+              
+              {/* Rutas de informes */}
+              <Route path="/app/informes" element={<ReportsPage />} />
+              <Route path="/app/informes/crear" element={<CreateReportPage />} />
+              <Route path="/app/informes/plantillas" element={<ReportsPage />} />
               
               {/* Rutas de médicos y profesionales */}
               <Route path="/app/medicos" element={<DoctorList />} />

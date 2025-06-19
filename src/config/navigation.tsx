@@ -1,4 +1,3 @@
-
 import { 
   Home, 
   Users, 
@@ -44,7 +43,12 @@ import {
   Clock,
   UserCircle,
   Send,
-  Video
+  Video,
+  FileSpreadsheet,
+  Download,
+  ChartBar,
+  ChartPie,
+  TrendingUp
 } from "lucide-react";
 
 export type MenuItem = {
@@ -122,6 +126,28 @@ export const mainNavItems: SubmenuItem[] = [
         title: "Generar Factura",
         path: "/app/facturacion/nueva",
         icon: DollarSign,
+      },
+    ],
+  },
+  {
+    title: "Informes",
+    path: "#",
+    icon: FileBarChart,
+    items: [
+      {
+        title: "Crear Informe",
+        path: "/app/informes/crear",
+        icon: ChartBar,
+      },
+      {
+        title: "Informes Guardados",
+        path: "/app/informes",
+        icon: FileText,
+      },
+      {
+        title: "Plantillas",
+        path: "/app/informes/plantillas",
+        icon: FileSpreadsheet,
       },
     ],
   },
