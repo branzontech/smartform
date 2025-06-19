@@ -12,7 +12,7 @@ import {
   LineChart, 
   PieChart, 
   AreaChart, 
-  Scatter 
+  ChartScatter 
 } from "lucide-react";
 import { ChartConfig, ChartType, ReportVariable } from "@/types/report-types";
 
@@ -28,7 +28,7 @@ const chartTypeOptions = [
   { value: 'line', label: 'Líneas', icon: LineChart },
   { value: 'pie', label: 'Circular', icon: PieChart },
   { value: 'area', label: 'Área', icon: AreaChart },
-  { value: 'scatter', label: 'Dispersión', icon: Scatter },
+  { value: 'scatter', label: 'Dispersión', icon: ChartScatter },
 ];
 
 export const ChartBuilder = ({ chart, availableVariables, onUpdate, onDelete }: ChartBuilderProps) => {

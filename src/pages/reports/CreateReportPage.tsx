@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Layout } from "@/components/layout";
 import { Button } from "@/components/ui/button";
@@ -21,7 +20,7 @@ import {
   PieChart,
   LineChart,
   AreaChart,
-  Scatter
+  ChartScatter
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { ReportVariable, ChartType, ChartConfig } from "@/types/report-types";
@@ -93,7 +92,7 @@ const chartTypeIcons = {
   line: LineChart,
   pie: PieChart,
   area: AreaChart,
-  scatter: Scatter
+  scatter: ChartScatter
 };
 
 const CreateReportPage = () => {
