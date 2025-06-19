@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Layout } from "@/components/layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -359,7 +358,7 @@ export default function ShiftModification() {
                     <Checkbox
                       id="partial-reassignment"
                       checked={isPartialReassignment}
-                      onCheckedChange={setIsPartialReassignment}
+                      onCheckedChange={(checked) => setIsPartialReassignment(checked === true)}
                     />
                     <label htmlFor="partial-reassignment" className="text-sm font-medium">
                       Reasignación parcial
@@ -376,7 +375,13 @@ export default function ShiftModification() {
                             <Checkbox
                               id={`slot-${slot.id}`}
                               checked={selectedTimeSlots.includes(slot.id)}
-                              onCheckedChange={() => handleTimeSlotToggle(slot.id)}
+                              onCheckedChange={(checked) => {
+                                if (checked === true) {
+                                  setSelectedTimeSlots([...selectedTimeSlots, slot.id]);
+                                } else {
+                                  setSelectedTimeSlots(selectedTimeSlots.filter(id => id !== slot.id));
+                                }
+                              }}
                             />
                             <label htmlFor={`slot-${slot.id}`} className="text-sm">
                               Turno {index + 1}: {slot.startTime} - {slot.endTime}
