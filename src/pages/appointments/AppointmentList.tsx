@@ -495,7 +495,9 @@ const AppointmentList = () => {
     }
 
     const newDate = new Date(reassignDate);
-    const selectedDoctor = reassignDoctorId ? mockDoctors.find(doctor => doctor.id === reassignDoctorId) : null;
+    const selectedDoctor = (reassignDoctorId && reassignDoctorId !== "keep-current") 
+      ? mockDoctors.find(doctor => doctor.id === reassignDoctorId) 
+      : null;
     
     const updatedAppointments = appointments.map(app => 
       selectedAppointments.includes(app.id)
@@ -503,7 +505,7 @@ const AppointmentList = () => {
             ...app, 
             date: newDate,
             time: reassignTime,
-            doctorId: reassignDoctorId || app.doctorId,
+            doctorId: (reassignDoctorId && reassignDoctorId !== "keep-current") ? reassignDoctorId : app.doctorId,
             doctorName: selectedDoctor?.name || app.doctorName,
             status: 'Reprogramada' as AppointmentStatus, 
             updatedAt: new Date() 
@@ -1033,7 +1035,7 @@ const AppointmentList = () => {
                                   <SelectValue placeholder="Mantener médico actual o seleccionar nuevo" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  <SelectItem value="">Mantener médico actual</SelectItem>
+                                  <SelectItem value="keep-current">Mantener médico actual</SelectItem>
                                   {mockDoctors.filter(doctor => doctor.status === 'Activo').map((doctor) => (
                                     <SelectItem key={doctor.id} value={doctor.id}>
                                       {doctor.name} - {doctor.specialty}
