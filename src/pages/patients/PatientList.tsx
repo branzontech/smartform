@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Header } from "@/components/layout/header";
 import { BackButton } from "@/App";
@@ -7,11 +7,14 @@ import { Input } from "@/components/ui/input";
 import { EmptyState } from "@/components/ui/empty-state";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import { Search, Plus, Users, Calendar, Eye, FileText } from "lucide-react";
+import { Search, Plus, Users, Calendar, Eye, FileText, Filter, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import { Patient } from "@/types/patient-types";
-import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 
 // Datos de ejemplo
 const mockPatients: Patient[] = [
@@ -49,7 +52,7 @@ const mockPatients: Patient[] = [
   }
 ];
 
-// Generar más pacientes de prueba para demostrar la carga infinita
+// Generar más pacientes de prueba para demostrar escalabilidad
 const generateMoreMockPatients = (startId: number, count: number): Patient[] => {
   const result: Patient[] = [];
   const names = ["Ana Martínez", "Luis Rodríguez", "Elena Santos", "Pedro Gómez", "Carmen López", "Miguel Torres", "Isabel Ramírez", "José García", "Laura Fernández", "Pablo Ruiz"];
@@ -75,21 +78,37 @@ const generateMoreMockPatients = (startId: number, count: number): Patient[] => 
   return result;
 };
 
-// Agregar pacientes adicionales al mock
-const extendedMockPatients = [...mockPatients, ...generateMoreMockPatients(mockPatients.length + 1, 30)];
+// Agregar pacientes adicionales al mock - Generar más para probar escalabilidad
+const extendedMockPatients = [...mockPatients, ...generateMoreMockPatients(mockPatients.length + 1, 500)];
 
-const ITEMS_PER_PAGE = 10;
+type SortField = 'name' | 'documentId' | 'dateOfBirth' | 'lastVisitAt' | 'createdAt';
+type SortDirection = 'asc' | 'desc';
+
+const ITEMS_PER_PAGE_OPTIONS = [10, 25, 50, 100];
 
 const PatientList = () => {
   const [patients, setPatients] = useState<Patient[]>([]);
-  const [displayedPatients, setDisplayedPatients] = useState<Patient[]>([]);
   const [loading, setLoading] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const [page, setPage] = useState(1);
-  const observerTarget = useRef<HTMLDivElement>(null);
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
+  const [genderFilter, setGenderFilter] = useState<string>("all");
+  const [hasVisitFilter, setHasVisitFilter] = useState<string>("all");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(25);
+  const [sortField, setSortField] = useState<SortField>('name');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
   const navigate = useNavigate();
 
+  // Debounce search term
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+      setCurrentPage(1); // Reset to first page when searching
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  // Load patients data
   useEffect(() => {
     const timer = setTimeout(() => {
       const savedPatients = localStorage.getItem("patients");
@@ -116,57 +135,70 @@ const PatientList = () => {
     return () => clearTimeout(timer);
   }, []);
 
-  const filteredPatients = patients.filter(patient =>
-    patient.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    patient.documentId.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Filter and sort patients
+  const filteredAndSortedPatients = useMemo(() => {
+    let filtered = patients.filter(patient => {
+      const matchesSearch = patient.name.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+                          patient.documentId.toLowerCase().includes(debouncedSearchTerm.toLowerCase());
+      
+      const matchesGender = genderFilter === "all" || patient.gender === genderFilter;
+      
+      const matchesVisit = hasVisitFilter === "all" || 
+                          (hasVisitFilter === "has-visit" && patient.lastVisitAt) ||
+                          (hasVisitFilter === "no-visit" && !patient.lastVisitAt);
 
-  // Cargar pacientes iniciales
-  useEffect(() => {
-    if (!loading && filteredPatients.length > 0) {
-      setDisplayedPatients(filteredPatients.slice(0, ITEMS_PER_PAGE));
-      setPage(1);
-    }
-  }, [loading, filteredPatients, searchTerm]);
-
-  // Configurar el observador de intersección para la carga infinita
-  const handleObserver = useCallback((entries: IntersectionObserverEntry[]) => {
-    const [entry] = entries;
-    if (entry?.isIntersecting && !loadingMore && displayedPatients.length < filteredPatients.length) {
-      setLoadingMore(true);
-    }
-  }, [loadingMore, displayedPatients.length, filteredPatients.length]);
-
-  useEffect(() => {
-    const observer = new IntersectionObserver(handleObserver, {
-      root: null,
-      rootMargin: "20px",
-      threshold: 0.1
+      return matchesSearch && matchesGender && matchesVisit;
     });
-    
-    if (observerTarget.current) {
-      observer.observe(observerTarget.current);
-    }
-    
-    return () => {
-      if (observerTarget.current) {
-        observer.unobserve(observerTarget.current);
-      }
-    };
-  }, [handleObserver]);
 
-  // Cargar más pacientes cuando se activa el observador
-  useEffect(() => {
-    if (loadingMore && displayedPatients.length < filteredPatients.length) {
-      setTimeout(() => {
-        const nextPage = page + 1;
-        const nextBatch = filteredPatients.slice(0, nextPage * ITEMS_PER_PAGE);
-        setDisplayedPatients(nextBatch);
-        setPage(nextPage);
-        setLoadingMore(false);
-      }, 500); // Simular tiempo de carga
+    // Sort the filtered results
+    filtered.sort((a, b) => {
+      let aValue: any = a[sortField];
+      let bValue: any = b[sortField];
+
+      // Handle dates
+      if (sortField === 'dateOfBirth' || sortField === 'lastVisitAt' || sortField === 'createdAt') {
+        aValue = aValue ? new Date(aValue).getTime() : 0;
+        bValue = bValue ? new Date(bValue).getTime() : 0;
+      }
+
+      // Handle strings
+      if (typeof aValue === 'string') {
+        aValue = aValue.toLowerCase();
+        bValue = bValue.toLowerCase();
+      }
+
+      if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
+      if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
+      return 0;
+    });
+
+    return filtered;
+  }, [patients, debouncedSearchTerm, genderFilter, hasVisitFilter, sortField, sortDirection]);
+
+  // Paginate the results
+  const paginatedPatients = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return filteredAndSortedPatients.slice(startIndex, startIndex + itemsPerPage);
+  }, [filteredAndSortedPatients, currentPage, itemsPerPage]);
+
+  const totalPages = Math.ceil(filteredAndSortedPatients.length / itemsPerPage);
+
+  // Handle sorting
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
     }
-  }, [loadingMore, page, filteredPatients, displayedPatients.length]);
+    setCurrentPage(1);
+  };
+
+  // Render sort icon
+  const renderSortIcon = (field: SortField) => {
+    if (sortField !== field) return <ArrowUpDown className="h-4 w-4" />;
+    return sortDirection === 'asc' ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />;
+  };
 
   const handleCreateConsultation = () => {
     navigate("/app/pacientes/nueva-consulta");
@@ -176,16 +208,37 @@ const PatientList = () => {
     navigate(`/app/pacientes/${id}`);
   };
 
+  // Reset filters
+  const resetFilters = () => {
+    setSearchTerm("");
+    setGenderFilter("all");
+    setHasVisitFilter("all");
+    setCurrentPage(1);
+  };
+
+  // Calculate age from date of birth
+  const calculateAge = (dateOfBirth: string) => {
+    const today = new Date();
+    const birthDate = new Date(dateOfBirth);
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    return age;
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex flex-col">
         <Header />
         <div className="flex-1 flex items-center justify-center">
           <div className="animate-pulse text-center">
-            <div className="h-8 w-48 bg-gray-200 dark:bg-gray-800 rounded mb-6 mx-auto"></div>
-            <div className="grid grid-cols-1 gap-4 max-w-4xl mx-auto px-4">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="h-20 bg-gray-200 dark:bg-gray-800 rounded-xl"></div>
+            <div className="h-8 w-48 bg-muted rounded mb-6 mx-auto"></div>
+            <div className="max-w-6xl mx-auto px-4">
+              <div className="h-12 bg-muted rounded mb-4"></div>
+              {[1, 2, 3, 4, 5].map((i) => (
+                <div key={i} className="h-12 bg-muted rounded mb-2"></div>
               ))}
             </div>
           </div>
@@ -197,98 +250,289 @@ const PatientList = () => {
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
-      <main className="flex-1 container mx-auto py-8 px-4">
+      <main className="flex-1 container mx-auto py-8 px-4 max-w-7xl">
         <BackButton />
+        
+        {/* Header */}
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold flex items-center">
-            <Users className="mr-2 text-purple-500" />
-            Pacientes
-          </h1>
-          <Button 
-            onClick={handleCreateConsultation} 
-            className="bg-purple-600 hover:bg-purple-700"
-          >
+          <div className="flex items-center gap-4">
+            <h1 className="text-2xl font-bold flex items-center">
+              <Users className="mr-2 text-primary" />
+              Pacientes
+            </h1>
+            <Badge variant="secondary" className="text-sm">
+              {filteredAndSortedPatients.length} pacientes
+            </Badge>
+          </div>
+          <Button onClick={handleCreateConsultation} className="bg-primary hover:bg-primary/90">
             <Plus className="mr-2" size={16} />
             Nueva consulta
           </Button>
         </div>
 
-        <div className="relative mb-6">
-          <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-          <Input
-            placeholder="Buscar por nombre o documento"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
-          />
-        </div>
-        
-        {filteredPatients.length === 0 ? (
+        {/* Filters */}
+        <Card className="mb-6">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg flex items-center">
+              <Filter className="mr-2 h-5 w-5" />
+              Filtros y búsqueda
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* Search */}
+            <div className="relative">
+              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar por nombre o documento..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            
+            {/* Filter row */}
+            <div className="flex flex-wrap gap-4 items-center">
+              <div className="flex items-center gap-2">
+                <label className="text-sm font-medium">Género:</label>
+                <Select value={genderFilter} onValueChange={setGenderFilter}>
+                  <SelectTrigger className="w-32">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos</SelectItem>
+                    <SelectItem value="Masculino">Masculino</SelectItem>
+                    <SelectItem value="Femenino">Femenino</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <label className="text-sm font-medium">Visitas:</label>
+                <Select value={hasVisitFilter} onValueChange={setHasVisitFilter}>
+                  <SelectTrigger className="w-40">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos</SelectItem>
+                    <SelectItem value="has-visit">Con visitas</SelectItem>
+                    <SelectItem value="no-visit">Sin visitas</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <label className="text-sm font-medium">Mostrar:</label>
+                <Select value={itemsPerPage.toString()} onValueChange={(value) => {
+                  setItemsPerPage(Number(value));
+                  setCurrentPage(1);
+                }}>
+                  <SelectTrigger className="w-20">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {ITEMS_PER_PAGE_OPTIONS.map(option => (
+                      <SelectItem key={option} value={option.toString()}>{option}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {(searchTerm || genderFilter !== "all" || hasVisitFilter !== "all") && (
+                <Button variant="outline" size="sm" onClick={resetFilters}>
+                  Limpiar filtros
+                </Button>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Results */}
+        {filteredAndSortedPatients.length === 0 ? (
           <EmptyState
             title="No hay pacientes registrados"
             description="Registra una nueva consulta para agregar pacientes."
             buttonText="Nueva consulta"
             onClick={handleCreateConsultation}
-            icon={<Users size={48} className="text-gray-300" />}
+            icon={<Users size={48} className="text-muted-foreground" />}
           />
         ) : (
-          <ScrollArea className="h-[calc(100vh-260px)]">
-            <div className="space-y-4 pr-2">
-              {displayedPatients.map((patient) => (
-                <Card 
-                  key={patient.id} 
-                  className="bg-blue-50/70 hover:bg-blue-50 dark:bg-gray-800/80 dark:hover:bg-gray-800 rounded-lg shadow p-4 hover:shadow-md transition-all duration-200 border-l-4 border-purple-200"
-                >
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h3 className="font-medium text-lg">{patient.name}</h3>
-                      <p className="text-sm text-gray-500">Documento: {patient.documentId}</p>
-                      <div className="flex items-center text-sm text-gray-500 mt-1">
-                        <Calendar size={14} className="mr-1" />
-                        {patient.lastVisitAt 
-                          ? `Última visita: ${format(patient.lastVisitAt, "d 'de' MMMM 'de' yyyy", { locale: es })}`
-                          : "Sin consultas previas"}
-                      </div>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        onClick={() => handleViewPatient(patient.id)}
-                        className="flex items-center gap-1"
-                      >
-                        <Eye size={14} />
-                        Detalle
-                      </Button>
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        onClick={() => navigate(`/app/pacientes/${patient.id}?tab=consultations`)}
-                        className="flex items-center gap-1"
-                      >
-                        <FileText size={14} />
-                        Historial
-                      </Button>
-                    </div>
+          <Card>
+            <CardContent className="p-0">
+              {/* Table */}
+              <div className="relative overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="hover:bg-transparent">
+                      <TableHead className="w-[200px]">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-auto p-0 font-medium"
+                          onClick={() => handleSort('name')}
+                        >
+                          Nombre
+                          {renderSortIcon('name')}
+                        </Button>
+                      </TableHead>
+                      <TableHead>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-auto p-0 font-medium"
+                          onClick={() => handleSort('documentId')}
+                        >
+                          Documento
+                          {renderSortIcon('documentId')}
+                        </Button>
+                      </TableHead>
+                      <TableHead>Edad</TableHead>
+                      <TableHead>Género</TableHead>
+                      <TableHead>Contacto</TableHead>
+                      <TableHead>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-auto p-0 font-medium"
+                          onClick={() => handleSort('lastVisitAt')}
+                        >
+                          Última visita
+                          {renderSortIcon('lastVisitAt')}
+                        </Button>
+                      </TableHead>
+                      <TableHead className="w-[150px]">Acciones</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {paginatedPatients.map((patient) => (
+                      <TableRow key={patient.id} className="hover:bg-muted/50">
+                        <TableCell className="font-medium">{patient.name}</TableCell>
+                        <TableCell className="font-mono text-sm">{patient.documentId}</TableCell>
+                        <TableCell>
+                          {calculateAge(patient.dateOfBirth)} años
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={patient.gender === 'Masculino' ? 'default' : 'secondary'} className="text-xs">
+                            {patient.gender}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-sm">
+                          <div>{patient.contactNumber}</div>
+                          {patient.email && (
+                            <div className="text-muted-foreground text-xs">{patient.email}</div>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {patient.lastVisitAt ? (
+                            <div className="text-sm">
+                              {format(patient.lastVisitAt, "dd/MM/yyyy", { locale: es })}
+                              <div className="text-muted-foreground text-xs">
+                                {format(patient.lastVisitAt, "HH:mm")}
+                              </div>
+                            </div>
+                          ) : (
+                            <Badge variant="outline" className="text-xs">
+                              Sin visitas
+                            </Badge>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex gap-1">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleViewPatient(patient.id)}
+                              className="h-8 w-8 p-0"
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => navigate(`/app/pacientes/${patient.id}?tab=consultations`)}
+                              className="h-8 w-8 p-0"
+                            >
+                              <FileText className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between px-6 py-4 border-t">
+                  <div className="text-sm text-muted-foreground">
+                    Mostrando {((currentPage - 1) * itemsPerPage) + 1} a{' '}
+                    {Math.min(currentPage * itemsPerPage, filteredAndSortedPatients.length)} de{' '}
+                    {filteredAndSortedPatients.length} pacientes
                   </div>
-                </Card>
-              ))}
-              
-              {/* Loader for more items */}
-              {loadingMore && (
-                <div className="py-2">
-                  <div className="flex justify-center">
-                    <Skeleton className="h-16 w-full rounded-lg" />
+                  
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(1)}
+                      disabled={currentPage === 1}
+                    >
+                      <ChevronsLeft className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                      disabled={currentPage === 1}
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                    </Button>
+                    
+                    <div className="flex items-center gap-1">
+                      {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                        const pageNumber = currentPage <= 3 
+                          ? i + 1 
+                          : currentPage >= totalPages - 2
+                          ? totalPages - 4 + i
+                          : currentPage - 2 + i;
+                        
+                        if (pageNumber < 1 || pageNumber > totalPages) return null;
+                        
+                        return (
+                          <Button
+                            key={pageNumber}
+                            variant={currentPage === pageNumber ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => setCurrentPage(pageNumber)}
+                            className="w-8 h-8"
+                          >
+                            {pageNumber}
+                          </Button>
+                        );
+                      })}
+                    </div>
+                    
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                      disabled={currentPage === totalPages}
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(totalPages)}
+                      disabled={currentPage === totalPages}
+                    >
+                      <ChevronsRight className="h-4 w-4" />
+                    </Button>
                   </div>
                 </div>
               )}
-              
-              {/* Intersection observer target */}
-              {displayedPatients.length < filteredPatients.length && (
-                <div ref={observerTarget} className="h-10" />
-              )}
-            </div>
-          </ScrollArea>
+            </CardContent>
+          </Card>
         )}
       </main>
     </div>
