@@ -14,12 +14,76 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Appointment, AppointmentStatus, AppointmentView } from "@/types/patient-types";
+import { Appointment, AppointmentStatus, AppointmentView, Doctor } from "@/types/patient-types";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { EmptyState } from "@/components/ui/empty-state";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { MoreVertical } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+
+// Datos mock de médicos disponibles
+const mockDoctors: Doctor[] = [
+  {
+    id: "1",
+    name: "Dr. Carlos López",
+    specialty: "Medicina General",
+    documentId: "12345678",
+    licenseNumber: "MED-001",
+    contactNumber: "+58-212-555-0101",
+    email: "carlos.lopez@hospital.com",
+    createdAt: new Date(),
+    status: "Activo",
+    specialties: ["Medicina General", "Consulta Externa"]
+  },
+  {
+    id: "2", 
+    name: "Dra. María Rodríguez",
+    specialty: "Cardiología",
+    documentId: "23456789",
+    licenseNumber: "MED-002",
+    contactNumber: "+58-212-555-0102",
+    email: "maria.rodriguez@hospital.com",
+    createdAt: new Date(),
+    status: "Activo",
+    specialties: ["Cardiología", "Medicina Interna"]
+  },
+  {
+    id: "3",
+    name: "Dr. José Martínez",
+    specialty: "Dermatología",
+    documentId: "34567890",
+    licenseNumber: "MED-003",
+    contactNumber: "+58-212-555-0103",
+    email: "jose.martinez@hospital.com",
+    createdAt: new Date(),
+    status: "Activo",
+    specialties: ["Dermatología", "Cirugía Dermatológica"]
+  },
+  {
+    id: "4",
+    name: "Dra. Ana Fernández",
+    specialty: "Pediatría",
+    documentId: "45678901",
+    licenseNumber: "MED-004",
+    contactNumber: "+58-212-555-0104",
+    email: "ana.fernandez@hospital.com",
+    createdAt: new Date(),
+    status: "Activo",
+    specialties: ["Pediatría", "Neonatología"]
+  },
+  {
+    id: "5",
+    name: "Dr. Roberto García",
+    specialty: "Psicología",
+    documentId: "56789012",
+    licenseNumber: "PSI-001",
+    contactNumber: "+58-212-555-0105",
+    email: "roberto.garcia@hospital.com",
+    createdAt: new Date(),
+    status: "Activo",
+    specialties: ["Psicología Clínica", "Terapia Familiar"]
+  }
+];
 
 const mockAppointments: Appointment[] = [
   {
@@ -33,6 +97,8 @@ const mockAppointments: Appointment[] = [
     status: "Programada",
     notes: "Traer análisis recientes",
     createdAt: new Date(new Date().setDate(new Date().getDate() - 5)),
+    doctorId: "1",
+    doctorName: "Dr. Carlos López"
   },
   {
     id: "2",
@@ -44,6 +110,8 @@ const mockAppointments: Appointment[] = [
     reason: "Primera consulta",
     status: "Programada",
     createdAt: new Date(new Date().setDate(new Date().getDate() - 3)),
+    doctorId: "2",
+    doctorName: "Dra. María Rodríguez"
   },
   {
     id: "3",
@@ -55,6 +123,8 @@ const mockAppointments: Appointment[] = [
     reason: "Revisión de tratamiento",
     status: "Pendiente",
     createdAt: new Date(new Date().setDate(new Date().getDate() - 2)),
+    doctorId: "1",
+    doctorName: "Dr. Carlos López"
   },
   {
     id: "4",
@@ -66,6 +136,8 @@ const mockAppointments: Appointment[] = [
     reason: "Procedimiento menor",
     status: "Programada",
     createdAt: new Date(new Date().setDate(new Date().getDate() - 7)),
+    doctorId: "3",
+    doctorName: "Dr. José Martínez"
   },
   {
     id: "5",
@@ -77,6 +149,8 @@ const mockAppointments: Appointment[] = [
     reason: "Control rutinario",
     status: "Completada",
     createdAt: new Date(new Date().setDate(new Date().getDate() - 10)),
+    doctorId: "4",
+    doctorName: "Dra. Ana Fernández"
   },
   {
     id: "6",
@@ -89,6 +163,8 @@ const mockAppointments: Appointment[] = [
     status: "Cancelada",
     notes: "Paciente canceló por enfermedad",
     createdAt: new Date(new Date().setDate(new Date().getDate() - 4)),
+    doctorId: "1",
+    doctorName: "Dr. Carlos López"
   },
   {
     id: "7",
@@ -100,6 +176,8 @@ const mockAppointments: Appointment[] = [
     reason: "Consulta de nutrición",
     status: "Programada",
     createdAt: new Date(new Date().setDate(new Date().getDate() - 1)),
+    doctorId: "2",
+    doctorName: "Dra. María Rodríguez"
   },
   {
     id: "8",
@@ -112,6 +190,8 @@ const mockAppointments: Appointment[] = [
     status: "Programada",
     notes: "Primera sesión",
     createdAt: new Date(new Date().setDate(new Date().getDate() - 6)),
+    doctorId: "5",
+    doctorName: "Dr. Roberto García"
   },
   {
     id: "9",
@@ -124,6 +204,8 @@ const mockAppointments: Appointment[] = [
     status: "Programada",
     notes: "Ayuno desde medianoche",
     createdAt: new Date(new Date().setDate(new Date().getDate() - 8)),
+    doctorId: "3",
+    doctorName: "Dr. José Martínez"
   },
   {
     id: "10",
@@ -135,6 +217,8 @@ const mockAppointments: Appointment[] = [
     reason: "Terapia física",
     status: "Pendiente",
     createdAt: new Date(new Date().setDate(new Date().getDate() - 3)),
+    doctorId: "4",
+    doctorName: "Dra. Ana Fernández"
   },
   {
     id: "11",
@@ -146,6 +230,8 @@ const mockAppointments: Appointment[] = [
     reason: "Control post-operatorio",
     status: "Completada",
     createdAt: new Date(new Date().setDate(new Date().getDate() - 15)),
+    doctorId: "2",
+    doctorName: "Dra. María Rodríguez"
   },
   {
     id: "12",
@@ -157,6 +243,8 @@ const mockAppointments: Appointment[] = [
     reason: "Consulta dermatológica",
     status: "Programada",
     createdAt: new Date(new Date().setDate(new Date().getDate() - 2)),
+    doctorId: "3",
+    doctorName: "Dr. José Martínez"
   },
   {
     id: "13",
@@ -169,6 +257,8 @@ const mockAppointments: Appointment[] = [
     status: "Programada",
     notes: "Traer electrocardiograma previo",
     createdAt: new Date(new Date().setDate(new Date().getDate() - 9)),
+    doctorId: "2",
+    doctorName: "Dra. María Rodríguez"
   },
   {
     id: "14",
@@ -181,6 +271,8 @@ const mockAppointments: Appointment[] = [
     status: "Reprogramada",
     notes: "Reprogramada por solicitud del paciente",
     createdAt: new Date(new Date().setDate(new Date().getDate() - 12)),
+    doctorId: "1",
+    doctorName: "Dr. Carlos López"
   },
 ];
 
@@ -294,6 +386,7 @@ const AppointmentList = () => {
   const [isReassignDialogOpen, setIsReassignDialogOpen] = useState(false);
   const [reassignDate, setReassignDate] = useState<string>("");
   const [reassignTime, setReassignTime] = useState<string>("");
+  const [reassignDoctorId, setReassignDoctorId] = useState<string>("");
 
   // Effect para mostrar/ocultar las acciones rápidas
   useEffect(() => {
@@ -402,12 +495,16 @@ const AppointmentList = () => {
     }
 
     const newDate = new Date(reassignDate);
+    const selectedDoctor = reassignDoctorId ? mockDoctors.find(doctor => doctor.id === reassignDoctorId) : null;
+    
     const updatedAppointments = appointments.map(app => 
       selectedAppointments.includes(app.id)
         ? { 
             ...app, 
             date: newDate,
             time: reassignTime,
+            doctorId: reassignDoctorId || app.doctorId,
+            doctorName: selectedDoctor?.name || app.doctorName,
             status: 'Reprogramada' as AppointmentStatus, 
             updatedAt: new Date() 
           }
@@ -417,15 +514,17 @@ const AppointmentList = () => {
     setAppointments(updatedAppointments);
     localStorage.setItem("appointments", JSON.stringify(updatedAppointments));
     
+    const doctorInfo = selectedDoctor ? ` con ${selectedDoctor.name}` : '';
     toast({
       title: "Citas reasignadas",
-      description: `Se reasignaron ${selectedAppointments.length} cita${selectedAppointments.length === 1 ? '' : 's'} exitosamente`,
+      description: `Se reasignaron ${selectedAppointments.length} cita${selectedAppointments.length === 1 ? '' : 's'} exitosamente${doctorInfo}`,
     });
     
     setSelectedAppointments([]);
     setIsReassignDialogOpen(false);
     setReassignDate("");
     setReassignTime("");
+    setReassignDoctorId("");
   };
 
   const changeWeek = (amount: number) => {
@@ -516,7 +615,7 @@ const AppointmentList = () => {
                 <h4 className="font-medium text-gray-900">{appointment.patientName}</h4>
                 <p className="text-sm text-gray-600 flex items-center">
                   <Clock size={12} className="mr-1" />
-                  {appointment.duration} min • Dr. López
+                  {appointment.duration} min • {appointment.doctorName || 'Sin médico asignado'}
                 </p>
               </div>
             </div>
@@ -922,6 +1021,22 @@ const AppointmentList = () => {
                                   {timeSlots.map((time) => (
                                     <SelectItem key={time} value={time}>
                                       {time}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div>
+                              <label className="text-sm font-medium">Médico (opcional)</label>
+                              <Select value={reassignDoctorId} onValueChange={setReassignDoctorId}>
+                                <SelectTrigger className="mt-1">
+                                  <SelectValue placeholder="Mantener médico actual o seleccionar nuevo" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="">Mantener médico actual</SelectItem>
+                                  {mockDoctors.filter(doctor => doctor.status === 'Activo').map((doctor) => (
+                                    <SelectItem key={doctor.id} value={doctor.id}>
+                                      {doctor.name} - {doctor.specialty}
                                     </SelectItem>
                                   ))}
                                 </SelectContent>

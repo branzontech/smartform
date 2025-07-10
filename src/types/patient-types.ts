@@ -72,6 +72,8 @@ export interface Appointment {
   createdAt: Date;
   updatedAt?: Date;
   googleEventId?: string; // ID del evento en Google Calendar
+  doctorId?: string; // ID del médico asignado
+  doctorName?: string; // Nombre del médico asignado
 }
 
 export type AppointmentWithPatient = Appointment & {
