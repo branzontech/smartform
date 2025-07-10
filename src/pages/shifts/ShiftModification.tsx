@@ -85,7 +85,7 @@ export default function ShiftModification() {
       });
     }
     
-    if (searchProfessional) {
+    if (searchProfessional && searchProfessional !== "all") {
       filtered = filtered.filter(shift => 
         shift.professionalId === searchProfessional
       );
@@ -247,7 +247,7 @@ export default function ShiftModification() {
                       <SelectValue placeholder="Todos los profesionales" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Todos los profesionales</SelectItem>
+                      <SelectItem value="all">Todos los profesionales</SelectItem>
                       {professionals.map((prof) => (
                         <SelectItem key={prof.id} value={prof.id}>
                           {prof.name} - {prof.specialty}

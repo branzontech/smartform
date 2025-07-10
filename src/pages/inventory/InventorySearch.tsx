@@ -49,11 +49,11 @@ const InventorySearch = () => {
     let results = searchInventoryItems(searchQuery);
     
     // Aplicar filtros adicionales
-    if (selectedCategory) {
+    if (selectedCategory && selectedCategory !== "all") {
       results = results.filter(item => item.category === selectedCategory);
     }
     
-    if (selectedStatus) {
+    if (selectedStatus && selectedStatus !== "all") {
       results = results.filter(item => item.status === selectedStatus);
     }
     
@@ -126,7 +126,7 @@ const InventorySearch = () => {
                   <SelectValue placeholder="Cualquier categoría" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Cualquier categoría</SelectItem>
+                  <SelectItem value="all">Cualquier categoría</SelectItem>
                   {categories.map((category) => (
                     <SelectItem key={category} value={category}>
                       {category}
@@ -140,7 +140,7 @@ const InventorySearch = () => {
                   <SelectValue placeholder="Cualquier estado" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Cualquier estado</SelectItem>
+                  <SelectItem value="all">Cualquier estado</SelectItem>
                   {statuses.map((status) => (
                     <SelectItem key={status} value={status}>
                       {status}

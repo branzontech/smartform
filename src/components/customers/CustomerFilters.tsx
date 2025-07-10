@@ -29,8 +29,8 @@ import { CustomerStatus, CustomerFrequency } from "@/types/customer-types";
 
 export const CustomerFilters = () => {
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<CustomerStatus | "">("");
-  const [frequencyFilter, setFrequencyFilter] = useState<CustomerFrequency | "">("");
+  const [statusFilter, setStatusFilter] = useState<CustomerStatus | "" | "all">("");
+  const [frequencyFilter, setFrequencyFilter] = useState<CustomerFrequency | "" | "all">("");
   const [dateFilter, setDateFilter] = useState<Date | undefined>(undefined);
   const [activeFilters, setActiveFilters] = useState<{
     status?: CustomerStatus;
@@ -45,8 +45,8 @@ export const CustomerFilters = () => {
       date?: Date;
     } = {};
     
-    if (statusFilter) filters.status = statusFilter;
-    if (frequencyFilter) filters.frequency = frequencyFilter;
+    if (statusFilter && statusFilter !== "all") filters.status = statusFilter;
+    if (frequencyFilter && frequencyFilter !== "all") filters.frequency = frequencyFilter;
     if (dateFilter) filters.date = dateFilter;
     
     setActiveFilters(filters);
@@ -109,12 +109,12 @@ export const CustomerFilters = () => {
               
               <div className="space-y-2">
                 <Label htmlFor="status-filter">Estado</Label>
-                <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as CustomerStatus | "")}>
+                <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as CustomerStatus | "" | "all")}>
                   <SelectTrigger id="status-filter">
                     <SelectValue placeholder="Cualquier estado" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Todos</SelectItem>
+                    <SelectItem value="all">Todos</SelectItem>
                     <SelectItem value="Activo">Activos</SelectItem>
                     <SelectItem value="Inactivo">Inactivos</SelectItem>
                     <SelectItem value="Potencial">Potenciales</SelectItem>
@@ -125,12 +125,12 @@ export const CustomerFilters = () => {
               
               <div className="space-y-2">
                 <Label htmlFor="frequency-filter">Frecuencia</Label>
-                <Select value={frequencyFilter} onValueChange={(value) => setFrequencyFilter(value as CustomerFrequency | "")}>
+                <Select value={frequencyFilter} onValueChange={(value) => setFrequencyFilter(value as CustomerFrequency | "" | "all")}>
                   <SelectTrigger id="frequency-filter">
                     <SelectValue placeholder="Cualquier frecuencia" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Todos</SelectItem>
+                    <SelectItem value="all">Todos</SelectItem>
                     <SelectItem value="Frecuente">Frecuentes</SelectItem>
                     <SelectItem value="Regular">Regulares</SelectItem>
                     <SelectItem value="Esporádico">Esporádicos</SelectItem>

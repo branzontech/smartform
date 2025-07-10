@@ -30,7 +30,7 @@ const InvoiceList = ({ limit, compact = false }: InvoiceListProps) => {
     .filter(invoice => 
       (invoice.patientName.toLowerCase().includes(search.toLowerCase()) ||
        invoice.invoiceNumber.toLowerCase().includes(search.toLowerCase())) &&
-      (statusFilter ? invoice.status === statusFilter : true)
+      (statusFilter && statusFilter !== "all" ? invoice.status === statusFilter : true)
     )
     .sort((a, b) => new Date(b.issueDate).getTime() - new Date(a.issueDate).getTime());
   
@@ -105,7 +105,7 @@ const InvoiceList = ({ limit, compact = false }: InvoiceListProps) => {
                 <SelectValue placeholder="Todos los estados" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Todos los estados</SelectItem>
+                <SelectItem value="all">Todos los estados</SelectItem>
                 <SelectItem value="paid">Pagada</SelectItem>
                 <SelectItem value="pending">Pendiente</SelectItem>
                 <SelectItem value="overdue">Vencida</SelectItem>
