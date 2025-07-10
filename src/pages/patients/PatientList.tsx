@@ -87,6 +87,9 @@ type SortDirection = 'asc' | 'desc';
 const ITEMS_PER_PAGE_OPTIONS = [10, 25, 50, 100];
 
 const PatientList = () => {
+  // Fixed: Removed all infinite scroll code and loadingMore references
+  console.log('PatientList: Modern table implementation loaded');
+  
   const [patients, setPatients] = useState<Patient[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
