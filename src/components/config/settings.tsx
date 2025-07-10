@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Header } from "@/components/layout/header";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, FileText, PlusSquare, Palette, Bell, Database, Save, User, UserCog, Shield, Plus, Cog } from "lucide-react";
+import { ArrowLeft, FileText, PlusSquare, Palette, Bell, Database, Save, User, UserCog, Shield, Plus, Cog, HelpCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
@@ -15,6 +15,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
+import { useOnboarding } from "@/hooks/use-onboarding";
 
 // Schema for the form creation
 const formCreationSchema = z.object({
@@ -37,6 +38,7 @@ const categories = [
 export const SettingsPage = () => {
   const isMobile = useIsMobile();
   const navigate = useNavigate();
+  const { resetOnboarding } = useOnboarding();
   
   const [autoSave, setAutoSave] = useState(true);
   const [notifications, setNotifications] = useState(true);
@@ -60,6 +62,11 @@ export const SettingsPage = () => {
 
   const handleSave = () => {
     toast.success("Configuración guardada con éxito");
+  };
+
+  const handleRestartGuide = () => {
+    resetOnboarding();
+    toast.success("Guía de usuario reiniciada. Se mostrará en un momento.");
   };
 
   return (
@@ -130,6 +137,24 @@ export const SettingsPage = () => {
                           <option value="pt">Português</option>
                           <option value="fr">Français</option>
                         </select>
+                      </div>
+                      
+                      <div className="pt-4 border-t">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <Label className="font-medium">Guía de usuario</Label>
+                            <p className="text-sm text-muted-foreground">Volver a mostrar la guía de introducción</p>
+                          </div>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={handleRestartGuide}
+                            className="flex items-center space-x-2"
+                          >
+                            <HelpCircle size={16} />
+                            <span>Mostrar guía</span>
+                          </Button>
+                        </div>
                       </div>
                     </CardContent>
                   </Card>
