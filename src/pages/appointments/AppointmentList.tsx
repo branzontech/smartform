@@ -378,6 +378,7 @@ const AppointmentList = () => {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<AppointmentStatus | 'Todas'>('Todas');
+  const [doctorFilter, setDoctorFilter] = useState<string>('Todos');
   const [viewMode, setViewMode] = useState<AppointmentView>('day');
   
   // Estados para selección múltiple y acciones rápidas
@@ -465,6 +466,20 @@ const AppointmentList = () => {
     } else {
       setSelectedAppointments([]);
     }
+  };
+
+  // Función especial para seleccionar todas las citas de un médico específico
+  const handleSelectAllDoctorAppointments = (doctorId: string) => {
+    const doctorAppointments = appointments.filter(app => 
+      app.doctorId === doctorId && 
+      (app.status === 'Programada' || app.status === 'Pendiente')
+    );
+    setSelectedAppointments(doctorAppointments.map(app => app.id));
+    setDoctorFilter(doctorId); // Asegurar que el filtro esté aplicado
+    toast({
+      title: "Citas seleccionadas",
+      description: `Se seleccionaron ${doctorAppointments.length} citas del médico para redistribución`,
+    });
   };
 
   const handleCancelAppointments = (appointmentIds: string[]) => {
@@ -560,6 +575,7 @@ const AppointmentList = () => {
     const matchesSearch = appointment.patientName.toLowerCase().includes(searchTerm.toLowerCase()) || 
                           appointment.reason.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'Todas' || appointment.status === statusFilter;
+    const matchesDoctor = doctorFilter === 'Todos' || appointment.doctorId === doctorFilter;
     
     let matchesDate = false;
     if (viewMode === 'day') {
@@ -573,7 +589,7 @@ const AppointmentList = () => {
                     appointment.date.getFullYear() === selectedDate.getFullYear();
     }
     
-    return matchesSearch && matchesStatus && matchesDate;
+    return matchesSearch && matchesStatus && matchesDoctor && matchesDate;
   });
 
   // Calcular estadísticas del día seleccionado para el panel izquierdo
@@ -932,9 +948,58 @@ const AppointmentList = () => {
                         <option value="Completada">Completadas</option>
                         <option value="Cancelada">Canceladas</option>
                       </select>
+                      <select
+                        className="rounded-md border border-input px-3 py-2 bg-background text-sm"
+                        value={doctorFilter}
+                        onChange={(e) => setDoctorFilter(e.target.value)}
+                      >
+                        <option value="Todos">Todos los médicos</option>
+                        {mockDoctors.map((doctor) => (
+                          <option key={doctor.id} value={doctor.id}>
+                            {doctor.name}
+                          </option>
+                        ))}
+                      </select>
                     </div>
                   </div>
                 </CardHeader>
+                
+                
+                {/* Alerta especial cuando se filtra por médico específico */}
+                {doctorFilter !== 'Todos' && (
+                  <div className="mb-4 p-4 bg-orange-50 border border-orange-200 rounded-lg">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        <Users className="h-4 w-4 text-orange-600" />
+                        <span className="text-sm font-medium text-orange-800">
+                          Mostrando citas de: {mockDoctors.find(d => d.id === doctorFilter)?.name}
+                        </span>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleSelectAllDoctorAppointments(doctorFilter)}
+                          className="text-orange-700 border-orange-300 hover:bg-orange-100"
+                        >
+                          <Users size={14} className="mr-1" />
+                          Seleccionar todas sus citas
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => setDoctorFilter('Todos')}
+                          className="text-gray-600 hover:text-gray-800"
+                        >
+                          <X size={14} />
+                        </Button>
+                      </div>
+                    </div>
+                    <p className="text-xs text-orange-600 mt-1">
+                      ⚠️ Útil para redistribuir citas cuando un médico se incapacita o no está disponible
+                    </p>
+                  </div>
+                )}
                 
                 <CardContent className="p-6">
                   {viewMode === 'week' && (
