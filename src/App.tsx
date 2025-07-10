@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -31,6 +30,7 @@ import AdmissionPage from "./pages/admissions/AdmissionPage";
 import AIAssistant from "./components/ai-assistant/AIAssistant";
 import TelemedicinePage from "./pages/telemedicine/TelemedicinePage";
 import PricingPage from "./pages/pricing/PricingPage"; // Import the new PricingPage
+import UserPortalPage from "./pages/user-portal/UserPortalPage"; // Import the new UserPortalPage
 
 // Importamos las páginas de especialidades
 import CirujanoPage from "./pages/especialidades/CirujanoPage";
@@ -114,6 +114,9 @@ function App() {
                 
                 {/* New pricing page */}
                 <Route path="/app/precios" element={<PricingPage />} />
+                
+                {/* Nueva ruta para el portal usuario */}
+                <Route path="/app/portal-usuario" element={<UserPortalPage />} />
                 
                 {/* Application routes */}
                 <Route path="/app" element={<AppointmentList />} />

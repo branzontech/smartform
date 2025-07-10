@@ -71,6 +71,11 @@ export const mainNavItems: SubmenuItem[] = [
     icon: Home,
   },
   {
+    title: "Portal Usuario",
+    path: "/app/portal-usuario",
+    icon: UserCircle,
+  },
+  {
     title: "Pacientes",
     path: "/app/pacientes",
     icon: Users,
