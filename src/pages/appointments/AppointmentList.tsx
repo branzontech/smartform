@@ -3,13 +3,13 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { format, startOfWeek, endOfWeek, eachDayOfInterval, isToday, isSameDay, addDays, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
-import { Calendar, ChevronLeft, ChevronRight, Plus, Clock, User, Filter, Search, Stethoscope } from "lucide-react";
+import { Calendar, ChevronLeft, ChevronRight, Plus, Clock, User, Filter, Search, Stethoscope, CalendarDays, CheckCircle, XCircle, AlertCircle } from "lucide-react";
 import { Header } from "@/components/layout/header";
 import { BackButton } from "@/App";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Appointment, AppointmentStatus, AppointmentView } from "@/types/patient-types";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -334,6 +334,20 @@ const AppointmentList = () => {
     end: endOfWeek(selectedDate, { weekStartsOn: 1 }),
   });
 
+  // Función para generar horarios disponibles desde las 8:00 hasta las 18:00 cada 30 minutos
+  const generateTimeSlots = () => {
+    const slots = [];
+    for (let hour = 8; hour < 18; hour++) {
+      slots.push(`${hour.toString().padStart(2, '0')}:00`);
+      if (hour < 17) { // No agregar :30 para las 17 porque sería 17:30 y queremos parar en 18:00
+        slots.push(`${hour.toString().padStart(2, '0')}:30`);
+      }
+    }
+    return slots;
+  };
+
+  const timeSlots = generateTimeSlots();
+
   const filteredAppointments = appointments.filter(appointment => {
     const matchesSearch = appointment.patientName.toLowerCase().includes(searchTerm.toLowerCase()) || 
                           appointment.reason.toLowerCase().includes(searchTerm.toLowerCase());
@@ -354,6 +368,15 @@ const AppointmentList = () => {
     return matchesSearch && matchesStatus && matchesDate;
   });
 
+  // Calcular estadísticas del día seleccionado para el panel izquierdo
+  const todayAppointments = appointments.filter(app => isSameDay(app.date, selectedDate));
+  const dayStats = {
+    total: todayAppointments.length,
+    confirmed: todayAppointments.filter(app => app.status === 'Programada').length,
+    pending: todayAppointments.filter(app => app.status === 'Pendiente').length,
+    cancelled: todayAppointments.filter(app => app.status === 'Cancelada').length,
+  };
+
   const appointmentsByDay = filteredAppointments.reduce((acc, appointment) => {
     const dateKey = format(appointment.date, 'yyyy-MM-dd');
     if (!acc[dateKey]) {
@@ -363,38 +386,81 @@ const AppointmentList = () => {
     return acc;
   }, {} as Record<string, Appointment[]>);
 
-  const renderViewContent = () => {
-    if (filteredAppointments.length === 0) {
+  // Componente para renderizar el slot de tiempo con cita o disponible
+  const TimeSlotCard = ({ time, appointment }: { time: string, appointment?: Appointment }) => {
+    if (appointment) {
+      const statusColors = {
+        'Programada': 'bg-green-50 border-l-4 border-l-green-500',
+        'Pendiente': 'bg-yellow-50 border-l-4 border-l-yellow-500',
+        'Cancelada': 'bg-red-50 border-l-4 border-l-red-500',
+        'Completada': 'bg-blue-50 border-l-4 border-l-blue-500',
+        'Reprogramada': 'bg-purple-50 border-l-4 border-l-purple-500'
+      };
+      
       return (
-        <EmptyState
-          title="No hay citas para mostrar"
-          description="No se encontraron citas que coincidan con los criterios de búsqueda."
-          icon={<Calendar size={48} className="text-gray-300" />}
-          buttonText="Nueva cita"
-          onClick={handleCreateAppointment}
-        />
-      );
-    }
-
-    if (viewMode === 'day') {
-      return (
-        <div className="space-y-4">
-          <h3 className="text-lg font-medium">
-            {format(selectedDate, "EEEE d 'de' MMMM", { locale: es })}
-            {isToday(selectedDate) && <span className="ml-2 text-purple-500">(Hoy)</span>}
-          </h3>
-          <div className="space-y-2">
-            {filteredAppointments.map((appointment) => (
-              <AppointmentCard
-                key={appointment.id}
-                appointment={appointment}
-                onClick={() => handleViewAppointment(appointment.id)}
-                onStartConsultation={() => handleStartConsultation(appointment)}
-              />
-            ))}
+        <div className={`p-4 rounded-lg ${statusColors[appointment.status]} cursor-pointer hover:shadow-md transition-shadow`}
+             onClick={() => handleViewAppointment(appointment.id)}>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm font-medium">
+                {appointment.patientName.charAt(0)}
+              </div>
+              <div>
+                <h4 className="font-medium text-gray-900">{appointment.patientName}</h4>
+                <p className="text-sm text-gray-600 flex items-center">
+                  <Clock size={12} className="mr-1" />
+                  {appointment.duration} min • Dr. López
+                </p>
+              </div>
+            </div>
+            <AppointmentStatusBadge status={appointment.status} />
           </div>
         </div>
       );
+    }
+
+    return (
+      <div className="p-4 rounded-lg border-2 border-dashed border-gray-200 hover:border-purple-300 cursor-pointer transition-colors group"
+           onClick={handleCreateAppointment}>
+        <div className="flex items-center justify-center text-gray-400 group-hover:text-purple-500">
+          <Plus size={16} className="mr-2" />
+          <span className="text-sm">Slot disponible</span>
+        </div>
+      </div>
+    );
+  };
+
+  const renderDayScheduleView = () => {
+    const dayAppointments = filteredAppointments.filter(app => isSameDay(app.date, selectedDate));
+    
+    return (
+      <div className="space-y-2">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-medium text-gray-600">Hora</h3>
+          <h3 className="text-lg font-medium text-gray-600">Citas programadas</h3>
+        </div>
+        
+        {timeSlots.map((time) => {
+          const appointment = dayAppointments.find(app => app.time === time);
+          
+          return (
+            <div key={time} className="grid grid-cols-12 gap-4 items-center py-1">
+              <div className="col-span-2 text-sm font-medium text-gray-600">
+                {time}
+              </div>
+              <div className="col-span-10">
+                <TimeSlotCard time={time} appointment={appointment} />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
+
+  const renderViewContent = () => {
+    if (viewMode === 'day') {
+      return renderDayScheduleView();
     }
 
     if (viewMode === 'week') {
@@ -483,143 +549,196 @@ const AppointmentList = () => {
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
-      <main className="flex-1 container mx-auto py-8 px-4">
-        <BackButton />
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold flex items-center">
-            <Calendar className="mr-2 text-purple-500" />
-            Citas
-          </h1>
-          <Button 
-            onClick={handleCreateAppointment}
-            className="bg-purple-600 hover:bg-purple-700"
-          >
-            <Plus className="mr-2" size={16} />
-            Nueva cita
-          </Button>
-        </div>
+      <main className="flex-1 bg-gray-50 dark:bg-gray-900">
+        <div className="container mx-auto py-6 px-4">
+          <BackButton />
+          
+          {/* Layout con dos columnas: panel izquierdo y contenido principal */}
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 mt-6">
+            {/* Panel izquierdo - Vista de estadísticas y acciones */}
+            <div className="lg:col-span-1 space-y-4">
+              {/* Navegación de fechas */}
+              <Card>
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-medium text-gray-500">Vista</h3>
+                    <Filter size={16} className="text-gray-400" />
+                  </div>
+                </CardHeader>
+                <CardContent className="pt-0">
+                  <Tabs defaultValue={viewMode} onValueChange={(v) => setViewMode(v as AppointmentView)}>
+                    <TabsList className="grid w-full grid-cols-3">
+                      <TabsTrigger value="day" className="text-xs">Día</TabsTrigger>
+                      <TabsTrigger value="week" className="text-xs">Semana</TabsTrigger>
+                      <TabsTrigger value="month" className="text-xs">Mes</TabsTrigger>
+                    </TabsList>
+                  </Tabs>
+                </CardContent>
+              </Card>
 
-        <div className="mb-6">
-          <Tabs defaultValue={viewMode} onValueChange={(v) => setViewMode(v as AppointmentView)}>
-            <div className="flex items-center justify-between mb-4">
-              <TabsList>
-                <TabsTrigger value="day">Día</TabsTrigger>
-                <TabsTrigger value="week">Semana</TabsTrigger>
-                <TabsTrigger value="month">Mes</TabsTrigger>
-              </TabsList>
-              
-              <div className="flex items-center">
-                {viewMode === 'day' && (
-                  <div className="flex items-center">
-                    <Button variant="ghost" size="sm" onClick={() => changeDay(-1)}>
-                      <ChevronLeft size={18} />
-                    </Button>
-                    <span className="mx-2 text-sm font-medium">
-                      {format(selectedDate, "d 'de' MMMM", { locale: es })}
-                      {isToday(selectedDate) && <span className="ml-1 text-purple-500">(Hoy)</span>}
-                    </span>
-                    <Button variant="ghost" size="sm" onClick={() => changeDay(1)}>
-                      <ChevronRight size={18} />
-                    </Button>
-                  </div>
-                )}
-                
-                {viewMode === 'week' && (
-                  <div className="flex items-center">
-                    <Button variant="ghost" size="sm" onClick={() => changeWeek(-1)}>
-                      <ChevronLeft size={18} />
-                    </Button>
-                    <span className="mx-2 text-sm font-medium">
-                      {format(weekDays[0], "d MMM", { locale: es })} - {format(weekDays[6], "d MMM", { locale: es })}
-                    </span>
-                    <Button variant="ghost" size="sm" onClick={() => changeWeek(1)}>
-                      <ChevronRight size={18} />
-                    </Button>
-                  </div>
-                )}
-                
-                {viewMode === 'month' && (
-                  <div className="flex items-center">
+              {/* Navegación de fecha específica */}
+              <Card>
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between mb-2">
                     <Button 
                       variant="ghost" 
                       size="sm" 
-                      onClick={() => {
-                        const newDate = new Date(selectedDate);
-                        newDate.setMonth(newDate.getMonth() - 1);
-                        setSelectedDate(newDate);
-                      }}
+                      onClick={() => viewMode === 'day' ? changeDay(-1) : viewMode === 'week' ? changeWeek(-1) : setSelectedDate(new Date(selectedDate.setMonth(selectedDate.getMonth() - 1)))}
                     >
                       <ChevronLeft size={18} />
                     </Button>
-                    <span className="mx-2 text-sm font-medium">
-                      {format(selectedDate, "MMMM yyyy", { locale: es })}
-                    </span>
                     <Button 
                       variant="ghost" 
                       size="sm" 
-                      onClick={() => {
-                        const newDate = new Date(selectedDate);
-                        newDate.setMonth(newDate.getMonth() + 1);
-                        setSelectedDate(newDate);
-                      }}
+                      onClick={() => viewMode === 'day' ? changeDay(1) : viewMode === 'week' ? changeWeek(1) : setSelectedDate(new Date(selectedDate.setMonth(selectedDate.getMonth() + 1)))}
                     >
                       <ChevronRight size={18} />
                     </Button>
                   </div>
-                )}
-              </div>
-            </div>
-            
-            <div className="mb-4 flex flex-col md:flex-row gap-2">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                <Input
-                  placeholder="Buscar paciente o motivo"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-              
-              <div className="flex items-center">
-                <Filter size={16} className="mr-2 text-gray-500" />
-                <select
-                  className="rounded-md border border-input px-3 py-2 bg-background"
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value as any)}
-                >
-                  <option value="Todas">Todas</option>
-                  <option value="Programada">Programadas</option>
-                  <option value="Pendiente">Pendientes</option>
-                  <option value="Reprogramada">Reprogramadas</option>
-                  <option value="Completada">Completadas</option>
-                  <option value="Cancelada">Canceladas</option>
-                </select>
-              </div>
-            </div>
-            
-            {viewMode === 'week' && (
-              <div className={`grid grid-cols-7 gap-1 mb-4 ${isMobile ? 'overflow-x-auto' : ''}`}>
-                {weekDays.map((day, i) => (
-                  <Button
-                    key={i}
-                    variant={isSameDay(day, selectedDate) ? "default" : "outline"}
-                    className={`text-xs h-auto py-1 ${isSameDay(day, new Date()) ? 'bg-purple-100 text-purple-700 border-purple-300' : ''} ${isMobile ? 'min-w-[4rem]' : ''}`}
-                    onClick={() => setSelectedDate(day)}
-                  >
-                    <div className="flex flex-col">
-                      <span>{format(day, "EEE", { locale: es })}</span>
-                      <span className="text-lg">{format(day, "d")}</span>
+                  <div className="text-center">
+                    <h2 className="text-lg font-semibold">
+                      {viewMode === 'day' && format(selectedDate, "d 'de' MMMM 'de' yyyy", { locale: es })}
+                      {viewMode === 'week' && `${format(weekDays[0], "d MMM", { locale: es })} - ${format(weekDays[6], "d MMM", { locale: es })}`}
+                      {viewMode === 'month' && format(selectedDate, "MMMM yyyy", { locale: es })}
+                    </h2>
+                    {isToday(selectedDate) && viewMode === 'day' && (
+                      <span className="text-xs text-purple-500 font-medium">Hoy</span>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Resumen del día */}
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm font-medium text-gray-500">
+                    Resumen del día
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="pt-0 space-y-3">
+                  {/* Total de citas */}
+                  <div className="flex items-center justify-between p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                    <div className="flex items-center space-x-2">
+                      <CalendarDays size={16} className="text-blue-600" />
+                      <span className="text-sm font-medium">Total citas</span>
                     </div>
+                    <span className="text-2xl font-bold text-blue-600">{dayStats.total}</span>
+                  </div>
+
+                  {/* Confirmadas */}
+                  <div className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                    <div className="flex items-center space-x-2">
+                      <CheckCircle size={16} className="text-green-600" />
+                      <span className="text-sm font-medium">Confirmadas</span>
+                    </div>
+                    <span className="text-2xl font-bold text-green-600">{dayStats.confirmed}</span>
+                  </div>
+
+                  {/* Pendientes */}
+                  <div className="flex items-center justify-between p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
+                    <div className="flex items-center space-x-2">
+                      <AlertCircle size={16} className="text-yellow-600" />
+                      <span className="text-sm font-medium">Pendientes</span>
+                    </div>
+                    <span className="text-2xl font-bold text-yellow-600">{dayStats.pending}</span>
+                  </div>
+
+                  {/* Canceladas */}
+                  <div className="flex items-center justify-between p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
+                    <div className="flex items-center space-x-2">
+                      <XCircle size={16} className="text-red-600" />
+                      <span className="text-sm font-medium">Canceladas</span>
+                    </div>
+                    <span className="text-2xl font-bold text-red-600">{dayStats.cancelled}</span>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Acciones rápidas */}
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm font-medium text-gray-500">
+                    Acciones rápidas
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="pt-0">
+                  <Button 
+                    onClick={handleCreateAppointment}
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                  >
+                    <Plus className="mr-2" size={16} />
+                    Nueva cita
                   </Button>
-                ))}
-              </div>
-            )}
-            
-            <div className="mt-4">
-              {renderViewContent()}
+                </CardContent>
+              </Card>
             </div>
-          </Tabs>
+
+            {/* Contenido principal - Lista de citas */}
+            <div className="lg:col-span-4">
+              <Card className="h-full">
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <Calendar className="text-purple-500" size={20} />
+                      <h1 className="text-xl font-semibold">
+                        {viewMode === 'day' && format(selectedDate, "EEEE, d 'de' MMMM 'de' yyyy", { locale: es })}
+                        {viewMode === 'week' && "Vista Semanal"}
+                        {viewMode === 'month' && format(selectedDate, "MMMM yyyy", { locale: es })}
+                      </h1>
+                    </div>
+                    
+                    {/* Filtros de búsqueda */}
+                    <div className="flex items-center space-x-2">
+                      <div className="relative">
+                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                        <Input
+                          placeholder="Buscar..."
+                          value={searchTerm}
+                          onChange={(e) => setSearchTerm(e.target.value)}
+                          className="pl-10 w-48"
+                        />
+                      </div>
+                      <select
+                        className="rounded-md border border-input px-3 py-2 bg-background text-sm"
+                        value={statusFilter}
+                        onChange={(e) => setStatusFilter(e.target.value as any)}
+                      >
+                        <option value="Todas">Todas</option>
+                        <option value="Programada">Programadas</option>
+                        <option value="Pendiente">Pendientes</option>
+                        <option value="Completada">Completadas</option>
+                        <option value="Cancelada">Canceladas</option>
+                      </select>
+                    </div>
+                  </div>
+                </CardHeader>
+                
+                <CardContent className="p-6">
+                  {viewMode === 'week' && (
+                    <div className={`grid grid-cols-7 gap-1 mb-6 ${isMobile ? 'overflow-x-auto' : ''}`}>
+                      {weekDays.map((day, i) => (
+                        <Button
+                          key={i}
+                          variant={isSameDay(day, selectedDate) ? "default" : "outline"}
+                          className={`text-xs h-auto py-2 ${isSameDay(day, new Date()) ? 'bg-purple-100 text-purple-700 border-purple-300' : ''} ${isMobile ? 'min-w-[5rem]' : ''}`}
+                          onClick={() => setSelectedDate(day)}
+                        >
+                          <div className="flex flex-col">
+                            <span className="font-medium">{format(day, "EEE", { locale: es })}</span>
+                            <span className="text-lg font-bold">{format(day, "d")}</span>
+                          </div>
+                        </Button>
+                      ))}
+                    </div>
+                  )}
+                  
+                  <div className="overflow-auto max-h-[600px]">
+                    {renderViewContent()}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
         </div>
       </main>
     </div>
