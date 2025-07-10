@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { format, startOfWeek, endOfWeek, eachDayOfInterval, isToday, isSameDay, addDays, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
-import { Calendar, ChevronLeft, ChevronRight, Plus, Clock, User, Filter, Search, Stethoscope, CalendarDays, CheckCircle, XCircle, AlertCircle } from "lucide-react";
+import { Calendar, ChevronLeft, ChevronRight, Plus, Clock, User, Filter, Search, Stethoscope, CalendarDays, CheckCircle, XCircle, AlertCircle, X, CalendarX, CalendarCheck, Users, Check } from "lucide-react";
 import { Header } from "@/components/layout/header";
 import { BackButton } from "@/App";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,9 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Appointment, AppointmentStatus, AppointmentView } from "@/types/patient-types";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -208,24 +211,46 @@ const AppointmentStatusBadge = ({ status }: { status: AppointmentStatus }) => {
   );
 };
 
-const AppointmentCard = ({ appointment, onClick, onStartConsultation }: { 
+const AppointmentCard = ({ 
+  appointment, 
+  onClick, 
+  onStartConsultation,
+  isSelected = false,
+  onSelect,
+  showSelection = false
+}: { 
   appointment: Appointment, 
   onClick: () => void,
-  onStartConsultation: () => void 
+  onStartConsultation: () => void,
+  isSelected?: boolean,
+  onSelect?: (isSelected: boolean) => void,
+  showSelection?: boolean
 }) => {
   return (
     <Card 
-      className="mb-2 hover:shadow-md transition-shadow cursor-pointer relative bg-[#F1F0FB] dark:bg-gray-800" // Added soft pastel gray background
+      className={`mb-2 hover:shadow-md transition-shadow cursor-pointer relative ${
+        isSelected ? 'ring-2 ring-blue-500 bg-blue-50' : 'bg-[#F1F0FB]'
+      } dark:bg-gray-800`}
     >
-      <CardContent className="p-3" onClick={onClick}>
-        <div className="flex justify-between items-start">
-          <div>
-            <div className="font-medium">{appointment.patientName}</div>
-            <div className="text-sm text-gray-500 flex items-center mt-1">
-              <Clock size={14} className="mr-1" />
-              {appointment.time} ({appointment.duration} min)
+      <CardContent className="p-3">
+        <div className="flex items-start justify-between">
+          <div className="flex items-start space-x-3">
+            {showSelection && onSelect && (
+              <Checkbox
+                checked={isSelected}
+                onCheckedChange={onSelect}
+                onClick={(e) => e.stopPropagation()}
+                className="mt-1"
+              />
+            )}
+            <div className="flex-1" onClick={onClick}>
+              <div className="font-medium">{appointment.patientName}</div>
+              <div className="text-sm text-gray-500 flex items-center mt-1">
+                <Clock size={14} className="mr-1" />
+                {appointment.time} ({appointment.duration} min)
+              </div>
+              <div className="text-sm mt-1">{appointment.reason}</div>
             </div>
-            <div className="text-sm mt-1">{appointment.reason}</div>
           </div>
           <div className="flex items-start gap-2">
             <AppointmentStatusBadge status={appointment.status} />
@@ -261,8 +286,19 @@ const AppointmentList = () => {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<AppointmentStatus | 'Todas'>('Todas');
-  // Set default view mode to 'day'
   const [viewMode, setViewMode] = useState<AppointmentView>('day');
+  
+  // Estados para selección múltiple y acciones rápidas
+  const [selectedAppointments, setSelectedAppointments] = useState<string[]>([]);
+  const [showBulkActions, setShowBulkActions] = useState(false);
+  const [isReassignDialogOpen, setIsReassignDialogOpen] = useState(false);
+  const [reassignDate, setReassignDate] = useState<string>("");
+  const [reassignTime, setReassignTime] = useState<string>("");
+
+  // Effect para mostrar/ocultar las acciones rápidas
+  useEffect(() => {
+    setShowBulkActions(selectedAppointments.length > 0);
+  }, [selectedAppointments]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -319,6 +355,77 @@ const AppointmentList = () => {
     }
     
     navigate(`/pacientes/nueva-consulta?patientId=${appointment.patientId}`);
+  };
+
+  // Funciones para acciones rápidas
+  const handleSelectAppointment = (appointmentId: string, isSelected: boolean) => {
+    if (isSelected) {
+      setSelectedAppointments(prev => [...prev, appointmentId]);
+    } else {
+      setSelectedAppointments(prev => prev.filter(id => id !== appointmentId));
+    }
+  };
+
+  const handleSelectAll = (isSelected: boolean) => {
+    if (isSelected) {
+      setSelectedAppointments(filteredAppointments.map(app => app.id));
+    } else {
+      setSelectedAppointments([]);
+    }
+  };
+
+  const handleCancelAppointments = (appointmentIds: string[]) => {
+    const updatedAppointments = appointments.map(app => 
+      appointmentIds.includes(app.id) 
+        ? { ...app, status: 'Cancelada' as AppointmentStatus, updatedAt: new Date() }
+        : app
+    );
+    setAppointments(updatedAppointments);
+    localStorage.setItem("appointments", JSON.stringify(updatedAppointments));
+    
+    toast({
+      title: "Citas canceladas",
+      description: `Se ${appointmentIds.length === 1 ? 'canceló' : 'cancelaron'} ${appointmentIds.length} cita${appointmentIds.length === 1 ? '' : 's'} exitosamente`,
+    });
+    
+    setSelectedAppointments([]);
+  };
+
+  const handleReassignAppointments = () => {
+    if (!reassignDate || !reassignTime) {
+      toast({
+        title: "Error",
+        description: "Debe seleccionar fecha y hora para reasignar",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const newDate = new Date(reassignDate);
+    const updatedAppointments = appointments.map(app => 
+      selectedAppointments.includes(app.id)
+        ? { 
+            ...app, 
+            date: newDate,
+            time: reassignTime,
+            status: 'Reprogramada' as AppointmentStatus, 
+            updatedAt: new Date() 
+          }
+        : app
+    );
+    
+    setAppointments(updatedAppointments);
+    localStorage.setItem("appointments", JSON.stringify(updatedAppointments));
+    
+    toast({
+      title: "Citas reasignadas",
+      description: `Se reasignaron ${selectedAppointments.length} cita${selectedAppointments.length === 1 ? '' : 's'} exitosamente`,
+    });
+    
+    setSelectedAppointments([]);
+    setIsReassignDialogOpen(false);
+    setReassignDate("");
+    setReassignTime("");
   };
 
   const changeWeek = (amount: number) => {
@@ -486,6 +593,9 @@ const AppointmentList = () => {
                     appointment={appointment}
                     onClick={() => handleViewAppointment(appointment.id)}
                     onStartConsultation={() => handleStartConsultation(appointment)}
+                    isSelected={selectedAppointments.includes(appointment.id)}
+                    onSelect={(isSelected) => handleSelectAppointment(appointment.id, isSelected)}
+                    showSelection={true}
                   />
                 ))}
               </div>
@@ -516,6 +626,9 @@ const AppointmentList = () => {
                     appointment={appointment}
                     onClick={() => handleViewAppointment(appointment.id)}
                     onStartConsultation={() => handleStartConsultation(appointment)}
+                    isSelected={selectedAppointments.includes(appointment.id)}
+                    onSelect={(isSelected) => handleSelectAppointment(appointment.id, isSelected)}
+                    showSelection={true}
                   />
                 ))}
               </div>
@@ -685,6 +798,15 @@ const AppointmentList = () => {
                         {viewMode === 'week' && "Vista Semanal"}
                         {viewMode === 'month' && format(selectedDate, "MMMM yyyy", { locale: es })}
                       </h1>
+                      {filteredAppointments.length > 0 && (viewMode === 'week' || viewMode === 'month') && (
+                        <div className="flex items-center space-x-2 ml-4">
+                          <Checkbox
+                            checked={selectedAppointments.length === filteredAppointments.length}
+                            onCheckedChange={handleSelectAll}
+                          />
+                          <span className="text-sm text-gray-600">Seleccionar todo</span>
+                        </div>
+                      )}
                     </div>
                     
                     {/* Filtros de búsqueda */}
@@ -739,6 +861,105 @@ const AppointmentList = () => {
               </Card>
             </div>
           </div>
+          {/* Barra de acciones rápidas flotante */}
+          {showBulkActions && (
+            <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-40">
+              <Card className="shadow-lg border-2 border-blue-200 bg-white">
+                <CardContent className="p-4">
+                  <div className="flex items-center space-x-4">
+                    <div className="flex items-center space-x-2 text-sm font-medium">
+                      <Check className="h-4 w-4 text-blue-600" />
+                      <span>{selectedAppointments.length} cita{selectedAppointments.length > 1 ? 's' : ''} seleccionada{selectedAppointments.length > 1 ? 's' : ''}</span>
+                    </div>
+                    
+                    <div className="h-6 w-px bg-gray-300" />
+                    
+                    <div className="flex items-center space-x-2">
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => handleCancelAppointments(selectedAppointments)}
+                        className="flex items-center space-x-1"
+                      >
+                        <CalendarX size={16} />
+                        <span>Cancelar</span>
+                      </Button>
+                      
+                      <Dialog open={isReassignDialogOpen} onOpenChange={setIsReassignDialogOpen}>
+                        <DialogTrigger asChild>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="flex items-center space-x-1 border-blue-200 text-blue-600 hover:bg-blue-50"
+                          >
+                            <CalendarCheck size={16} />
+                            <span>Reasignar</span>
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                          <DialogHeader>
+                            <DialogTitle>
+                              Reasignar {selectedAppointments.length} cita{selectedAppointments.length > 1 ? 's' : ''}
+                            </DialogTitle>
+                          </DialogHeader>
+                          <div className="space-y-4 py-4">
+                            <div>
+                              <label className="text-sm font-medium">Nueva fecha</label>
+                              <Input
+                                type="date"
+                                value={reassignDate}
+                                onChange={(e) => setReassignDate(e.target.value)}
+                                className="mt-1"
+                              />
+                            </div>
+                            <div>
+                              <label className="text-sm font-medium">Nueva hora</label>
+                              <Select value={reassignTime} onValueChange={setReassignTime}>
+                                <SelectTrigger className="mt-1">
+                                  <SelectValue placeholder="Seleccionar hora" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {timeSlots.map((time) => (
+                                    <SelectItem key={time} value={time}>
+                                      {time}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div className="flex justify-end space-x-2 pt-4">
+                              <Button
+                                variant="outline"
+                                onClick={() => setIsReassignDialogOpen(false)}
+                              >
+                                Cancelar
+                              </Button>
+                              <Button
+                                onClick={handleReassignAppointments}
+                                className="bg-blue-600 hover:bg-blue-700"
+                              >
+                                Reasignar citas
+                              </Button>
+                            </div>
+                          </div>
+                        </DialogContent>
+                      </Dialog>
+                      
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setSelectedAppointments([])}
+                        className="flex items-center space-x-1"
+                      >
+                        <X size={16} />
+                        <span>Limpiar</span>
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
         </div>
       </main>
     </div>
