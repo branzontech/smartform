@@ -26,6 +26,7 @@ import { FormError } from '@/components/forms/form-viewer/form-error';
 import { FormSubmissionSuccess } from '@/components/forms/form-viewer/form-submission-success';
 import { createDynamicSchema, fetchFormById, saveFormResponse } from '@/utils/form-utils';
 import { useToast } from '@/hooks/use-toast';
+import { PatientHistoryPanel } from '@/components/patients/PatientHistoryPanel';
 
 interface FormData {
   [key: string]: any;
@@ -221,71 +222,149 @@ const FormViewer = () => {
     return <FormSubmissionSuccess onResubmit={() => setSubmitted(false)} />;
   }
 
+  // Check if this is a consultation form to use two-column layout
+  const isConsultationForm = patientId && consultationId;
+
   return (
-    <div className="container py-12 print:py-6 print:mx-0 print:w-full print:max-w-none">
+    <div className={`${isConsultationForm ? 'min-h-screen' : 'container py-12'} print:py-6 print:mx-0 print:w-full print:max-w-none`}>
       <div className="hidden print:block text-center mb-6">
         <h1 className="text-2xl font-bold">{formTitle}</h1>
         {formDescription && <p className="text-gray-600">{formDescription}</p>}
       </div>
 
-      <div className="print:hidden">
-        <BackButton />
-      </div>
-      
-      <div className="mb-6 flex justify-between items-center print:hidden">
-        <FormTitle 
-          defaultTitle={formTitle}
-          defaultDescription={formDescription}
-          readOnly={true}
-        />
-        <div className="flex gap-2">
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={printForm}
-            className="flex items-center gap-2"
-          >
-            <Printer size={16} />
-            Imprimir
-          </Button>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={copyFormLinkToClipboard}
-            className="flex items-center gap-2"
-          >
-            <LinkIcon size={16} />
-            Compartir
-          </Button>
-        </div>
-      </div>
-      
-      {patientId && consultationId && (
-        <div className="bg-blue-50 dark:bg-blue-900/20 p-4 mb-6 rounded-lg border border-blue-200 dark:border-blue-800">
-          <p className="text-blue-700 dark:text-blue-300 font-medium">
-            Este formulario está siendo completado como parte de una consulta médica.
-          </p>
+      {!isConsultationForm && (
+        <div className="print:hidden">
+          <BackButton />
         </div>
       )}
       
-      <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100 print:shadow-none print:border-none">
-        <FormProvider {...form}>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-              {questions.map(question => (
-                <QuestionRenderer
-                  key={question.id}
-                  question={question}
-                  formData={formData}
-                  onChange={handleInputChange}
-                  errors={form.formState.errors}
-                />
-              ))}
-              <Button type="submit" className="w-full sm:w-auto print:hidden">Enviar respuestas</Button>
-            </form>
-          </Form>
-        </FormProvider>
-      </div>
+      {isConsultationForm ? (
+        // Two-column layout for consultation forms
+        <div className="flex h-screen">
+          {/* Main form column */}
+          <div className="flex-1 flex flex-col overflow-hidden">
+            <div className="print:hidden bg-white border-b p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <BackButton />
+                  <div>
+                    <h1 className="text-xl font-semibold">{formTitle}</h1>
+                    {formDescription && (
+                      <p className="text-sm text-muted-foreground">{formDescription}</p>
+                    )}
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={printForm}
+                    className="flex items-center gap-2"
+                  >
+                    <Printer size={16} />
+                    Imprimir
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={copyFormLinkToClipboard}
+                    className="flex items-center gap-2"
+                  >
+                    <LinkIcon size={16} />
+                    Compartir
+                  </Button>
+                </div>
+              </div>
+              
+              <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                <p className="text-blue-700 dark:text-blue-300 text-sm font-medium">
+                  Consulta médica en curso - Complete el formulario de atención
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex-1 overflow-auto">
+              <div className="p-6 bg-background">
+                <FormProvider {...form}>
+                  <Form {...form}>
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+                      {questions.map(question => (
+                        <QuestionRenderer
+                          key={question.id}
+                          question={question}
+                          formData={formData}
+                          onChange={handleInputChange}
+                          errors={form.formState.errors}
+                        />
+                      ))}
+                      <div className="sticky bottom-0 bg-background pt-4 border-t">
+                        <Button type="submit" className="w-full print:hidden">
+                          Completar atención
+                        </Button>
+                      </div>
+                    </form>
+                  </Form>
+                </FormProvider>
+              </div>
+            </div>
+          </div>
+          
+          {/* Patient history side panel */}
+          <div className="w-80 border-l bg-muted/30 print:hidden">
+            <PatientHistoryPanel patientId={patientId} className="h-full" />
+          </div>
+        </div>
+      ) : (
+        // Standard single-column layout for regular forms
+        <div>
+          <div className="mb-6 flex justify-between items-center print:hidden">
+            <FormTitle 
+              defaultTitle={formTitle}
+              defaultDescription={formDescription}
+              readOnly={true}
+            />
+            <div className="flex gap-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={printForm}
+                className="flex items-center gap-2"
+              >
+                <Printer size={16} />
+                Imprimir
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={copyFormLinkToClipboard}
+                className="flex items-center gap-2"
+              >
+                <LinkIcon size={16} />
+                Compartir
+              </Button>
+            </div>
+          </div>
+          
+          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100 print:shadow-none print:border-none">
+            <FormProvider {...form}>
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+                  {questions.map(question => (
+                    <QuestionRenderer
+                      key={question.id}
+                      question={question}
+                      formData={formData}
+                      onChange={handleInputChange}
+                      errors={form.formState.errors}
+                    />
+                  ))}
+                  <Button type="submit" className="w-full sm:w-auto print:hidden">Enviar respuestas</Button>
+                </form>
+              </Form>
+            </FormProvider>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
