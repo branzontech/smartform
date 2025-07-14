@@ -88,6 +88,8 @@ export const PatientHistoryPanel: React.FC<PatientHistoryPanelProps> = ({
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    console.log("PatientHistoryPanel - patientId received:", patientId);
+    
     const loadPatientData = () => {
       try {
         // Cargar paciente

@@ -53,6 +53,10 @@ const FormViewer = () => {
 
   useEffect(() => {
     const loadForm = async () => {
+      console.log("FormViewer - formId:", formId);
+      console.log("FormViewer - patientId:", patientId);
+      console.log("FormViewer - consultationId:", consultationId);
+      
       if (formId) {
         setLoading(true);
         setError("");
@@ -224,6 +228,9 @@ const FormViewer = () => {
 
   // Check if this is a consultation form to use two-column layout
   const isConsultationForm = patientId && consultationId;
+  
+  console.log("FormViewer - isConsultationForm:", isConsultationForm);
+  console.log("FormViewer - patientId for panel:", patientId);
 
   return (
     <div className={`${isConsultationForm ? 'min-h-screen' : 'container py-12'} print:py-6 print:mx-0 print:w-full print:max-w-none`}>
