@@ -53,9 +53,10 @@ const FormViewer = () => {
 
   useEffect(() => {
     const loadForm = async () => {
-      console.log("FormViewer - formId:", formId);
-      console.log("FormViewer - patientId:", patientId);
-      console.log("FormViewer - consultationId:", consultationId);
+  console.log("FormViewer - formId:", formId);
+  console.log("FormViewer - patientId:", patientId);
+  console.log("FormViewer - consultationId:", consultationId);
+  console.log("FormViewer - Current URL:", location.pathname + location.search);
       
       if (formId) {
         setLoading(true);
