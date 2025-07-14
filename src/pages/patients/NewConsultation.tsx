@@ -86,8 +86,50 @@ const NewConsultation = () => {
           setPatients([]);
         }
       } else {
-        console.log("No patients found in localStorage, setting empty array");
-        setPatients([]);
+        console.log("No patients found in localStorage, creating mock patients");
+        // Crear pacientes mock para testing
+        const mockPatients: Patient[] = [
+          {
+            id: "patient-1",
+            name: "María García López",
+            documentId: "12345678",
+            dateOfBirth: "1985-03-15",
+            gender: "Femenino",
+            contactNumber: "+57 300 123 4567",
+            email: "maria.garcia@email.com",
+            address: "Calle 123 #45-67, Bogotá",
+            createdAt: new Date("2024-01-15"),
+            lastVisitAt: new Date("2024-06-20")
+          },
+          {
+            id: "patient-2", 
+            name: "Carlos Rodríguez Martínez",
+            documentId: "87654321",
+            dateOfBirth: "1978-11-22",
+            gender: "Masculino",
+            contactNumber: "+57 301 987 6543",
+            email: "carlos.rodriguez@email.com",
+            address: "Carrera 45 #123-89, Medellín",
+            createdAt: new Date("2024-02-10"),
+            lastVisitAt: new Date("2024-07-05")
+          },
+          {
+            id: "patient-3",
+            name: "Ana Sofía Herrera",
+            documentId: "11223344",
+            dateOfBirth: "1992-08-08",
+            gender: "Femenino", 
+            contactNumber: "+57 302 555 7890",
+            email: "ana.herrera@email.com",
+            address: "Avenida 80 #12-34, Cali",
+            createdAt: new Date("2024-03-01"),
+            lastVisitAt: new Date("2024-07-10")
+          }
+        ];
+        
+        localStorage.setItem("patients", JSON.stringify(mockPatients));
+        setPatients(mockPatients);
+        console.log("Mock patients created:", mockPatients);
       }
 
       const savedForms = localStorage.getItem("forms");
