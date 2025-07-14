@@ -127,7 +127,13 @@ export const SettingsPage = () => {
             variant="ghost" 
             size="icon" 
             className="mr-2"
-            onClick={() => navigate(-1)}
+            onClick={() => {
+              if (activeCategory !== "general") {
+                setActiveCategory("general");
+              } else {
+                navigate(-1);
+              }
+            }}
           >
             <ArrowLeft size={20} />
           </Button>
