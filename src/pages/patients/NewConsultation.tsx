@@ -149,8 +149,90 @@ const NewConsultation = () => {
           setAvailableForms([]);
         }
       } else {
-        console.log("No forms found in localStorage, setting empty array");
-        setAvailableForms([]);
+        console.log("No forms found in localStorage, creating mock forms");
+        // Crear formularios mock para testing
+        const mockForms: FormType[] = [
+          {
+            id: "form-1",
+            title: "Consulta Médica General",
+            description: "Formulario estándar para consultas médicas generales",
+            formType: "forms",
+            responseCount: 0,
+            questions: [
+              {
+                id: "q1",
+                type: "short",
+                title: "Motivo de consulta",
+                description: "Describa brevemente el motivo de su consulta",
+                required: true
+              },
+              {
+                id: "q2", 
+                type: "paragraph",
+                title: "Síntomas actuales",
+                description: "Detalle los síntomas que presenta actualmente",
+                required: true
+              }
+            ],
+            createdAt: new Date("2024-01-10"),
+            updatedAt: new Date("2024-07-01")
+          },
+          {
+            id: "form-2",
+            title: "Historia Clínica Inicial",
+            description: "Formulario completo para primera consulta de pacientes nuevos",
+            formType: "forms",
+            responseCount: 0,
+            questions: [
+              {
+                id: "q1",
+                type: "short",
+                title: "Antecedentes familiares",
+                description: "Mencione antecedentes médicos relevantes de la familia",
+                required: false
+              },
+              {
+                id: "q2",
+                type: "paragraph", 
+                title: "Antecedentes personales",
+                description: "Describa su historia médica personal",
+                required: true
+              }
+            ],
+            createdAt: new Date("2024-02-15"),
+            updatedAt: new Date("2024-06-15")
+          },
+          {
+            id: "form-3",
+            title: "Control de Seguimiento",
+            description: "Formulario para citas de control y seguimiento",
+            formType: "formato",
+            responseCount: 0,
+            questions: [
+              {
+                id: "q1",
+                type: "short",
+                title: "Evolución del tratamiento",
+                description: "¿Cómo ha evolucionado desde la última consulta?",
+                required: true
+              },
+              {
+                id: "q2",
+                type: "multiple-choice",
+                title: "Estado general",
+                description: "¿Cómo se siente en general?",
+                required: true,
+                options: ["Mejor", "Igual", "Peor"]
+              }
+            ],
+            createdAt: new Date("2024-03-20"),
+            updatedAt: new Date("2024-07-10")
+          }
+        ];
+        
+        localStorage.setItem("forms", JSON.stringify(mockForms));
+        setAvailableForms(mockForms);
+        console.log("Mock forms created:", mockForms);
       }
 
       if (selectedPatientId) {
