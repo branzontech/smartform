@@ -123,11 +123,14 @@ export const SettingsPage = () => {
       <div className="pl-28 pr-6 py-6">
         {/* Header with back button */}
         <div className="flex items-center mb-6">
-          <Link to="/">
-            <Button variant="ghost" size="icon" className="mr-2">
-              <ArrowLeft size={20} />
-            </Button>
-          </Link>
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="mr-2"
+            onClick={() => navigate(-1)}
+          >
+            <ArrowLeft size={20} />
+          </Button>
           <h1 className="text-2xl font-bold">
             {categories.find(cat => cat.id === activeCategory)?.label || "Configuración"}
           </h1>
