@@ -286,31 +286,26 @@ export const PatientHistoryPanel: React.FC<PatientHistoryPanelProps> = ({
         
         <CardContent className="flex-1 overflow-hidden">
           <Tabs defaultValue="diagnoses" className="h-full flex flex-col">
-            <TabsList className="flex w-full h-auto p-1 mb-4 overflow-x-auto">
-              <TabsTrigger value="diagnoses" className="flex-shrink-0 px-2 py-1 text-xs min-w-fit">
-                <FileText className="w-3 h-3 mr-1" />
-                <span className="hidden sm:inline">Diagnósticos</span>
-                <span className="sm:hidden">Dx</span>
+            <TabsList className="grid grid-cols-5 gap-1 h-auto p-1 mb-4">
+              <TabsTrigger value="diagnoses" className="flex flex-col items-center p-2 h-auto text-xs">
+                <FileText className="w-4 h-4 mb-1" />
+                <span className="text-[10px] leading-none">Dx</span>
               </TabsTrigger>
-              <TabsTrigger value="plans" className="flex-shrink-0 px-2 py-1 text-xs min-w-fit">
-                <CalendarIcon className="w-3 h-3 mr-1" />
-                <span className="hidden sm:inline">Planes</span>
-                <span className="sm:hidden">Pl</span>
+              <TabsTrigger value="plans" className="flex flex-col items-center p-2 h-auto text-xs">
+                <CalendarIcon className="w-4 h-4 mb-1" />
+                <span className="text-[10px] leading-none">Plan</span>
               </TabsTrigger>
-              <TabsTrigger value="prescriptions" className="flex-shrink-0 px-2 py-1 text-xs min-w-fit">
-                <Pill className="w-3 h-3 mr-1" />
-                <span className="hidden sm:inline">Recetas</span>
-                <span className="sm:hidden">Rx</span>
+              <TabsTrigger value="prescriptions" className="flex flex-col items-center p-2 h-auto text-xs">
+                <Pill className="w-4 h-4 mb-1" />
+                <span className="text-[10px] leading-none">Rx</span>
               </TabsTrigger>
-              <TabsTrigger value="physicalExams" className="flex-shrink-0 px-2 py-1 text-xs min-w-fit">
-                <Activity className="w-3 h-3 mr-1" />
-                <span className="hidden sm:inline">Ex. Físico</span>
-                <span className="sm:hidden">Ex</span>
+              <TabsTrigger value="physicalExams" className="flex flex-col items-center p-2 h-auto text-xs">
+                <Activity className="w-4 h-4 mb-1" />
+                <span className="text-[10px] leading-none">Exam</span>
               </TabsTrigger>
-              <TabsTrigger value="labResults" className="flex-shrink-0 px-2 py-1 text-xs min-w-fit">
-                <TestTube className="w-3 h-3 mr-1" />
-                <span className="hidden sm:inline">Laboratorios</span>
-                <span className="sm:hidden">Lab</span>
+              <TabsTrigger value="labResults" className="flex flex-col items-center p-2 h-auto text-xs">
+                <TestTube className="w-4 h-4 mb-1" />
+                <span className="text-[10px] leading-none">Lab</span>
               </TabsTrigger>
             </TabsList>
 
