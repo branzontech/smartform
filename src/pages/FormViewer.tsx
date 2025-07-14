@@ -229,24 +229,27 @@ const FormViewer = () => {
 
   // Check if this is a consultation form to use two-column layout
   const isConsultationForm = patientId && consultationId;
+  // Show patient history panel if we have a patientId (even without consultationId)
+  const showPatientPanel = !!patientId;
   
   console.log("FormViewer - isConsultationForm:", isConsultationForm);
+  console.log("FormViewer - showPatientPanel:", showPatientPanel);
   console.log("FormViewer - patientId for panel:", patientId);
 
   return (
-    <div className={`${isConsultationForm ? 'min-h-screen' : 'container py-12'} print:py-6 print:mx-0 print:w-full print:max-w-none`}>
+    <div className={`${showPatientPanel ? 'min-h-screen' : 'container py-12'} print:py-6 print:mx-0 print:w-full print:max-w-none`}>
       <div className="hidden print:block text-center mb-6">
         <h1 className="text-2xl font-bold">{formTitle}</h1>
         {formDescription && <p className="text-gray-600">{formDescription}</p>}
       </div>
 
-      {!isConsultationForm && (
+      {!showPatientPanel && (
         <div className="print:hidden">
           <BackButton />
         </div>
       )}
       
-      {isConsultationForm ? (
+      {showPatientPanel ? (
         // Two-column layout for consultation forms
         <div className="flex h-screen">
           {/* Main form column */}
@@ -284,11 +287,21 @@ const FormViewer = () => {
                 </div>
               </div>
               
-              <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                <p className="text-blue-700 dark:text-blue-300 text-sm font-medium">
-                  Consulta médica en curso - Complete el formulario de atención
-                </p>
-              </div>
+              {isConsultationForm && (
+                <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                  <p className="text-blue-700 dark:text-blue-300 text-sm font-medium">
+                    Consulta médica en curso - Complete el formulario de atención
+                  </p>
+                </div>
+              )}
+              
+              {showPatientPanel && !isConsultationForm && (
+                <div className="mt-3 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+                  <p className="text-green-700 dark:text-green-300 text-sm font-medium">
+                    Formulario para paciente - Historial médico disponible en el panel lateral
+                  </p>
+                </div>
+              )}
             </div>
             
             <div className="flex-1 overflow-auto">
