@@ -409,11 +409,11 @@ const NewConsultation = () => {
       });
     }
     
-    navigate(`/ver/${selectedFormId}?patientId=${selectedPatientId}&consultationId=${newConsultation.id}`);
+    navigate(`/app/ver/${selectedFormId}?patientId=${selectedPatientId}&consultationId=${newConsultation.id}`);
   };
 
   const openFormPreview = (formId: string) => {
-    window.open(`/ver/${formId}`, '_blank');
+    window.open(`/app/ver/${formId}`, '_blank');
   };
 
   return (
