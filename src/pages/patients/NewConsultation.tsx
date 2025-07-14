@@ -227,6 +227,45 @@ const NewConsultation = () => {
             ],
             createdAt: new Date("2024-03-20"),
             updatedAt: new Date("2024-07-10")
+          },
+          {
+            id: "form-4",
+            title: "Consulta Médica Completa",
+            description: "Formulario integral de consulta médica con solicitud de medicamentos",
+            formType: "forms",
+            responseCount: 0,
+            questions: [
+              {
+                id: "q1",
+                type: "short",
+                title: "Motivo de consulta",
+                description: "Describa brevemente el motivo de su consulta",
+                required: true
+              },
+              {
+                id: "q2", 
+                type: "paragraph",
+                title: "Examen físico",
+                description: "Hallazgos del examen físico realizado",
+                required: true
+              },
+              {
+                id: "q3",
+                type: "paragraph",
+                title: "Plan de tratamiento",
+                description: "Describa el plan de tratamiento propuesto",
+                required: true
+              },
+              {
+                id: "q4",
+                type: "medication",
+                title: "Medicamentos e Insumos Requeridos",
+                description: "Seleccione los medicamentos e insumos necesarios para el tratamiento",
+                required: false
+              }
+            ],
+            createdAt: new Date("2024-07-14"),
+            updatedAt: new Date("2024-07-14")
           }
         ];
         

@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useEffect } from "react";
-import { CheckSquare, Circle, List, MessageSquare, Minus, Plus, Type, Calculator, Activity, Stethoscope, FileText, Search, Check, Edit3, FileUp, AlignHorizontalSpaceBetween, AlignVerticalSpaceBetween } from "lucide-react";
+import { CheckSquare, Circle, List, MessageSquare, Minus, Plus, Type, Calculator, Activity, Stethoscope, FileText, Search, Check, Edit3, FileUp, AlignHorizontalSpaceBetween, AlignVerticalSpaceBetween, Package } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { QuestionTypeProps, OptionProps, AddOptionButtonProps, DiagnosisListProps, Diagnosis, MultifieldItemProps, MultifieldConfig, SignaturePadProps } from "@/components/forms/question/types";
 
@@ -17,6 +17,7 @@ export const questionTypes = [
   { id: "multifield", label: "Campos múltiples", icon: AlignVerticalSpaceBetween },
   { id: "signature", label: "Firma", icon: Edit3 },
   { id: "file", label: "Adjuntar archivo", icon: FileUp },
+  { id: "medication", label: "Medicamentos e Insumos", icon: Package },
 ];
 
 export const QuestionType = ({ selected, onChange }: QuestionTypeProps) => {

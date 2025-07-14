@@ -25,7 +25,8 @@ export type QuestionType =
   | "clinical" 
   | "multifield"
   | "signature"
-  | "file";
+  | "file"
+  | "medication";
 
 export interface QuestionTypeOption {
   id: QuestionType;

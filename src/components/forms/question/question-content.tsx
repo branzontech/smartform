@@ -13,6 +13,7 @@ import { Clinical } from "./content/clinical";
 import { Multifield } from "./content/multifield";
 import { Signature } from "./content/signature";
 import { FileUpload } from "./content/file-upload";
+import { MedicationContent } from "./content/medication";
 
 export const QuestionContent: React.FC<QuestionContentProps> = ({ 
   question, 
@@ -44,6 +45,8 @@ export const QuestionContent: React.FC<QuestionContentProps> = ({
       return <Signature question={question} onUpdate={onUpdate} readOnly={readOnly} />;
     case "file":
       return <FileUpload question={question} onUpdate={onUpdate} readOnly={readOnly} />;
+    case "medication":
+      return <MedicationContent question={question} onUpdate={onUpdate} readOnly={readOnly} />;
     default:
       return <div>Tipo de pregunta no soportado: {question.type}</div>;
   }

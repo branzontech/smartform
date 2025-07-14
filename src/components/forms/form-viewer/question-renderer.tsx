@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 import { SignaturePad } from "@/components/ui/question-types";
 import { QuestionData } from "../question/types";
 import { FileUp } from "lucide-react";
+import { MedicationManager } from "@/components/medical/MedicationManager";
 
 interface QuestionRendererProps {
   question: QuestionData;
@@ -435,6 +436,18 @@ export const QuestionRenderer = ({ question, formData, onChange, errors }: Quest
             </FormItem>
           )}
         />
+      );
+      
+    case "medication":
+      return (
+        <FormItem>
+          <FormLabel>{question.title}</FormLabel>
+          <MedicationManager 
+            consultationId={formData._consultationId}
+            patientId={formData._patientId}
+            className="mt-2"
+          />
+        </FormItem>
       );
       
     default:
