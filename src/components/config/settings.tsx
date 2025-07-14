@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Header } from "@/components/layout/header";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, FileText, PlusSquare, Palette, Bell, Database, Save, User, UserCog, Shield, Plus, Cog, HelpCircle } from "lucide-react";
+import { ArrowLeft, FileText, PlusSquare, Palette, Bell, Database, Save, User, UserCog, Shield, Plus, Cog, HelpCircle, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
@@ -16,6 +16,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { useOnboarding } from "@/hooks/use-onboarding";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { cn } from "@/lib/utils";
 
 // Schema for the form creation
 const formCreationSchema = z.object({
@@ -44,6 +46,8 @@ export const SettingsPage = () => {
   const [notifications, setNotifications] = useState(true);
   const [darkPrint, setDarkPrint] = useState(false);
   const [language, setLanguage] = useState("es");
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [activeCategory, setActiveCategory] = useState("general");
 
   // Form creation
   const form = useForm<z.infer<typeof formCreationSchema>>({
@@ -70,38 +74,95 @@ export const SettingsPage = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen flex bg-background">
       <Header />
-      <div className="container mx-auto py-6 max-w-6xl flex-1">
-        <div className="flex items-center mb-6">
-          <Link to="/">
-            <Button variant="ghost" size="icon" className="mr-2">
-              <ArrowLeft size={20} />
-            </Button>
-          </Link>
-          <h1 className="text-2xl font-bold">Configuración</h1>
+      
+      {/* Floating Settings Sidebar */}
+      <div className={cn(
+        "fixed left-0 top-16 bottom-0 z-40 transition-all duration-300 ease-in-out",
+        "bg-card border-r shadow-lg",
+        sidebarCollapsed ? "w-16" : "w-80"
+      )}>
+        {/* Sidebar Header */}
+        <div className="flex items-center justify-between p-4 border-b">
+          {!sidebarCollapsed && (
+            <h2 className="text-lg font-semibold">Configuración</h2>
+          )}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+            className="ml-auto"
+          >
+            {sidebarCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
+          </Button>
         </div>
-        
-        <div className="bg-card border rounded-lg shadow-sm">
-          <div className="p-6">
-            <Tabs defaultValue="general" className="w-full">
-              <div className="mb-8">
-                <TabsList className={`inline-flex ${isMobile ? 'grid-cols-3 gap-1' : 'grid-cols-6'} w-full overflow-x-auto`}>
-                  {categories.map(category => (
-                    <TabsTrigger 
-                      key={category.id} 
-                      value={category.id}
-                      className="flex flex-col items-center justify-center gap-1 py-2 h-auto"
-                    >
-                      {category.icon}
-                      <span className="text-xs whitespace-nowrap">{category.label}</span>
-                    </TabsTrigger>
-                  ))}
-                </TabsList>
-              </div>
-              
-              <div className="mb-6">
-                <TabsContent value="general" className="space-y-4">
+
+        {/* Sidebar Navigation */}
+        <ScrollArea className="flex-1 h-[calc(100vh-8rem)]">
+          <div className="p-2">
+            {categories.map((category) => (
+              <Button
+                key={category.id}
+                variant={activeCategory === category.id ? "default" : "ghost"}
+                className={cn(
+                  "w-full justify-start mb-1 transition-all duration-200",
+                  sidebarCollapsed ? "px-2" : "px-4",
+                  "h-12"
+                )}
+                onClick={() => setActiveCategory(category.id)}
+              >
+                <div className="flex items-center gap-3">
+                  {category.icon}
+                  {!sidebarCollapsed && (
+                    <span className="text-sm font-medium">{category.label}</span>
+                  )}
+                </div>
+              </Button>
+            ))}
+          </div>
+        </ScrollArea>
+
+        {/* Sidebar Footer */}
+        <div className="p-4 border-t">
+          <Button
+            onClick={handleSave}
+            className={cn(
+              "w-full transition-all duration-200",
+              sidebarCollapsed ? "px-2" : "px-4"
+            )}
+            size="sm"
+          >
+            <Save className="h-4 w-4" />
+            {!sidebarCollapsed && <span className="ml-2">Guardar</span>}
+          </Button>
+        </div>
+      </div>
+
+      {/* Main Content Area */}
+      <div className={cn(
+        "flex-1 transition-all duration-300 ease-in-out",
+        sidebarCollapsed ? "ml-16" : "ml-80"
+      )}>
+        <div className="p-6">
+          {/* Header with back button */}
+          <div className="flex items-center mb-6">
+            <Link to="/">
+              <Button variant="ghost" size="icon" className="mr-2">
+                <ArrowLeft size={20} />
+              </Button>
+            </Link>
+            <h1 className="text-2xl font-bold">
+              {categories.find(cat => cat.id === activeCategory)?.label || "Configuración"}
+            </h1>
+          </div>
+
+          {/* Scrollable Content */}
+          <ScrollArea className="h-[calc(100vh-12rem)]">
+            <div className="pr-4">{/* Content padding for scrollbar */}
+              {/* General Settings */}
+              {activeCategory === "general" && (
+                <div className="space-y-6">
                   <Card>
                     <CardHeader>
                       <CardTitle>Configuración General</CardTitle>
@@ -158,9 +219,12 @@ export const SettingsPage = () => {
                       </div>
                     </CardContent>
                   </Card>
-                </TabsContent>
+                </div>
+              )}
                 
-                <TabsContent value="appearance" className="space-y-4">
+              {/* Appearance Settings */}
+              {activeCategory === "appearance" && (
+                <div className="space-y-6">
                   <Card>
                     <CardHeader>
                       <CardTitle>Apariencia</CardTitle>
@@ -201,9 +265,12 @@ export const SettingsPage = () => {
                       </div>
                     </CardContent>
                   </Card>
-                </TabsContent>
+                </div>
+              )}
                 
-                <TabsContent value="forms" className="space-y-4">
+              {/* Forms Settings */}
+              {activeCategory === "forms" && (
+                <div className="space-y-6">
                   <Card>
                     <CardHeader>
                       <CardTitle>Gestión de formularios</CardTitle>
@@ -276,9 +343,12 @@ export const SettingsPage = () => {
                       </div>
                     </CardContent>
                   </Card>
-                </TabsContent>
+                </div>
+              )}
                 
-                <TabsContent value="notifications" className="space-y-4">
+              {/* Notifications Settings */}
+              {activeCategory === "notifications" && (
+                <div className="space-y-6">
                   <Card>
                     <CardHeader>
                       <CardTitle>Notificaciones</CardTitle>
@@ -319,9 +389,12 @@ export const SettingsPage = () => {
                       </div>
                     </CardContent>
                   </Card>
-                </TabsContent>
+                </div>
+              )}
                 
-                <TabsContent value="account" className="space-y-4">
+              {/* Account Settings */}
+              {activeCategory === "account" && (
+                <div className="space-y-6">
                   <Card>
                     <CardHeader>
                       <CardTitle>Cuenta</CardTitle>
@@ -355,9 +428,12 @@ export const SettingsPage = () => {
                       </div>
                     </CardContent>
                   </Card>
-                </TabsContent>
+                </div>
+              )}
                 
-                <TabsContent value="advanced" className="space-y-4">
+              {/* Advanced Settings */}
+              {activeCategory === "advanced" && (
+                <div className="space-y-6">
                   <Card>
                     <CardHeader>
                       <CardTitle>Configuración avanzada</CardTitle>
@@ -400,17 +476,10 @@ export const SettingsPage = () => {
                       </div>
                     </CardContent>
                   </Card>
-                </TabsContent>
-              </div>
-              
-              <div className="flex justify-end">
-                <Button onClick={handleSave}>
-                  <Save className="mr-2 h-4 w-4" />
-                  Guardar cambios
-                </Button>
-              </div>
-            </Tabs>
-          </div>
+                </div>
+              )}
+            </div>
+          </ScrollArea>
         </div>
       </div>
     </div>
