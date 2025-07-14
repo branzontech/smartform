@@ -70,6 +70,8 @@ const NewConsultation = () => {
   useEffect(() => {
     const timer = setTimeout(() => {
       const savedPatients = localStorage.getItem("patients");
+      console.log("Saved patients from localStorage:", savedPatients);
+      
       if (savedPatients) {
         try {
           const parsedPatients = JSON.parse(savedPatients).map((patient: any) => ({
@@ -77,12 +79,14 @@ const NewConsultation = () => {
             createdAt: new Date(patient.createdAt),
             lastVisitAt: patient.lastVisitAt ? new Date(patient.lastVisitAt) : undefined,
           }));
+          console.log("Parsed patients:", parsedPatients);
           setPatients(parsedPatients);
         } catch (error) {
           console.error("Error parsing patients:", error);
           setPatients([]);
         }
       } else {
+        console.log("No patients found in localStorage, setting empty array");
         setPatients([]);
       }
 
@@ -433,22 +437,49 @@ const NewConsultation = () => {
               ) : (
                 <div className="space-y-2">
                   <Label htmlFor="patientId">Seleccionar paciente *</Label>
-                  <Select 
-                    value={selectedPatientId}
-                    onValueChange={setSelectedPatientId}
-                    required
-                  >
-                    <SelectTrigger id="patientId">
-                      <SelectValue placeholder="Seleccionar paciente" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {patients.map((patient) => (
-                        <SelectItem key={patient.id} value={patient.id}>
-                          {patient.name} - {patient.documentId}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  {loading ? (
+                    <div className="flex items-center justify-center p-4 border rounded-md">
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-purple-600"></div>
+                      <span className="ml-2 text-sm">Cargando pacientes...</span>
+                    </div>
+                  ) : patients.length > 0 ? (
+                    <Select 
+                      value={selectedPatientId}
+                      onValueChange={setSelectedPatientId}
+                      required
+                    >
+                      <SelectTrigger id="patientId">
+                        <SelectValue placeholder="Seleccionar paciente" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {patients.map((patient) => (
+                          <SelectItem key={patient.id} value={patient.id}>
+                            {patient.name} - {patient.documentId}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <div className="text-center py-6 border border-dashed border-gray-300 rounded-lg">
+                      <div className="text-gray-400 mb-2">
+                        <svg className="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+                        </svg>
+                      </div>
+                      <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
+                        No hay pacientes registrados
+                      </h3>
+                      <p className="text-gray-500 dark:text-gray-400 mb-4">
+                        Para crear una consulta, primero debe registrar pacientes o crear un nuevo paciente.
+                      </p>
+                      <Button 
+                        onClick={() => setIsNewPatient(true)}
+                        className="bg-purple-600 hover:bg-purple-700"
+                      >
+                        Crear nuevo paciente
+                      </Button>
+                    </div>
+                  )}
                 </div>
               )}
               
