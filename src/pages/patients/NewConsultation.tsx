@@ -87,6 +87,8 @@ const NewConsultation = () => {
       }
 
       const savedForms = localStorage.getItem("forms");
+      console.log("Saved forms from localStorage:", savedForms);
+      
       if (savedForms) {
         try {
           const parsedForms = JSON.parse(savedForms).map((form: any) => ({
@@ -94,12 +96,14 @@ const NewConsultation = () => {
             createdAt: new Date(form.createdAt),
             updatedAt: new Date(form.updatedAt)
           }));
+          console.log("Parsed forms:", parsedForms);
           setAvailableForms(parsedForms);
         } catch (error) {
           console.error("Error parsing forms:", error);
           setAvailableForms([]);
         }
       } else {
+        console.log("No forms found in localStorage, setting empty array");
         setAvailableForms([]);
       }
 
@@ -553,7 +557,12 @@ const NewConsultation = () => {
             <div className="space-y-4">
               <h3 className="font-medium text-lg mt-6 mb-3">Todos los formularios</h3>
               
-              {availableForms.length > 0 ? (
+              {loading ? (
+                <div className="flex items-center justify-center p-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
+                  <span className="ml-2">Cargando formularios...</span>
+                </div>
+              ) : availableForms.length > 0 ? (
                 <Tabs defaultValue="all" className="w-full">
                   <TabsList className="mb-4">
                     <TabsTrigger value="all">Todos</TabsTrigger>
