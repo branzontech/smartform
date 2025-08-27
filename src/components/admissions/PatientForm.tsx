@@ -1,16 +1,18 @@
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Calendar, MapPin, Phone } from "lucide-react";
+import { Calendar, MapPin, Phone, Settings } from "lucide-react";
 import { nanoid } from "nanoid";
 import { Patient } from "@/types/patient-types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
 import {
   Form,
   FormControl,
@@ -20,6 +22,13 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { toast } from "@/hooks/use-toast";
+import { FormCustomizer, CustomFieldRenderer } from "@/components/forms/form-customizer";
+import { FormTemplate } from "@/components/forms/form-customizer/types";
+import { 
+  getFormTemplates, 
+  saveFormTemplate, 
+  getDefaultFormTemplate 
+} from "@/utils/form-template-utils";
 
 // Schema for validation of the form
 const patientSchema = z.object({
@@ -42,6 +51,11 @@ interface PatientFormProps {
 }
 
 export const PatientForm = ({ patient, onSubmit, onCancel }: PatientFormProps) => {
+  const [showCustomizer, setShowCustomizer] = useState(false);
+  const [selectedTemplate, setSelectedTemplate] = useState<FormTemplate | null>(null);
+  const [customFieldValues, setCustomFieldValues] = useState<Record<string, any>>({});
+  const [availableTemplates, setAvailableTemplates] = useState<FormTemplate[]>([]);
+
   const patientForm = useForm<PatientFormValues>({
     resolver: zodResolver(patientSchema),
     defaultValues: {
@@ -56,12 +70,84 @@ export const PatientForm = ({ patient, onSubmit, onCancel }: PatientFormProps) =
     },
   });
 
+  useEffect(() => {
+    setAvailableTemplates(getFormTemplates());
+    const defaultTemplate = getDefaultFormTemplate();
+    if (defaultTemplate) {
+      setSelectedTemplate(defaultTemplate);
+    }
+  }, []);
+
+  const handleTemplateSelect = (templateId: string) => {
+    const template = availableTemplates.find(t => t.id === templateId);
+    setSelectedTemplate(template || null);
+    setCustomFieldValues({});
+  };
+
+  const handleCustomFieldChange = (fieldId: string, value: any) => {
+    setCustomFieldValues(prev => ({
+      ...prev,
+      [fieldId]: value
+    }));
+  };
+
+  const handleSaveTemplate = (template: FormTemplate) => {
+    saveFormTemplate(template);
+    setAvailableTemplates(getFormTemplates());
+    setSelectedTemplate(template);
+    setShowCustomizer(false);
+    toast({
+      title: "Plantilla guardada",
+      description: "La plantilla se ha guardado correctamente",
+    });
+  };
+
+  const handleFormSubmit = (data: PatientFormValues) => {
+    const submissionData = {
+      ...data,
+      customFields: selectedTemplate ? {
+        templateId: selectedTemplate.id,
+        templateName: selectedTemplate.name,
+        sectionName: selectedTemplate.sectionName,
+        values: customFieldValues
+      } : undefined
+    };
+    
+    onSubmit(submissionData);
+  };
+
+  if (showCustomizer) {
+    return (
+      <FormCustomizer
+        templateName="Plantilla de Admisión"
+        onSave={handleSaveTemplate}
+        onCancel={() => setShowCustomizer(false)}
+        maxFields={10}
+      />
+    );
+  }
+
   return (
     <Form {...patientForm}>
-      <form onSubmit={patientForm.handleSubmit(onSubmit)} className="space-y-6">
-        <Card>
-          <CardContent className="pt-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <form onSubmit={patientForm.handleSubmit(handleFormSubmit)} className="space-y-6">
+        <Tabs defaultValue="basic" className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="basic">Información Básica</TabsTrigger>
+            <TabsTrigger value="custom" className="flex items-center gap-2">
+              <Settings className="h-4 w-4" />
+              Campos Personalizados
+              {selectedTemplate && (
+                <Badge variant="secondary" className="ml-1">
+                  {selectedTemplate.fields.length}
+                </Badge>
+              )}
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="basic" className="space-y-6">
+            <Card>
+              <CardContent className="pt-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <FormField
                 control={patientForm.control}
                 name="name"
@@ -223,9 +309,99 @@ export const PatientForm = ({ patient, onSubmit, onCancel }: PatientFormProps) =
                   </FormItem>
                 )}
               />
-            </div>
-          </CardContent>
-        </Card>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="custom" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      <Settings className="h-5 w-5" />
+                      Campos Personalizados
+                    </CardTitle>
+                  </div>
+                  <div className="flex gap-2">
+                    <Select value={selectedTemplate?.id || ""} onValueChange={handleTemplateSelect}>
+                      <SelectTrigger className="w-64">
+                        <SelectValue placeholder="Seleccionar plantilla" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {availableTemplates.map((template) => (
+                          <SelectItem key={template.id} value={template.id}>
+                            <div className="flex items-center gap-2">
+                              {template.name}
+                              {template.isDefault && (
+                                <Badge variant="outline" className="text-xs">
+                                  Predeterminada
+                                </Badge>
+                              )}
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowCustomizer(true)}
+                    >
+                      <Settings className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              </CardHeader>
+              
+              {selectedTemplate && (
+                <CardContent className="space-y-6">
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20">
+                      {selectedTemplate.sectionName}
+                    </Badge>
+                    <span>•</span>
+                    <span>{selectedTemplate.fields.length} campos</span>
+                  </div>
+                  
+                  <div className="grid gap-4">
+                    {selectedTemplate.fields.map((field) => (
+                      <CustomFieldRenderer
+                        key={field.id}
+                        field={field}
+                        value={customFieldValues[field.id]}
+                        onChange={(value) => handleCustomFieldChange(field.id, value)}
+                      />
+                    ))}
+                  </div>
+                </CardContent>
+              )}
+              
+              {!selectedTemplate && (
+                <CardContent>
+                  <div className="text-center py-8">
+                    <Settings className="mx-auto h-12 w-12 text-muted-foreground" />
+                    <h3 className="mt-4 text-lg font-semibold">No hay plantillas disponibles</h3>
+                    <p className="text-muted-foreground">
+                      Crea una plantilla personalizada para comenzar
+                    </p>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="mt-4"
+                      onClick={() => setShowCustomizer(true)}
+                    >
+                      <Settings className="h-4 w-4 mr-2" />
+                      Crear Plantilla
+                    </Button>
+                  </div>
+                </CardContent>
+              )}
+            </Card>
+          </TabsContent>
+        </Tabs>
 
         <div className="flex justify-between gap-3">
           <Button type="button" variant="outline" onClick={onCancel}>
