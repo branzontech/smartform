@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import { Calendar, Clock, User, FilePlus, Save } from "lucide-react";
+import { Calendar, Clock, User, FilePlus, Save, Settings } from "lucide-react";
 import { Header } from "@/components/layout/header";
 import { BackButton } from "@/App";
 import { Button } from "@/components/ui/button";
@@ -28,6 +28,9 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { toast } from "sonner";
 import { Checkbox } from "@/components/ui/checkbox";
 import { isUserSignedIn, createGoogleCalendarEvent, updateGoogleCalendarEvent } from "@/utils/google-calendar";
+import { FormCustomizer, CustomFieldRenderer, FormTemplate } from "@/components/forms/form-customizer";
+import { saveFormTemplate, getFormTemplates, getDefaultFormTemplate } from "@/utils/form-template-utils";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
 // Datos mock
 const mockAppointments: Appointment[] = [
@@ -112,30 +115,61 @@ const timeSlots = [
 // Duraciones típicas
 const durations = [15, 30, 45, 60, 90, 120];
 
-// Schema para validación del formulario
-const appointmentFormSchema = z.object({
-  patientId: z.string({
-    required_error: "Por favor selecciona un paciente",
-  }),
-  date: z.date({
-    required_error: "Por favor selecciona una fecha",
-  }),
-  time: z.string({
-    required_error: "Por favor selecciona una hora",
-  }),
-  duration: z.number({
-    required_error: "Por favor selecciona una duración",
-  }),
-  reason: z.string().min(3, {
-    message: "El motivo debe tener al menos 3 caracteres",
-  }),
-  notes: z.string().optional(),
-  status: z.enum(["Programada", "Pendiente", "Reprogramada", "Cancelada", "Completada"], {
-    required_error: "Por favor selecciona un estado",
-  }),
-});
+// Schema para validación del formulario (se construye dinámicamente)
+const getAppointmentFormSchema = (customFields: any[] = []) => {
+  let schemaObj: any = {
+    patientId: z.string({
+      required_error: "Por favor selecciona un paciente",
+    }),
+    date: z.date({
+      required_error: "Por favor selecciona una fecha",
+    }),
+    time: z.string({
+      required_error: "Por favor selecciona una hora",
+    }),
+    duration: z.number({
+      required_error: "Por favor selecciona una duración",
+    }),
+    reason: z.string().min(3, {
+      message: "El motivo debe tener al menos 3 caracteres",
+    }),
+    notes: z.string().optional(),
+    status: z.enum(["Programada", "Pendiente", "Reprogramada", "Cancelada", "Completada"], {
+      required_error: "Por favor selecciona un estado",
+    }),
+  };
 
-type FormValues = z.infer<typeof appointmentFormSchema>;
+  // Agregar validaciones para campos personalizados
+  customFields.forEach(field => {
+    if (field.required) {
+      switch (field.type) {
+        case "number":
+          schemaObj[field.id] = z.number({
+            required_error: `${field.label} es requerido`
+          });
+          break;
+        case "checkbox":
+          schemaObj[field.id] = z.array(z.string()).min(1, {
+            message: `${field.label} es requerido`
+          });
+          break;
+        case "date":
+          schemaObj[field.id] = z.string({
+            required_error: `${field.label} es requerido`
+          });
+          break;
+        default:
+          schemaObj[field.id] = z.string().min(1, {
+            message: `${field.label} es requerido`
+          });
+      }
+    } else {
+      schemaObj[field.id] = z.any().optional();
+    }
+  });
+
+  return z.object(schemaObj);
+};
 
 // Componente principal para crear/editar citas
 const AppointmentForm = () => {
@@ -147,7 +181,15 @@ const AppointmentForm = () => {
   const [googleEventId, setGoogleEventId] = useState<string | undefined>();
   const [syncWithGoogle, setSyncWithGoogle] = useState(false);
   const [googleConnected, setGoogleConnected] = useState(false);
+  const [currentTemplate, setCurrentTemplate] = useState<FormTemplate | null>(null);
+  const [showCustomizer, setShowCustomizer] = useState(false);
+  const [customFieldValues, setCustomFieldValues] = useState<Record<string, any>>({});
+  const [customFieldErrors, setCustomFieldErrors] = useState<Record<string, string>>({});
   const isEditing = !!id;
+  
+  // Crear schema dinámico basado en la plantilla actual
+  const appointmentFormSchema = getAppointmentFormSchema(currentTemplate?.fields || []);
+  type FormValues = z.infer<typeof appointmentFormSchema>;
   
   // Form con valores predeterminados
   const form = useForm<FormValues>({
@@ -162,6 +204,14 @@ const AppointmentForm = () => {
       status: "Programada",
     },
   });
+
+  // Cargar plantilla predeterminada al iniciar
+  useEffect(() => {
+    const defaultTemplate = getDefaultFormTemplate();
+    if (defaultTemplate) {
+      setCurrentTemplate(defaultTemplate);
+    }
+  }, []);
 
   // Verificar si el usuario está conectado a Google al cargar
   useEffect(() => {
@@ -303,9 +353,60 @@ const AppointmentForm = () => {
     return undefined;
   };
 
+  // Validar campos personalizados
+  const validateCustomFields = (): boolean => {
+    if (!currentTemplate?.fields) return true;
+    
+    const errors: Record<string, string> = {};
+    let isValid = true;
+
+    currentTemplate.fields.forEach(field => {
+      if (field.required) {
+        const value = customFieldValues[field.id];
+        if (!value || (Array.isArray(value) && value.length === 0)) {
+          errors[field.id] = `${field.label} es requerido`;
+          isValid = false;
+        }
+      }
+    });
+
+    setCustomFieldErrors(errors);
+    return isValid;
+  };
+
+  // Manejar cambio en campos personalizados
+  const handleCustomFieldChange = (fieldId: string, value: any) => {
+    setCustomFieldValues(prev => ({
+      ...prev,
+      [fieldId]: value
+    }));
+    
+    // Limpiar error si existe
+    if (customFieldErrors[fieldId]) {
+      setCustomFieldErrors(prev => ({
+        ...prev,
+        [fieldId]: ""
+      }));
+    }
+  };
+
+  // Manejar guardado de plantilla
+  const handleSaveTemplate = (template: FormTemplate) => {
+    saveFormTemplate(template);
+    setCurrentTemplate(template);
+    setShowCustomizer(false);
+    toast.success("Plantilla guardada exitosamente");
+  };
+
   // Manejar envío del formulario
   const onSubmit = async (values: FormValues) => {
     console.log("Form values:", values);
+    
+    // Validar campos personalizados
+    if (!validateCustomFields()) {
+      toast.error("Por favor completa todos los campos requeridos");
+      return;
+    }
     
     const selectedPatient = patients.find(p => p.id === values.patientId);
     
@@ -314,7 +415,7 @@ const AppointmentForm = () => {
       return;
     }
     
-    const newAppointment: Appointment = {
+    const newAppointment: any = {
       id: isEditing ? id as string : Date.now().toString(),
       patientId: values.patientId,
       patientName: selectedPatient.name,
@@ -326,7 +427,8 @@ const AppointmentForm = () => {
       notes: values.notes,
       createdAt: isEditing ? new Date() : new Date(),
       updatedAt: isEditing ? new Date() : undefined,
-      googleEventId
+      googleEventId,
+      customFields: customFieldValues // Agregar campos personalizados
     };
     
     // Sincronizar con Google Calendar si está habilitado
@@ -625,6 +727,85 @@ const AppointmentForm = () => {
                       }
                     </Label>
                   </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Campos personalizados */}
+            {currentTemplate && currentTemplate.fields.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle>Campos Personalizados</CardTitle>
+                      <CardDescription>
+                        Plantilla: {currentTemplate.name}
+                      </CardDescription>
+                    </div>
+                    <Dialog open={showCustomizer} onOpenChange={setShowCustomizer}>
+                      <DialogTrigger asChild>
+                        <Button variant="outline" size="sm">
+                          <Settings className="h-4 w-4 mr-2" />
+                          Personalizar
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+                        <DialogHeader>
+                          <DialogTitle>Personalizar Campos de Cita</DialogTitle>
+                        </DialogHeader>
+                        <FormCustomizer
+                          existingTemplate={currentTemplate}
+                          onSave={handleSaveTemplate}
+                          onCancel={() => setShowCustomizer(false)}
+                          maxFields={10}
+                        />
+                      </DialogContent>
+                    </Dialog>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {currentTemplate.fields.map((field) => (
+                    <CustomFieldRenderer
+                      key={field.id}
+                      field={field}
+                      value={customFieldValues[field.id]}
+                      onChange={(value) => handleCustomFieldChange(field.id, value)}
+                      error={customFieldErrors[field.id]}
+                    />
+                  ))}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Configurar plantilla si no hay una activa */}
+            {(!currentTemplate || currentTemplate.fields.length === 0) && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Campos Personalizados</CardTitle>
+                  <CardDescription>
+                    Personaliza los campos adicionales para este tipo de cita
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Dialog open={showCustomizer} onOpenChange={setShowCustomizer}>
+                    <DialogTrigger asChild>
+                      <Button variant="outline" className="w-full">
+                        <Settings className="h-4 w-4 mr-2" />
+                        Configurar Campos Personalizados
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+                      <DialogHeader>
+                        <DialogTitle>Personalizar Campos de Cita</DialogTitle>
+                      </DialogHeader>
+                      <FormCustomizer
+                        templateName="Cita Personalizada"
+                        onSave={handleSaveTemplate}
+                        onCancel={() => setShowCustomizer(false)}
+                        maxFields={10}
+                      />
+                    </DialogContent>
+                  </Dialog>
                 </CardContent>
               </Card>
             )}
