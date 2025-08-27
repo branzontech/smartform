@@ -312,163 +312,45 @@ export const PatientForm = ({ patient, onSubmit, onCancel }: PatientFormProps) =
               </CardContent>
             </Card>
 
-            {/* Sección de campos personalizados */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
+            {/* Campos Personalizados para llenar */}
+            {selectedTemplate && selectedTemplate.fields.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
                     <Settings className="h-5 w-5" />
-                    <span>Campos Personalizados</span>
-                    {selectedTemplate && (
-                      <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20">
-                        {selectedTemplate.fields.length} campos
-                      </Badge>
-                    )}
-                  </div>
-                  <div className="flex gap-2">
-                    {!selectedTemplate ? (
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setShowCustomizer(true)}
-                      >
-                        <Settings className="h-4 w-4 mr-2" />
-                        Crear Campos
-                      </Button>
-                    ) : (
-                      <>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setShowCustomizer(true)}
-                        >
-                          <Settings className="h-4 w-4 mr-2" />
-                          Editar
-                        </Button>
-                        <Select value={selectedTemplate?.id || ""} onValueChange={handleTemplateSelect}>
-                          <SelectTrigger className="w-48">
-                            <SelectValue placeholder="Cambiar plantilla" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {availableTemplates.map((template) => (
-                              <SelectItem key={template.id} value={template.id}>
-                                <div className="flex items-center gap-2">
-                                  {template.name}
-                                  {template.isDefault && (
-                                    <Badge variant="outline" className="text-xs">
-                                      Predeterminada
-                                    </Badge>
-                                  )}
-                                </div>
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </>
-                    )}
-                  </div>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {!selectedTemplate ? (
+                    <span>{selectedTemplate.sectionName}</span>
+                    <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20">
+                      {selectedTemplate.fields.length} campos
+                    </Badge>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {selectedTemplate.fields.map((field) => (
+                    <CustomFieldRenderer
+                      key={field.id}
+                      field={field}
+                      value={customFieldValues[field.id]}
+                      onChange={(value) => handleCustomFieldChange(field.id, value)}
+                    />
+                  ))}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Botón para crear campos si no hay plantilla */}
+            {!selectedTemplate && (
+              <Card>
+                <CardContent className="pt-6">
                   <div className="text-center py-6">
-                    <Settings className="mx-auto h-8 w-8 text-muted-foreground mb-3" />
-                    <p className="text-muted-foreground text-sm mb-4">
-                      Añade campos personalizados para recopilar información específica del paciente
+                    <Settings className="mx-auto h-12 w-12 text-muted-foreground" />
+                    <h3 className="mt-4 text-lg font-semibold">Agregar Campos Personalizados</h3>
+                    <p className="text-muted-foreground mt-2">
+                      Ve a la pestaña "Campos Personalizados" para crear campos adicionales
                     </p>
-                    <Button
-                      type="button"
-                      variant="default"
-                      size="sm"
-                      onClick={() => setShowCustomizer(true)}
-                    >
-                      <Settings className="h-4 w-4 mr-2" />
-                      Crear Campos Personalizados
-                    </Button>
                   </div>
-                ) : (
-                  <div className="space-y-4">
-                    {selectedTemplate.fields.length > 0 && (
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
-                        <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20">
-                          {selectedTemplate.sectionName}
-                        </Badge>
-                        <span>•</span>
-                        <span>{selectedTemplate.fields.length} campos disponibles</span>
-                      </div>
-                    )}
-                    
-                    {/* Mostrar campos completados */}
-                    {Object.keys(customFieldValues).length > 0 ? (
-                      <div className="grid gap-4">
-                        {selectedTemplate.fields
-                          .filter(field => customFieldValues[field.id] !== undefined && customFieldValues[field.id] !== "")
-                          .map((field) => (
-                            <div key={field.id} className="relative">
-                              <div className="flex items-start gap-3">
-                                <div className="absolute -left-2 top-0 bottom-0 w-1 bg-gradient-to-b from-primary/30 to-primary/10 rounded-full"></div>
-                                <div className="flex-1">
-                                  <div className="flex items-center gap-2 mb-1">
-                                    <span className="text-sm font-medium text-foreground">{field.label}</span>
-                                    <Badge variant="outline" className="text-xs bg-primary/5 text-primary border-primary/20">
-                                      Completado
-                                    </Badge>
-                                  </div>
-                                  <div className="text-sm text-muted-foreground bg-muted/30 px-3 py-2 rounded-md border">
-                                    {Array.isArray(customFieldValues[field.id]) 
-                                      ? customFieldValues[field.id].join(", ")
-                                      : customFieldValues[field.id]?.toString() || "Sin especificar"
-                                    }
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          className="w-fit mt-2"
-                          onClick={() => {
-                            // Cambiar a la pestaña de campos personalizados
-                            const tabsList = document.querySelector('[role="tablist"]');
-                            const customTab = document.querySelector('[value="custom"]');
-                            if (customTab) {
-                              (customTab as HTMLElement).click();
-                            }
-                          }}
-                        >
-                          Completar más campos
-                        </Button>
-                      </div>
-                    ) : (
-                      <div className="text-center py-4">
-                        <p className="text-muted-foreground text-sm mb-3">
-                          No has completado ningún campo personalizado aún
-                        </p>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            // Cambiar a la pestaña de campos personalizados
-                            const tabsList = document.querySelector('[role="tablist"]');
-                            const customTab = document.querySelector('[value="custom"]');
-                            if (customTab) {
-                              (customTab as HTMLElement).click();
-                            }
-                          }}
-                        >
-                          Completar campos personalizados
-                        </Button>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            )}
           </TabsContent>
 
           <TabsContent value="custom" className="space-y-6">
