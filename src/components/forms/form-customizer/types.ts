@@ -36,6 +36,7 @@ export interface CustomField {
 export interface FormTemplate {
   id: string;
   name: string;
+  sectionName: string;
   description: string;
   fields: CustomField[];
   isDefault: boolean;

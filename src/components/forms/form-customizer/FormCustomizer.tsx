@@ -22,6 +22,7 @@ export const FormCustomizer: React.FC<FormCustomizerProps> = ({
 }) => {
   const [template, setTemplate] = useState<Partial<FormTemplate>>({
     name: templateName,
+    sectionName: "Información Adicional",
     description: "",
     fields: [],
     isDefault: false
@@ -97,6 +98,7 @@ export const FormCustomizer: React.FC<FormCustomizerProps> = ({
     const completeTemplate: FormTemplate = {
       id: existingTemplate?.id || Date.now().toString(),
       name: template.name,
+      sectionName: template.sectionName || "Información Adicional",
       description: template.description || "",
       fields: template.fields,
       isDefault: template.isDefault || false,
@@ -130,6 +132,27 @@ export const FormCustomizer: React.FC<FormCustomizerProps> = ({
               />
             </div>
             
+            <div className="space-y-2">
+              <Label>Nombre de la sección</Label>
+              <Input
+                value={template.sectionName || ""}
+                onChange={(e) => setTemplate(prev => ({ ...prev, sectionName: e.target.value }))}
+                placeholder="Ej: Información del Paciente, Datos Clínicos"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Descripción</Label>
+              <Textarea
+                value={template.description || ""}
+                onChange={(e) => setTemplate(prev => ({ ...prev, description: e.target.value }))}
+                placeholder="Describe cuándo usar esta plantilla"
+                rows={2}
+              />
+            </div>
+            
             <div className="flex items-center space-x-2 pt-6">
               <Switch
                 checked={template.isDefault || false}
@@ -137,16 +160,6 @@ export const FormCustomizer: React.FC<FormCustomizerProps> = ({
               />
               <Label>Usar como plantilla predeterminada</Label>
             </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label>Descripción</Label>
-            <Textarea
-              value={template.description || ""}
-              onChange={(e) => setTemplate(prev => ({ ...prev, description: e.target.value }))}
-              placeholder="Describe cuándo usar esta plantilla"
-              rows={2}
-            />
           </div>
         </CardContent>
       </Card>

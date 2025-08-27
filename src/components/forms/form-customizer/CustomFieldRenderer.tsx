@@ -196,12 +196,18 @@ export const CustomFieldRenderer: React.FC<CustomFieldRendererProps> = ({
   };
 
   return (
-    <div className="space-y-2">
-      <Label htmlFor={field.id}>
+    <div className="space-y-2 relative">
+      <Label htmlFor={field.id} className="flex items-center gap-2">
         {field.label}
         {field.required && <span className="text-destructive ml-1">*</span>}
+        <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/20">
+          Personalizado
+        </span>
       </Label>
-      {renderField()}
+      <div className="relative">
+        {renderField()}
+        <div className="absolute -left-2 top-0 bottom-0 w-1 bg-gradient-to-b from-primary/30 to-primary/10 rounded-full"></div>
+      </div>
       {error && (
         <p className="text-sm text-destructive">{error}</p>
       )}

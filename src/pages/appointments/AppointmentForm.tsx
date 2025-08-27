@@ -737,7 +737,12 @@ const AppointmentForm = () => {
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <div>
-                      <CardTitle>Campos Personalizados</CardTitle>
+                      <CardTitle className="flex items-center gap-2">
+                        {currentTemplate.sectionName || "Campos Personalizados"}
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/20">
+                          Personalizado
+                        </span>
+                      </CardTitle>
                       <CardDescription>
                         Plantilla: {currentTemplate.name}
                       </CardDescription>
@@ -779,13 +784,18 @@ const AppointmentForm = () => {
 
             {/* Configurar plantilla si no hay una activa */}
             {(!currentTemplate || currentTemplate.fields.length === 0) && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Campos Personalizados</CardTitle>
-                  <CardDescription>
-                    Personaliza los campos adicionales para este tipo de cita
-                  </CardDescription>
-                </CardHeader>
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  Campos Personalizados
+                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-muted text-muted-foreground border border-border">
+                    No configurado
+                  </span>
+                </CardTitle>
+                <CardDescription>
+                  Personaliza los campos adicionales para este tipo de cita
+                </CardDescription>
+              </CardHeader>
                 <CardContent>
                   <Dialog open={showCustomizer} onOpenChange={setShowCustomizer}>
                     <DialogTrigger asChild>

@@ -22,6 +22,7 @@ export const getFormTemplates = (): FormTemplate[] => {
     
     return JSON.parse(templates).map((template: any) => ({
       ...template,
+      sectionName: template.sectionName || "Información Adicional", // Fallback para plantillas existentes
       createdAt: new Date(template.createdAt),
       updatedAt: template.updatedAt ? new Date(template.updatedAt) : undefined
     }));
