@@ -182,6 +182,11 @@ export const mainNavItems: SubmenuItem[] = [
     ],
   },
   {
+    title: "Recordatorios Médicos",
+    path: "/app/notificaciones/centro",
+    icon: Bell,
+  },
+  {
     title: "Notificaciones",
     path: "/app/clientes/notificaciones/nueva",
     icon: Send,

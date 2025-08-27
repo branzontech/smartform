@@ -63,6 +63,7 @@ import InvoiceForm from "./pages/billing/InvoiceForm";
 import CustomerList from "./pages/customers/CustomerList";
 import CustomerDetail from "./pages/customers/CustomerDetail";
 import NotificationForm from "./pages/customers/NotificationForm";
+import NotificationCenter from "./pages/notifications/NotificationCenter";
 
 // Importamos las páginas de informes
 import ReportsPage from "./pages/reports/ReportsPage";
@@ -185,6 +186,9 @@ function App() {
                 <Route path="/app/clientes" element={<CustomerList />} />
                 <Route path="/app/clientes/:id" element={<CustomerDetail />} />
                 <Route path="/app/clientes/notificaciones/nueva" element={<NotificationForm />} />
+                
+                {/* Ruta para centro de notificaciones */}
+                <Route path="/app/notificaciones/centro" element={<NotificationCenter />} />
                 
                 {/* Support legacy routes */}
                 <Route path="/crear" element={<Navigate to="/app/crear" replace />} />

@@ -15,7 +15,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
-import { Calendar, Image, Send, Info, Upload, Video, Mail, MessageCircle, Check, X, Clock } from "lucide-react";
+import { Calendar, Image, Send, Info, Upload, Video, Mail, MessageCircle, Check, X, Clock, AlertTriangle, Stethoscope, Repeat } from "lucide-react";
 import { NotificationChannel, NotificationType } from "@/types/customer-types";
 
 interface SendLog {
@@ -39,6 +39,14 @@ const NotificationForm = () => {
   const [scheduledDate, setScheduledDate] = useState<Date | undefined>(undefined);
   const [isSending, setIsSending] = useState(false);
   const [sendLogs, setSendLogs] = useState<SendLog[]>([]);
+  
+  // Estados para recordatorios médicos programados
+  const [isMedicalReminder, setIsMedicalReminder] = useState(false);
+  const [reminderFrequency, setReminderFrequency] = useState<"Una vez" | "Diario" | "Semanal" | "Mensual" | "Personalizado">("Una vez");
+  const [customDays, setCustomDays] = useState<number>(1);
+  const [priority, setPriority] = useState<"Alta" | "Media" | "Baja">("Media");
+  const [patientType, setPatientType] = useState<"Paciente" | "Cliente">("Paciente");
+  const [followUpType, setFollowUpType] = useState<string>("");
   
   const { toast } = useToast();
 
@@ -125,11 +133,19 @@ const NotificationForm = () => {
       const successCount = newLogs.filter(log => log.status === 'success').length;
       const errorCount = newLogs.filter(log => log.status === 'error').length;
       
-      toast({
-        title: errorCount === 0 ? "Éxito" : "Parcialmente enviado",
-        description: `${successCount} enviados exitosamente${errorCount > 0 ? `, ${errorCount} con errores` : ''}`,
-        variant: errorCount === 0 ? "default" : "destructive",
-      });
+      if (isMedicalReminder) {
+        toast({
+          title: "Recordatorio Médico Creado",
+          description: `Recordatorio de seguimiento programado exitosamente para ${followUpType || 'seguimiento médico'}. ${reminderFrequency !== "Una vez" ? `Se repetirá ${reminderFrequency.toLowerCase()}.` : ""}`,
+          variant: "default",
+        });
+      } else {
+        toast({
+          title: errorCount === 0 ? "Éxito" : "Parcialmente enviado",
+          description: `${successCount} enviados exitosamente${errorCount > 0 ? `, ${errorCount} con errores` : ''}`,
+          variant: errorCount === 0 ? "default" : "destructive",
+        });
+      }
     }, 1500);
   };
 
@@ -193,7 +209,7 @@ const NotificationForm = () => {
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="General">General</SelectItem>
-                            <SelectItem value="Recordatorio">Recordatorio</SelectItem>
+                            <SelectItem value="Recordatorio">Recordatorio Simple</SelectItem>
                             <SelectItem value="Felicitación">Felicitación</SelectItem>
                             <SelectItem value="Promoción">Promoción</SelectItem>
                           </SelectContent>
@@ -313,13 +329,143 @@ const NotificationForm = () => {
                         </Popover>
                       </div>
                     </div>
+                    
+                    {/* Sección de Recordatorios Médicos Programados */}
+                    <div className="space-y-4 border-t pt-4">
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          id="medicalReminder"
+                          checked={isMedicalReminder}
+                          onChange={() => setIsMedicalReminder(!isMedicalReminder)}
+                          className="h-4 w-4 rounded border-gray-300 text-primary"
+                        />
+                        <Label htmlFor="medicalReminder" className="cursor-pointer flex items-center gap-2">
+                          <Stethoscope className="h-4 w-4 text-primary" />
+                          Convertir en recordatorio médico programado
+                        </Label>
+                      </div>
+                      
+                      {isMedicalReminder && (
+                        <div className="space-y-4 bg-blue-50 dark:bg-blue-900/10 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+                          <Alert>
+                            <AlertTriangle className="h-4 w-4" />
+                            <AlertDescription>
+                              Los recordatorios médicos aparecerán en el Centro de Notificaciones y se repetirán según la frecuencia configurada.
+                            </AlertDescription>
+                          </Alert>
+                          
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <Label htmlFor="followUpType">Tipo de Seguimiento</Label>
+                              <Select 
+                                value={followUpType} 
+                                onValueChange={setFollowUpType}
+                              >
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Selecciona el tipo" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="Post-operatorio">Seguimiento Post-operatorio</SelectItem>
+                                  <SelectItem value="Tratamiento">Control de Tratamiento</SelectItem>
+                                  <SelectItem value="Resultados">Revisión de Resultados</SelectItem>
+                                  <SelectItem value="Cita">Reagendar Cita</SelectItem>
+                                  <SelectItem value="Medicacion">Control de Medicación</SelectItem>
+                                  <SelectItem value="Terapia">Seguimiento Terapéutico</SelectItem>
+                                  <SelectItem value="Otros">Otros</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            
+                            <div className="space-y-2">
+                              <Label htmlFor="patientType">Tipo de Paciente</Label>
+                              <Select 
+                                value={patientType} 
+                                onValueChange={(value) => setPatientType(value as "Paciente" | "Cliente")}
+                              >
+                                <SelectTrigger>
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="Paciente">Paciente</SelectItem>
+                                  <SelectItem value="Cliente">Cliente</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </div>
+                          
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <Label htmlFor="priority">Prioridad</Label>
+                              <Select 
+                                value={priority} 
+                                onValueChange={(value) => setPriority(value as "Alta" | "Media" | "Baja")}
+                              >
+                                <SelectTrigger>
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="Alta">Alta</SelectItem>
+                                  <SelectItem value="Media">Media</SelectItem>
+                                  <SelectItem value="Baja">Baja</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            
+                            <div className="space-y-2">
+                              <Label htmlFor="frequency">Frecuencia de Recordatorio</Label>
+                              <Select 
+                                value={reminderFrequency} 
+                                onValueChange={(value) => setReminderFrequency(value as any)}
+                              >
+                                <SelectTrigger>
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="Una vez">Una vez</SelectItem>
+                                  <SelectItem value="Diario">Diario</SelectItem>
+                                  <SelectItem value="Semanal">Semanal</SelectItem>
+                                  <SelectItem value="Mensual">Mensual</SelectItem>
+                                  <SelectItem value="Personalizado">Personalizado</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </div>
+                          
+                          {reminderFrequency === "Personalizado" && (
+                            <div className="space-y-2">
+                              <Label htmlFor="customDays">Repetir cada (días)</Label>
+                              <Input
+                                id="customDays"
+                                type="number"
+                                min="1"
+                                max="365"
+                                value={customDays}
+                                onChange={(e) => setCustomDays(parseInt(e.target.value) || 1)}
+                                placeholder="Número de días"
+                              />
+                            </div>
+                          )}
+                          
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <Repeat className="h-4 w-4" />
+                            <span>
+                              {reminderFrequency === "Una vez" 
+                                ? "Este recordatorio se enviará solo una vez"
+                                : `Este recordatorio se repetirá ${reminderFrequency.toLowerCase()}${reminderFrequency === "Personalizado" ? ` (cada ${customDays} día${customDays !== 1 ? 's' : ''})` : ""}`
+                              }
+                            </span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
                   
                   <Button type="submit" className="w-full" disabled={isSending}>
                     {isSending ? "Enviando..." : (
                       <>
-                        <Send className="mr-2 h-4 w-4" />
-                        Enviar Notificación
+                        {isMedicalReminder ? <Stethoscope className="mr-2 h-4 w-4" /> : <Send className="mr-2 h-4 w-4" />}
+                        {isMedicalReminder ? "Crear Recordatorio Médico" : "Enviar Notificación"}
                       </>
                     )}
                   </Button>
