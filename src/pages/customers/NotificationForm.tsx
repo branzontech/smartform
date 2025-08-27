@@ -12,9 +12,20 @@ import { DatePicker } from "@/components/ui/date-picker";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CustomerSelect } from "@/components/customers/CustomerSelect";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
-import { Calendar, Image, Send, Info } from "lucide-react";
+import { Calendar, Image, Send, Info, Upload, Video, Mail, MessageCircle, Check, X, Clock } from "lucide-react";
 import { NotificationChannel, NotificationType } from "@/types/customer-types";
+
+interface SendLog {
+  id: string;
+  recipient: string;
+  channel: NotificationChannel;
+  status: 'success' | 'error' | 'pending';
+  message: string;
+  timestamp: Date;
+}
 
 const NotificationForm = () => {
   const [isToAll, setIsToAll] = useState(false);
@@ -24,10 +35,41 @@ const NotificationForm = () => {
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
   const [imageUrl, setImageUrl] = useState("");
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [scheduledDate, setScheduledDate] = useState<Date | undefined>(undefined);
   const [isSending, setIsSending] = useState(false);
+  const [sendLogs, setSendLogs] = useState<SendLog[]>([]);
   
   const { toast } = useToast();
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Validar tipo de archivo
+      const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'video/mp4', 'video/webm'];
+      if (!validTypes.includes(file.type)) {
+        toast({
+          title: "Error",
+          description: "Tipo de archivo no válido. Solo se permiten imágenes (JPG, PNG, GIF) y videos (MP4, WEBM)",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // Validar tamaño (máximo 10MB)
+      if (file.size > 10 * 1024 * 1024) {
+        toast({
+          title: "Error",
+          description: "El archivo es demasiado grande. Máximo 10MB",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      setUploadedFile(file);
+      setImageUrl(URL.createObjectURL(file));
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,14 +94,41 @@ const NotificationForm = () => {
     
     setIsSending(true);
     
-    // Simular envío
+    // Simular envío con logs
+    const recipients = isToAll ? ["Todos los clientes"] : ["Cliente seleccionado"];
+    const channels: NotificationChannel[] = channel === "Ambos" ? ["Email", "WhatsApp"] : [channel];
+    
+    const newLogs: SendLog[] = [];
+    
+    recipients.forEach(recipient => {
+      channels.forEach(ch => {
+        // Simular éxito o error aleatoriamente
+        const isSuccess = Math.random() > 0.2; // 80% éxito
+        
+        newLogs.push({
+          id: Math.random().toString(36).substr(2, 9),
+          recipient,
+          channel: ch,
+          status: isSuccess ? 'success' : 'error',
+          message: isSuccess 
+            ? `Enviado exitosamente via ${ch}` 
+            : `Error al enviar via ${ch}: Conexión fallida`,
+          timestamp: new Date()
+        });
+      });
+    });
+    
     setTimeout(() => {
       setIsSending(false);
+      setSendLogs(prev => [...newLogs, ...prev]);
+      
+      const successCount = newLogs.filter(log => log.status === 'success').length;
+      const errorCount = newLogs.filter(log => log.status === 'error').length;
+      
       toast({
-        title: "Éxito",
-        description: isToAll 
-          ? "Notificación programada para todos los clientes" 
-          : "Notificación programada para el cliente seleccionado",
+        title: errorCount === 0 ? "Éxito" : "Parcialmente enviado",
+        description: `${successCount} enviados exitosamente${errorCount > 0 ? `, ${errorCount} con errores` : ''}`,
+        variant: errorCount === 0 ? "default" : "destructive",
       });
     }, 1500);
   };
@@ -178,29 +247,44 @@ const NotificationForm = () => {
                     </div>
                     
                     <div className="space-y-2">
-                      <Label htmlFor="imageUrl">Imagen (opcional)</Label>
-                      <div className="flex gap-2">
-                        <Input
-                          id="imageUrl"
-                          value={imageUrl}
-                          onChange={(e) => setImageUrl(e.target.value)}
-                          placeholder="URL de la imagen"
+                      <Label>Multimedia (opcional)</Label>
+                      <div className="space-y-3">
+                        <div className="flex gap-2">
+                          <Input
+                            value={imageUrl}
+                            onChange={(e) => setImageUrl(e.target.value)}
+                            placeholder="URL de la imagen o video"
+                          />
+                          <Button 
+                            variant="outline" 
+                            size="icon" 
+                            type="button"
+                            onClick={() => document.getElementById('file-upload')?.click()}
+                          >
+                            <Upload size={16} />
+                          </Button>
+                        </div>
+                        
+                        <input
+                          id="file-upload"
+                          type="file"
+                          accept="image/*,video/*"
+                          onChange={handleFileUpload}
+                          className="hidden"
                         />
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <Button variant="outline" size="icon" type="button">
-                              <Image size={16} />
-                            </Button>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-80">
-                            <div className="space-y-2">
-                              <h4 className="font-medium">Seleccionar Imagen</h4>
-                              <p className="text-sm text-muted-foreground">
-                                Próximamente: selección de imágenes predefinidas.
-                              </p>
-                            </div>
-                          </PopoverContent>
-                        </Popover>
+                        
+                        {uploadedFile && (
+                          <Alert>
+                            <Upload className="h-4 w-4" />
+                            <AlertDescription>
+                              Archivo seleccionado: {uploadedFile.name} ({(uploadedFile.size / 1024 / 1024).toFixed(2)} MB)
+                            </AlertDescription>
+                          </Alert>
+                        )}
+                        
+                        <p className="text-xs text-muted-foreground">
+                          Formatos soportados: JPG, PNG, GIF, MP4, WEBM (máximo 10MB)
+                        </p>
                       </div>
                     </div>
                     
@@ -244,41 +328,104 @@ const NotificationForm = () => {
             </Card>
           </div>
           
-          <div>
+          <div className="space-y-4">
             <Card>
               <CardHeader>
                 <CardTitle>Vista Previa</CardTitle>
                 <CardDescription>
-                  Así se verá tu notificación
+                  Previsualiza cómo se verá en diferentes canales
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="bg-white dark:bg-gray-800 border rounded-lg p-4 shadow-sm">
-                  {subject && <h3 className="font-medium mb-2">{subject}</h3>}
-                  {message && <p className="text-sm mb-3 whitespace-pre-line">{message}</p>}
-                  {imageUrl && (
-                    <div className="mt-3 rounded-md overflow-hidden">
-                      <img 
-                        src={imageUrl} 
-                        alt="Vista previa" 
-                        className="w-full h-auto object-cover"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).src = 'https://placehold.co/600x400?text=Imagen+no+disponible';
-                        }}
-                      />
+                <Tabs defaultValue="email" className="w-full">
+                  <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="email" className="flex items-center gap-2">
+                      <Mail size={16} />
+                      Email
+                    </TabsTrigger>
+                    <TabsTrigger value="whatsapp" className="flex items-center gap-2">
+                      <MessageCircle size={16} />
+                      WhatsApp
+                    </TabsTrigger>
+                  </TabsList>
+                  
+                  <TabsContent value="email" className="mt-4">
+                    <div className="bg-white dark:bg-gray-800 border rounded-lg p-4 shadow-sm">
+                      <div className="border-b pb-3 mb-3">
+                        <div className="flex items-center justify-between text-xs text-gray-500">
+                          <span>De: tu-clinica@example.com</span>
+                          <span>{new Date().toLocaleDateString('es-ES')}</span>
+                        </div>
+                        {subject && <h3 className="font-medium mt-2 text-lg">{subject}</h3>}
+                      </div>
+                      {message && <p className="text-sm mb-3 whitespace-pre-line leading-relaxed">{message}</p>}
+                      {imageUrl && (
+                        <div className="mt-3 rounded-md overflow-hidden">
+                          {uploadedFile?.type.startsWith('video/') ? (
+                            <video controls className="w-full h-auto">
+                              <source src={imageUrl} type={uploadedFile.type} />
+                              Tu navegador no soporta video.
+                            </video>
+                          ) : (
+                            <img 
+                              src={imageUrl} 
+                              alt="Vista previa" 
+                              className="w-full h-auto object-cover max-h-60"
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).src = 'https://placehold.co/600x400?text=Imagen+no+disponible';
+                              }}
+                            />
+                          )}
+                        </div>
+                      )}
+                      <div className="mt-4 pt-3 border-t text-xs text-gray-400">
+                        <p>Este es un correo automatizado. No responder.</p>
+                      </div>
                     </div>
-                  )}
-                  <div className="mt-4 text-xs text-gray-500 flex items-center">
-                    <Calendar className="h-3 w-3 mr-1" />
-                    {scheduledDate 
-                      ? scheduledDate.toLocaleDateString('es-ES', { 
-                          day: 'numeric', 
-                          month: 'short', 
-                          year: 'numeric' 
-                        })
-                      : "Envío inmediato"}
-                  </div>
-                </div>
+                  </TabsContent>
+                  
+                  <TabsContent value="whatsapp" className="mt-4">
+                    <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
+                      <div className="flex items-center gap-2 mb-3">
+                        <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
+                          <span className="text-white text-xs font-medium">TC</span>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium">Tu Clínica</p>
+                          <p className="text-xs text-gray-500">Hoy {new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</p>
+                        </div>
+                      </div>
+                      
+                      <div className="bg-white dark:bg-gray-800 rounded-lg p-3 ml-2">
+                        {subject && <p className="font-medium text-sm mb-1">*{subject}*</p>}
+                        {message && <p className="text-sm whitespace-pre-line">{message}</p>}
+                        {imageUrl && (
+                          <div className="mt-2 rounded-md overflow-hidden">
+                            {uploadedFile?.type.startsWith('video/') ? (
+                              <video controls className="w-full h-auto max-h-40">
+                                <source src={imageUrl} type={uploadedFile.type} />
+                              </video>
+                            ) : (
+                              <img 
+                                src={imageUrl} 
+                                alt="Vista previa" 
+                                className="w-full h-auto object-cover max-h-40 rounded"
+                                onError={(e) => {
+                                  (e.target as HTMLImageElement).src = 'https://placehold.co/600x400?text=Imagen+no+disponible';
+                                }}
+                              />
+                            )}
+                          </div>
+                        )}
+                        <p className="text-xs text-gray-400 mt-2">
+                          {scheduledDate 
+                            ? `Programado: ${scheduledDate.toLocaleDateString('es-ES')}` 
+                            : "Envío inmediato"}
+                        </p>
+                      </div>
+                    </div>
+                  </TabsContent>
+                </Tabs>
                 
                 <div className="mt-4">
                   <h4 className="text-sm font-medium mb-2">Detalles del Envío</h4>
@@ -296,6 +443,45 @@ const NotificationForm = () => {
                 </div>
               </CardContent>
             </Card>
+
+            {sendLogs.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Clock size={16} />
+                    Historial de Envíos
+                  </CardTitle>
+                  <CardDescription>
+                    Registro de notificaciones enviadas
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3 max-h-60 overflow-y-auto">
+                    {sendLogs.map((log) => (
+                      <div key={log.id} className="flex items-start gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                        <div className="flex-shrink-0 mt-0.5">
+                          {log.status === 'success' && <Check size={16} className="text-green-500" />}
+                          {log.status === 'error' && <X size={16} className="text-red-500" />}
+                          {log.status === 'pending' && <Clock size={16} className="text-yellow-500" />}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-sm font-medium">{log.recipient}</span>
+                            <span className="text-xs bg-gray-200 dark:bg-gray-700 px-2 py-1 rounded">
+                              {log.channel}
+                            </span>
+                          </div>
+                          <p className="text-xs text-gray-600 dark:text-gray-400">{log.message}</p>
+                          <p className="text-xs text-gray-500 mt-1">
+                            {log.timestamp.toLocaleString('es-ES')}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
             
             <Card className="mt-4">
               <CardHeader className="pb-3">
