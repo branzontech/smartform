@@ -3,11 +3,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Clock, User, TrendingUp } from "lucide-react";
+import { Calendar, Clock, User, TrendingUp, Database } from "lucide-react";
 import { Professional, Shift, MonthlyShiftView, TimeSlot } from "@/types/shift-types";
-import { getAllProfessionals, createMonthlyShiftView, getShiftsByMonth } from "@/utils/shift-utils";
+import { getAllProfessionals, createMonthlyShiftView, getShiftsByMonth, generateSampleShifts } from "@/utils/shift-utils";
 import { format, startOfWeek, endOfWeek, eachDayOfInterval, addWeeks, startOfMonth, endOfMonth, getWeek, addDays } from "date-fns";
 import { es } from "date-fns/locale";
+import { useToast } from "@/hooks/use-toast";
 
 type ViewMode = "day" | "week" | "month";
 
@@ -23,6 +24,8 @@ export function ShiftVisualization({ refreshTrigger = 0 }: ShiftVisualizationPro
   const [shifts, setShifts] = useState<Shift[]>([]);
   const [monthlyView, setMonthlyView] = useState<MonthlyShiftView | null>(null);
   const [loading, setLoading] = useState(false);
+  const [generating, setGenerating] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
     loadProfessionals();
@@ -73,6 +76,34 @@ export function ShiftVisualization({ refreshTrigger = 0 }: ShiftVisualizationPro
       setMonthlyView(null);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleGenerateSampleData = async () => {
+    try {
+      setGenerating(true);
+      await generateSampleShifts(selectedDate.getMonth(), selectedDate.getFullYear());
+      
+      toast({
+        title: "Datos generados",
+        description: "Se han generado turnos de ejemplo para todos los profesionales",
+      });
+      
+      // Recargar datos
+      if (viewMode === "month") {
+        await loadMonthlyView();
+      } else {
+        await loadShifts();
+      }
+    } catch (error) {
+      console.error("Error generating sample data:", error);
+      toast({
+        title: "Error",
+        description: "No se pudieron generar los datos de ejemplo",
+        variant: "destructive",
+      });
+    } finally {
+      setGenerating(false);
     }
   };
 
@@ -389,6 +420,31 @@ export function ShiftVisualization({ refreshTrigger = 0 }: ShiftVisualizationPro
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+          </div>
+          
+          {/* Botón para generar datos de ejemplo */}
+          <div className="mt-4 pt-4 border-t">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium">Datos de ejemplo</p>
+                <p className="text-xs text-muted-foreground">
+                  Genera turnos para todos los profesionales ({professionals.length} médicos disponibles)
+                </p>
+              </div>
+              <Button 
+                onClick={handleGenerateSampleData}
+                disabled={generating}
+                variant="outline"
+                className="flex items-center gap-2"
+              >
+                {generating ? (
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+                ) : (
+                  <Database className="h-4 w-4" />
+                )}
+                {generating ? "Generando..." : "Generar Datos"}
+              </Button>
             </div>
           </div>
         </CardContent>

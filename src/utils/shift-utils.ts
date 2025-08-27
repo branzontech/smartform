@@ -40,6 +40,46 @@ const mockProfessionals: Professional[] = [
     phone: "555-234-5678",
     isActive: true,
   },
+  {
+    id: "prof-4",
+    name: "Dra. María González",
+    specialty: "Ginecología",
+    email: "maria.gonzalez@ejemplo.com",
+    phone: "555-345-6789",
+    isActive: true,
+  },
+  {
+    id: "prof-5",
+    name: "Dr. Roberto Fernández",
+    specialty: "Neurología",
+    email: "roberto.fernandez@ejemplo.com",
+    phone: "555-456-7890",
+    isActive: true,
+  },
+  {
+    id: "prof-6",
+    name: "Dra. Ana Ruiz",
+    specialty: "Dermatología",
+    email: "ana.ruiz@ejemplo.com",
+    phone: "555-567-8901",
+    isActive: true,
+  },
+  {
+    id: "prof-7",
+    name: "Dr. Miguel Torres",
+    specialty: "Oftalmología",
+    email: "miguel.torres@ejemplo.com",
+    phone: "555-678-9012",
+    isActive: true,
+  },
+  {
+    id: "prof-8",
+    name: "Dra. Sofia Herrera",
+    specialty: "Psiquiatría",
+    email: "sofia.herrera@ejemplo.com",
+    phone: "555-789-0123",
+    isActive: true,
+  },
 ];
 
 // Horarios de trabajo estándar
@@ -395,4 +435,77 @@ export const generateMonthlyShifts = async (
   }
   
   return await assignShifts(professionalId, dates, timeSlots);
+};
+
+// Generar datos de ejemplo para todos los profesionales
+export const generateSampleShifts = async (month: number = new Date().getMonth(), year: number = new Date().getFullYear()): Promise<void> => {
+  const professionals = await getAllProfessionals();
+  
+  // Configuraciones de horarios variadas para diferentes profesionales
+  const timeSlotConfigurations = [
+    [{ id: "morning", startTime: "08:00", endTime: "12:00", duration: 240 }],
+    [{ id: "afternoon", startTime: "14:00", endTime: "18:00", duration: 240 }],
+    [
+      { id: "morning", startTime: "08:00", endTime: "12:00", duration: 240 },
+      { id: "afternoon", startTime: "14:00", endTime: "18:00", duration: 240 }
+    ],
+    [{ id: "extended", startTime: "09:00", endTime: "17:00", duration: 480 }],
+    [
+      { id: "early", startTime: "07:00", endTime: "11:00", duration: 240 },
+      { id: "late", startTime: "15:00", endTime: "19:00", duration: 240 }
+    ],
+  ];
+  
+  // Patrones de días de trabajo variados
+  const workDayPatterns = [
+    [1, 2, 3, 4, 5], // Lunes a Viernes
+    [1, 3, 5], // Lunes, Miércoles, Viernes
+    [2, 4, 6], // Martes, Jueves, Sábado
+    [1, 2, 3, 4], // Lunes a Jueves
+    [3, 4, 5, 6], // Miércoles a Sábado
+    [1, 2, 4, 5], // Lunes, Martes, Jueves, Viernes
+    [2, 3, 4, 5, 6], // Martes a Sábado
+    [1, 3, 4, 6], // Lunes, Miércoles, Jueves, Sábado
+  ];
+  
+  try {
+    // Generar turnos para cada profesional con configuraciones diferentes
+    for (let i = 0; i < professionals.length; i++) {
+      const professional = professionals[i];
+      const timeSlots = timeSlotConfigurations[i % timeSlotConfigurations.length];
+      const workDays = workDayPatterns[i % workDayPatterns.length];
+      
+      // Generar turnos para este mes y algunos días del siguiente
+      await generateMonthlyShifts(professional.id, month, year, workDays, timeSlots);
+      
+      // Generar algunos turnos para el mes siguiente también
+      if (month < 11) {
+        const reducedWorkDays = workDays.slice(0, Math.max(2, workDays.length - 2));
+        await generateMonthlyShifts(professional.id, month + 1, year, reducedWorkDays, timeSlots);
+      } else {
+        const reducedWorkDays = workDays.slice(0, Math.max(2, workDays.length - 2));
+        await generateMonthlyShifts(professional.id, 0, year + 1, reducedWorkDays, timeSlots);
+      }
+    }
+    
+    // Generar algunos turnos con estados especiales
+    const allShifts = await getAllShifts();
+    const updatedShifts = allShifts.map((shift, index) => {
+      // Cambiar algunos estados para variedad
+      if (index % 10 === 0) {
+        return { ...shift, status: 'Disponible' as const };
+      } else if (index % 15 === 0) {
+        return { ...shift, status: 'Incapacidad' as const, notes: 'Incapacidad médica temporal' };
+      } else if (index % 20 === 0) {
+        return { ...shift, status: 'Vacaciones' as const, notes: 'Vacaciones programadas' };
+      }
+      return shift;
+    });
+    
+    localStorage.setItem("shifts", JSON.stringify(updatedShifts));
+    
+  } catch (error) {
+    console.error("Error generating sample shifts:", error);
+    throw error;
+  }
 };
