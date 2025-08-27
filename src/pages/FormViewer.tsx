@@ -50,6 +50,7 @@ const FormViewer = () => {
   const queryParams = new URLSearchParams(location.search);
   const patientId = queryParams.get("patientId");
   const consultationId = queryParams.get("consultationId");
+  const isEmbedded = queryParams.get("embedded") === "true";
 
   useEffect(() => {
     const loadForm = async () => {
@@ -189,8 +190,16 @@ const FormViewer = () => {
       duration: 5000,
     });
 
+    // If embedded, notify parent window
+    if (isEmbedded && formId) {
+      window.parent.postMessage({
+        type: 'formCompleted',
+        formId: formId
+      }, '*');
+    }
+    
     // If this was part of a consultation, redirect back to patient detail
-    if (patientId && consultationId) {
+    if (patientId && consultationId && !isEmbedded) {
       uiToast({
         title: "Formulario guardado",
         description: "El formulario ha sido guardado correctamente para esta consulta.",
@@ -235,6 +244,41 @@ const FormViewer = () => {
   console.log("FormViewer - isConsultationForm:", isConsultationForm);
   console.log("FormViewer - showPatientPanel:", showPatientPanel);
   console.log("FormViewer - patientId for panel:", patientId);
+
+  // If embedded, return minimal layout
+  if (isEmbedded) {
+    return (
+      <div className="p-4 bg-background">
+        <div className="mb-4">
+          <h2 className="text-lg font-semibold">{formTitle}</h2>
+          {formDescription && (
+            <p className="text-sm text-muted-foreground">{formDescription}</p>
+          )}
+        </div>
+        
+        <FormProvider {...form}>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              {questions.map(question => (
+                <QuestionRenderer
+                  key={question.id}
+                  question={question}
+                  formData={formData}
+                  onChange={handleInputChange}
+                  errors={form.formState.errors}
+                />
+              ))}
+              <div className="pt-4">
+                <Button type="submit" className="w-full">
+                  Completar formulario
+                </Button>
+              </div>
+            </form>
+          </Form>
+        </FormProvider>
+      </div>
+    );
+  }
 
   return (
     <div className={`${showPatientPanel ? 'min-h-screen' : 'container py-12'} print:py-6 print:mx-0 print:w-full print:max-w-none`}>

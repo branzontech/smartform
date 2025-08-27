@@ -1,15 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Header } from "@/components/layout/header";
 import { BackButton } from "@/App";
 import { Check, FileText, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { fetchFormById } from '@/utils/form-utils';
+import { fetchFormById, createDynamicSchema, saveFormResponse } from '@/utils/form-utils';
 import { Form as FormType } from '../Home';
+import { QuestionRenderer } from '@/components/forms/form-viewer/question-renderer';
+import { QuestionData } from '@/components/forms/question/types';
+import { Form } from "@/components/ui/form";
+import { useForm, FormProvider } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 
 interface FormWithStatus {
   id: string;
@@ -17,6 +22,8 @@ interface FormWithStatus {
   description: string;
   completed: boolean;
   formData: FormType | null;
+  questions: QuestionData[];
+  responses: { [key: string]: any };
 }
 
 const MultiFormViewer = () => {
@@ -32,6 +39,7 @@ const MultiFormViewer = () => {
   const [forms, setForms] = useState<FormWithStatus[]>([]);
   const [currentFormIndex, setCurrentFormIndex] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [currentFormData, setCurrentFormData] = useState<{ [key: string]: any }>({});
 
   useEffect(() => {
     const loadForms = async () => {
@@ -46,7 +54,9 @@ const MultiFormViewer = () => {
             title: result.form.title,
             description: result.form.description,
             completed: false,
-            formData: result.form
+            formData: result.form,
+            questions: result.form.questions as QuestionData[],
+            responses: {}
           });
         }
       }
@@ -62,9 +72,16 @@ const MultiFormViewer = () => {
     }
   }, [formIds, navigate]);
 
-  const handleFormComplete = (formId: string) => {
+  const handleFormComplete = (formId: string, responses: any) => {
+    // Save the form response
+    saveFormResponse(formId, {
+      ...responses,
+      _patientId: patientId,
+      _consultationId: consultationId
+    });
+
     setForms(prev => prev.map(form => 
-      form.id === formId ? { ...form, completed: true } : form
+      form.id === formId ? { ...form, completed: true, responses } : form
     ));
     
     toast({
@@ -73,12 +90,19 @@ const MultiFormViewer = () => {
     });
 
     // Automatically move to next form if available
-    const currentForm = forms.find(f => f.id === formId);
     const currentIndex = forms.findIndex(f => f.id === formId);
     
     if (currentIndex < forms.length - 1) {
       setCurrentFormIndex(currentIndex + 1);
+      setCurrentFormData({});
     }
+  };
+
+  const handleInputChange = (id: string, value: any) => {
+    setCurrentFormData(prev => ({
+      ...prev,
+      [id]: value
+    }));
   };
 
   const handleFinishConsultation = () => {
@@ -98,11 +122,90 @@ const MultiFormViewer = () => {
       description: `Se completaron ${completedFormsCount} de ${forms.length} formularios`,
     });
 
-    navigate(`/pacientes/${patientId}`);
+    navigate(`/app/pacientes/${patientId}`);
   };
 
   const completedCount = forms.filter(f => f.completed).length;
   const progressPercentage = forms.length > 0 ? (completedCount / forms.length) * 100 : 0;
+
+  // Create dynamic form schema for current form
+  const currentForm = forms[currentFormIndex];
+  const dynamicSchema = currentForm ? createDynamicSchema(currentForm.questions) : z.object({});
+  
+  const form = useForm<z.infer<typeof dynamicSchema>>({
+    resolver: zodResolver(dynamicSchema),
+    defaultValues: currentFormData,
+  });
+
+  // Update form when switching forms
+  useEffect(() => {
+    if (currentForm) {
+      // Load patient data if available
+      if (patientId) {
+        const savedPatients = localStorage.getItem("patients");
+        if (savedPatients) {
+          const patients = JSON.parse(savedPatients);
+          const patient = patients.find((p: any) => p.id === patientId);
+          
+          if (patient) {
+            const patientData: { [key: string]: any } = {};
+            currentForm.questions.forEach(question => {
+              if (question.type === "short" && question.title.includes("nombre")) {
+                patientData[question.id] = patient.name;
+              } else if (question.type === "short" && question.title.includes("identificación")) {
+                patientData[question.id] = patient.documentId;
+              } else if (question.type === "short" && question.title.includes("teléfono")) {
+                patientData[question.id] = patient.contactNumber;
+              } else if (question.type === "short" && question.title.includes("email")) {
+                patientData[question.id] = patient.email;
+              }
+            });
+            
+            setCurrentFormData(patientData);
+            form.reset(patientData);
+          }
+        }
+      } else {
+        setCurrentFormData({});
+        form.reset({});
+      }
+    }
+  }, [currentFormIndex, patientId, currentForm, form]);
+
+  const onSubmit = (values: z.infer<typeof dynamicSchema>) => {
+    if (!currentForm) return;
+
+    // Process special field types
+    const processedValues = { ...values };
+    
+    currentForm.questions.forEach(question => {
+      if (question.type === "vitals" && question.vitalType === "TA") {
+        processedValues[question.id] = {
+          sys: currentFormData[`${question.id}_sys`],
+          dia: currentFormData[`${question.id}_dia`]
+        };
+      } else if (question.type === "vitals" && question.vitalType === "IMC") {
+        processedValues[question.id] = {
+          weight: currentFormData[`${question.id}_weight`],
+          height: currentFormData[`${question.id}_height`],
+          bmi: currentFormData[`${question.id}_bmi`]
+        };
+      } else if (question.type === "clinical") {
+        processedValues[question.id] = {
+          title: currentFormData[`${question.id}_title`],
+          detail: currentFormData[`${question.id}_detail`]
+        };
+      } else if (question.type === "multifield" && question.multifields) {
+        const multifieldValues: Record<string, string> = {};
+        question.multifields.forEach(field => {
+          multifieldValues[field.id] = currentFormData[`${question.id}_${field.id}`] || '';
+        });
+        processedValues[question.id] = multifieldValues;
+      }
+    });
+
+    handleFormComplete(currentForm.id, processedValues);
+  };
 
   if (loading) {
     return (
@@ -141,146 +244,136 @@ const MultiFormViewer = () => {
     <div className="min-h-screen flex flex-col">
       <Header />
       <main className="flex-1">
-        {/* Header with progress */}
-        <div className="bg-white border-b p-4">
+        {/* Compact header with progress */}
+        <div className="bg-background border-b p-3">
           <div className="container mx-auto">
-            <div className="flex items-center gap-4 mb-4">
+            <div className="flex items-center gap-3 mb-3">
               <BackButton />
-              <div className="flex-1">
-                <h1 className="text-xl font-bold">Consulta Médica - Formularios Múltiples</h1>
-                <p className="text-sm text-muted-foreground">
-                  Completando {forms.length} formularios para la consulta
+              <div className="flex-1 min-w-0">
+                <h1 className="text-lg font-semibold truncate">Consulta - Formularios Múltiples</h1>
+                <p className="text-xs text-muted-foreground">
+                  {completedCount}/{forms.length} completados
                 </p>
               </div>
             </div>
-            
-            <div className="space-y-2">
-              <div className="flex justify-between text-sm">
-                <span>Progreso general</span>
-                <span>{completedCount} de {forms.length} completados</span>
-              </div>
-              <Progress value={progressPercentage} className="w-full" />
-            </div>
+            <Progress value={progressPercentage} className="w-full h-1.5" />
           </div>
         </div>
 
         {/* Forms navigation and content */}
-        <div className="container mx-auto p-4">
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-            {/* Forms list sidebar */}
-            <div className="lg:col-span-1">
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base">Formularios de la consulta</CardTitle>
-                  <CardDescription>
-                    Haga clic en un formulario para acceder
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  {forms.map((form, index) => (
-                    <div
-                      key={form.id}
-                      className={`p-3 rounded-lg border cursor-pointer transition-all ${
-                        currentFormIndex === index 
-                          ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20' 
-                          : 'border-gray-200 hover:border-gray-300'
-                      }`}
-                      onClick={() => setCurrentFormIndex(index)}
-                    >
-                      <div className="flex items-center gap-2">
-                        <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center text-xs ${
-                          form.completed 
-                            ? 'bg-green-500 border-green-500 text-white' 
-                            : currentFormIndex === index
-                              ? 'border-purple-500 text-purple-500'
-                              : 'border-gray-300 text-gray-500'
-                        }`}>
-                          {form.completed ? <Check size={14} /> : index + 1}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <h4 className="font-medium text-sm truncate">{form.title}</h4>
-                          <p className="text-xs text-muted-foreground">
-                            {form.completed ? 'Completado' : 'Pendiente'}
-                          </p>
-                        </div>
+        <div className="flex-1 overflow-hidden">
+          <div className="flex h-full">
+            {/* Compact forms sidebar */}
+            <div className="w-64 border-r bg-muted/30 p-3 space-y-3">
+              <div className="space-y-2">
+                {forms.map((formItem, index) => (
+                  <div
+                    key={formItem.id}
+                    className={`p-2 rounded cursor-pointer transition-all text-sm ${
+                      currentFormIndex === index 
+                        ? 'bg-primary text-primary-foreground' 
+                        : 'hover:bg-muted'
+                    }`}
+                    onClick={() => setCurrentFormIndex(index)}
+                  >
+                    <div className="flex items-center gap-2">
+                      <div className={`w-5 h-5 rounded-full border flex items-center justify-center text-xs ${
+                        formItem.completed 
+                          ? 'bg-green-500 border-green-500 text-white' 
+                          : currentFormIndex === index
+                            ? 'border-primary-foreground'
+                            : 'border-muted-foreground'
+                      }`}>
+                        {formItem.completed ? <Check size={10} /> : index + 1}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium truncate">{formItem.title}</div>
                       </div>
                     </div>
-                  ))}
-                </CardContent>
-              </Card>
+                  </div>
+                ))}
+              </div>
 
-              {/* Action buttons */}
-              <div className="mt-4 space-y-2">
+              {/* Compact navigation */}
+              <div className="space-y-2">
                 <Button
                   variant="outline"
+                  size="sm"
                   className="w-full"
                   onClick={() => setCurrentFormIndex(Math.max(0, currentFormIndex - 1))}
                   disabled={currentFormIndex === 0}
                 >
-                  <ChevronLeft size={16} className="mr-2" />
-                  Formulario anterior
+                  <ChevronLeft size={14} className="mr-1" />
+                  Anterior
                 </Button>
                 
                 <Button
                   variant="outline"
+                  size="sm"
                   className="w-full"
                   onClick={() => setCurrentFormIndex(Math.min(forms.length - 1, currentFormIndex + 1))}
                   disabled={currentFormIndex === forms.length - 1}
                 >
-                  Siguiente formulario
-                  <ChevronRight size={16} className="ml-2" />
+                  Siguiente
+                  <ChevronRight size={14} className="ml-1" />
                 </Button>
 
                 <Button
+                  size="sm"
                   className="w-full bg-green-600 hover:bg-green-700"
                   onClick={handleFinishConsultation}
                   disabled={completedCount === 0}
                 >
-                  Finalizar consulta
-                  <Check size={16} className="ml-2" />
+                  <Check size={14} className="mr-1" />
+                  Finalizar
                 </Button>
               </div>
             </div>
 
-            {/* Current form content */}
-            <div className="lg:col-span-3">
-              {forms[currentFormIndex] && (
-                <Card>
-                  <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <CardTitle className="flex items-center gap-2">
-                          {forms[currentFormIndex].title}
-                          {forms[currentFormIndex].completed && (
-                            <Check size={16} className="text-green-500" />
-                          )}
-                        </CardTitle>
-                        <CardDescription>{forms[currentFormIndex].description}</CardDescription>
-                      </div>
-                      <div className="text-right text-sm text-muted-foreground">
-                        Formulario {currentFormIndex + 1} de {forms.length}
-                      </div>
+            {/* Current form content - Direct rendering */}
+            <div className="flex-1 overflow-auto">
+              {currentForm && (
+                <div className="p-4">
+                  <div className="mb-4 pb-3 border-b">
+                    <h2 className="text-lg font-semibold flex items-center gap-2">
+                      {currentForm.title}
+                      {currentForm.completed && (
+                        <Check size={16} className="text-green-500" />
+                      )}
+                    </h2>
+                    {currentForm.description && (
+                      <p className="text-sm text-muted-foreground mt-1">{currentForm.description}</p>
+                    )}
+                    <div className="text-xs text-muted-foreground mt-2">
+                      Formulario {currentFormIndex + 1} de {forms.length}
                     </div>
-                  </CardHeader>
-                  <CardContent>
-                    {/* Embed the form viewer component */}
-                    <div className="min-h-96">
-                      <iframe
-                        src={`/app/ver/${forms[currentFormIndex].id}?patientId=${patientId}&consultationId=${consultationId}&embedded=true`}
-                        className="w-full h-96 border rounded-lg"
-                        title={forms[currentFormIndex].title}
-                        onLoad={() => {
-                          // Listen for form completion messages from iframe
-                          window.addEventListener('message', (event) => {
-                            if (event.data.type === 'formCompleted' && event.data.formId === forms[currentFormIndex].id) {
-                              handleFormComplete(forms[currentFormIndex].id);
-                            }
-                          });
-                        }}
-                      />
-                    </div>
-                  </CardContent>
-                </Card>
+                  </div>
+                  
+                  <FormProvider {...form}>
+                    <Form {...form}>
+                      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                        {currentForm.questions.map(question => (
+                          <QuestionRenderer
+                            key={question.id}
+                            question={question}
+                            formData={currentFormData}
+                            onChange={handleInputChange}
+                            errors={form.formState.errors}
+                          />
+                        ))}
+                        <div className="sticky bottom-0 bg-background pt-4 border-t">
+                          <Button 
+                            type="submit" 
+                            className="w-full"
+                            disabled={currentForm.completed}
+                          >
+                            {currentForm.completed ? 'Formulario completado' : 'Completar formulario'}
+                          </Button>
+                        </div>
+                      </form>
+                    </Form>
+                  </FormProvider>
+                </div>
               )}
             </div>
           </div>
