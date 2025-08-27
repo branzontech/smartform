@@ -49,8 +49,8 @@ const NewConsultation = () => {
     address: ""
   });
   
-  const [selectedFormId, setSelectedFormId] = useState<string>("");
-  const [selectedFormTitle, setSelectedFormTitle] = useState<string>("");
+  const [selectedFormIds, setSelectedFormIds] = useState<string[]>([]);
+  const [selectedForms, setSelectedForms] = useState<FormType[]>([]);
   
   const [consultationDate, setConsultationDate] = useState<Date>(new Date());
   const [reason, setReason] = useState("");
@@ -338,10 +338,10 @@ const NewConsultation = () => {
   };
 
   const handleFormContinue = () => {
-    if (!selectedFormId) {
+    if (selectedFormIds.length === 0) {
       toast({
-        title: "Formulario no seleccionado",
-        description: "Por favor seleccione un formulario para continuar",
+        title: "Formularios no seleccionados",
+        description: "Por favor seleccione al menos un formulario para continuar",
         variant: "destructive"
       });
       return;
@@ -379,8 +379,8 @@ const NewConsultation = () => {
       notes: notes || undefined,
       followUpDate: enableFollowUp ? followUpDate : undefined,
       status,
-      formId: selectedFormId,
-      formTitle: selectedFormTitle
+      formIds: selectedFormIds,
+      forms: selectedForms
     };
     
     const savedConsultations = localStorage.getItem("consultations");
@@ -448,7 +448,29 @@ const NewConsultation = () => {
       });
     }
     
-    navigate(`/app/ver/${selectedFormId}?patientId=${selectedPatientId}&consultationId=${newConsultation.id}`);
+    // Navigate to multi-form viewer if multiple forms, single form viewer if just one
+    if (selectedFormIds.length > 1) {
+      navigate(`/app/consulta-multiple?patientId=${selectedPatientId}&consultationId=${newConsultation.id}&forms=${selectedFormIds.join(',')}`);
+    } else {
+      navigate(`/app/ver/${selectedFormIds[0]}?patientId=${selectedPatientId}&consultationId=${newConsultation.id}`);
+    }
+  };
+
+  const handleFormSelection = (formId: string, formTitle: string) => {
+    const isSelected = selectedFormIds.includes(formId);
+    
+    if (isSelected) {
+      // Deseleccionar formulario
+      setSelectedFormIds(prev => prev.filter(id => id !== formId));
+      setSelectedForms(prev => prev.filter(form => form.id !== formId));
+    } else {
+      // Seleccionar formulario
+      setSelectedFormIds(prev => [...prev, formId]);
+      const form = availableForms.find(f => f.id === formId);
+      if (form) {
+        setSelectedForms(prev => [...prev, form]);
+      }
+    }
   };
 
   const openFormPreview = (formId: string) => {
@@ -674,33 +696,38 @@ const NewConsultation = () => {
                       </CardHeader>
                       <CardContent>
                         <ul className="space-y-2">
-                          {recentForms.map(form => (
-                            <li 
-                              key={form.id}
-                              className={`p-2 rounded cursor-pointer transition-colors ${selectedFormId === form.id ? 'bg-purple-100 dark:bg-purple-900/30' : 'hover:bg-gray-100 dark:hover:bg-gray-700'}`}
-                              onClick={() => {
-                                setSelectedFormId(form.id);
-                                setSelectedFormTitle(form.title);
-                              }}
-                            >
-                              <div className="flex justify-between items-center">
-                                <span>{form.title}</span>
-                                <Button 
-                                  variant="ghost" 
-                                  size="sm"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    openFormPreview(form.id);
-                                  }}
-                                >
-                                  <FileText size={14} />
-                                </Button>
-                              </div>
-                              <span className="text-xs text-gray-500">
-                                Último uso: {format(new Date(form.lastUsed), 'dd/MM/yyyy')}
-                              </span>
-                            </li>
-                          ))}
+                           {recentForms.map(form => {
+                            const isSelected = selectedFormIds.includes(form.id);
+                            return (
+                              <li 
+                                key={form.id}
+                                className={`p-2 rounded cursor-pointer transition-colors ${isSelected ? 'bg-purple-100 dark:bg-purple-900/30 border-2 border-purple-500' : 'hover:bg-gray-100 dark:hover:bg-gray-700'}`}
+                                onClick={() => handleFormSelection(form.id, form.title)}
+                              >
+                                <div className="flex justify-between items-center">
+                                  <div className="flex items-center gap-2">
+                                    <div className={`w-4 h-4 rounded border-2 ${isSelected ? 'bg-purple-500 border-purple-500' : 'border-gray-300'} flex items-center justify-center`}>
+                                      {isSelected && <span className="text-white text-xs">✓</span>}
+                                    </div>
+                                    <span>{form.title}</span>
+                                  </div>
+                                  <Button 
+                                    variant="ghost" 
+                                    size="sm"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      openFormPreview(form.id);
+                                    }}
+                                  >
+                                    <FileText size={14} />
+                                  </Button>
+                                </div>
+                                <span className="text-xs text-gray-500 ml-6">
+                                  Último uso: {format(new Date(form.lastUsed), 'dd/MM/yyyy')}
+                                </span>
+                              </li>
+                            );
+                          })}
                         </ul>
                       </CardContent>
                     </Card>
@@ -713,33 +740,38 @@ const NewConsultation = () => {
                       </CardHeader>
                       <CardContent>
                         <ul className="space-y-2">
-                          {frequentForms.map(form => (
-                            <li 
-                              key={form.id}
-                              className={`p-2 rounded cursor-pointer transition-colors ${selectedFormId === form.id ? 'bg-purple-100 dark:bg-purple-900/30' : 'hover:bg-gray-100 dark:hover:bg-gray-700'}`}
-                              onClick={() => {
-                                setSelectedFormId(form.id);
-                                setSelectedFormTitle(form.title);
-                              }}
-                            >
-                              <div className="flex justify-between items-center">
-                                <span>{form.title}</span>
-                                <Button 
-                                  variant="ghost" 
-                                  size="sm"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    openFormPreview(form.id);
-                                  }}
-                                >
-                                  <FileText size={14} />
-                                </Button>
-                              </div>
-                              <span className="text-xs text-gray-500">
-                                Usado {form.usageCount} veces
-                              </span>
-                            </li>
-                          ))}
+                          {frequentForms.map(form => {
+                            const isSelected = selectedFormIds.includes(form.id);
+                            return (
+                              <li 
+                                key={form.id}
+                                className={`p-2 rounded cursor-pointer transition-colors ${isSelected ? 'bg-purple-100 dark:bg-purple-900/30 border-2 border-purple-500' : 'hover:bg-gray-100 dark:hover:bg-gray-700'}`}
+                                onClick={() => handleFormSelection(form.id, form.title)}
+                              >
+                                <div className="flex justify-between items-center">
+                                  <div className="flex items-center gap-2">
+                                    <div className={`w-4 h-4 rounded border-2 ${isSelected ? 'bg-purple-500 border-purple-500' : 'border-gray-300'} flex items-center justify-center`}>
+                                      {isSelected && <span className="text-white text-xs">✓</span>}
+                                    </div>
+                                    <span>{form.title}</span>
+                                  </div>
+                                  <Button 
+                                    variant="ghost" 
+                                    size="sm"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      openFormPreview(form.id);
+                                    }}
+                                  >
+                                    <FileText size={14} />
+                                  </Button>
+                                </div>
+                                <span className="text-xs text-gray-500 ml-6">
+                                  Usado {form.usageCount} veces
+                                </span>
+                              </li>
+                            );
+                          })}
                         </ul>
                       </CardContent>
                     </Card>
@@ -766,64 +798,72 @@ const NewConsultation = () => {
                   
                   <TabsContent value="all" className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {availableForms.map(form => (
-                        <div 
-                          key={form.id}
-                          className={`p-4 border rounded-lg cursor-pointer transition-all ${selectedFormId === form.id ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20' : 'border-gray-200 hover:border-purple-300'}`}
-                          onClick={() => {
-                            setSelectedFormId(form.id);
-                            setSelectedFormTitle(form.title);
-                          }}
-                        >
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <h3 className="font-medium">{form.title}</h3>
-                              <p className="text-sm text-gray-500 dark:text-gray-400">{form.description}</p>
+                       {availableForms.map(form => {
+                        const isSelected = selectedFormIds.includes(form.id);
+                        return (
+                          <div 
+                            key={form.id}
+                            className={`p-4 border rounded-lg cursor-pointer transition-all ${isSelected ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20' : 'border-gray-200 hover:border-purple-300'}`}
+                            onClick={() => handleFormSelection(form.id, form.title)}
+                          >
+                            <div className="flex justify-between items-start">
+                              <div className="flex items-start gap-3">
+                                <div className={`w-5 h-5 rounded border-2 mt-1 ${isSelected ? 'bg-purple-500 border-purple-500' : 'border-gray-300'} flex items-center justify-center`}>
+                                  {isSelected && <span className="text-white text-xs">✓</span>}
+                                </div>
+                                <div>
+                                  <h3 className="font-medium">{form.title}</h3>
+                                  <p className="text-sm text-gray-500 dark:text-gray-400">{form.description}</p>
+                                </div>
+                              </div>
+                              <div className="flex items-center space-x-2">
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    openFormPreview(form.id);
+                                  }}
+                                >
+                                  <FileText size={14} className="mr-1" />
+                                  Vista previa
+                                </Button>
+                              </div>
                             </div>
-                            <div className="flex items-center space-x-2">
-                              <Button 
-                                variant="ghost" 
-                                size="sm"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  openFormPreview(form.id);
-                                }}
-                              >
-                                <FileText size={14} className="mr-1" />
-                                Vista previa
-                              </Button>
+                            <div className="flex items-center mt-2 text-xs ml-8">
+                              <span className="mr-2 px-2 py-0.5 bg-gray-100 dark:bg-gray-700 rounded">
+                                {form.formType === 'forms' ? 'Form' : 'Formato'}
+                              </span>
+                              <span className="text-gray-500">
+                                Última actualización: {format(new Date(form.updatedAt), 'dd/MM/yyyy')}
+                              </span>
                             </div>
                           </div>
-                          <div className="flex items-center mt-2 text-xs">
-                            <span className="mr-2 px-2 py-0.5 bg-gray-100 dark:bg-gray-700 rounded">
-                              {form.formType === 'forms' ? 'Form' : 'Formato'}
-                            </span>
-                            <span className="text-gray-500">
-                              Última actualización: {format(new Date(form.updatedAt), 'dd/MM/yyyy')}
-                            </span>
-                          </div>
-                        </div>
-                      ))}
+                        );
+                       })}
                     </div>
                   </TabsContent>
                   
                   <TabsContent value="forms" className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {availableForms.filter(form => form.formType === 'forms').map(form => (
-                        <div 
-                          key={form.id}
-                          className={`p-4 border rounded-lg cursor-pointer transition-all ${selectedFormId === form.id ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20' : 'border-gray-200 hover:border-purple-300'}`}
-                          onClick={() => {
-                            setSelectedFormId(form.id);
-                            setSelectedFormTitle(form.title);
-                          }}
-                        >
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <h3 className="font-medium">{form.title}</h3>
-                              <p className="text-sm text-gray-500 dark:text-gray-400">{form.description}</p>
-                            </div>
-                            <div className="flex items-center space-x-2">
+                       {availableForms.filter(form => form.formType === 'forms').map(form => {
+                        const isSelected = selectedFormIds.includes(form.id);
+                        return (
+                          <div 
+                            key={form.id}
+                            className={`p-4 border rounded-lg cursor-pointer transition-all ${isSelected ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20' : 'border-gray-200 hover:border-purple-300'}`}
+                            onClick={() => handleFormSelection(form.id, form.title)}
+                          >
+                            <div className="flex justify-between items-start">
+                              <div className="flex items-start gap-3">
+                                <div className={`w-5 h-5 rounded border-2 mt-1 ${isSelected ? 'bg-purple-500 border-purple-500' : 'border-gray-300'} flex items-center justify-center`}>
+                                  {isSelected && <span className="text-white text-xs">✓</span>}
+                                </div>
+                                <div>
+                                  <h3 className="font-medium">{form.title}</h3>
+                                  <p className="text-sm text-gray-500 dark:text-gray-400">{form.description}</p>
+                                </div>
+                              </div>
                               <Button 
                                 variant="ghost" 
                                 size="sm"
@@ -836,35 +876,38 @@ const NewConsultation = () => {
                                 Vista previa
                               </Button>
                             </div>
+                            <div className="flex items-center mt-2 text-xs ml-8">
+                              <span className="mr-2 px-2 py-0.5 bg-gray-100 dark:bg-gray-700 rounded">Form</span>
+                              <span className="text-gray-500">
+                                Última actualización: {format(new Date(form.updatedAt), 'dd/MM/yyyy')}
+                              </span>
+                            </div>
                           </div>
-                          <div className="flex items-center mt-2 text-xs">
-                            <span className="mr-2 px-2 py-0.5 bg-gray-100 dark:bg-gray-700 rounded">Form</span>
-                            <span className="text-gray-500">
-                              Última actualización: {format(new Date(form.updatedAt), 'dd/MM/yyyy')}
-                            </span>
-                          </div>
-                        </div>
-                      ))}
+                        );
+                       })}
                     </div>
                   </TabsContent>
                   
                   <TabsContent value="formato" className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {availableForms.filter(form => form.formType === 'formato').map(form => (
-                        <div 
-                          key={form.id}
-                          className={`p-4 border rounded-lg cursor-pointer transition-all ${selectedFormId === form.id ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20' : 'border-gray-200 hover:border-purple-300'}`}
-                          onClick={() => {
-                            setSelectedFormId(form.id);
-                            setSelectedFormTitle(form.title);
-                          }}
-                        >
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <h3 className="font-medium">{form.title}</h3>
-                              <p className="text-sm text-gray-500 dark:text-gray-400">{form.description}</p>
-                            </div>
-                            <div className="flex items-center space-x-2">
+                       {availableForms.filter(form => form.formType === 'formato').map(form => {
+                        const isSelected = selectedFormIds.includes(form.id);
+                        return (
+                          <div 
+                            key={form.id}
+                            className={`p-4 border rounded-lg cursor-pointer transition-all ${isSelected ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20' : 'border-gray-200 hover:border-purple-300'}`}
+                            onClick={() => handleFormSelection(form.id, form.title)}
+                          >
+                            <div className="flex justify-between items-start">
+                              <div className="flex items-start gap-3">
+                                <div className={`w-5 h-5 rounded border-2 mt-1 ${isSelected ? 'bg-purple-500 border-purple-500' : 'border-gray-300'} flex items-center justify-center`}>
+                                  {isSelected && <span className="text-white text-xs">✓</span>}
+                                </div>
+                                <div>
+                                  <h3 className="font-medium">{form.title}</h3>
+                                  <p className="text-sm text-gray-500 dark:text-gray-400">{form.description}</p>
+                                </div>
+                              </div>
                               <Button 
                                 variant="ghost" 
                                 size="sm"
@@ -877,15 +920,15 @@ const NewConsultation = () => {
                                 Vista previa
                               </Button>
                             </div>
+                            <div className="flex items-center mt-2 text-xs ml-8">
+                              <span className="mr-2 px-2 py-0.5 bg-gray-100 dark:bg-gray-700 rounded">Formato</span>
+                              <span className="text-gray-500">
+                                Última actualización: {format(new Date(form.updatedAt), 'dd/MM/yyyy')}
+                              </span>
+                            </div>
                           </div>
-                          <div className="flex items-center mt-2 text-xs">
-                            <span className="mr-2 px-2 py-0.5 bg-gray-100 dark:bg-gray-700 rounded">Formato</span>
-                            <span className="text-gray-500">
-                              Última actualización: {format(new Date(form.updatedAt), 'dd/MM/yyyy')}
-                            </span>
-                          </div>
-                        </div>
-                      ))}
+                        );
+                       })}
                     </div>
                   </TabsContent>
                 </Tabs>
@@ -897,13 +940,32 @@ const NewConsultation = () => {
                 </div>
               )}
               
-              {selectedFormId && (
-                <div className="flex items-center mt-4 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-md">
-                  <FileText size={20} className="text-green-600 dark:text-green-400 mr-2" />
-                  <div className="text-sm">
-                    <p className="font-medium text-green-800 dark:text-green-300">
-                      Formulario seleccionado: {selectedFormTitle}
-                    </p>
+              {selectedFormIds.length > 0 && (
+                <div className="mt-6 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+                  <div className="flex items-center mb-3">
+                    <FileText size={20} className="text-green-600 dark:text-green-400 mr-2" />
+                    <h3 className="font-medium text-green-800 dark:text-green-300">
+                      Formularios seleccionados ({selectedFormIds.length})
+                    </h3>
+                  </div>
+                  <div className="grid gap-2">
+                    {selectedForms.map((form, index) => (
+                      <div key={form.id} className="flex items-center justify-between bg-white dark:bg-gray-800 p-2 rounded border">
+                        <div className="flex items-center">
+                          <span className="bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 text-xs px-2 py-1 rounded mr-2">
+                            {index + 1}
+                          </span>
+                          <span className="text-sm font-medium">{form.title}</span>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleFormSelection(form.id, form.title)}
+                        >
+                          ✕
+                        </Button>
+                      </div>
+                    ))}
                   </div>
                 </div>
               )}
@@ -918,7 +980,7 @@ const NewConsultation = () => {
                 <Button 
                   onClick={handleFormContinue} 
                   className="bg-purple-600 hover:bg-purple-700"
-                  disabled={!selectedFormId}
+                  disabled={selectedFormIds.length === 0}
                 >
                   Continuar
                   <ArrowRight className="ml-2" size={16} />
@@ -1151,10 +1213,10 @@ const NewConsultation = () => {
                   <FileText size={20} className="text-blue-600 dark:text-blue-400 mr-2" />
                   <div className="text-sm">
                     <p className="font-medium text-blue-800 dark:text-blue-300">
-                      Al guardar será redirigido al formulario: {selectedFormTitle}
+                      Al guardar será redirigido a {selectedFormIds.length > 1 ? `los ${selectedFormIds.length} formularios` : 'el formulario'} seleccionado{selectedFormIds.length > 1 ? 's' : ''}
                     </p>
                     <p className="text-blue-600 dark:text-blue-400">
-                      Se guardará la relación entre esta consulta y el formulario seleccionado.
+                      Se guardará la relación entre esta consulta y {selectedFormIds.length > 1 ? 'los formularios' : 'el formulario'} seleccionado{selectedFormIds.length > 1 ? 's' : ''}.
                     </p>
                   </div>
                 </div>

@@ -17,6 +17,7 @@ import FormResponses from "./pages/FormResponses";
 import PatientList from "./pages/patients/PatientList";
 import PatientDetail from "./pages/patients/PatientDetail";
 import NewConsultation from "./pages/patients/NewConsultation";
+import MultiFormViewer from "./pages/patients/MultiFormViewer";
 import PatientDashboard from "./pages/patients/PatientDashboard";
 import NotFound from "./pages/NotFound";
 import { SettingsPage } from "./components/config/settings";
@@ -130,6 +131,7 @@ function App() {
                 <Route path="/app/pacientes/dashboard" element={<PatientDashboard />} />
                 <Route path="/app/pacientes/:id" element={<PatientDetail />} />
                 <Route path="/app/pacientes/nueva-consulta" element={<NewConsultation />} />
+                <Route path="/app/consulta-multiple" element={<MultiFormViewer />} />
                 <Route path="/app/citas" element={<AppointmentList />} />
                 <Route path="/app/citas/:id" element={<AppointmentDetail />} />
                 <Route path="/app/citas/nueva" element={<AppointmentForm />} />
