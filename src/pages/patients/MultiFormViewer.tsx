@@ -11,8 +11,8 @@ import { fetchFormById, createDynamicSchema, saveFormResponse } from '@/utils/fo
 import { Form as FormType } from '../Home';
 import { QuestionRenderer } from '@/components/forms/form-viewer/question-renderer';
 import { QuestionData } from '@/components/forms/question/types';
-import { Form } from "@/components/ui/form";
-import { useForm, FormProvider } from "react-hook-form";
+import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 
@@ -349,30 +349,28 @@ const MultiFormViewer = () => {
                     </div>
                   </div>
                   
-                  <FormProvider {...form}>
-                    <Form {...form}>
-                      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                        {currentForm.questions.map(question => (
-                          <QuestionRenderer
-                            key={question.id}
-                            question={question}
-                            formData={currentFormData}
-                            onChange={handleInputChange}
-                            errors={form.formState.errors}
-                          />
-                        ))}
-                        <div className="sticky bottom-0 bg-background pt-4 border-t">
-                          <Button 
-                            type="submit" 
-                            className="w-full"
-                            disabled={currentForm.completed}
-                          >
-                            {currentForm.completed ? 'Formulario completado' : 'Completar formulario'}
-                          </Button>
-                        </div>
-                      </form>
-                    </Form>
-                  </FormProvider>
+                  <Form {...form}>
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                      {currentForm.questions.map(question => (
+                        <QuestionRenderer
+                          key={question.id}
+                          question={question}
+                          formData={currentFormData}
+                          onChange={handleInputChange}
+                          errors={form.formState.errors}
+                        />
+                      ))}
+                      <div className="sticky bottom-0 bg-background pt-4 border-t">
+                        <Button 
+                          type="submit" 
+                          className="w-full"
+                          disabled={currentForm.completed}
+                        >
+                          {currentForm.completed ? 'Formulario completado' : 'Completar formulario'}
+                        </Button>
+                      </div>
+                    </form>
+                  </Form>
                 </div>
               )}
             </div>
