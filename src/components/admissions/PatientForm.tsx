@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -148,170 +147,211 @@ export const PatientForm = ({ patient, onSubmit, onCancel }: PatientFormProps) =
             <Card>
               <CardContent className="pt-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <FormField
-                control={patientForm.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Nombre completo</FormLabel>
-                    <FormControl>
-                      <Input {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <div className="flex gap-4">
-                <FormField
-                  control={patientForm.control}
-                  name="documentType"
-                  render={({ field }) => (
-                    <FormItem className="w-1/3">
-                      <FormLabel>Tipo</FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
-                      >
+                  <FormField
+                    control={patientForm.control}
+                    name="name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Nombre completo</FormLabel>
                         <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Tipo" />
-                          </SelectTrigger>
+                          <Input {...field} />
                         </FormControl>
-                        <SelectContent>
-                          <SelectItem value="DNI">DNI</SelectItem>
-                          <SelectItem value="Pasaporte">Pasaporte</SelectItem>
-                          <SelectItem value="Cédula">Cédula</SelectItem>
-                          <SelectItem value="Otro">Otro</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={patientForm.control}
-                  name="documentId"
-                  render={({ field }) => (
-                    <FormItem className="flex-1">
-                      <FormLabel>Nº Documento</FormLabel>
-                      <FormControl>
-                        <Input {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              <FormField
-                control={patientForm.control}
-                name="dateOfBirth"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Fecha de nacimiento</FormLabel>
-                    <FormControl>
-                      <div className="flex items-center">
-                        <Calendar size={16} className="mr-2 text-gray-500" />
-                        <Input
-                          type="date"
-                          {...field}
-                        />
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={patientForm.control}
-                name="gender"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Género</FormLabel>
-                    <FormControl>
-                      <RadioGroup
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
-                        className="flex gap-6"
-                      >
-                        <FormItem className="flex items-center space-x-2 space-y-0">
-                          <FormControl>
-                            <RadioGroupItem value="Masculino" />
-                          </FormControl>
-                          <FormLabel className="cursor-pointer">Masculino</FormLabel>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <div className="flex gap-4">
+                    <FormField
+                      control={patientForm.control}
+                      name="documentType"
+                      render={({ field }) => (
+                        <FormItem className="w-1/3">
+                          <FormLabel>Tipo</FormLabel>
+                          <Select
+                            onValueChange={field.onChange}
+                            defaultValue={field.value}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Tipo" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="DNI">DNI</SelectItem>
+                              <SelectItem value="Pasaporte">Pasaporte</SelectItem>
+                              <SelectItem value="Cédula">Cédula</SelectItem>
+                              <SelectItem value="Otro">Otro</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
                         </FormItem>
-                        <FormItem className="flex items-center space-x-2 space-y-0">
+                      )}
+                    />
+                    
+                    <FormField
+                      control={patientForm.control}
+                      name="documentId"
+                      render={({ field }) => (
+                        <FormItem className="flex-1">
+                          <FormLabel>Nº Documento</FormLabel>
                           <FormControl>
-                            <RadioGroupItem value="Femenino" />
+                            <Input {...field} />
                           </FormControl>
-                          <FormLabel className="cursor-pointer">Femenino</FormLabel>
+                          <FormMessage />
                         </FormItem>
-                        <FormItem className="flex items-center space-x-2 space-y-0">
-                          <FormControl>
-                            <RadioGroupItem value="Otro" />
-                          </FormControl>
-                          <FormLabel className="cursor-pointer">Otro</FormLabel>
-                        </FormItem>
-                      </RadioGroup>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                      )}
+                    />
+                  </div>
 
-              <FormField
-                control={patientForm.control}
-                name="contactNumber"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Teléfono de contacto</FormLabel>
-                    <FormControl>
-                      <div className="flex items-center">
-                        <Phone size={16} className="mr-2 text-gray-500" />
-                        <Input {...field} />
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                  <FormField
+                    control={patientForm.control}
+                    name="dateOfBirth"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Fecha de nacimiento</FormLabel>
+                        <FormControl>
+                          <div className="flex items-center">
+                            <Calendar size={16} className="mr-2 text-gray-500" />
+                            <Input
+                              type="date"
+                              {...field}
+                            />
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-              <FormField
-                control={patientForm.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Correo electrónico</FormLabel>
-                    <FormControl>
-                      <Input type="email" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                  <FormField
+                    control={patientForm.control}
+                    name="gender"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Género</FormLabel>
+                        <FormControl>
+                          <RadioGroup
+                            onValueChange={field.onChange}
+                            defaultValue={field.value}
+                            className="flex gap-6"
+                          >
+                            <FormItem className="flex items-center space-x-2 space-y-0">
+                              <FormControl>
+                                <RadioGroupItem value="Masculino" />
+                              </FormControl>
+                              <FormLabel className="cursor-pointer">Masculino</FormLabel>
+                            </FormItem>
+                            <FormItem className="flex items-center space-x-2 space-y-0">
+                              <FormControl>
+                                <RadioGroupItem value="Femenino" />
+                              </FormControl>
+                              <FormLabel className="cursor-pointer">Femenino</FormLabel>
+                            </FormItem>
+                            <FormItem className="flex items-center space-x-2 space-y-0">
+                              <FormControl>
+                                <RadioGroupItem value="Otro" />
+                              </FormControl>
+                              <FormLabel className="cursor-pointer">Otro</FormLabel>
+                            </FormItem>
+                          </RadioGroup>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-              <FormField
-                control={patientForm.control}
-                name="address"
-                render={({ field }) => (
-                  <FormItem className="md:col-span-2">
-                    <FormLabel>Dirección</FormLabel>
-                    <FormControl>
-                      <div className="flex items-center">
-                        <MapPin size={16} className="mr-2 text-gray-500" />
-                        <Input {...field} />
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                  <FormField
+                    control={patientForm.control}
+                    name="contactNumber"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Teléfono de contacto</FormLabel>
+                        <FormControl>
+                          <div className="flex items-center">
+                            <Phone size={16} className="mr-2 text-gray-500" />
+                            <Input {...field} />
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={patientForm.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Correo electrónico</FormLabel>
+                        <FormControl>
+                          <Input type="email" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={patientForm.control}
+                    name="address"
+                    render={({ field }) => (
+                      <FormItem className="md:col-span-2">
+                        <FormLabel>Dirección</FormLabel>
+                        <FormControl>
+                          <div className="flex items-center">
+                            <MapPin size={16} className="mr-2 text-gray-500" />
+                            <Input {...field} />
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                 </div>
               </CardContent>
             </Card>
+
+            {/* Mostrar campos personalizados completados */}
+            {selectedTemplate && Object.keys(customFieldValues).length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20">
+                      {selectedTemplate.sectionName}
+                    </Badge>
+                    <span className="text-base font-medium">Información Completada</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid gap-4">
+                    {selectedTemplate.fields
+                      .filter(field => customFieldValues[field.id] !== undefined && customFieldValues[field.id] !== "")
+                      .map((field) => (
+                        <div key={field.id} className="relative">
+                          <div className="flex items-start gap-3">
+                            <div className="absolute -left-2 top-0 bottom-0 w-1 bg-gradient-to-b from-primary/30 to-primary/10 rounded-full"></div>
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="text-sm font-medium text-foreground">{field.label}</span>
+                                <Badge variant="outline" className="text-xs bg-primary/5 text-primary border-primary/20">
+                                  Personalizado
+                                </Badge>
+                              </div>
+                              <div className="text-sm text-muted-foreground bg-muted/30 px-3 py-2 rounded-md border">
+                                {Array.isArray(customFieldValues[field.id]) 
+                                  ? customFieldValues[field.id].join(", ")
+                                  : customFieldValues[field.id]?.toString() || "Sin especificar"
+                                }
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </TabsContent>
 
           <TabsContent value="custom" className="space-y-6">
