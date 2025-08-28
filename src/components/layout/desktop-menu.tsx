@@ -3,7 +3,7 @@ import React from "react";
 import { Button } from "@/components/ui/button";
 import { Moon, Sun } from "lucide-react";
 import { NavItem } from "./nav-item";
-import { NavSubmenu } from "./nav-submenu";
+import { EnhancedNavMenu } from "./enhanced-nav-menu";
 import { mainNavItems } from "@/config/navigation";
 
 type DesktopMenuProps = {
@@ -33,7 +33,7 @@ export const DesktopMenu = ({ theme, toggleTheme, goHome }: DesktopMenuProps) =>
         }
         
         return item.items ? (
-          <NavSubmenu key={item.title} item={item} />
+          <EnhancedNavMenu key={item.title} item={item} />
         ) : (
           <NavItem key={item.title} item={item} />
         );
