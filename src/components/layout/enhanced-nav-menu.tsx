@@ -27,79 +27,115 @@ const menuGroups = {
 
 export const EnhancedNavMenu = ({ item, onClick }: EnhancedNavMenuProps) => {
   const Icon = item.icon;
-  const groupTitle = menuGroups[item.title as keyof typeof menuGroups] || item.title;
 
   if (!item.items) return null;
-
-  // Group items into columns (max 3 columns)
-  const itemsPerColumn = Math.ceil(item.items.length / 3);
-  const columns = [];
-  for (let i = 0; i < item.items.length; i += itemsPerColumn) {
-    columns.push(item.items.slice(i, i + itemsPerColumn));
-  }
 
   return (
     <NavigationMenu>
       <NavigationMenuList>
         <NavigationMenuItem>
-          <NavigationMenuTrigger className="group relative px-4 py-2 rounded-lg bg-gradient-to-r from-background/80 to-background/60 backdrop-blur-sm border border-border/50 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/10 transition-all duration-300">
-            <div className="flex items-center gap-2">
-              <Icon size={18} className="text-muted-foreground group-hover:text-primary transition-colors" />
-              <span className="font-medium text-foreground group-hover:text-primary transition-colors">
-                {item.title}
-              </span>
-            </div>
+          <NavigationMenuTrigger className="group inline-flex h-10 w-max items-center justify-center rounded-md bg-background px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus:outline-none disabled:pointer-events-none disabled:opacity-50 data-[active]:bg-accent/50 data-[state=open]:bg-accent/50">
+            <Icon size={16} className="mr-2" />
+            {item.title}
           </NavigationMenuTrigger>
           
-          <NavigationMenuContent className="p-0 border-0 shadow-2xl">
-            <div className="glassmorphism rounded-xl border border-border/20 shadow-xl backdrop-blur-xl bg-background/80 min-w-[640px] max-w-4xl">
-              {/* Header */}
-              <div className="px-6 py-4 border-b border-border/20">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-primary/10">
-                    <Icon size={20} className="text-primary" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-lg text-foreground">{groupTitle}</h3>
-                    <p className="text-sm text-muted-foreground">
-                      {item.items.length} opciones disponibles
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Content Grid */}
-              <div className="p-6">
-                <div className={`grid gap-6 ${columns.length === 1 ? 'grid-cols-1' : columns.length === 2 ? 'grid-cols-2' : 'grid-cols-3'}`}>
-                  {columns.map((columnItems, columnIndex) => (
-                    <div key={columnIndex} className="space-y-2">
-                      {columnItems.map((subItem) => {
-                        const SubIcon = subItem.icon;
-                        return (
-                          <Link
-                            key={subItem.path}
-                            to={subItem.path}
-                            onClick={onClick}
-                            className="group block p-3 rounded-lg hover:bg-accent/50 transition-all duration-200 border border-transparent hover:border-border/30"
-                          >
-                            <div className="flex items-center gap-3">
-                              <div className="p-2 rounded-md bg-muted group-hover:bg-primary/10 transition-colors">
-                                <SubIcon size={16} className="text-muted-foreground group-hover:text-primary transition-colors" />
-                              </div>
-                              <div className="flex-1">
-                                <div className="font-medium text-sm text-foreground group-hover:text-primary transition-colors">
-                                  {subItem.title}
-                                </div>
-                                <div className="text-xs text-muted-foreground mt-0.5">
-                                  {getItemDescription(subItem.title)}
-                                </div>
-                              </div>
+          <NavigationMenuContent>
+            <div className="w-[800px] p-8 bg-white dark:bg-gray-900 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700">
+              <div className="grid grid-cols-3 gap-8">
+                {/* Primera columna */}
+                <div className="space-y-4">
+                  <h4 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-4">
+                    Gestión Principal
+                  </h4>
+                  {item.items.slice(0, Math.ceil(item.items.length / 3)).map((subItem) => {
+                    const SubIcon = subItem.icon;
+                    return (
+                      <Link
+                        key={subItem.path}
+                        to={subItem.path}
+                        onClick={onClick}
+                        className="group block p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                      >
+                        <div className="flex items-start gap-3">
+                          <div className="flex-shrink-0 w-8 h-8 bg-violet-100 dark:bg-violet-900/30 rounded-lg flex items-center justify-center">
+                            <SubIcon size={16} className="text-violet-600 dark:text-violet-400" />
+                          </div>
+                          <div>
+                            <div className="font-medium text-gray-900 dark:text-white text-sm group-hover:text-violet-600 dark:group-hover:text-violet-400">
+                              {subItem.title}
                             </div>
-                          </Link>
-                        );
-                      })}
-                    </div>
-                  ))}
+                            <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                              {getItemDescription(subItem.title)}
+                            </div>
+                          </div>
+                        </div>
+                      </Link>
+                    );
+                  })}
+                </div>
+
+                {/* Segunda columna */}
+                <div className="space-y-4">
+                  <h4 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-4">
+                    Funciones Avanzadas
+                  </h4>
+                  {item.items.slice(Math.ceil(item.items.length / 3), Math.ceil(item.items.length * 2 / 3)).map((subItem) => {
+                    const SubIcon = subItem.icon;
+                    return (
+                      <Link
+                        key={subItem.path}
+                        to={subItem.path}
+                        onClick={onClick}
+                        className="group block p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                      >
+                        <div className="flex items-start gap-3">
+                          <div className="flex-shrink-0 w-8 h-8 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
+                            <SubIcon size={16} className="text-blue-600 dark:text-blue-400" />
+                          </div>
+                          <div>
+                            <div className="font-medium text-gray-900 dark:text-white text-sm group-hover:text-blue-600 dark:group-hover:text-blue-400">
+                              {subItem.title}
+                            </div>
+                            <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                              {getItemDescription(subItem.title)}
+                            </div>
+                          </div>
+                        </div>
+                      </Link>
+                    );
+                  })}
+                </div>
+
+                {/* Tercera columna */}
+                <div className="space-y-4">
+                  <h4 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-4">
+                    Herramientas
+                  </h4>
+                  {item.items.slice(Math.ceil(item.items.length * 2 / 3)).map((subItem) => {
+                    const SubIcon = subItem.icon;
+                    return (
+                      <Link
+                        key={subItem.path}
+                        to={subItem.path}
+                        onClick={onClick}
+                        className="group block p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                      >
+                        <div className="flex items-start gap-3">
+                          <div className="flex-shrink-0 w-8 h-8 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
+                            <SubIcon size={16} className="text-green-600 dark:text-green-400" />
+                          </div>
+                          <div>
+                            <div className="font-medium text-gray-900 dark:text-white text-sm group-hover:text-green-600 dark:group-hover:text-green-400">
+                              {subItem.title}
+                            </div>
+                            <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                              {getItemDescription(subItem.title)}
+                            </div>
+                          </div>
+                        </div>
+                      </Link>
+                    );
+                  })}
                 </div>
               </div>
             </div>
