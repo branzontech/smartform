@@ -32,6 +32,7 @@ import AIAssistant from "./components/ai-assistant/AIAssistant";
 import TelemedicinePage from "./pages/telemedicine/TelemedicinePage";
 import PricingPage from "./pages/pricing/PricingPage"; // Import the new PricingPage
 import UserPortalPage from "./pages/user-portal/UserPortalPage"; // Import the new UserPortalPage
+import ChatPage from "./pages/chat/ChatPage";
 
 // Importamos las páginas de especialidades
 import CirujanoPage from "./pages/especialidades/CirujanoPage";
@@ -140,6 +141,9 @@ function App() {
                 
                 {/* Nueva ruta para telemedicina */}
                 <Route path="/app/telemedicina" element={<TelemedicinePage />} />
+                
+                {/* Nueva ruta para chat médico */}
+                <Route path="/app/chat" element={<ChatPage />} />
                 
                 {/* Nueva ruta para admisiones */}
                 <Route path="/app/admisiones" element={<AdmissionPage />} />

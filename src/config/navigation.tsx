@@ -251,6 +251,11 @@ export const mainNavItems: SubmenuItem[] = [
     icon: MessageSquare,
     items: [
       {
+        title: "Chat Médico",
+        path: "/app/chat",
+        icon: MessageSquare,
+      },
+      {
         title: "Mensajes",
         path: "/app/comunicacion/mensajes",
         icon: Mail,
