@@ -93,7 +93,7 @@ const ChatPage = () => {
           </p>
         </div>
 
-        <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden h-[calc(100vh-200px)]">
+        <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden" style={{ height: 'calc(100vh - 180px)' }}>
           <div className="flex h-full">
             {/* Mobile: Show either list or chat */}
             <div className={`md:hidden ${showMobileChat ? 'hidden' : 'block'} w-full`}>

@@ -181,9 +181,10 @@ export const ChatInterface = ({ selectedDoctor, onBack }: ChatInterfaceProps) =>
       </div>
 
       {/* Messages Area */}
-      <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
-        <div className="space-y-4">
-          {messages.map((message) => (
+      <div className="flex-1 overflow-hidden">
+        <ScrollArea className="h-full p-4" ref={scrollAreaRef}>
+          <div className="space-y-4">
+            {messages.map((message) => (
             <div
               key={message.id}
               className={`flex ${message.senderType === "user" ? "justify-end" : "justify-start"}`}
@@ -217,9 +218,10 @@ export const ChatInterface = ({ selectedDoctor, onBack }: ChatInterfaceProps) =>
               </div>
             </div>
           ))}
-          <div ref={messagesEndRef} />
-        </div>
-      </ScrollArea>
+            <div ref={messagesEndRef} />
+          </div>
+        </ScrollArea>
+      </div>
 
       {/* Message Input */}
       <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">

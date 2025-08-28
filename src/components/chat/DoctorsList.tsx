@@ -24,7 +24,7 @@ type DoctorsListProps = {
 
 export const DoctorsList = ({ doctors, selectedDoctor, onSelectDoctor }: DoctorsListProps) => {
   return (
-    <div className="w-full md:w-80 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700">
+    <div className="w-full md:w-80 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 flex flex-col h-full">
       {/* Header */}
       <div className="p-4 border-b border-gray-200 dark:border-gray-700">
         <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
@@ -36,7 +36,8 @@ export const DoctorsList = ({ doctors, selectedDoctor, onSelectDoctor }: Doctors
       </div>
 
       {/* Doctors List */}
-      <ScrollArea className="h-[calc(100vh-140px)]">
+      <div className="flex-1 overflow-hidden">
+        <ScrollArea className="h-full">
         <div className="p-2">
           {doctors.map((doctor) => (
             <div
@@ -93,8 +94,9 @@ export const DoctorsList = ({ doctors, selectedDoctor, onSelectDoctor }: Doctors
               </div>
             </div>
           ))}
-        </div>
-      </ScrollArea>
+          </div>
+        </ScrollArea>
+      </div>
     </div>
   );
 };

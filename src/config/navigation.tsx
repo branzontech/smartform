@@ -76,6 +76,11 @@ export const mainNavItems: SubmenuItem[] = [
     icon: UserCircle,
   },
   {
+    title: "Chat Médico",
+    path: "/app/chat",
+    icon: MessageSquare,
+  },
+  {
     title: "Pacientes",
     path: "/app/pacientes",
     icon: Users,

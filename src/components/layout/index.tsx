@@ -2,6 +2,7 @@
 import React from "react";
 import { Header } from "./header";
 import { TenantStatusBar } from "../tenant/TenantStatusBar";
+import { FloatingChatButton } from "./floating-chat-button";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -17,6 +18,7 @@ export const Layout = ({ children }: LayoutProps) => {
         </div>
         {children}
       </main>
+      <FloatingChatButton />
     </div>
   );
 };
