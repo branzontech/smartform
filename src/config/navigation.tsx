@@ -51,7 +51,9 @@ import {
   TrendingUp,
   CalendarRange,
   CalendarCheck,
-  CalendarClock
+  CalendarClock,
+  Workflow,
+  Bot
 } from "lucide-react";
 
 export type MenuItem = {
@@ -131,6 +133,11 @@ export const mainNavItems: SubmenuItem[] = [
     title: "Telemedicina",
     path: "/app/telemedicina",
     icon: Video,
+  },
+  {
+    title: "Workflows IA",
+    path: "/app/workflows",
+    icon: Workflow,
   },
   {
     title: "Facturación",

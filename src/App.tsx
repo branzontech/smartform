@@ -76,6 +76,9 @@ import ShiftManagement from "./pages/shifts/ShiftManagement";
 import ShiftAssignment from "./pages/shifts/ShiftAssignment";
 import ShiftModification from "./pages/shifts/ShiftModification";
 
+// Importamos las páginas de workflows
+import WorkflowPage from "./pages/workflow/WorkflowPage";
+
 export const BackButton = () => {
   const navigate = useNavigate();
   
@@ -144,6 +147,9 @@ function App() {
                 
                 {/* Nueva ruta para chat médico */}
                 <Route path="/app/chat" element={<ChatPage />} />
+                
+                {/* Nueva ruta para workflows */}
+                <Route path="/app/workflows" element={<WorkflowPage />} />
                 
                 {/* Nueva ruta para admisiones */}
                 <Route path="/app/admisiones" element={<AdmissionPage />} />
