@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { SidebarProvider } from '@/components/ui/sidebar';
 import { 
   Play, 
   Save, 
@@ -14,7 +15,9 @@ import {
   BarChart3
 } from 'lucide-react';
 import WorkflowCanvas from './WorkflowCanvas';
+import WorkflowSidebar from './WorkflowSidebar';
 import { Workflow, WorkflowStep, WorkflowConnection } from '@/types/workflow-types';
+import { nanoid } from 'nanoid';
 
 // Mock data para el workflow de seguimiento post-consulta
 const mockPostConsultationWorkflow: Workflow = {
@@ -124,6 +127,7 @@ const WorkflowBuilder: React.FC<WorkflowBuilderProps> = ({
 }) => {
   const [currentWorkflow, setCurrentWorkflow] = useState<Workflow>(workflow);
   const [activeTab, setActiveTab] = useState('canvas');
+  const [selectedStep, setSelectedStep] = useState<WorkflowStep | null>(null);
 
   const handleStepsChange = (steps: WorkflowStep[]) => {
     setCurrentWorkflow(prev => ({
@@ -155,79 +159,166 @@ const WorkflowBuilder: React.FC<WorkflowBuilderProps> = ({
     }));
   };
 
+  const handleAddStep = (stepType: WorkflowStep['type']) => {
+    const newStep: WorkflowStep = {
+      id: nanoid(),
+      type: stepType,
+      title: `Nuevo ${stepType === 'trigger' ? 'Activador' : stepType === 'task' ? 'Tarea' : stepType === 'reminder' ? 'Recordatorio' : stepType === 'monitoring' ? 'Monitoreo' : 'Condición'}`,
+      description: 'Descripción del paso',
+      position: { x: 300, y: 200 },
+      config: {}
+    };
+
+    setCurrentWorkflow(prev => ({
+      ...prev,
+      steps: [...prev.steps, newStep],
+      updatedAt: new Date()
+    }));
+  };
+
+  const handleUpdateStep = (stepId: string, updates: Partial<WorkflowStep>) => {
+    setCurrentWorkflow(prev => ({
+      ...prev,
+      steps: prev.steps.map(step => 
+        step.id === stepId ? { ...step, ...updates } : step
+      ),
+      updatedAt: new Date()
+    }));
+
+    // Actualizar el step seleccionado si es el que se está editando
+    if (selectedStep?.id === stepId) {
+      setSelectedStep(prev => prev ? { ...prev, ...updates } : null);
+    }
+  };
+
+  const handleDeleteStep = (stepId: string) => {
+    setCurrentWorkflow(prev => ({
+      ...prev,
+      steps: prev.steps.filter(step => step.id !== stepId),
+      connections: prev.connections.filter(
+        conn => conn.source !== stepId && conn.target !== stepId
+      ),
+      updatedAt: new Date()
+    }));
+
+    // Limpiar selección si se elimina el step seleccionado
+    if (selectedStep?.id === stepId) {
+      setSelectedStep(null);
+    }
+  };
+
+  const handleDuplicateStep = (stepId: string) => {
+    const stepToDuplicate = currentWorkflow.steps.find(step => step.id === stepId);
+    if (stepToDuplicate) {
+      const duplicatedStep: WorkflowStep = {
+        ...stepToDuplicate,
+        id: nanoid(),
+        title: `${stepToDuplicate.title} (Copia)`,
+        position: {
+          x: stepToDuplicate.position.x + 50,
+          y: stepToDuplicate.position.y + 50
+        }
+      };
+
+      setCurrentWorkflow(prev => ({
+        ...prev,
+        steps: [...prev.steps, duplicatedStep],
+        updatedAt: new Date()
+      }));
+    }
+  };
+
+  const handleStepSelect = (stepId: string) => {
+    const step = currentWorkflow.steps.find(s => s.id === stepId);
+    setSelectedStep(step || null);
+  };
+
   return (
-    <div className="h-full flex flex-col">
-      {/* Header */}
-      <div className="border-b p-4 bg-background">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <WorkflowIcon className="h-6 w-6 text-primary" />
-            <div>
-              <h1 className="text-xl font-semibold">{currentWorkflow.name}</h1>
-              <p className="text-sm text-muted-foreground">{currentWorkflow.description}</p>
+    <SidebarProvider>
+      <div className="h-full flex w-full">
+        {/* Sidebar */}
+        <WorkflowSidebar
+          selectedStep={selectedStep}
+          onAddStep={handleAddStep}
+          onUpdateStep={handleUpdateStep}
+          onDeleteStep={handleDeleteStep}
+          onDuplicateStep={handleDuplicateStep}
+        />
+
+        {/* Main Content */}
+        <div className="flex-1 flex flex-col">
+          {/* Header */}
+          <div className="border-b p-4 bg-background">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <WorkflowIcon className="h-6 w-6 text-primary" />
+                <div>
+                  <h1 className="text-xl font-semibold">{currentWorkflow.name}</h1>
+                  <p className="text-sm text-muted-foreground">{currentWorkflow.description}</p>
+                </div>
+              </div>
+              
+              <div className="flex items-center gap-2">
+                <Badge 
+                  variant={currentWorkflow.active ? "default" : "secondary"}
+                  className="gap-1"
+                >
+                  <div className={`w-2 h-2 rounded-full ${currentWorkflow.active ? 'bg-green-500' : 'bg-gray-400'}`} />
+                  {currentWorkflow.active ? 'Activo' : 'Inactivo'}
+                </Badge>
+                
+                <Button variant="outline" size="sm" onClick={handleToggleActive}>
+                  {currentWorkflow.active ? 'Desactivar' : 'Activar'}
+                </Button>
+                
+                <Button variant="outline" size="sm">
+                  <Settings className="h-4 w-4 mr-1" />
+                  Configurar
+                </Button>
+                
+                <Button size="sm" onClick={handleSave}>
+                  <Save className="h-4 w-4 mr-1" />
+                  Guardar
+                </Button>
+              </div>
             </div>
           </div>
-          
-          <div className="flex items-center gap-2">
-            <Badge 
-              variant={currentWorkflow.active ? "default" : "secondary"}
-              className="gap-1"
-            >
-              <div className={`w-2 h-2 rounded-full ${currentWorkflow.active ? 'bg-green-500' : 'bg-gray-400'}`} />
-              {currentWorkflow.active ? 'Activo' : 'Inactivo'}
-            </Badge>
-            
-            <Button variant="outline" size="sm" onClick={handleToggleActive}>
-              {currentWorkflow.active ? 'Desactivar' : 'Activar'}
-            </Button>
-            
-            <Button variant="outline" size="sm">
-              <Settings className="h-4 w-4 mr-1" />
-              Configurar
-            </Button>
-            
-            <Button size="sm" onClick={handleSave}>
-              <Save className="h-4 w-4 mr-1" />
-              Guardar
-            </Button>
-          </div>
-        </div>
-      </div>
 
-      {/* Main Content */}
-      <div className="flex-1 overflow-hidden">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="canvas" className="gap-2">
-              <WorkflowIcon className="h-4 w-4" />
-              Canvas
-            </TabsTrigger>
-            <TabsTrigger value="preview" className="gap-2">
-              <Eye className="h-4 w-4" />
-              Vista Previa
-            </TabsTrigger>
-            <TabsTrigger value="analytics" className="gap-2">
-              <BarChart3 className="h-4 w-4" />
-              Analíticas
-            </TabsTrigger>
-          </TabsList>
+          {/* Tabs Content */}
+          <div className="flex-1 overflow-hidden">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col">
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="canvas" className="gap-2">
+                  <WorkflowIcon className="h-4 w-4" />
+                  Canvas
+                </TabsTrigger>
+                <TabsTrigger value="preview" className="gap-2">
+                  <Eye className="h-4 w-4" />
+                  Vista Previa
+                </TabsTrigger>
+                <TabsTrigger value="analytics" className="gap-2">
+                  <BarChart3 className="h-4 w-4" />
+                  Analíticas
+                </TabsTrigger>
+              </TabsList>
 
-          <TabsContent value="canvas" className="flex-1 overflow-hidden mt-0">
-            <WorkflowCanvas
-              steps={currentWorkflow.steps}
-              connections={currentWorkflow.connections}
-              onStepsChange={handleStepsChange}
-              onConnectionsChange={handleConnectionsChange}
-            />
-          </TabsContent>
+              <TabsContent value="canvas" className="flex-1 overflow-hidden mt-0">
+                <WorkflowCanvas
+                  steps={currentWorkflow.steps}
+                  connections={currentWorkflow.connections}
+                  onStepsChange={handleStepsChange}
+                  onConnectionsChange={handleConnectionsChange}
+                  onStepSelect={handleStepSelect}
+                />
+              </TabsContent>
 
-          <TabsContent value="preview" className="flex-1 overflow-hidden mt-0">
-            <WorkflowCanvas
-              steps={currentWorkflow.steps}
-              connections={currentWorkflow.connections}
-              readOnly={true}
-            />
-          </TabsContent>
+              <TabsContent value="preview" className="flex-1 overflow-hidden mt-0">
+                <WorkflowCanvas
+                  steps={currentWorkflow.steps}
+                  connections={currentWorkflow.connections}
+                  readOnly={true}
+                />
+              </TabsContent>
 
           <TabsContent value="analytics" className="flex-1 p-6 overflow-auto">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
@@ -289,10 +380,12 @@ const WorkflowBuilder: React.FC<WorkflowBuilderProps> = ({
                 </div>
               </CardContent>
             </Card>
-          </TabsContent>
-        </Tabs>
+              </TabsContent>
+            </Tabs>
+          </div>
+        </div>
       </div>
-    </div>
+    </SidebarProvider>
   );
 };
 

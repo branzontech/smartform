@@ -34,6 +34,7 @@ interface WorkflowCanvasProps {
   connections: WorkflowConnection[];
   onStepsChange?: (steps: WorkflowStep[]) => void;
   onConnectionsChange?: (connections: WorkflowConnection[]) => void;
+  onStepSelect?: (stepId: string) => void;
   readOnly?: boolean;
 }
 
@@ -42,6 +43,7 @@ const WorkflowCanvas: React.FC<WorkflowCanvasProps> = ({
   connections,
   onStepsChange,
   onConnectionsChange,
+  onStepSelect,
   readOnly = false
 }) => {
   // Convertir steps a nodes de React Flow
@@ -111,6 +113,13 @@ const WorkflowCanvas: React.FC<WorkflowCanvasProps> = ({
     }
   }, [nodes, onNodesChange, onStepsChange, steps, readOnly]);
 
+  // Manejar selección de nodos
+  const handleNodeClick = useCallback((event: React.MouseEvent, node: Node) => {
+    if (onStepSelect && !readOnly) {
+      onStepSelect(node.id);
+    }
+  }, [onStepSelect, readOnly]);
+
   return (
     <div className="h-full w-full">
       <ReactFlow
@@ -119,6 +128,7 @@ const WorkflowCanvas: React.FC<WorkflowCanvasProps> = ({
         onNodesChange={handleNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
+        onNodeClick={handleNodeClick}
         nodeTypes={nodeTypes}
         fitView
         snapToGrid
