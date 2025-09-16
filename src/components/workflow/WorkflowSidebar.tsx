@@ -295,11 +295,11 @@ const WorkflowSidebar: React.FC<WorkflowSidebarProps> = ({
   };
 
   return (
-    <Sidebar className="w-80 border-r bg-sidebar">
-      <SidebarContent className="p-0">
-        <div className="h-full">
+    <Sidebar className="w-80 border-r bg-sidebar h-full">
+      <SidebarContent className="p-0 h-full">
+        <div className="h-full flex flex-col">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col">
-            <div className="border-b bg-sidebar/50 p-4">
+            <div className="border-b bg-sidebar/50 p-4 flex-shrink-0">
               <TabsList className="grid w-full grid-cols-2 h-9">
                 <TabsTrigger value="nodes" className="text-xs">
                   Elementos
@@ -310,51 +310,64 @@ const WorkflowSidebar: React.FC<WorkflowSidebarProps> = ({
               </TabsList>
             </div>
 
-            <TabsContent value="nodes" className="flex-1 mt-0 p-4 space-y-4">
-              <SidebarGroup>
-                <SidebarGroupLabel className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                  Agregar Elementos
-                </SidebarGroupLabel>
-                <SidebarGroupContent>
-                  <div className="space-y-2">
-                    {stepTypes.map((stepType) => (
-                      <Card 
-                        key={stepType.type}
-                        className={`cursor-pointer transition-all duration-200 hover:shadow-md border ${stepType.borderColor} bg-gradient-to-r ${stepType.gradient} hover:scale-[1.02]`}
-                        onClick={() => onAddStep(stepType.type)}
-                      >
-                        <CardContent className="p-3">
-                          <div className="flex items-center gap-3">
-                            <div className={`p-2 rounded-md bg-background ${stepType.iconColor}`}>
-                              <stepType.icon className="h-4 w-4" />
+            <TabsContent value="nodes" className="flex-1 mt-0 overflow-hidden">
+              <div className="h-full overflow-y-auto p-4 space-y-4">
+                <SidebarGroup>
+                  <SidebarGroupLabel className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                    Agregar Elementos
+                  </SidebarGroupLabel>
+                  <SidebarGroupContent>
+                    <div className="space-y-2">
+                      {stepTypes.map((stepType) => (
+                        <Card 
+                          key={stepType.type}
+                          className={`cursor-pointer transition-all duration-200 hover:shadow-md border ${stepType.borderColor} bg-gradient-to-r ${stepType.gradient} hover:scale-[1.02]`}
+                          onClick={() => onAddStep(stepType.type)}
+                        >
+                          <CardContent className="p-3">
+                            <div className="flex items-center gap-3">
+                              <div className={`p-2 rounded-md bg-background ${stepType.iconColor}`}>
+                                <stepType.icon className="h-4 w-4" />
+                              </div>
+                              <div className="flex-1">
+                                <div className="font-medium text-sm text-foreground">{stepType.title}</div>
+                                <div className="text-xs text-muted-foreground">{stepType.description}</div>
+                              </div>
+                              <Plus className={`h-4 w-4 ${stepType.iconColor}`} />
                             </div>
-                            <div className="flex-1">
-                              <div className="font-medium text-sm text-foreground">{stepType.title}</div>
-                              <div className="text-xs text-muted-foreground">{stepType.description}</div>
-                            </div>
-                            <Plus className={`h-4 w-4 ${stepType.iconColor}`} />
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                </SidebarGroupContent>
-              </SidebarGroup>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  </SidebarGroupContent>
+                </SidebarGroup>
 
-              <div className="border-t pt-4">
-                <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-                  Instrucciones
-                </div>
-                <div className="text-xs text-muted-foreground space-y-1">
-                  <p>• Arrastra elementos al canvas para crear tu flujo</p>
-                  <p>• Conecta elementos arrastrando desde los puntos de conexión</p>
-                  <p>• Selecciona elementos para configurar sus propiedades</p>
+                <div className="border-t pt-4">
+                  <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+                    Instrucciones
+                  </div>
+                  <div className="text-xs text-muted-foreground space-y-2 leading-relaxed">
+                    <div className="flex items-start gap-2">
+                      <div className="w-1 h-1 rounded-full bg-primary mt-2 flex-shrink-0"></div>
+                      <p>Arrastra elementos al canvas para crear tu flujo</p>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <div className="w-1 h-1 rounded-full bg-primary mt-2 flex-shrink-0"></div>
+                      <p>Conecta elementos arrastrando desde los puntos de conexión</p>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <div className="w-1 h-1 rounded-full bg-primary mt-2 flex-shrink-0"></div>
+                      <p>Selecciona elementos para configurar sus propiedades</p>
+                    </div>
+                  </div>
                 </div>
               </div>
             </TabsContent>
 
-            <TabsContent value="properties" className="flex-1 mt-0 p-4">
-              {renderStepProperties()}
+            <TabsContent value="properties" className="flex-1 mt-0 overflow-hidden">
+              <div className="h-full overflow-y-auto p-4">
+                {renderStepProperties()}
+              </div>
             </TabsContent>
           </Tabs>
         </div>
