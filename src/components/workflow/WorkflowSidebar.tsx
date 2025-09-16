@@ -295,7 +295,7 @@ const WorkflowSidebar: React.FC<WorkflowSidebarProps> = ({
   };
 
   return (
-    <Sidebar className="w-80 border-r bg-sidebar h-full">
+    <Sidebar className="w-80 border-r bg-sidebar h-full" collapsible="icon">
       <SidebarContent className="p-0 h-full">
         <div className="h-full flex flex-col">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col">
@@ -329,7 +329,7 @@ const WorkflowSidebar: React.FC<WorkflowSidebarProps> = ({
                               <div className={`p-2 rounded-md bg-background ${stepType.iconColor}`}>
                                 <stepType.icon className="h-4 w-4" />
                               </div>
-                              <div className="flex-1">
+                              <div className="flex-1 group-data-[collapsible=icon]:hidden">
                                 <div className="font-medium text-sm text-foreground">{stepType.title}</div>
                                 <div className="text-xs text-muted-foreground">{stepType.description}</div>
                               </div>
@@ -342,7 +342,7 @@ const WorkflowSidebar: React.FC<WorkflowSidebarProps> = ({
                   </SidebarGroupContent>
                 </SidebarGroup>
 
-                <div className="border-t pt-4">
+                <div className="border-t pt-4 group-data-[collapsible=icon]:hidden">
                   <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
                     Instrucciones
                   </div>

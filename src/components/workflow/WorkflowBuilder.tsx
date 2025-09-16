@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { SidebarProvider } from '@/components/ui/sidebar';
+import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { 
   Play, 
   Save, 
@@ -234,7 +234,7 @@ const WorkflowBuilder: React.FC<WorkflowBuilderProps> = ({
   };
 
   return (
-    <SidebarProvider>
+    <SidebarProvider defaultOpen={true}>
       <div className="h-screen flex w-full bg-background">
         {/* Sidebar */}
         <WorkflowSidebar
@@ -251,6 +251,7 @@ const WorkflowBuilder: React.FC<WorkflowBuilderProps> = ({
           <div className="border-b p-4 bg-background/95 backdrop-blur-sm flex-shrink-0">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
+                <SidebarTrigger />
                 <div className="p-2 rounded-lg bg-primary/10">
                   <WorkflowIcon className="h-5 w-5 text-primary" />
                 </div>
