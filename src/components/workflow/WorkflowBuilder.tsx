@@ -235,7 +235,7 @@ const WorkflowBuilder: React.FC<WorkflowBuilderProps> = ({
 
   return (
     <SidebarProvider>
-      <div className="h-full flex w-full">
+      <div className="h-screen flex w-full bg-background">
         {/* Sidebar */}
         <WorkflowSidebar
           selectedStep={selectedStep}
@@ -246,38 +246,35 @@ const WorkflowBuilder: React.FC<WorkflowBuilderProps> = ({
         />
 
         {/* Main Content */}
-        <div className="flex-1 flex flex-col">
+        <div className="flex-1 flex flex-col min-h-0">
           {/* Header */}
-          <div className="border-b p-4 bg-background">
+          <div className="border-b p-4 bg-background/95 backdrop-blur-sm flex-shrink-0">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <WorkflowIcon className="h-6 w-6 text-primary" />
+                <div className="p-2 rounded-lg bg-primary/10">
+                  <WorkflowIcon className="h-5 w-5 text-primary" />
+                </div>
                 <div>
-                  <h1 className="text-xl font-semibold">{currentWorkflow.name}</h1>
-                  <p className="text-sm text-muted-foreground">{currentWorkflow.description}</p>
+                  <h1 className="text-lg font-semibold text-foreground">{currentWorkflow.name}</h1>
+                  <p className="text-xs text-muted-foreground">{currentWorkflow.description}</p>
                 </div>
               </div>
               
               <div className="flex items-center gap-2">
                 <Badge 
                   variant={currentWorkflow.active ? "default" : "secondary"}
-                  className="gap-1"
+                  className="gap-2 text-xs"
                 >
-                  <div className={`w-2 h-2 rounded-full ${currentWorkflow.active ? 'bg-green-500' : 'bg-gray-400'}`} />
+                  <div className={`w-1.5 h-1.5 rounded-full ${currentWorkflow.active ? 'bg-green-400' : 'bg-muted-foreground'}`} />
                   {currentWorkflow.active ? 'Activo' : 'Inactivo'}
                 </Badge>
                 
-                <Button variant="outline" size="sm" onClick={handleToggleActive}>
+                <Button variant="outline" size="sm" onClick={handleToggleActive} className="h-8 text-xs">
                   {currentWorkflow.active ? 'Desactivar' : 'Activar'}
                 </Button>
                 
-                <Button variant="outline" size="sm">
-                  <Settings className="h-4 w-4 mr-1" />
-                  Configurar
-                </Button>
-                
-                <Button size="sm" onClick={handleSave}>
-                  <Save className="h-4 w-4 mr-1" />
+                <Button size="sm" onClick={handleSave} className="h-8 text-xs">
+                  <Save className="h-3 w-3 mr-1.5" />
                   Guardar
                 </Button>
               </div>
@@ -285,22 +282,24 @@ const WorkflowBuilder: React.FC<WorkflowBuilderProps> = ({
           </div>
 
           {/* Tabs Content */}
-          <div className="flex-1 overflow-hidden">
+          <div className="flex-1 min-h-0">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col">
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="canvas" className="gap-2">
-                  <WorkflowIcon className="h-4 w-4" />
-                  Canvas
-                </TabsTrigger>
-                <TabsTrigger value="preview" className="gap-2">
-                  <Eye className="h-4 w-4" />
-                  Vista Previa
-                </TabsTrigger>
-                <TabsTrigger value="analytics" className="gap-2">
-                  <BarChart3 className="h-4 w-4" />
-                  Analíticas
-                </TabsTrigger>
-              </TabsList>
+              <div className="border-b bg-muted/30 flex-shrink-0">
+                <TabsList className="h-10 w-auto inline-flex bg-transparent p-1">
+                  <TabsTrigger value="canvas" className="gap-2 text-xs h-8">
+                    <WorkflowIcon className="h-3 w-3" />
+                    Diseñador
+                  </TabsTrigger>
+                  <TabsTrigger value="preview" className="gap-2 text-xs h-8">
+                    <Eye className="h-3 w-3" />
+                    Vista Previa
+                  </TabsTrigger>
+                  <TabsTrigger value="analytics" className="gap-2 text-xs h-8">
+                    <BarChart3 className="h-3 w-3" />
+                    Analíticas
+                  </TabsTrigger>
+                </TabsList>
+              </div>
 
               <TabsContent value="canvas" className="flex-1 overflow-hidden mt-0">
                 <WorkflowCanvas

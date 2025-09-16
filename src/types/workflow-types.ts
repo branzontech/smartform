@@ -22,6 +22,7 @@ export interface WorkflowStepConfig {
   // Para monitoreo
   monitoringType?: 'no_response' | 'missed_appointment' | 'medication_adherence';
   timeframe?: number; // en horas
+  alertAction?: 'notify_staff' | 'send_patient_message' | 'escalate_doctor';
   
   // Para condiciones
   condition?: string;
