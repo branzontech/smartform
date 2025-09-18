@@ -60,7 +60,13 @@ export function AppSidebar() {
   };
 
   return (
-    <Sidebar className="border-r border-sidebar-border text-white shadow-2xl" style={{ backgroundColor: '#5644e5' }}>
+    <Sidebar 
+      className="border-r border-sidebar-border text-white shadow-2xl"
+      style={{
+        ["--sidebar-background" as any]: "247 76% 58%",
+        ["--sidebar-foreground" as any]: "0 0% 100%",
+      } as React.CSSProperties}
+    >
       <SidebarHeader className="p-4 border-b border-white/10">
         <div className={`flex items-center gap-3 transition-all duration-300 ${state === "collapsed" ? "justify-center" : ""}`}>
           <div className="p-2 rounded-xl bg-primary/20 backdrop-blur-sm border border-primary/30">
