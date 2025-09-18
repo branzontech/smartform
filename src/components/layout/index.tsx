@@ -2,6 +2,7 @@
 import React from "react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "./app-sidebar";
+import { Sidebar2 } from "./sidebar2";
 import { TenantStatusBar } from "../tenant/TenantStatusBar";
 import { FloatingChatButton } from "./floating-chat-button";
 import { Button } from "@/components/ui/button";
@@ -114,6 +115,9 @@ export const Layout = ({ children }: LayoutProps) => {
 
           <FloatingChatButton />
         </div>
+        
+        {/* Sidebar2 flotante */}
+        <Sidebar2 />
       </div>
 
       {/* Search Dialog */}
