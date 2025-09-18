@@ -60,7 +60,7 @@ export function AppSidebar() {
   };
 
   return (
-    <Sidebar className="border-r border-sidebar-border bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 text-white shadow-2xl">
+    <Sidebar className="border-r border-sidebar-border text-white shadow-2xl" style={{ backgroundColor: '#5644e5' }}>
       <SidebarHeader className="p-4 border-b border-white/10">
         <div className={`flex items-center gap-3 transition-all duration-300 ${state === "collapsed" ? "justify-center" : ""}`}>
           <div className="p-2 rounded-xl bg-primary/20 backdrop-blur-sm border border-primary/30">
