@@ -20,62 +20,104 @@ import {
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-// Floating menu items (exactamente como en la imagen de referencia)
+// Floating menu items con submenús agrupados
 const floatingMenuItems = [
   { 
-    id: "home", 
+    id: "dashboard", 
     icon: <Home size={20} />, 
     path: "/app/home",
-    isActive: false 
+    label: "Dashboard",
+    isActive: false,
+    items: []
   },
   { 
     id: "patients", 
     icon: <Users size={20} />, 
-    path: "/app/pacientes",
-    isActive: false 
+    path: "",
+    label: "Pacientes",
+    isActive: false,
+    items: [
+      { id: "patient-list", icon: <Users size={18} />, path: "/app/pacientes", label: "Lista de Pacientes" },
+      { id: "new-patient", icon: <Plus size={18} />, path: "/app/pacientes/nueva-consulta", label: "Nuevo Paciente" },
+      { id: "patient-dashboard", icon: <Database size={18} />, path: "/app/pacientes/dashboard", label: "Dashboard Pacientes" },
+    ]
   },
   { 
-    id: "calendar", 
+    id: "appointments", 
     icon: <Calendar size={20} />, 
-    path: "/app/citas",
-    isActive: false 
+    path: "",
+    label: "Citas Médicas",
+    isActive: false,
+    items: [
+      { id: "calendar", icon: <Calendar size={18} />, path: "/app/citas", label: "Agenda" },
+      { id: "new-appointment", icon: <Plus size={18} />, path: "/app/citas/nueva", label: "Nueva Cita" },
+      { id: "shifts", icon: <Calendar size={18} />, path: "/app/turnos", label: "Turnos" },
+    ]
   },
   { 
-    id: "plus", 
-    icon: <Plus size={20} />, 
-    path: "/app/crear",
-    isActive: false 
+    id: "communication", 
+    icon: <MessageSquare size={20} />, 
+    path: "",
+    label: "Comunicación",
+    isActive: false,
+    items: [
+      { id: "chat", icon: <MessageSquare size={18} />, path: "/app/chat", label: "Chat Médico" },
+      { id: "telemedicine", icon: <FileText size={18} />, path: "/app/telemedicina", label: "Telemedicina" },
+      { id: "notifications", icon: <FileText size={18} />, path: "/app/notificaciones/centro", label: "Notificaciones" },
+    ]
   },
   { 
-    id: "database", 
-    icon: <Database size={20} />, 
-    path: "/app/pacientes/dashboard",
-    isActive: false 
+    id: "clinical", 
+    icon: <ClipboardList size={20} />, 
+    path: "",
+    label: "Gestión Clínica",
+    isActive: false,
+    items: [
+      { id: "clinical-history", icon: <ClipboardList size={18} />, path: "/app/crear", label: "Historias Clínicas" },
+      { id: "admissions", icon: <PlusSquare size={18} />, path: "/app/admisiones", label: "Admisiones" },
+      { id: "user-portal", icon: <FileText size={18} />, path: "/app/portal-usuario", label: "Portal Usuario" },
+    ]
   },
   { 
-    id: "briefcase", 
-    icon: <PlusSquare size={20} />, 
-    path: "/app/admisiones",
-    isActive: false 
+    id: "admin", 
+    icon: <Stethoscope size={20} />, 
+    path: "",
+    label: "Personal & Admin",
+    isActive: false,
+    items: [
+      { id: "doctors", icon: <Stethoscope size={18} />, path: "/app/medicos", label: "Médicos" },
+      { id: "inventory", icon: <Database size={18} />, path: "/app/inventario/articulos", label: "Inventario" },
+      { id: "offices", icon: <FileText size={18} />, path: "/app/locations/sites", label: "Consultorios" },
+    ]
   },
   // Separador visual
   { 
     id: "separator", 
     icon: null, 
     path: "",
-    isActive: false 
+    label: "",
+    isActive: false,
+    items: []
   },
   { 
-    id: "cog", 
+    id: "billing", 
+    icon: <CreditCard size={20} />, 
+    path: "",
+    label: "Facturación",
+    isActive: false,
+    items: [
+      { id: "billing-dashboard", icon: <CreditCard size={18} />, path: "/app/facturacion", label: "Dashboard" },
+      { id: "new-invoice", icon: <Plus size={18} />, path: "/app/facturacion/nueva", label: "Nueva Factura" },
+      { id: "reports", icon: <FileText size={18} />, path: "/app/informes", label: "Reportes" },
+    ]
+  },
+  { 
+    id: "settings", 
     icon: <Cog size={20} />, 
     path: "/app/configuracion",
-    isActive: false 
-  },
-  { 
-    id: "trash", 
-    icon: <Trash2 size={20} />, 
-    path: "",
-    isActive: false 
+    label: "Configuración",
+    isActive: false,
+    items: []
   },
 ];
 
@@ -84,6 +126,7 @@ export const Sidebar2 = () => {
   const navigate = useNavigate();
   const currentPath = location.pathname;
   const [isVisible, setIsVisible] = useState(true);
+  const [activeSubmenu, setActiveSubmenu] = useState<string | null>(null);
 
   // Función para determinar si un item está activo
   const isItemActive = (path: string) => {
@@ -93,16 +136,33 @@ export const Sidebar2 = () => {
     return currentPath.startsWith(path) && path !== "";
   };
 
+  // Función para verificar si un grupo tiene un item activo
+  const hasActiveSubItem = (items: any[]) => {
+    return items.some(item => isItemActive(item.path));
+  };
+
   // Función para manejar clicks
-  const handleItemClick = (item: typeof floatingMenuItems[0]) => {
-    if (item.path) {
+  const handleItemClick = (item: any) => {
+    if (item.items && item.items.length > 0) {
+      // Si tiene subitems, toggle submenu
+      setActiveSubmenu(activeSubmenu === item.id ? null : item.id);
+    } else if (item.path) {
+      // Si no tiene subitems, navegar directamente
       navigate(item.path);
+      setActiveSubmenu(null);
     }
+  };
+
+  // Función para manejar clicks en subitems
+  const handleSubItemClick = (path: string) => {
+    navigate(path);
+    setActiveSubmenu(null);
   };
 
   // Toggle visibility
   const toggleVisibility = () => {
     setIsVisible(!isVisible);
+    setActiveSubmenu(null);
   };
 
   return (
@@ -129,14 +189,20 @@ export const Sidebar2 = () => {
                     variant="ghost"
                     size="icon"
                     className={cn(
-                      "w-12 h-12 rounded-full transition-all duration-200 hover:scale-110 text-white",
-                      isItemActive(item.path)
+                      "w-12 h-12 rounded-full transition-all duration-200 hover:scale-110 text-white relative",
+                      (isItemActive(item.path) || hasActiveSubItem(item.items || []) || activeSubmenu === item.id)
                         ? "bg-white/20 text-white shadow-md" 
                         : "hover:bg-white/10 text-white hover:text-white"
                     )}
                     onClick={() => handleItemClick(item)}
                   >
                     {item.icon}
+                    {/* Indicator de submenu */}
+                    {item.items && item.items.length > 0 && (
+                      <div className="absolute -right-1 -bottom-1 w-3 h-3 bg-white rounded-full flex items-center justify-center">
+                        <div className="w-1 h-1 bg-purple-600 rounded-full"></div>
+                      </div>
+                    )}
                   </Button>
                 )}
               </div>
@@ -144,6 +210,41 @@ export const Sidebar2 = () => {
           </div>
         </div>
       </div>
+
+      {/* Submenu flotante */}
+      {activeSubmenu && isVisible && (
+        <div className="fixed left-28 top-1/2 -translate-y-1/2 z-40">
+          <div 
+            className="backdrop-blur-sm rounded-2xl shadow-xl border border-border/20 p-4 w-56 animate-slide-in-right"
+            style={{ backgroundColor: '#8b35e9' }}
+          >
+            <div className="space-y-2">
+              {floatingMenuItems
+                .find(item => item.id === activeSubmenu)
+                ?.items?.map((subItem: any) => (
+                <Button
+                  key={subItem.id}
+                  variant="ghost"
+                  className={cn(
+                    "w-full justify-start text-left h-10 rounded-xl transition-all duration-200 text-white",
+                    isItemActive(subItem.path)
+                      ? "bg-white/20 text-white shadow-sm" 
+                      : "hover:bg-white/10 text-white hover:text-white"
+                  )}
+                  onClick={() => handleSubItemClick(subItem.path)}
+                >
+                  <div className="flex items-center gap-3 w-full">
+                    <div className="flex-shrink-0">
+                      {subItem.icon}
+                    </div>
+                    <span className="text-sm font-medium truncate">{subItem.label}</span>
+                  </div>
+                </Button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Botón toggle - siempre visible */}
       <div className="fixed left-2 top-1/2 -translate-y-1/2 z-50">
