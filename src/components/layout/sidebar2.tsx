@@ -189,7 +189,7 @@ export const Sidebar2 = () => {
                     variant="ghost"
                     size="icon"
                     className={cn(
-                      "w-12 h-12 rounded-full transition-all duration-200 hover:scale-110 text-white relative",
+                      "w-12 h-12 rounded-full transition-all duration-200 hover:scale-110 text-white",
                       (isItemActive(item.path) || hasActiveSubItem(item.items || []) || activeSubmenu === item.id)
                         ? "bg-white/20 text-white shadow-md" 
                         : "hover:bg-white/10 text-white hover:text-white"
@@ -197,12 +197,6 @@ export const Sidebar2 = () => {
                     onClick={() => handleItemClick(item)}
                   >
                     {item.icon}
-                    {/* Indicator de submenu */}
-                    {item.items && item.items.length > 0 && (
-                      <div className="absolute -right-1 -bottom-1 w-3 h-3 bg-white rounded-full flex items-center justify-center">
-                        <div className="w-1 h-1 bg-purple-600 rounded-full"></div>
-                      </div>
-                    )}
                   </Button>
                 )}
               </div>
