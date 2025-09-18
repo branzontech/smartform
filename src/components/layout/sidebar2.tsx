@@ -99,7 +99,10 @@ export const Sidebar2 = () => {
 
   return (
     <div className="fixed left-6 top-1/2 -translate-y-1/2 z-50">
-      <div className="bg-card/95 backdrop-blur-sm rounded-full shadow-xl border border-border/20 p-3 w-20">
+      <div 
+        className="backdrop-blur-sm rounded-full shadow-xl border border-border/20 p-3 w-20"
+        style={{ backgroundColor: '#8b35e9' }}
+      >
         <div className="flex flex-col items-center space-y-4">
           {floatingMenuItems.map((item, index) => (
             <div key={item.id}>
