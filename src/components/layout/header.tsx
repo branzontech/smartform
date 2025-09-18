@@ -162,25 +162,29 @@ export const Header = ({ showCreate = true }: HeaderProps) => {
 
   return (
     <TooltipProvider>
-      <header className="border-b border-gray-200 dark:border-gray-800 sticky top-0 bg-gradient-to-r from-purple-50/90 via-white/90 to-purple-50/90 dark:from-gray-900/90 dark:via-gray-900/95 dark:to-purple-900/90 backdrop-blur-md z-10 shadow-sm">
-        <div className="container mx-auto flex items-center justify-between h-16">
+      <header className="sticky top-4 z-10 mx-4">
+        <div 
+          className="rounded-full shadow-xl border border-white/10 backdrop-blur-sm"
+          style={{ backgroundColor: 'rgba(139, 53, 233, 0.8)' }}
+        >
+          <div className="container mx-auto flex items-center justify-between h-16 px-8">
           <div className="flex items-center">
             <Link to="/app/home" className="flex items-center space-x-2">
-              <Stethoscope className="h-6 w-6 text-form-primary" />
-              <span className="text-xl font-semibold bg-gradient-to-r from-form-primary to-form-secondary bg-clip-text text-transparent">Smart Doctor</span>
+              <Stethoscope className="h-6 w-6 text-white" />
+              <span className="text-xl font-semibold text-white">Smart Doctor</span>
             </Link>
           </div>
 
           <div className="flex-1 flex items-center justify-center px-4">
             <Button
               variant="outline"
-              className="relative h-10 w-full max-w-sm justify-start text-sm text-muted-foreground sm:pr-12 md:w-40 lg:w-64 rounded-full bg-white/20 backdrop-blur-sm border border-white/30 hover:border-purple-200 dark:bg-gray-800/20 dark:border-gray-700/30"
+              className="relative h-10 w-full max-w-sm justify-start text-sm text-white/80 sm:pr-12 md:w-40 lg:w-64 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 hover:border-white/40 hover:bg-white/20"
               onClick={() => setSearchOpen(true)}
             >
-              <Search className="mr-2 h-4 w-4 opacity-50" />
+              <Search className="mr-2 h-4 w-4 opacity-70" />
               <span className="hidden lg:inline-flex">Buscar en la navegación...</span>
               <span className="inline-flex lg:hidden">Buscar...</span>
-              <kbd className="pointer-events-none absolute right-1.5 top-2 hidden h-5 select-none items-center gap-1 rounded-full border bg-white/20 px-1.5 font-mono text-[10px] font-medium opacity-100 sm:flex">
+              <kbd className="pointer-events-none absolute right-1.5 top-2 hidden h-5 select-none items-center gap-1 rounded-full border border-white/20 bg-white/10 px-1.5 font-mono text-[10px] font-medium text-white/80 sm:flex">
                 <span className="text-xs">⌘</span>K
               </kbd>
             </Button>
@@ -189,7 +193,7 @@ export const Header = ({ showCreate = true }: HeaderProps) => {
           <div className="flex items-center space-x-4">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="p-2 flex items-center gap-2 hover:bg-violet-400/20 dark:hover:bg-violet-500/30 group">
+                <Button variant="ghost" className="p-2 flex items-center gap-2 hover:bg-white/10 text-white group rounded-full">
                   Menú <ChevronDown className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
@@ -238,10 +242,10 @@ export const Header = ({ showCreate = true }: HeaderProps) => {
               <DropdownMenuTrigger asChild>
                 <Button 
                   variant="ghost"
-                  className="p-2 hover:bg-violet-400/20 dark:hover:bg-violet-500/30 group relative"
+                  className="p-2 hover:bg-white/10 text-white group relative rounded-full"
                   size="icon"
                 >
-                  <Bell size={18} className="group-hover:text-form-primary" />
+                  <Bell size={18} className="group-hover:text-white" />
                   {unreadNotificationsCount > 0 && (
                     <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-red-500 flex items-center justify-center text-white text-xs font-bold">
                       {unreadNotificationsCount}
@@ -311,14 +315,14 @@ export const Header = ({ showCreate = true }: HeaderProps) => {
               <DropdownMenuTrigger asChild>
                 <Button 
                   variant="ghost"
-                  className="p-1 hover:bg-violet-400/20 dark:hover:bg-violet-500/30 group flex items-center gap-2"
+                  className="p-1 hover:bg-white/10 text-white group flex items-center gap-2 rounded-full"
                 >
-                  <Avatar className="h-8 w-8 bg-purple-100 dark:bg-purple-900/60">
-                    <AvatarFallback className="text-sm text-purple-700 dark:text-purple-200">
+                  <Avatar className="h-8 w-8 bg-white/20">
+                    <AvatarFallback className="text-sm text-white">
                       {user.initials}
                     </AvatarFallback>
                   </Avatar>
-                  <span className="hidden md:block text-sm font-medium">{user.name}</span>
+                  <span className="hidden md:block text-sm font-medium text-white">{user.name}</span>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
@@ -341,24 +345,24 @@ export const Header = ({ showCreate = true }: HeaderProps) => {
               <Button 
                 variant="ghost"
                 onClick={toggleTheme}
-                className="p-2 hover:bg-violet-400/20 dark:hover:bg-violet-500/30 group"
+                className="p-2 hover:bg-white/10 text-white group rounded-full"
                 size="icon"
               >
                 {theme === "light" ? 
-                  <Moon size={18} className="group-hover:text-form-primary" /> : 
-                  <Sun size={18} className="group-hover:text-form-primary" />
+                  <Moon size={18} className="group-hover:text-white" /> : 
+                  <Sun size={18} className="group-hover:text-white" />
                 }
               </Button>
             ) : (
               <Button 
                 variant="ghost"
                 onClick={toggleTheme}
-                className="p-2 hover:bg-violet-400/20 dark:hover:bg-violet-500/30 group"
+                className="p-2 hover:bg-white/10 text-white group rounded-full"
                 size="icon"
               >
                 {theme === "light" ? 
-                  <Moon size={18} className="group-hover:text-form-primary" /> : 
-                  <Sun size={18} className="group-hover:text-form-primary" />
+                  <Moon size={18} className="group-hover:text-white" /> : 
+                  <Sun size={18} className="group-hover:text-white" />
                 }
               </Button>
             )}
@@ -366,7 +370,7 @@ export const Header = ({ showCreate = true }: HeaderProps) => {
             {isMobile && (
               <button 
                 onClick={toggleMobileMenu}
-                className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-300 dark:hover:text-white ml-2"
+                className="p-2 text-white hover:text-white/80 ml-2 rounded-full hover:bg-white/10"
               >
                 <Menu size={24} />
               </button>
@@ -381,6 +385,7 @@ export const Header = ({ showCreate = true }: HeaderProps) => {
               toggleMobileMenu={toggleMobileMenu} 
             />
           )}
+          </div>
         </div>
       </header>
 
