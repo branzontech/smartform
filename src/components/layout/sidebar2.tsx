@@ -113,10 +113,10 @@ export const Sidebar2 = () => {
                   variant="ghost"
                   size="icon"
                   className={cn(
-                    "w-12 h-12 rounded-full transition-all duration-200 hover:scale-110",
+                    "w-12 h-12 rounded-full transition-all duration-200 hover:scale-110 text-white",
                     isItemActive(item.path)
-                      ? "bg-primary text-primary-foreground shadow-md" 
-                      : "hover:bg-muted text-muted-foreground hover:text-foreground"
+                      ? "bg-white/20 text-white shadow-md" 
+                      : "hover:bg-white/10 text-white hover:text-white"
                   )}
                   onClick={() => handleItemClick(item)}
                 >
