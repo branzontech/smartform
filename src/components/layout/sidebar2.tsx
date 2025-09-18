@@ -176,11 +176,9 @@ export const Sidebar2 = () => {
         }`}
       >
         <div 
-          className="backdrop-blur-md rounded-full shadow-2xl border border-white/20 p-3 w-20 glassmorphism-sidebar"
+          className="backdrop-blur-sm rounded-full shadow-xl border border-white/10 p-3 w-20"
           style={{ 
-            background: 'linear-gradient(135deg, rgba(139, 53, 233, 0.15), rgba(139, 53, 233, 0.25))',
-            backdropFilter: 'blur(20px)',
-            borderRadius: '50px'
+            backgroundColor: 'rgba(139, 53, 233, 0.8)'
           }}
         >
           <div className="flex flex-col items-center space-y-4">
@@ -213,10 +211,9 @@ export const Sidebar2 = () => {
       {activeSubmenu && isVisible && (
         <div className="fixed left-28 top-1/2 -translate-y-1/2 z-40">
           <div 
-            className="backdrop-blur-md rounded-2xl shadow-2xl border border-white/20 p-4 w-56 animate-slide-in-right glassmorphism-submenu"
+            className="backdrop-blur-sm rounded-2xl shadow-xl border border-white/10 p-4 w-56 animate-slide-in-right"
             style={{ 
-              background: 'linear-gradient(135deg, rgba(139, 53, 233, 0.15), rgba(139, 53, 233, 0.25))',
-              backdropFilter: 'blur(20px)'
+              backgroundColor: 'rgba(139, 53, 233, 0.8)'
             }}
           >
             <div className="space-y-2">
@@ -258,8 +255,7 @@ export const Sidebar2 = () => {
               : 'bg-primary hover:bg-primary/90 text-white shadow-lg'
           }`}
           style={{ 
-            backgroundColor: isVisible ? 'rgba(139, 53, 233, 0.2)' : '#8b35e9',
-            backdropFilter: 'blur(10px)'
+            backgroundColor: isVisible ? 'rgba(139, 53, 233, 0.6)' : '#8b35e9'
           }}
         >
           {isVisible ? <ChevronLeft size={16} /> : <ChevronRight size={16} />}
