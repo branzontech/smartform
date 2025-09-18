@@ -162,7 +162,7 @@ export const Header = ({ showCreate = true }: HeaderProps) => {
 
   return (
     <TooltipProvider>
-      <header className="sticky top-4 z-10 mx-4">
+      <header className="fixed top-4 left-0 right-0 z-50 mx-4">
         <div 
           className="rounded-full shadow-xl border border-white/10 backdrop-blur-sm"
           style={{ backgroundColor: 'rgba(139, 53, 233, 0.8)' }}
