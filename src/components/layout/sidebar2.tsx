@@ -153,7 +153,7 @@ export const Sidebar2 = () => {
           className={`w-10 h-10 rounded-full transition-all duration-300 hover:scale-110 ${
             isVisible 
               ? 'bg-white/10 hover:bg-white/20 text-white backdrop-blur-sm border border-white/20' 
-              : 'bg-primary hover:bg-primary/90 text-white shadow-lg animate-pulse'
+              : 'bg-primary hover:bg-primary/90 text-white shadow-lg'
           }`}
           style={{ 
             backgroundColor: isVisible ? 'rgba(139, 53, 233, 0.3)' : '#8b35e9'
