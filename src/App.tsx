@@ -8,6 +8,7 @@ import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { TenantProvider } from "@/contexts/TenantContext"; // Import the TenantProvider
 import { OnboardingWrapper } from "@/components/onboarding/OnboardingWrapper";
+import { Layout } from "@/components/layout";
 
 import LandingPage from "./pages/LandingPage";
 import Home from "./pages/Home";
@@ -124,83 +125,89 @@ function App() {
                 {/* Nueva ruta para el portal usuario */}
                 <Route path="/app/portal-usuario" element={<UserPortalPage />} />
                 
-                {/* Application routes */}
-                <Route path="/app" element={<AppointmentList />} />
-                <Route path="/app/home" element={<Home />} />
-                <Route path="/app/crear" element={<FormCreator />} />
-                <Route path="/app/editar/:id" element={<FormCreator />} />
-                <Route path="/app/ver/:id" element={<FormViewer />} />
-                <Route path="/app/respuestas/:id" element={<FormResponses />} />
-                <Route path="/app/pacientes" element={<PatientList />} />
-                <Route path="/app/pacientes/dashboard" element={<PatientDashboard />} />
-                <Route path="/app/pacientes/:id" element={<PatientDetail />} />
-                <Route path="/app/pacientes/nueva-consulta" element={<NewConsultation />} />
-                <Route path="/app/consulta-multiple" element={<MultiFormViewer />} />
-                <Route path="/app/citas" element={<AppointmentList />} />
-                <Route path="/app/citas/:id" element={<AppointmentDetail />} />
-                <Route path="/app/citas/nueva" element={<AppointmentForm />} />
-                <Route path="/app/citas/editar/:id" element={<AppointmentForm />} />
-                <Route path="/app/configuracion" element={<SettingsPage />} />
-                
-                {/* Nueva ruta para telemedicina */}
-                <Route path="/app/telemedicina" element={<TelemedicinePage />} />
-                
-                {/* Nueva ruta para chat médico */}
-                <Route path="/app/chat" element={<ChatPage />} />
-                
-                {/* Nueva ruta para workflows */}
-                <Route path="/app/workflows" element={<WorkflowPage />} />
-                
-                {/* Nueva ruta para admisiones */}
-                <Route path="/app/admisiones" element={<AdmissionPage />} />
-                
-                {/* Rutas de informes */}
-                <Route path="/app/informes" element={<ReportsPage />} />
-                <Route path="/app/informes/crear" element={<CreateReportPage />} />
-                <Route path="/app/informes/plantillas" element={<ReportsPage />} />
-                
-                {/* Rutas de turnos */}
-                <Route path="/app/turnos" element={<ShiftManagement />} />
-                <Route path="/app/turnos/asignar" element={<ShiftAssignment />} />
-                <Route path="/app/turnos/modificar" element={<ShiftModification />} />
-                
-                {/* Rutas de médicos y profesionales */}
-                <Route path="/app/medicos" element={<DoctorList />} />
-                <Route path="/app/medicos/nuevo" element={<DoctorForm />} />
-                <Route path="/app/medicos/:id" element={<DoctorProfile />} />
-                
-                {/* Rutas de especialidades */}
-                <Route path="/app/especialidades/cirujano" element={<CirujanoPage />} />
-                <Route path="/app/especialidades/psicologo" element={<PsicologoPage />} />
-                <Route path="/app/especialidades/nutricionista" element={<NutricionistaPage />} />
-                <Route path="/app/especialidades/terapias" element={<TerapiasPage />} />
-                
-                {/* Rutas para inventario */}
-                <Route path="/app/inventario/articulos" element={<InventoryList />} />
-                <Route path="/app/inventario/nuevo" element={<InventoryForm />} />
-                <Route path="/app/inventario/editar/:id" element={<InventoryForm />} />
-                <Route path="/app/inventario/buscar" element={<InventorySearch />} />
-                <Route path="/app/inventario/:id" element={<InventoryDetail />} />
-                
-                {/* Rutas para consultorios y sedes */}
-                <Route path="/app/locations/sites" element={<SiteListPage />} />
-                <Route path="/app/locations/sites/:siteId" element={<SiteDetailPage />} />
-                <Route path="/app/locations/offices" element={<OfficeListPage />} />
-                <Route path="/app/locations/map" element={<SiteListPage />} />
-                
-                {/* Rutas para facturación */}
-                <Route path="/app/facturacion" element={<BillingDashboard />} />
-                <Route path="/app/facturacion/:id" element={<InvoiceDetail />} />
-                <Route path="/app/facturacion/nueva" element={<InvoiceForm />} />
-                <Route path="/app/facturacion/editar/:id" element={<InvoiceForm />} />
-                
-                {/* Rutas para clientes */}
-                <Route path="/app/clientes" element={<CustomerList />} />
-                <Route path="/app/clientes/:id" element={<CustomerDetail />} />
-                <Route path="/app/clientes/notificaciones/nueva" element={<NotificationForm />} />
-                
-                {/* Ruta para centro de notificaciones */}
-                <Route path="/app/notificaciones/centro" element={<NotificationCenter />} />
+                {/* Application routes wrapped with Layout */}
+                <Route path="/app/*" element={
+                  <Layout>
+                    <Routes>
+                      <Route index element={<AppointmentList />} />
+                      <Route path="home" element={<Home />} />
+                      <Route path="crear" element={<FormCreator />} />
+                      <Route path="editar/:id" element={<FormCreator />} />
+                      <Route path="ver/:id" element={<FormViewer />} />
+                      <Route path="respuestas/:id" element={<FormResponses />} />
+                      <Route path="pacientes" element={<PatientList />} />
+                      <Route path="pacientes/dashboard" element={<PatientDashboard />} />
+                      <Route path="pacientes/:id" element={<PatientDetail />} />
+                      <Route path="pacientes/nueva-consulta" element={<NewConsultation />} />
+                      <Route path="consulta-multiple" element={<MultiFormViewer />} />
+                      <Route path="citas" element={<AppointmentList />} />
+                      <Route path="citas/:id" element={<AppointmentDetail />} />
+                      <Route path="citas/nueva" element={<AppointmentForm />} />
+                      <Route path="citas/editar/:id" element={<AppointmentForm />} />
+                      <Route path="configuracion" element={<SettingsPage />} />
+                      
+                      {/* Telemedicina */}
+                      <Route path="telemedicina" element={<TelemedicinePage />} />
+                      
+                      {/* Chat médico */}
+                      <Route path="chat" element={<ChatPage />} />
+                      
+                      {/* Workflows */}
+                      <Route path="workflows" element={<WorkflowPage />} />
+                      
+                      {/* Admisiones */}
+                      <Route path="admisiones" element={<AdmissionPage />} />
+                      
+                      {/* Informes */}
+                      <Route path="informes" element={<ReportsPage />} />
+                      <Route path="informes/crear" element={<CreateReportPage />} />
+                      <Route path="informes/plantillas" element={<ReportsPage />} />
+                      
+                      {/* Turnos */}
+                      <Route path="turnos" element={<ShiftManagement />} />
+                      <Route path="turnos/asignar" element={<ShiftAssignment />} />
+                      <Route path="turnos/modificar" element={<ShiftModification />} />
+                      
+                      {/* Médicos y profesionales */}
+                      <Route path="medicos" element={<DoctorList />} />
+                      <Route path="medicos/nuevo" element={<DoctorForm />} />
+                      <Route path="medicos/:id" element={<DoctorProfile />} />
+                      
+                      {/* Especialidades */}
+                      <Route path="especialidades/cirujano" element={<CirujanoPage />} />
+                      <Route path="especialidades/psicologo" element={<PsicologoPage />} />
+                      <Route path="especialidades/nutricionista" element={<NutricionistaPage />} />
+                      <Route path="especialidades/terapias" element={<TerapiasPage />} />
+                      
+                      {/* Inventario */}
+                      <Route path="inventario/articulos" element={<InventoryList />} />
+                      <Route path="inventario/nuevo" element={<InventoryForm />} />
+                      <Route path="inventario/editar/:id" element={<InventoryForm />} />
+                      <Route path="inventario/buscar" element={<InventorySearch />} />
+                      <Route path="inventario/:id" element={<InventoryDetail />} />
+                      
+                      {/* Consultorios y sedes */}
+                      <Route path="locations/sites" element={<SiteListPage />} />
+                      <Route path="locations/sites/:siteId" element={<SiteDetailPage />} />
+                      <Route path="locations/offices" element={<OfficeListPage />} />
+                      <Route path="locations/map" element={<SiteListPage />} />
+                      
+                      {/* Facturación */}
+                      <Route path="facturacion" element={<BillingDashboard />} />
+                      <Route path="facturacion/:id" element={<InvoiceDetail />} />
+                      <Route path="facturacion/nueva" element={<InvoiceForm />} />
+                      <Route path="facturacion/editar/:id" element={<InvoiceForm />} />
+                      
+                      {/* Clientes */}
+                      <Route path="clientes" element={<CustomerList />} />
+                      <Route path="clientes/:id" element={<CustomerDetail />} />
+                      <Route path="clientes/notificaciones/nueva" element={<NotificationForm />} />
+                      
+                      {/* Centro de notificaciones */}
+                      <Route path="notificaciones/centro" element={<NotificationCenter />} />
+                    </Routes>
+                  </Layout>
+                } />
                 
                 {/* Support legacy routes */}
                 <Route path="/crear" element={<Navigate to="/app/crear" replace />} />
