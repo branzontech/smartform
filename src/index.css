@@ -140,6 +140,13 @@
   .glassmorphism {
     @apply bg-white/80 backdrop-blur-md border border-white/20 shadow-md;
   }
+
+  /* Sidebar oval container */
+  .sidebar-oval {
+    border-radius: 50px;
+    margin: 16px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  }
 }
 
 /* Animaciones para transiciones de página */

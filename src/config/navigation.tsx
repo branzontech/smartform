@@ -67,195 +67,55 @@ export type SubmenuItem = MenuItem & {
 };
 
 export const mainNavItems: SubmenuItem[] = [
+  // Navegación Principal
   {
-    title: "Inicio",
+    title: "Dashboard",
     path: "/app/home",
     icon: Home,
   },
   {
-    title: "Portal Usuario",
-    path: "/app/portal-usuario",
-    icon: UserCircle,
-  },
-  {
-    title: "Chat Médico",
-    path: "/app/chat",
-    icon: MessageSquare,
-  },
-  {
     title: "Pacientes",
-    path: "/app/pacientes",
-    icon: Users,
-  },
-  {
-    title: "Clientes",
-    path: "/app/clientes",
-    icon: UserCircle,
-  },
-  {
-    title: "Médicos",
-    path: "/app/medicos",
-    icon: Stethoscope,
-  },
-  {
-    title: "Admisiones",
-    path: "/app/admisiones",
-    icon: UserCheck,
-  },
-  {
-    title: "Citas",
-    path: "/app/citas",
-    icon: Calendar,
-  },
-  {
-    title: "Gestión de Turnos",
     path: "#",
-    icon: CalendarRange,
+    icon: Users,
     items: [
       {
-        title: "Asignar Turnos",
-        path: "/app/turnos/asignar",
+        title: "Lista de Pacientes",
+        path: "/app/pacientes",
+        icon: Users,
+      },
+      {
+        title: "Nuevo Paciente",
+        path: "/app/pacientes/nueva-consulta",
+        icon: UserPlus,
+      },
+      {
+        title: "Dashboard Pacientes",
+        path: "/app/pacientes/dashboard",
+        icon: BarChart,
+      },
+    ],
+  },
+  {
+    title: "Citas Médicas",
+    path: "#",
+    icon: Calendar,
+    items: [
+      {
+        title: "Agenda",
+        path: "/app/citas",
+        icon: Calendar,
+      },
+      {
+        title: "Nueva Cita",
+        path: "/app/citas/nueva",
         icon: CalendarCheck,
       },
       {
-        title: "Consultar Turnos",
+        title: "Turnos",
         path: "/app/turnos",
-        icon: CalendarClock,
-      },
-      {
-        title: "Modificar Turnos",
-        path: "/app/turnos/modificar",
-        icon: Clock,
+        icon: CalendarRange,
       },
     ],
-  },
-  {
-    title: "Telemedicina",
-    path: "/app/telemedicina",
-    icon: Video,
-  },
-  {
-    title: "Workflows IA",
-    path: "/app/workflows",
-    icon: Workflow,
-  },
-  {
-    title: "Facturación",
-    path: "#",
-    icon: CreditCard,
-    items: [
-      {
-        title: "Dashboard",
-        path: "/app/facturacion",
-        icon: PieChart,
-      },
-      {
-        title: "Facturas",
-        path: "/app/facturacion",
-        icon: Receipt,
-      },
-      {
-        title: "Pagos Pendientes",
-        path: "/app/facturacion?tab=pending",
-        icon: Clock,
-      },
-      {
-        title: "Reportes",
-        path: "/app/facturacion?tab=reports",
-        icon: FileBarChart,
-      },
-      {
-        title: "Generar Factura",
-        path: "/app/facturacion/nueva",
-        icon: DollarSign,
-      },
-    ],
-  },
-  {
-    title: "Informes",
-    path: "#",
-    icon: FileBarChart,
-    items: [
-      {
-        title: "Crear Informe",
-        path: "/app/informes/crear",
-        icon: ChartBar,
-      },
-      {
-        title: "Informes Guardados",
-        path: "/app/informes",
-        icon: FileText,
-      },
-      {
-        title: "Plantillas",
-        path: "/app/informes/plantillas",
-        icon: FileSpreadsheet,
-      },
-    ],
-  },
-  {
-    title: "Recordatorios Médicos",
-    path: "/app/notificaciones/centro",
-    icon: Bell,
-  },
-  {
-    title: "Notificaciones",
-    path: "/app/clientes/notificaciones/nueva",
-    icon: Send,
-  },
-  {
-    title: "Inventario",
-    path: "#",
-    icon: PackageOpen,
-    items: [
-      {
-        title: "Artículos",
-        path: "/app/inventario/articulos",
-        icon: List,
-      },
-      {
-        title: "Nuevo Artículo",
-        path: "/app/inventario/nuevo",
-        icon: PackagePlus,
-      },
-      {
-        title: "Buscar",
-        path: "/app/inventario/buscar",
-        icon: PackageSearch,
-      },
-    ],
-  },
-  {
-    title: "Consultorios",
-    path: "#",
-    icon: Building,
-    items: [
-      {
-        title: "Sedes",
-        path: "/app/locations/sites",
-        icon: Building,
-      },
-      {
-        title: "Consultorios",
-        path: "/app/locations/offices",
-        icon: Building2,
-      },
-      {
-        title: "Mapa de Instalaciones",
-        path: "/app/locations/map",
-        icon: MapPin,
-      },
-    ],
-  },
-  {
-    title: "Historias clínicas",
-    path: "/app/crear",
-    icon: ClipboardList,
-  },
-  {
-    title: "Estadísticas",
-    path: "/app/pacientes/dashboard",
-    icon: BarChart,
   },
   {
     title: "Comunicación",
@@ -268,48 +128,43 @@ export const mainNavItems: SubmenuItem[] = [
         icon: MessageSquare,
       },
       {
-        title: "Mensajes",
-        path: "/app/comunicacion/mensajes",
-        icon: Mail,
+        title: "Telemedicina",
+        path: "/app/telemedicina",
+        icon: Video,
       },
       {
         title: "Notificaciones",
-        path: "/app/comunicacion/notificaciones",
+        path: "/app/notificaciones/centro",
         icon: Bell,
       },
-      {
-        title: "Foros",
-        path: "/app/comunicacion/foros",
-        icon: MessageSquare,
-      },
     ],
   },
   {
-    title: "Recursos",
+    title: "Gestión Clínica",
     path: "#",
-    icon: BookOpen,
+    icon: ClipboardList,
     items: [
       {
-        title: "Artículos",
-        path: "/app/recursos/articulos",
-        icon: FileText,
+        title: "Historias Clínicas",
+        path: "/app/crear",
+        icon: ClipboardList,
       },
       {
-        title: "Videos",
-        path: "/app/recursos/videos",
-        icon: GraduationCap,
+        title: "Admisiones",
+        path: "/app/admisiones",
+        icon: UserCheck,
       },
       {
-        title: "Enlaces",
-        path: "/app/recursos/enlaces",
-        icon: Link,
+        title: "Portal Usuario",
+        path: "/app/portal-usuario",
+        icon: UserCircle,
       },
     ],
   },
   {
-    title: "Personal",
+    title: "Personal & Admin",
     path: "#",
-    icon: UserPlus,
+    icon: Stethoscope,
     items: [
       {
         title: "Médicos",
@@ -317,14 +172,36 @@ export const mainNavItems: SubmenuItem[] = [
         icon: Stethoscope,
       },
       {
-        title: "Enfermeros",
-        path: "/app/personal/enfermeros",
-        icon: Heart,
+        title: "Inventario",
+        path: "/app/inventario/articulos",
+        icon: PackageOpen,
       },
       {
-        title: "Administrativos",
-        path: "/app/personal/administrativos",
-        icon: Briefcase,
+        title: "Consultorios",
+        path: "/app/locations/sites",
+        icon: Building,
+      },
+    ],
+  },
+  {
+    title: "Facturación",
+    path: "#",
+    icon: CreditCard,
+    items: [
+      {
+        title: "Dashboard",
+        path: "/app/facturacion",
+        icon: PieChart,
+      },
+      {
+        title: "Nueva Factura",
+        path: "/app/facturacion/nueva",
+        icon: DollarSign,
+      },
+      {
+        title: "Reportes",
+        path: "/app/informes",
+        icon: FileBarChart,
       },
     ],
   },

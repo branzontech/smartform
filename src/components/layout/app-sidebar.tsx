@@ -61,14 +61,11 @@ export function AppSidebar() {
 
   return (
     <Sidebar 
-      className="text-white shadow-2xl ml-4 my-4"
+      variant="floating"
+      className="text-white shadow-2xl"
       style={{
         ["--sidebar-background" as any]: "247 76% 58%",
         ["--sidebar-foreground" as any]: "0 0% 100%",
-        borderRadius: "50px",
-        border: "none",
-        width: "280px",
-        maxWidth: "280px"
       } as React.CSSProperties}
     >
       <SidebarHeader className="p-6 pt-8">
