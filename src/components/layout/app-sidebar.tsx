@@ -61,16 +61,20 @@ export function AppSidebar() {
 
   return (
     <Sidebar 
-      className="border-r border-sidebar-border text-white shadow-2xl"
+      className="text-white shadow-2xl ml-4 my-4"
       style={{
         ["--sidebar-background" as any]: "247 76% 58%",
         ["--sidebar-foreground" as any]: "0 0% 100%",
+        borderRadius: "50px",
+        border: "none",
+        width: "280px",
+        maxWidth: "280px"
       } as React.CSSProperties}
     >
-      <SidebarHeader className="p-4 border-b border-white/10">
+      <SidebarHeader className="p-6 pt-8">
         <div className={`flex items-center gap-3 transition-all duration-300 ${state === "collapsed" ? "justify-center" : ""}`}>
-          <div className="p-2 rounded-xl bg-primary/20 backdrop-blur-sm border border-primary/30">
-            <Stethoscope className="h-6 w-6 text-primary" />
+          <div className="p-3 rounded-full bg-white/20 backdrop-blur-sm">
+            <Stethoscope className="h-7 w-7 text-white" />
           </div>
           {state !== "collapsed" && (
             <div className="flex flex-col">
@@ -81,7 +85,7 @@ export function AppSidebar() {
         </div>
       </SidebarHeader>
 
-      <SidebarContent className="px-2 py-4">
+      <SidebarContent className="px-4 py-2 flex-1">
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu className="space-y-1">
@@ -95,9 +99,9 @@ export function AppSidebar() {
                     <SidebarMenuItem key={item.title}>
                       <Collapsible open={isGroupOpen} onOpenChange={() => toggleGroup(item.title)}>
                         <CollapsibleTrigger asChild>
-                          <SidebarMenuButton 
-                            className={`w-full group hover:bg-white/10 transition-all duration-200 rounded-xl ${
-                              hasActiveSubItem ? "bg-primary/20 text-white shadow-md border border-primary/30" : "text-white/90"
+                           <SidebarMenuButton 
+                            className={`w-full group hover:bg-white/10 transition-all duration-200 rounded-2xl ${
+                              hasActiveSubItem ? "bg-white/20 text-white shadow-md" : "text-white/90"
                             }`}
                           >
                             <div className="flex items-center gap-3 w-full">
@@ -118,14 +122,14 @@ export function AppSidebar() {
                             <SidebarMenuSub className="mt-2 space-y-1">
                               {item.items!.map((subItem) => (
                                 <SidebarMenuSubItem key={subItem.path}>
-                                  <SidebarMenuSubButton 
-                                    asChild
-                                    className={`rounded-lg transition-all duration-200 ${
-                                      isActive(subItem.path) 
-                                        ? "bg-primary/30 text-white shadow-sm border border-primary/40" 
-                                        : "text-white/80 hover:bg-white/10 hover:text-white"
-                                    }`}
-                                  >
+                                     <SidebarMenuSubButton 
+                                      asChild
+                                      className={`rounded-2xl transition-all duration-200 ${
+                                        isActive(subItem.path) 
+                                          ? "bg-white/30 text-white shadow-sm" 
+                                          : "text-white/80 hover:bg-white/10 hover:text-white"
+                                      }`}
+                                    >
                                     <NavLink to={subItem.path} className="flex items-center gap-3 w-full">
                                       <subItem.icon className="h-4 w-4 flex-shrink-0" />
                                       <span className="font-medium">{subItem.title}</span>
@@ -145,9 +149,9 @@ export function AppSidebar() {
                   <SidebarMenuItem key={item.path}>
                     <SidebarMenuButton 
                       asChild
-                      className={`group hover:bg-white/10 transition-all duration-200 rounded-xl ${
+                      className={`group hover:bg-white/10 transition-all duration-200 rounded-2xl ${
                         isActive(item.path) 
-                          ? "bg-primary/20 text-white shadow-md border border-primary/30" 
+                          ? "bg-white/20 text-white shadow-md" 
                           : "text-white/90"
                       }`}
                     >
@@ -168,16 +172,16 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="p-4 border-t border-white/10">
+      <SidebarFooter className="p-6 pb-8">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
               variant="ghost"
-              className={`w-full justify-start gap-3 hover:bg-white/10 text-white transition-all duration-200 rounded-xl ${
+              className={`w-full justify-start gap-3 hover:bg-white/10 text-white transition-all duration-200 rounded-2xl ${
                 state === "collapsed" ? "px-2" : ""
               }`}
             >
-              <Avatar className="h-8 w-8 bg-primary/20 border-2 border-primary/30">
+              <Avatar className="h-10 w-10 bg-white/20 border-2 border-white/30 rounded-full">
                 <AvatarFallback className="text-sm font-bold text-white bg-transparent">
                   {user.initials}
                 </AvatarFallback>
