@@ -17,6 +17,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { AdditionalFormsModal } from '@/components/forms/AdditionalFormsModal';
 import { QuickLinksManager } from '@/components/forms/QuickLinksManager';
+import { PatientHistoryPanel } from '@/components/patients/PatientHistoryPanel';
 
 interface FormWithStatus {
   id: string;
@@ -353,7 +354,7 @@ const MultiFormViewer = () => {
           </div>
         </div>
 
-        {/* Forms navigation and content */}
+        {/* Forms navigation and content with patient history */}
         <div className="flex-1 overflow-hidden">
           <div className="flex h-full">
             {/* Compact forms sidebar */}
@@ -440,7 +441,7 @@ const MultiFormViewer = () => {
               </div>
             </div>
 
-            {/* Current form content - Direct rendering */}
+            {/* Current form content - Center column */}
             <div className="flex-1 overflow-auto">
               {currentForm && (
                 <div className="p-4">
@@ -484,6 +485,13 @@ const MultiFormViewer = () => {
                 </div>
               )}
             </div>
+
+            {/* Patient history panel - Right column */}
+            {patientId && (
+              <div className="w-80 border-l bg-muted/30">
+                <PatientHistoryPanel patientId={patientId} className="h-full p-3" />
+              </div>
+            )}
           </div>
         </div>
       </main>
