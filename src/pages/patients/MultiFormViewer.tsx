@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Progress } from "@/components/ui/progress";
 import { Header } from "@/components/layout/header";
 import { BackButton } from "@/App";
-import { Check, FileText, ChevronLeft, ChevronRight, FolderOpen, Bell, Calendar, Stethoscope, User } from 'lucide-react';
+import { Check, FileText, ChevronLeft, ChevronRight, FolderOpen, Bell, Calendar, Stethoscope, User, Pill } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { fetchFormById, createDynamicSchema, saveFormResponse } from '@/utils/form-utils';
 import { Form as FormType } from '../Home';
@@ -19,6 +19,7 @@ import { AdditionalFormsModal } from '@/components/forms/AdditionalFormsModal';
 import { QuickLinksManager } from '@/components/forms/QuickLinksManager';
 import { PatientHistoryPanel } from '@/components/patients/PatientHistoryPanel';
 import { PatientAdmissionHistoryPanel } from '@/components/patients/PatientAdmissionHistoryPanel';
+import { PatientMedicationPanel } from '@/components/patients/PatientMedicationPanel';
 
 interface FormWithStatus {
   id: string;
@@ -45,7 +46,7 @@ const MultiFormViewer = () => {
   const [loading, setLoading] = useState(true);
   const [currentFormData, setCurrentFormData] = useState<{ [key: string]: any }>({});
   const [showPatientHistory, setShowPatientHistory] = useState(false);
-  const [activePanel, setActivePanel] = useState<'history' | 'admissions' | null>(null);
+  const [activePanel, setActivePanel] = useState<'history' | 'admissions' | 'medications' | null>(null);
 
   useEffect(() => {
     const loadForms = async () => {
@@ -373,6 +374,14 @@ const MultiFormViewer = () => {
                   <Button
                     variant="ghost"
                     size="sm"
+                    onClick={() => setActivePanel(activePanel === 'medications' ? null : 'medications')}
+                    className={`p-2 rounded-full ${activePanel === 'medications' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'}`}
+                  >
+                    <Pill size={18} />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
                     className="p-2 rounded-full hover:bg-muted"
                   >
                     <Bell size={18} />
@@ -531,6 +540,9 @@ const MultiFormViewer = () => {
                 )}
                 {activePanel === 'admissions' && (
                   <PatientAdmissionHistoryPanel patientId={patientId} className="h-full p-3" />
+                )}
+                {activePanel === 'medications' && (
+                  <PatientMedicationPanel patientId={patientId} className="h-full p-3" />
                 )}
               </div>
             )}
