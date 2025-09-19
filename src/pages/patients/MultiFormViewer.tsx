@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Progress } from "@/components/ui/progress";
 import { Header } from "@/components/layout/header";
 import { BackButton } from "@/App";
-import { Check, FileText, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Check, FileText, ChevronLeft, ChevronRight, History, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { fetchFormById, createDynamicSchema, saveFormResponse } from '@/utils/form-utils';
 import { Form as FormType } from '../Home';
@@ -43,6 +43,7 @@ const MultiFormViewer = () => {
   const [currentFormIndex, setCurrentFormIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const [currentFormData, setCurrentFormData] = useState<{ [key: string]: any }>({});
+  const [showPatientHistory, setShowPatientHistory] = useState(false);
 
   useEffect(() => {
     const loadForms = async () => {
@@ -349,6 +350,26 @@ const MultiFormViewer = () => {
                   {completedCount}/{forms.length} completados
                 </p>
               </div>
+              {patientId && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowPatientHistory(!showPatientHistory)}
+                  className="flex items-center gap-2"
+                >
+                  {showPatientHistory ? (
+                    <>
+                      <X size={16} />
+                      <span className="hidden sm:inline">Ocultar</span>
+                    </>
+                  ) : (
+                    <>
+                      <History size={16} />
+                      <span className="hidden sm:inline">Antecedentes</span>
+                    </>
+                  )}
+                </Button>
+              )}
             </div>
             <Progress value={progressPercentage} className="w-full h-1.5" />
           </div>
@@ -486,8 +507,8 @@ const MultiFormViewer = () => {
               )}
             </div>
 
-            {/* Patient history panel - Right column */}
-            {patientId && (
+            {/* Patient history panel - Right column (collapsible) */}
+            {patientId && showPatientHistory && (
               <div className="w-80 border-l bg-muted/30">
                 <PatientHistoryPanel patientId={patientId} className="h-full p-3" />
               </div>
