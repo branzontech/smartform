@@ -83,6 +83,11 @@ const MultiFormViewer = () => {
       }
       
       setForms(formsWithStatus);
+      if (formsWithStatus.length === 0) {
+        // Auto-redirect to form selection if none are valid to avoid empty state loop
+        navigate('/app/pacientes/nueva-consulta?warn=emptyForms');
+        return;
+      }
       setLoading(false);
     };
 
