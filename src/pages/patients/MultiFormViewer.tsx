@@ -15,6 +15,8 @@ import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { AdditionalFormsModal } from '@/components/forms/AdditionalFormsModal';
+import { QuickLinksManager } from '@/components/forms/QuickLinksManager';
 
 interface FormWithStatus {
   id: string;
@@ -114,6 +116,55 @@ const MultiFormViewer = () => {
       ...prev,
       [id]: value
     }));
+  };
+
+  const handleAddForm = (formId: string) => {
+    const result = fetchFormById(formId);
+    if (result.form) {
+      const questions = result.form.questions as QuestionData[] || [];
+      if (questions.length > 0) {
+        const newForm: FormWithStatus = {
+          id: formId,
+          title: result.form.title,
+          description: result.form.description,
+          completed: false,
+          formData: result.form,
+          questions: questions,
+          responses: {}
+        };
+        
+        setForms(prev => [...prev, newForm]);
+        
+        // Update URL to include the new form
+        const currentFormIds = queryParams.get("forms")?.split(',') || [];
+        const updatedFormIds = [...currentFormIds, formId];
+        const newUrl = `${location.pathname}?${queryParams.toString().replace(
+          /forms=[^&]*/,
+          `forms=${updatedFormIds.join(',')}`
+        )}`;
+        window.history.replaceState({}, '', newUrl);
+        
+        toast({
+          title: "Formulario agregado",
+          description: `Se agregó "${result.form.title}" a la consulta`,
+        });
+      }
+    }
+  };
+
+  const handleQuickLinkNavigate = (url: string) => {
+    // Save current progress before navigating
+    const completedFormsCount = forms.filter(f => f.completed).length;
+    if (completedFormsCount > 0) {
+      localStorage.setItem(`consultation_progress_${consultationId}`, JSON.stringify({
+        patientId,
+        consultationId,
+        completedForms: forms.filter(f => f.completed).map(f => ({ id: f.id, title: f.title })),
+        timestamp: new Date().toISOString()
+      }));
+    }
+    
+    navigate(url);
   };
 
   const handleFinishConsultation = () => {
@@ -286,8 +337,9 @@ const MultiFormViewer = () => {
         <div className="flex-1 overflow-hidden">
           <div className="flex h-full">
             {/* Compact forms sidebar */}
-            <div className="w-64 border-r bg-muted/30 p-3 space-y-3">
+            <div className="w-80 border-r bg-muted/30 p-3 space-y-4">
               <div className="space-y-2">
+                <h3 className="text-sm font-medium text-muted-foreground">Formularios de la consulta</h3>
                 {forms.map((formItem, index) => (
                   <div
                     key={formItem.id}
@@ -316,8 +368,24 @@ const MultiFormViewer = () => {
                 ))}
               </div>
 
+              {/* Add more forms */}
+              <div className="space-y-2">
+                <h3 className="text-sm font-medium text-muted-foreground">Agregar formularios</h3>
+                <AdditionalFormsModal 
+                  onAddForm={handleAddForm}
+                  excludeFormIds={forms.map(f => f.id)}
+                />
+              </div>
+
+              {/* Quick Links */}
+              <div className="space-y-2">
+                <h3 className="text-sm font-medium text-muted-foreground">Vínculos rápidos</h3>
+                <QuickLinksManager onNavigate={handleQuickLinkNavigate} />
+              </div>
+
               {/* Compact navigation */}
               <div className="space-y-2">
+                <h3 className="text-sm font-medium text-muted-foreground">Navegación</h3>
                 <Button
                   variant="outline"
                   size="sm"
