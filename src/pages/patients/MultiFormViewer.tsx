@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Progress } from "@/components/ui/progress";
 import { Header } from "@/components/layout/header";
 import { BackButton } from "@/App";
-import { Check, FileText, ChevronLeft, ChevronRight, History, X } from 'lucide-react';
+import { Check, FileText, ChevronLeft, ChevronRight, FolderOpen, Bell, Calendar, Stethoscope, User } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { fetchFormById, createDynamicSchema, saveFormResponse } from '@/utils/form-utils';
 import { Form as FormType } from '../Home';
@@ -351,24 +351,37 @@ const MultiFormViewer = () => {
                 </p>
               </div>
               {patientId && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowPatientHistory(!showPatientHistory)}
-                  className="flex items-center gap-2"
-                >
-                  {showPatientHistory ? (
-                    <>
-                      <X size={16} />
-                      <span className="hidden sm:inline">Ocultar</span>
-                    </>
-                  ) : (
-                    <>
-                      <History size={16} />
-                      <span className="hidden sm:inline">Antecedentes</span>
-                    </>
-                  )}
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowPatientHistory(!showPatientHistory)}
+                    className={`p-2 rounded-full ${showPatientHistory ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'}`}
+                  >
+                    <FolderOpen size={18} />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="p-2 rounded-full hover:bg-muted"
+                  >
+                    <Bell size={18} />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="p-2 rounded-full hover:bg-muted"
+                  >
+                    <Calendar size={18} />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="p-2 rounded-full hover:bg-muted"
+                  >
+                    <Stethoscope size={18} />
+                  </Button>
+                </div>
               )}
             </div>
             <Progress value={progressPercentage} className="w-full h-1.5" />
