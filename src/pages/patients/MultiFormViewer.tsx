@@ -49,15 +49,26 @@ const MultiFormViewer = () => {
       for (const formId of formIds) {
         const result = fetchFormById(formId);
         if (result.form) {
-          formsWithStatus.push({
-            id: formId,
-            title: result.form.title,
-            description: result.form.description,
-            completed: false,
-            formData: result.form,
-            questions: result.form.questions as QuestionData[],
-            responses: {}
-          });
+          // Only add forms that have questions
+          const questions = result.form.questions as QuestionData[] || [];
+          if (questions.length > 0) {
+            formsWithStatus.push({
+              id: formId,
+              title: result.form.title,
+              description: result.form.description,
+              completed: false,
+              formData: result.form,
+              questions: questions,
+              responses: {}
+            });
+          } else {
+            console.warn(`Form ${formId} has no questions, skipping...`);
+            toast({
+              title: "Formulario vacío",
+              description: `El formulario "${result.form.title}" no tiene preguntas configuradas`,
+              variant: "destructive"
+            });
+          }
         }
       }
       
@@ -70,7 +81,7 @@ const MultiFormViewer = () => {
     } else {
       navigate('/app/pacientes/nueva-consulta');
     }
-  }, [formIds, navigate]);
+  }, [formIds, navigate, toast]);
 
   const handleFormComplete = (formId: string, responses: any) => {
     // Save the form response
@@ -107,6 +118,17 @@ const MultiFormViewer = () => {
 
   const handleFinishConsultation = () => {
     const completedFormsCount = forms.filter(f => f.completed).length;
+    const formsWithQuestions = forms.filter(f => f.questions.length > 0);
+    
+    // If there are no forms with questions, allow finishing
+    if (formsWithQuestions.length === 0) {
+      toast({
+        title: "Consulta finalizada",
+        description: "No había formularios válidos que completar",
+      });
+      navigate(`/app/pacientes/${patientId}`);
+      return;
+    }
     
     if (completedFormsCount === 0) {
       toast({
@@ -322,7 +344,7 @@ const MultiFormViewer = () => {
                   size="sm"
                   className="w-full bg-green-600 hover:bg-green-700"
                   onClick={handleFinishConsultation}
-                  disabled={completedCount === 0}
+                  disabled={forms.length > 0 && completedCount === 0}
                 >
                   <Check size={14} className="mr-1" />
                   Finalizar
