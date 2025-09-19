@@ -18,6 +18,7 @@ import { z } from "zod";
 import { AdditionalFormsModal } from '@/components/forms/AdditionalFormsModal';
 import { QuickLinksManager } from '@/components/forms/QuickLinksManager';
 import { PatientHistoryPanel } from '@/components/patients/PatientHistoryPanel';
+import { PatientAdmissionHistory } from '@/components/patients/PatientAdmissionHistory';
 
 interface FormWithStatus {
   id: string;
@@ -374,13 +375,15 @@ const MultiFormViewer = () => {
                   >
                     <Calendar size={18} />
                   </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="p-2 rounded-full hover:bg-muted"
-                  >
-                    <Stethoscope size={18} />
-                  </Button>
+                  <PatientAdmissionHistory patientId={patientId}>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="p-2 rounded-full hover:bg-muted"
+                    >
+                      <Stethoscope size={18} />
+                    </Button>
+                  </PatientAdmissionHistory>
                 </div>
               )}
             </div>
