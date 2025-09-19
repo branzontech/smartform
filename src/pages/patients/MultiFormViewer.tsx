@@ -47,6 +47,7 @@ const MultiFormViewer = () => {
     const loadForms = async () => {
       setLoading(true);
       const formsWithStatus: FormWithStatus[] = [];
+      const skippedForms: string[] = [];
       
       for (const formId of formIds) {
         const result = fetchFormById(formId);
@@ -65,13 +66,20 @@ const MultiFormViewer = () => {
             });
           } else {
             console.warn(`Form ${formId} has no questions, skipping...`);
-            toast({
-              title: "Formulario vacío",
-              description: `El formulario "${result.form.title}" no tiene preguntas configuradas`,
-              variant: "destructive"
-            });
+            skippedForms.push(result.form.title);
           }
         }
+      }
+      
+      // Show toast only once for all skipped forms
+      if (skippedForms.length > 0) {
+        toast({
+          title: skippedForms.length === 1 ? "Formulario vacío" : "Formularios vacíos",
+          description: skippedForms.length === 1 
+            ? `El formulario "${skippedForms[0]}" no tiene preguntas configuradas`
+            : `Los formularios: ${skippedForms.join(', ')} no tienen preguntas configuradas`,
+          variant: "destructive"
+        });
       }
       
       setForms(formsWithStatus);
@@ -83,7 +91,7 @@ const MultiFormViewer = () => {
     } else {
       navigate('/app/pacientes/nueva-consulta');
     }
-  }, [formIds, navigate, toast]);
+  }, [formIds.join(','), navigate]); // Use join to avoid dependency array issues
 
   const handleFormComplete = (formId: string, responses: any) => {
     // Save the form response
@@ -294,7 +302,7 @@ const MultiFormViewer = () => {
     );
   }
 
-  if (forms.length === 0) {
+  if (forms.length === 0 && !loading) {
     return (
       <div className="min-h-screen flex flex-col">
         <Header />
@@ -302,11 +310,18 @@ const MultiFormViewer = () => {
           <BackButton />
           <div className="text-center py-12">
             <FileText size={48} className="mx-auto text-gray-300 mb-4" />
-            <h2 className="text-2xl font-bold mb-2">No se encontraron formularios</h2>
-            <p className="text-gray-600 mb-4">No hay formularios válidos para esta consulta</p>
-            <Button onClick={() => navigate('/app/pacientes/nueva-consulta')}>
-              Volver a nueva consulta
-            </Button>
+            <h2 className="text-2xl font-bold mb-2">No se encontraron formularios válidos</h2>
+            <p className="text-gray-600 mb-4">
+              Los formularios seleccionados no tienen preguntas configuradas o no existen
+            </p>
+            <div className="space-y-2">
+              <Button onClick={() => navigate('/app/pacientes/nueva-consulta')}>
+                Volver a nueva consulta
+              </Button>
+              <p className="text-sm text-muted-foreground">
+                Puedes agregar formularios usando el botón "Agregar formulario" en el panel lateral
+              </p>
+            </div>
           </div>
         </main>
       </div>
