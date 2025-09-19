@@ -12,6 +12,9 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
   DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubTrigger,
+  DropdownMenuSubContent,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { mainNavItems } from "@/config/navigation";
@@ -198,23 +201,18 @@ export const Header = ({ showCreate = true }: HeaderProps) => {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent 
-                className="w-56 max-h-[70vh] overflow-y-auto bg-white/20 dark:bg-gray-900/30 backdrop-blur-lg border border-white/20 dark:border-gray-700/30 shadow-lg" 
+                className="w-56 max-h-[70vh] overflow-y-auto bg-white/95 dark:bg-gray-900/95 backdrop-blur-lg border border-white/20 dark:border-gray-700/30 shadow-lg" 
                 align="end"
               >
                 <DropdownMenuGroup>
                   {mainNavItems.map((item) => (
                     item.items ? (
-                      <DropdownMenu key={item.title}>
-                        <DropdownMenuTrigger asChild className="w-full">
-                          <DropdownMenuItem className="flex items-center justify-between cursor-default">
-                            <div className="flex items-center gap-2">
-                              {item.icon && <item.icon className="h-4 w-4" />}
-                              <span>{item.title}</span>
-                            </div>
-                            <ChevronDown className="h-4 w-4" />
-                          </DropdownMenuItem>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent className="w-56">
+                      <DropdownMenuSub key={item.title}>
+                        <DropdownMenuSubTrigger className="flex items-center gap-2">
+                          {item.icon && <item.icon className="h-4 w-4" />}
+                          <span>{item.title}</span>
+                        </DropdownMenuSubTrigger>
+                        <DropdownMenuSubContent className="w-56 bg-white/95 dark:bg-gray-900/95 backdrop-blur-lg border border-white/20 dark:border-gray-700/30 shadow-lg">
                           {item.items.map((subItem) => (
                             <DropdownMenuItem key={subItem.title} asChild>
                               <Link to={subItem.path || "#"} className="flex items-center gap-2">
@@ -223,8 +221,8 @@ export const Header = ({ showCreate = true }: HeaderProps) => {
                               </Link>
                             </DropdownMenuItem>
                           ))}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                        </DropdownMenuSubContent>
+                      </DropdownMenuSub>
                     ) : (
                       <DropdownMenuItem key={item.title} asChild>
                         <Link to={item.path || "#"} className="flex items-center gap-2">
