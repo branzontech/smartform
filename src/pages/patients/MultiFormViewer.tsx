@@ -18,7 +18,7 @@ import { z } from "zod";
 import { AdditionalFormsModal } from '@/components/forms/AdditionalFormsModal';
 import { QuickLinksManager } from '@/components/forms/QuickLinksManager';
 import { PatientHistoryPanel } from '@/components/patients/PatientHistoryPanel';
-import { PatientAdmissionHistory } from '@/components/patients/PatientAdmissionHistory';
+import { PatientAdmissionHistoryPanel } from '@/components/patients/PatientAdmissionHistoryPanel';
 
 interface FormWithStatus {
   id: string;
@@ -45,6 +45,7 @@ const MultiFormViewer = () => {
   const [loading, setLoading] = useState(true);
   const [currentFormData, setCurrentFormData] = useState<{ [key: string]: any }>({});
   const [showPatientHistory, setShowPatientHistory] = useState(false);
+  const [activePanel, setActivePanel] = useState<'history' | 'admissions' | null>(null);
 
   useEffect(() => {
     const loadForms = async () => {
@@ -356,10 +357,18 @@ const MultiFormViewer = () => {
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => setShowPatientHistory(!showPatientHistory)}
-                    className={`p-2 rounded-full ${showPatientHistory ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'}`}
+                    onClick={() => setActivePanel(activePanel === 'history' ? null : 'history')}
+                    className={`p-2 rounded-full ${activePanel === 'history' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'}`}
                   >
                     <FolderOpen size={18} />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setActivePanel(activePanel === 'admissions' ? null : 'admissions')}
+                    className={`p-2 rounded-full ${activePanel === 'admissions' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'}`}
+                  >
+                    <Stethoscope size={18} />
                   </Button>
                   <Button
                     variant="ghost"
@@ -375,15 +384,6 @@ const MultiFormViewer = () => {
                   >
                     <Calendar size={18} />
                   </Button>
-                  <PatientAdmissionHistory patientId={patientId}>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="p-2 rounded-full hover:bg-muted"
-                    >
-                      <Stethoscope size={18} />
-                    </Button>
-                  </PatientAdmissionHistory>
                 </div>
               )}
             </div>
@@ -523,10 +523,15 @@ const MultiFormViewer = () => {
               )}
             </div>
 
-            {/* Patient history panel - Right column (collapsible) */}
-            {patientId && showPatientHistory && (
+            {/* Patient panels - Right column (collapsible) */}
+            {patientId && activePanel && (
               <div className="w-80 border-l bg-muted/30">
-                <PatientHistoryPanel patientId={patientId} className="h-full p-3" />
+                {activePanel === 'history' && (
+                  <PatientHistoryPanel patientId={patientId} className="h-full p-3" />
+                )}
+                {activePanel === 'admissions' && (
+                  <PatientAdmissionHistoryPanel patientId={patientId} className="h-full p-3" />
+                )}
               </div>
             )}
           </div>
