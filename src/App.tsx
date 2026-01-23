@@ -6,11 +6,12 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useNavigate, Navigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { TenantProvider } from "@/contexts/TenantContext"; // Import the TenantProvider
+import { TenantProvider } from "@/contexts/TenantContext";
 import { OnboardingWrapper } from "@/components/onboarding/OnboardingWrapper";
 import { Layout } from "@/components/layout";
+import { HelmetProvider } from "react-helmet-async";
 
-import LandingPage from "./pages/LandingPage";
+import LandingPage from "./pages/landing";
 import Home from "./pages/Home";
 import FormCreator from "./pages/FormCreator";
 import FormViewer from "./pages/FormViewer";
@@ -103,10 +104,11 @@ const queryClient = new QueryClient();
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <TenantProvider>
-          <Toaster />
+    <HelmetProvider>
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <TenantProvider>
+            <Toaster />
           <Sonner />
           <OnboardingWrapper>
             <BrowserRouter>
@@ -232,11 +234,12 @@ function App() {
               
               {/* Asistente de IA flotante */}
               <AIAssistant />
-            </BrowserRouter>
-          </OnboardingWrapper>
-        </TenantProvider>
-      </TooltipProvider>
-    </QueryClientProvider>
+              </BrowserRouter>
+            </OnboardingWrapper>
+          </TenantProvider>
+        </TooltipProvider>
+      </QueryClientProvider>
+    </HelmetProvider>
   );
 }
 
