@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Header } from "@/components/layout/header";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, FileText, PlusSquare, Palette, Bell, Database, Save, User, UserCog, Shield, Plus, Cog, HelpCircle, Home, Trash2 } from "lucide-react";
+import { ArrowLeft, FileText, Palette, Bell, Save, User, Shield, Plus, Cog, HelpCircle, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
@@ -27,19 +27,6 @@ const formCreationSchema = z.object({
   description: z.string().optional(),
 });
 
-// Floating menu items (como en la imagen de referencia)
-const floatingMenuItems = [
-  { id: "home", icon: <Home size={20} />, action: () => window.location.href = "/" },
-  { id: "forms", icon: <FileText size={20} />, isActive: false },
-  { id: "users", icon: <User size={20} />, isActive: false },
-  { id: "plus", icon: <Plus size={20} />, isActive: false },
-  { id: "database", icon: <Database size={20} />, isActive: false },
-  { id: "briefcase", icon: <PlusSquare size={20} />, isActive: false },
-  // Separador visual
-  { id: "separator", icon: null, isActive: false },
-  { id: "cog", icon: <Cog size={20} />, isActive: true },
-  { id: "trash", icon: <Trash2 size={20} />, isActive: false },
-];
 
 // Settings categories
 const categories = [
@@ -90,37 +77,8 @@ export const SettingsPage = () => {
     <div className="min-h-screen bg-background">
       <Header />
       
-      {/* Menú Flotante Vertical - Como en la imagen de referencia */}
-      <div className="fixed left-6 top-1/2 -translate-y-1/2 z-50">
-        <div className="bg-card/95 backdrop-blur-sm rounded-full shadow-xl border border-border/20 p-3 w-20">
-          <div className="flex flex-col items-center space-y-4">
-            {floatingMenuItems.map((item, index) => (
-              <div key={item.id}>
-                {item.id === "separator" ? (
-                  <div className="w-8 h-px bg-border my-2" />
-                ) : (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className={cn(
-                      "w-12 h-12 rounded-full transition-all duration-200 hover:scale-110",
-                      item.isActive 
-                        ? "bg-primary text-primary-foreground shadow-md" 
-                        : "hover:bg-muted text-muted-foreground hover:text-foreground"
-                    )}
-                    onClick={item.action || (() => setActiveCategory(item.id))}
-                  >
-                    {item.icon}
-                  </Button>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
       {/* Área de contenido principal */}
-      <div className="pl-28 pr-6 py-6">
+      <div className="px-6 py-6">
         {/* Header with back button */}
         <div className="flex items-center mb-6">
           <Button 
