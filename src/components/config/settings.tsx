@@ -78,7 +78,7 @@ export const SettingsPage = () => {
       <Header />
       
       {/* Área de contenido principal */}
-      <div className="px-6 py-6">
+      <div className="container mx-auto px-6 py-6">
         {/* Header with back button */}
         <div className="flex items-center mb-6">
           <Button 
@@ -100,9 +100,36 @@ export const SettingsPage = () => {
           </h1>
         </div>
 
-        {/* Scrollable Content */}
-        <ScrollArea className="h-[calc(100vh-12rem)]">
-          <div className="pr-4 max-w-4xl">
+        {/* Layout con sidebar de categorías y contenido */}
+        <div className="flex gap-8">
+          {/* Sidebar de categorías */}
+          <div className="w-64 shrink-0">
+            <div className="bg-card rounded-xl border border-border p-4 sticky top-24">
+              <h3 className="text-sm font-semibold text-muted-foreground mb-4 uppercase tracking-wider">Categorías</h3>
+              <nav className="space-y-1">
+                {categories.map((category) => (
+                  <button
+                    key={category.id}
+                    onClick={() => setActiveCategory(category.id)}
+                    className={cn(
+                      "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-all duration-200",
+                      activeCategory === category.id
+                        ? "bg-primary text-primary-foreground shadow-md"
+                        : "hover:bg-muted text-muted-foreground hover:text-foreground"
+                    )}
+                  >
+                    {category.icon}
+                    <span className="font-medium">{category.label}</span>
+                  </button>
+                ))}
+              </nav>
+            </div>
+          </div>
+
+          {/* Contenido principal */}
+          <div className="flex-1">
+            <ScrollArea className="h-[calc(100vh-12rem)]">
+              <div className="pr-4">
             {/* General Settings */}
             {activeCategory === "general" && (
               <div className="space-y-6">
@@ -403,7 +430,9 @@ export const SettingsPage = () => {
               </div>
             )}
           </div>
-        </ScrollArea>
+            </ScrollArea>
+          </div>
+        </div>
 
         {/* Fixed Save Button */}
         <div className="fixed bottom-6 right-6">
