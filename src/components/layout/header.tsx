@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ChevronDown, Menu, Stethoscope, Moon, Sun, Search, Bell, UserCircle, LogOut } from "lucide-react";
+import { ChevronDown, Menu, Stethoscope, Moon, Sun, Search, Bell, UserCircle, LogOut, LayoutGrid } from "lucide-react";
+import { AppLauncherModal } from "./AppLauncherModal";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { MobileMenu } from "./mobile-menu";
 import { DesktopMenu } from "./desktop-menu";
@@ -41,7 +42,7 @@ export const Header = ({ showCreate = true }: HeaderProps) => {
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
-
+  const [appLauncherOpen, setAppLauncherOpen] = useState(false);
   const [notifications, setNotifications] = useState([
     {
       id: 1,
@@ -85,6 +86,9 @@ export const Header = ({ showCreate = true }: HeaderProps) => {
       if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
         e.preventDefault();
         setSearchOpen((open) => !open);
+      }
+      if (e.key === "Escape") {
+        setAppLauncherOpen(false);
       }
     };
 
@@ -171,11 +175,21 @@ export const Header = ({ showCreate = true }: HeaderProps) => {
           style={{ backgroundColor: 'rgba(139, 53, 233, 0.95)' }}
         >
           <div className="container mx-auto flex items-center justify-between h-16 px-8">
-          <div className="flex items-center">
-            <Link to="/app/home" className="flex items-center space-x-2">
+          <div className="flex items-center gap-3">
+            <button 
+              onClick={() => setAppLauncherOpen(true)}
+              className="flex items-center space-x-2 hover:opacity-80 transition-opacity cursor-pointer"
+            >
               <Stethoscope className="h-6 w-6 text-white" />
               <span className="text-xl font-semibold text-white">Smart Doctor</span>
-            </Link>
+            </button>
+            <button
+              onClick={() => setAppLauncherOpen(true)}
+              className="p-2 rounded-full hover:bg-white/10 transition-colors"
+              title="Abrir menú de aplicaciones"
+            >
+              <LayoutGrid className="h-5 w-5 text-white/80" />
+            </button>
           </div>
 
           <div className="flex-1 flex items-center justify-center px-4">
@@ -436,6 +450,12 @@ export const Header = ({ showCreate = true }: HeaderProps) => {
           ))}
         </CommandList>
       </CommandDialog>
+
+      {/* App Launcher Modal */}
+      <AppLauncherModal 
+        isOpen={appLauncherOpen} 
+        onClose={() => setAppLauncherOpen(false)} 
+      />
     </TooltipProvider>
   );
 };
