@@ -353,193 +353,216 @@ const PatientList = () => {
           </div>
         </div>
 
-        {/* Results */}
+        {/* Results - Modern Windows 11 Style */}
         {filteredAndSortedPatients.length === 0 ? (
-          <EmptyState
-            title="No hay pacientes registrados"
-            description="Registra una nueva consulta para agregar pacientes."
-            buttonText="Nueva consulta"
-            onClick={handleCreateConsultation}
-            icon={<Users size={48} className="text-muted-foreground" />}
-          />
+          <div className="p-12 bg-card/80 backdrop-blur-xl rounded-3xl border border-border/50 shadow-lg text-center">
+            <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-primary/10 flex items-center justify-center">
+              <Users size={40} className="text-primary" />
+            </div>
+            <h3 className="text-xl font-semibold mb-2">No hay pacientes registrados</h3>
+            <p className="text-muted-foreground mb-6">Registra una nueva consulta para agregar pacientes.</p>
+            <Button onClick={handleCreateConsultation} className="rounded-xl h-11 px-6">
+              <Plus className="mr-2 h-4 w-4" />
+              Nueva consulta
+            </Button>
+          </div>
         ) : (
-          <Card>
-            <CardContent className="p-0">
-              {/* Table */}
-              <div className="relative overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="hover:bg-transparent">
-                      <TableHead className="w-[200px]">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-auto p-0 font-medium"
-                          onClick={() => handleSort('name')}
+          <div className="bg-card/80 backdrop-blur-xl rounded-3xl border border-border/50 shadow-lg overflow-hidden">
+            {/* Table */}
+            <div className="relative overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow className="hover:bg-transparent border-b border-border/50">
+                    <TableHead className="w-[200px] py-4 px-6">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-auto p-0 font-semibold text-foreground hover:text-primary gap-2"
+                        onClick={() => handleSort('name')}
+                      >
+                        Nombre
+                        {renderSortIcon('name')}
+                      </Button>
+                    </TableHead>
+                    <TableHead className="py-4">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-auto p-0 font-semibold text-foreground hover:text-primary gap-2"
+                        onClick={() => handleSort('documentId')}
+                      >
+                        Documento
+                        {renderSortIcon('documentId')}
+                      </Button>
+                    </TableHead>
+                    <TableHead className="py-4 font-semibold text-foreground">Edad</TableHead>
+                    <TableHead className="py-4 font-semibold text-foreground">Género</TableHead>
+                    <TableHead className="py-4 font-semibold text-foreground">Contacto</TableHead>
+                    <TableHead className="py-4">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-auto p-0 font-semibold text-foreground hover:text-primary gap-2"
+                        onClick={() => handleSort('lastVisitAt')}
+                      >
+                        Última visita
+                        {renderSortIcon('lastVisitAt')}
+                      </Button>
+                    </TableHead>
+                    <TableHead className="w-[150px] py-4 font-semibold text-foreground">Acciones</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {paginatedPatients.map((patient, index) => (
+                    <TableRow 
+                      key={patient.id} 
+                      className="hover:bg-primary/5 transition-colors duration-200 border-b border-border/30 last:border-0"
+                    >
+                      <TableCell className="py-4 px-6">
+                        <span className="font-medium text-foreground">{patient.name}</span>
+                      </TableCell>
+                      <TableCell className="py-4">
+                        <span className="font-mono text-sm text-muted-foreground bg-muted/50 px-2 py-1 rounded-lg">
+                          {patient.documentId}
+                        </span>
+                      </TableCell>
+                      <TableCell className="py-4 text-muted-foreground">
+                        {calculateAge(patient.dateOfBirth)} años
+                      </TableCell>
+                      <TableCell className="py-4">
+                        <Badge 
+                          variant={patient.gender === 'Masculino' ? 'default' : 'secondary'} 
+                          className="text-xs rounded-lg px-3 py-1"
                         >
-                          Nombre
-                          {renderSortIcon('name')}
-                        </Button>
-                      </TableHead>
-                      <TableHead>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-auto p-0 font-medium"
-                          onClick={() => handleSort('documentId')}
-                        >
-                          Documento
-                          {renderSortIcon('documentId')}
-                        </Button>
-                      </TableHead>
-                      <TableHead>Edad</TableHead>
-                      <TableHead>Género</TableHead>
-                      <TableHead>Contacto</TableHead>
-                      <TableHead>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-auto p-0 font-medium"
-                          onClick={() => handleSort('lastVisitAt')}
-                        >
-                          Última visita
-                          {renderSortIcon('lastVisitAt')}
-                        </Button>
-                      </TableHead>
-                      <TableHead className="w-[150px]">Acciones</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {paginatedPatients.map((patient) => (
-                      <TableRow key={patient.id} className="hover:bg-muted/50">
-                        <TableCell className="font-medium">{patient.name}</TableCell>
-                        <TableCell className="font-mono text-sm">{patient.documentId}</TableCell>
-                        <TableCell>
-                          {calculateAge(patient.dateOfBirth)} años
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant={patient.gender === 'Masculino' ? 'default' : 'secondary'} className="text-xs">
-                            {patient.gender}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-sm">
-                          <div>{patient.contactNumber}</div>
-                          {patient.email && (
-                            <div className="text-muted-foreground text-xs">{patient.email}</div>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          {patient.lastVisitAt ? (
-                            <div className="text-sm">
-                              {format(patient.lastVisitAt, "dd/MM/yyyy", { locale: es })}
-                              <div className="text-muted-foreground text-xs">
-                                {format(patient.lastVisitAt, "HH:mm")}
-                              </div>
+                          {patient.gender}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="py-4">
+                        <div className="text-sm text-foreground">{patient.contactNumber}</div>
+                        {patient.email && (
+                          <div className="text-muted-foreground text-xs mt-0.5">{patient.email}</div>
+                        )}
+                      </TableCell>
+                      <TableCell className="py-4">
+                        {patient.lastVisitAt ? (
+                          <div className="text-sm">
+                            <span className="text-foreground">{format(patient.lastVisitAt, "dd/MM/yyyy", { locale: es })}</span>
+                            <div className="text-muted-foreground text-xs mt-0.5">
+                              {format(patient.lastVisitAt, "HH:mm")}
                             </div>
-                          ) : (
-                            <Badge variant="outline" className="text-xs">
-                              Sin visitas
-                            </Badge>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex gap-1">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleViewPatient(patient.id)}
-                              className="h-8 w-8 p-0"
-                            >
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => navigate(`/app/pacientes/${patient.id}?tab=consultations`)}
-                              className="h-8 w-8 p-0"
-                            >
-                              <FileText className="h-4 w-4" />
-                            </Button>
                           </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
+                        ) : (
+                          <Badge variant="outline" className="text-xs rounded-lg border-border/50">
+                            Sin visitas
+                          </Badge>
+                        )}
+                      </TableCell>
+                      <TableCell className="py-4">
+                        <div className="flex gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleViewPatient(patient.id)}
+                            className="h-9 w-9 p-0 rounded-xl hover:bg-primary/10 hover:text-primary transition-colors"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => navigate(`/app/pacientes/${patient.id}?tab=consultations`)}
+                            className="h-9 w-9 p-0 rounded-xl hover:bg-primary/10 hover:text-primary transition-colors"
+                          >
+                            <FileText className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
 
-              {/* Pagination */}
-              {totalPages > 1 && (
-                <div className="flex items-center justify-between px-6 py-4 border-t">
-                  <div className="text-sm text-muted-foreground">
-                    Mostrando {((currentPage - 1) * itemsPerPage) + 1} a{' '}
-                    {Math.min(currentPage * itemsPerPage, filteredAndSortedPatients.length)} de{' '}
-                    {filteredAndSortedPatients.length} pacientes
+            {/* Pagination - Modern Style */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between px-6 py-5 border-t border-border/50 bg-muted/20">
+                <div className="text-sm text-muted-foreground">
+                  Mostrando <span className="font-medium text-foreground">{((currentPage - 1) * itemsPerPage) + 1}</span> a{' '}
+                  <span className="font-medium text-foreground">{Math.min(currentPage * itemsPerPage, filteredAndSortedPatients.length)}</span> de{' '}
+                  <span className="font-medium text-foreground">{filteredAndSortedPatients.length}</span> pacientes
+                </div>
+                
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setCurrentPage(1)}
+                    disabled={currentPage === 1}
+                    className="h-9 w-9 p-0 rounded-xl hover:bg-primary/10 disabled:opacity-40"
+                  >
+                    <ChevronsLeft className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                    disabled={currentPage === 1}
+                    className="h-9 w-9 p-0 rounded-xl hover:bg-primary/10 disabled:opacity-40"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                      const pageNumber = currentPage <= 3 
+                        ? i + 1 
+                        : currentPage >= totalPages - 2
+                        ? totalPages - 4 + i
+                        : currentPage - 2 + i;
+                      
+                      if (pageNumber < 1 || pageNumber > totalPages) return null;
+                      
+                      return (
+                        <Button
+                          key={pageNumber}
+                          variant={currentPage === pageNumber ? "default" : "ghost"}
+                          size="sm"
+                          onClick={() => setCurrentPage(pageNumber)}
+                          className={cn(
+                            "w-9 h-9 rounded-xl transition-all",
+                            currentPage === pageNumber 
+                              ? "bg-primary text-primary-foreground shadow-md" 
+                              : "hover:bg-primary/10"
+                          )}
+                        >
+                          {pageNumber}
+                        </Button>
+                      );
+                    })}
                   </div>
                   
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setCurrentPage(1)}
-                      disabled={currentPage === 1}
-                    >
-                      <ChevronsLeft className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                      disabled={currentPage === 1}
-                    >
-                      <ChevronLeft className="h-4 w-4" />
-                    </Button>
-                    
-                    <div className="flex items-center gap-1">
-                      {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                        const pageNumber = currentPage <= 3 
-                          ? i + 1 
-                          : currentPage >= totalPages - 2
-                          ? totalPages - 4 + i
-                          : currentPage - 2 + i;
-                        
-                        if (pageNumber < 1 || pageNumber > totalPages) return null;
-                        
-                        return (
-                          <Button
-                            key={pageNumber}
-                            variant={currentPage === pageNumber ? "default" : "outline"}
-                            size="sm"
-                            onClick={() => setCurrentPage(pageNumber)}
-                            className="w-8 h-8"
-                          >
-                            {pageNumber}
-                          </Button>
-                        );
-                      })}
-                    </div>
-                    
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                      disabled={currentPage === totalPages}
-                    >
-                      <ChevronRight className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setCurrentPage(totalPages)}
-                      disabled={currentPage === totalPages}
-                    >
-                      <ChevronsRight className="h-4 w-4" />
-                    </Button>
-                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                    disabled={currentPage === totalPages}
+                    className="h-9 w-9 p-0 rounded-xl hover:bg-primary/10 disabled:opacity-40"
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setCurrentPage(totalPages)}
+                    disabled={currentPage === totalPages}
+                    className="h-9 w-9 p-0 rounded-xl hover:bg-primary/10 disabled:opacity-40"
+                  >
+                    <ChevronsRight className="h-4 w-4" />
+                  </Button>
                 </div>
-              )}
-            </CardContent>
-          </Card>
+              </div>
+            )}
+          </div>
         )}
       </main>
     </div>
