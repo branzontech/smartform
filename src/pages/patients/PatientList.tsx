@@ -273,81 +273,85 @@ const PatientList = () => {
           </Button>
         </div>
 
-        {/* Filters */}
-        <Card className="mb-6">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-lg flex items-center">
-              <Filter className="mr-2 h-5 w-5" />
-              Filtros y búsqueda
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {/* Search */}
-            <div className="relative">
-              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Buscar por nombre o documento..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
+        {/* Filters - Modern Windows 11 Style */}
+        <div className="mb-6 p-6 bg-card/80 backdrop-blur-xl rounded-3xl border border-border/50 shadow-lg">
+          <div className="flex items-center gap-2 mb-5">
+            <div className="p-2 rounded-xl bg-primary/10">
+              <Filter className="h-5 w-5 text-primary" />
             </div>
-            
-            {/* Filter row */}
-            <div className="flex flex-wrap gap-4 items-center">
-              <div className="flex items-center gap-2">
-                <label className="text-sm font-medium">Género:</label>
-                <Select value={genderFilter} onValueChange={setGenderFilter}>
-                  <SelectTrigger className="w-32">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todos</SelectItem>
-                    <SelectItem value="Masculino">Masculino</SelectItem>
-                    <SelectItem value="Femenino">Femenino</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <label className="text-sm font-medium">Visitas:</label>
-                <Select value={hasVisitFilter} onValueChange={setHasVisitFilter}>
-                  <SelectTrigger className="w-40">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todos</SelectItem>
-                    <SelectItem value="has-visit">Con visitas</SelectItem>
-                    <SelectItem value="no-visit">Sin visitas</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <label className="text-sm font-medium">Mostrar:</label>
-                <Select value={itemsPerPage.toString()} onValueChange={(value) => {
-                  setItemsPerPage(Number(value));
-                  setCurrentPage(1);
-                }}>
-                  <SelectTrigger className="w-20">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {ITEMS_PER_PAGE_OPTIONS.map(option => (
-                      <SelectItem key={option} value={option.toString()}>{option}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {(searchTerm || genderFilter !== "all" || hasVisitFilter !== "all") && (
-                <Button variant="outline" size="sm" onClick={resetFilters}>
-                  Limpiar filtros
-                </Button>
-              )}
+            <h2 className="text-lg font-semibold text-foreground">Filtros y búsqueda</h2>
+          </div>
+          
+          {/* Search - Modern Style */}
+          <div className="relative mb-5">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar por nombre o documento..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-11 h-12 bg-muted/50 border-0 rounded-2xl text-base focus-visible:ring-2 focus-visible:ring-primary/30 placeholder:text-muted-foreground/60"
+            />
+          </div>
+          
+          {/* Filter row - Modern Style */}
+          <div className="flex flex-wrap gap-6 items-center">
+            <div className="flex items-center gap-3">
+              <label className="text-sm font-medium text-muted-foreground">Género:</label>
+              <Select value={genderFilter} onValueChange={setGenderFilter}>
+                <SelectTrigger className="w-36 h-10 bg-muted/50 border-0 rounded-xl focus:ring-2 focus:ring-primary/30">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="rounded-xl border-border/50 bg-popover/95 backdrop-blur-xl">
+                  <SelectItem value="all" className="rounded-lg">Todos</SelectItem>
+                  <SelectItem value="Masculino" className="rounded-lg">Masculino</SelectItem>
+                  <SelectItem value="Femenino" className="rounded-lg">Femenino</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-          </CardContent>
-        </Card>
+
+            <div className="flex items-center gap-3">
+              <label className="text-sm font-medium text-muted-foreground">Visitas:</label>
+              <Select value={hasVisitFilter} onValueChange={setHasVisitFilter}>
+                <SelectTrigger className="w-40 h-10 bg-muted/50 border-0 rounded-xl focus:ring-2 focus:ring-primary/30">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="rounded-xl border-border/50 bg-popover/95 backdrop-blur-xl">
+                  <SelectItem value="all" className="rounded-lg">Todos</SelectItem>
+                  <SelectItem value="has-visit" className="rounded-lg">Con visitas</SelectItem>
+                  <SelectItem value="no-visit" className="rounded-lg">Sin visitas</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <label className="text-sm font-medium text-muted-foreground">Mostrar:</label>
+              <Select value={itemsPerPage.toString()} onValueChange={(value) => {
+                setItemsPerPage(Number(value));
+                setCurrentPage(1);
+              }}>
+                <SelectTrigger className="w-24 h-10 bg-muted/50 border-0 rounded-xl focus:ring-2 focus:ring-primary/30">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="rounded-xl border-border/50 bg-popover/95 backdrop-blur-xl">
+                  {ITEMS_PER_PAGE_OPTIONS.map(option => (
+                    <SelectItem key={option} value={option.toString()} className="rounded-lg">{option}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {(searchTerm || genderFilter !== "all" || hasVisitFilter !== "all") && (
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={resetFilters}
+                className="h-10 px-4 rounded-xl hover:bg-destructive/10 hover:text-destructive transition-colors"
+              >
+                Limpiar filtros
+              </Button>
+            )}
+          </div>
+        </div>
 
         {/* Results */}
         {filteredAndSortedPatients.length === 0 ? (
