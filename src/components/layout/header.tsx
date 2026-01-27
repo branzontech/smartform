@@ -162,10 +162,13 @@ export const Header = ({ showCreate = true }: HeaderProps) => {
 
   return (
     <TooltipProvider>
+      {/* Background cover to hide scrolling content */}
+      <div className="fixed top-0 left-0 right-0 h-24 bg-background z-40" />
+      
       <header className="fixed top-4 left-0 right-0 z-50 mx-4">
         <div 
-          className="rounded-full shadow-xl border border-white/10 backdrop-blur-sm"
-          style={{ backgroundColor: 'rgba(139, 53, 233, 0.8)' }}
+          className="rounded-full shadow-xl border border-white/10"
+          style={{ backgroundColor: 'rgba(139, 53, 233, 0.95)' }}
         >
           <div className="container mx-auto flex items-center justify-between h-16 px-8">
           <div className="flex items-center">
