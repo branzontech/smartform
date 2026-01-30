@@ -798,14 +798,15 @@ const AppointmentList = () => {
             <div>
               <div className="h-full rounded-3xl bg-card/80 backdrop-blur-xl border border-border/50 shadow-xl overflow-hidden">
                 {/* Header con filtros modernos */}
-                <div className="p-6 border-b border-border/50">
-                  <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-                    <div className="flex items-center space-x-3">
-                      <div className="p-2.5 rounded-xl bg-primary/10">
-                        <Calendar className="text-primary" size={20} />
-                      </div>
+                <div className="p-6 border-b border-border/50 space-y-4">
+                  {/* Primera fila: Navegación y selector de vista */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      {/* Icono y navegación de fecha */}
                       <div className="flex items-center gap-3">
-                        {/* Navegación de fecha */}
+                        <div className="p-2.5 rounded-xl bg-primary/10">
+                          <Calendar className="text-primary" size={20} />
+                        </div>
                         <Button 
                           variant="ghost" 
                           size="sm"
@@ -814,15 +815,11 @@ const AppointmentList = () => {
                         >
                           <ChevronLeft size={18} />
                         </Button>
-                        
-                        <div>
-                          <h1 className="text-xl font-semibold text-foreground">
-                            {viewMode === 'day' && format(selectedDate, "EEEE, d 'de' MMMM 'de' yyyy", { locale: es })}
-                            {viewMode === 'week' && "Vista Semanal"}
-                            {viewMode === 'month' && format(selectedDate, "MMMM yyyy", { locale: es })}
-                          </h1>
-                        </div>
-                        
+                        <h1 className="text-xl font-semibold text-foreground min-w-[180px] text-center">
+                          {viewMode === 'day' && format(selectedDate, "d MMMM yyyy", { locale: es })}
+                          {viewMode === 'week' && format(selectedDate, "'Semana del' d MMM", { locale: es })}
+                          {viewMode === 'month' && format(selectedDate, "MMMM yyyy", { locale: es })}
+                        </h1>
                         <Button 
                           variant="ghost" 
                           size="sm"
@@ -831,66 +828,73 @@ const AppointmentList = () => {
                         >
                           <ChevronRight size={18} />
                         </Button>
-                        
-                        {/* Selector de vista */}
-                        <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as AppointmentView)} className="ml-4">
-                          <TabsList className="rounded-xl bg-muted/50 p-1">
-                            <TabsTrigger value="day" className="text-xs rounded-lg px-3 data-[state=active]:bg-background data-[state=active]:shadow-sm">Día</TabsTrigger>
-                            <TabsTrigger value="week" className="text-xs rounded-lg px-3 data-[state=active]:bg-background data-[state=active]:shadow-sm">Semana</TabsTrigger>
-                            <TabsTrigger value="month" className="text-xs rounded-lg px-3 data-[state=active]:bg-background data-[state=active]:shadow-sm">Mes</TabsTrigger>
-                          </TabsList>
-                        </Tabs>
                       </div>
                       
+                      {/* Separador */}
+                      <div className="h-8 w-px bg-border/50" />
+                      
+                      {/* Selector de vista */}
+                      <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as AppointmentView)}>
+                        <TabsList className="rounded-xl bg-muted/50 p-1">
+                          <TabsTrigger value="day" className="text-xs rounded-lg px-4 py-2 data-[state=active]:bg-background data-[state=active]:shadow-sm">Día</TabsTrigger>
+                          <TabsTrigger value="week" className="text-xs rounded-lg px-4 py-2 data-[state=active]:bg-background data-[state=active]:shadow-sm">Semana</TabsTrigger>
+                          <TabsTrigger value="month" className="text-xs rounded-lg px-4 py-2 data-[state=active]:bg-background data-[state=active]:shadow-sm">Mes</TabsTrigger>
+                        </TabsList>
+                      </Tabs>
+                      
+                      {/* Seleccionar todo - solo visible en vista semana/mes */}
                       {filteredAppointments.length > 0 && (viewMode === 'week' || viewMode === 'month') && (
-                        <div className="flex items-center space-x-2 ml-4 pl-4 border-l border-border/50">
-                          <Checkbox
-                            checked={selectedAppointments.length === filteredAppointments.length}
-                            onCheckedChange={handleSelectAll}
-                            className="rounded-md"
-                          />
-                          <span className="text-sm text-muted-foreground">Seleccionar todo</span>
-                        </div>
+                        <>
+                          <div className="h-8 w-px bg-border/50" />
+                          <div className="flex items-center gap-2">
+                            <Checkbox
+                              checked={selectedAppointments.length === filteredAppointments.length}
+                              onCheckedChange={handleSelectAll}
+                              className="rounded-md"
+                            />
+                            <span className="text-sm text-muted-foreground">Seleccionar todo</span>
+                          </div>
+                        </>
                       )}
                     </div>
-                    
-                    {/* Filtros de búsqueda modernos */}
-                    <div className="flex items-center gap-3 flex-wrap">
-                      <div className="relative">
-                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input
-                          placeholder="Buscar citas..."
-                          value={searchTerm}
-                          onChange={(e) => setSearchTerm(e.target.value)}
-                          className="pl-10 w-56 h-11 rounded-xl bg-muted/50 border-0 focus-visible:ring-1 focus-visible:ring-primary/50"
-                        />
-                      </div>
-                      <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as any)}>
-                        <SelectTrigger className="w-44 h-11 rounded-xl bg-muted/50 border-0 focus:ring-1 focus:ring-primary/50">
-                          <SelectValue placeholder="Estado" />
-                        </SelectTrigger>
-                        <SelectContent className="rounded-xl backdrop-blur-xl bg-popover/95 border-border/50">
-                          <SelectItem value="Todas" className="rounded-lg">Todas</SelectItem>
-                          <SelectItem value="Programada" className="rounded-lg">Programadas</SelectItem>
-                          <SelectItem value="Pendiente" className="rounded-lg">Pendientes</SelectItem>
-                          <SelectItem value="Completada" className="rounded-lg">Completadas</SelectItem>
-                          <SelectItem value="Cancelada" className="rounded-lg">Canceladas</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <Select value={doctorFilter} onValueChange={setDoctorFilter}>
-                        <SelectTrigger className="w-52 h-11 rounded-xl bg-muted/50 border-0 focus:ring-1 focus:ring-primary/50">
-                          <SelectValue placeholder="Médico" />
-                        </SelectTrigger>
-                        <SelectContent className="rounded-xl backdrop-blur-xl bg-popover/95 border-border/50">
-                          <SelectItem value="Todos" className="rounded-lg">Todos los médicos</SelectItem>
-                          {mockDoctors.map((doctor) => (
-                            <SelectItem key={doctor.id} value={doctor.id} className="rounded-lg">
-                              {doctor.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                  </div>
+                  
+                  {/* Segunda fila: Filtros de búsqueda */}
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <div className="relative flex-1 max-w-xs">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        placeholder="Buscar citas..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="pl-10 h-10 rounded-xl bg-muted/50 border-0 focus-visible:ring-1 focus-visible:ring-primary/50"
+                      />
                     </div>
+                    <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as any)}>
+                      <SelectTrigger className="w-40 h-10 rounded-xl bg-muted/50 border-0 focus:ring-1 focus:ring-primary/50">
+                        <SelectValue placeholder="Estado" />
+                      </SelectTrigger>
+                      <SelectContent className="rounded-xl bg-popover border-border/50 z-50">
+                        <SelectItem value="Todas" className="rounded-lg">Todas</SelectItem>
+                        <SelectItem value="Programada" className="rounded-lg">Programadas</SelectItem>
+                        <SelectItem value="Pendiente" className="rounded-lg">Pendientes</SelectItem>
+                        <SelectItem value="Completada" className="rounded-lg">Completadas</SelectItem>
+                        <SelectItem value="Cancelada" className="rounded-lg">Canceladas</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Select value={doctorFilter} onValueChange={setDoctorFilter}>
+                      <SelectTrigger className="w-48 h-10 rounded-xl bg-muted/50 border-0 focus:ring-1 focus:ring-primary/50">
+                        <SelectValue placeholder="Médico" />
+                      </SelectTrigger>
+                      <SelectContent className="rounded-xl bg-popover border-border/50 z-50">
+                        <SelectItem value="Todos" className="rounded-lg">Todos los médicos</SelectItem>
+                        {mockDoctors.map((doctor) => (
+                          <SelectItem key={doctor.id} value={doctor.id} className="rounded-lg">
+                            {doctor.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
                 
