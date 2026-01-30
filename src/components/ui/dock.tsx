@@ -102,12 +102,13 @@ function DockIcon({
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
               className={cn(
-                "absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1",
-                "text-[10px] font-semibold rounded-full flex items-center justify-center",
+                "absolute -top-0.5 -right-0.5 min-w-[16px] h-[16px] px-0.5",
+                "text-[9px] font-bold rounded-full flex items-center justify-center",
+                "shadow-sm border border-background/50",
                 BADGE_VARIANTS[item.badgeVariant || "default"]
               )}
             >
-              {item.badge}
+              {typeof item.badge === 'number' && item.badge > 99 ? '99+' : item.badge}
             </motion.span>
           )}
 
