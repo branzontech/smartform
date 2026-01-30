@@ -6,9 +6,11 @@ import { TenantStatusBar } from "../tenant/TenantStatusBar";
 import { FloatingChatButton } from "./floating-chat-button";
 import { Button } from "@/components/ui/button";
 import { Stethoscope, Search, Bell, Moon, Sun, UserCircle } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { AnimatePresence } from "framer-motion";
+import { PageTransition } from "./page-transition";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -35,6 +37,7 @@ export const Layout = ({ children }: LayoutProps) => {
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [searchOpen, setSearchOpen] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
 
   const user = {
     name: "Dr. Martínez",
@@ -109,7 +112,11 @@ export const Layout = ({ children }: LayoutProps) => {
             <div className="container mx-auto px-4 py-4">
               <TenantStatusBar />
             </div>
-            {children}
+            <AnimatePresence mode="wait">
+              <PageTransition key={location.pathname}>
+                {children}
+              </PageTransition>
+            </AnimatePresence>
           </main>
 
         <FloatingChatButton />
