@@ -112,7 +112,17 @@ export const Layout = ({ children }: LayoutProps) => {
             <div className="container mx-auto px-4 py-4">
               <TenantStatusBar />
             </div>
-            <AnimatePresence mode="wait">
+            {(() => {
+              console.log(`[Layout] Renderizando contenido para ruta: ${location.pathname}`);
+              console.log(`[Layout] Timestamp: ${new Date().toISOString()}`);
+              return null;
+            })()}
+            <AnimatePresence 
+              mode="wait"
+              onExitComplete={() => {
+                console.log(`[Layout] AnimatePresence: Exit animation completada`);
+              }}
+            >
               <PageTransition key={location.pathname}>
                 {children}
               </PageTransition>

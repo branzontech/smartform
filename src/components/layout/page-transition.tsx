@@ -1,5 +1,6 @@
 import { motion, Variants, Transition } from "framer-motion";
-import { ReactNode } from "react";
+import { ReactNode, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 
 interface PageTransitionProps {
   children: ReactNode;
@@ -31,6 +32,17 @@ const springTransition: Transition = {
 };
 
 export function PageTransition({ children, className }: PageTransitionProps) {
+  const location = useLocation();
+  
+  useEffect(() => {
+    console.log(`[PageTransition] Montando transición para ruta: ${location.pathname}`);
+    console.log(`[PageTransition] Timestamp: ${new Date().toISOString()}`);
+    
+    return () => {
+      console.log(`[PageTransition] Desmontando transición para ruta: ${location.pathname}`);
+    };
+  }, [location.pathname]);
+
   return (
     <motion.div
       initial="initial"
@@ -39,6 +51,12 @@ export function PageTransition({ children, className }: PageTransitionProps) {
       variants={pageVariants}
       transition={springTransition}
       className={className}
+      onAnimationStart={() => {
+        console.log(`[PageTransition] Animación iniciando para: ${location.pathname}`);
+      }}
+      onAnimationComplete={() => {
+        console.log(`[PageTransition] Animación completada para: ${location.pathname}`);
+      }}
     >
       {children}
     </motion.div>
