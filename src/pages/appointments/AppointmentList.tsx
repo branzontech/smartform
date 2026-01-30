@@ -432,7 +432,7 @@ const AppointmentList = () => {
   };
 
   const handleCreateAppointment = () => {
-    navigate("/citas/nueva");
+    navigate("/app/citas/nueva");
   };
 
   const handleStartConsultation = (appointment: Appointment) => {
