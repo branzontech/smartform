@@ -187,7 +187,7 @@ export function Dock({
       className={cn(
         "fixed z-50",
         position === "bottom" ? "bottom-6" : "top-6",
-        "left-1/2 -translate-x-1/2",
+        "left-0 right-0 flex justify-center",
         className
       )}
     >

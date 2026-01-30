@@ -790,78 +790,6 @@ const AppointmentList = () => {
         <div className="container mx-auto py-6 px-4">
           <BackButton />
           
-          {/* Barra flotante de controles - siempre visible */}
-          <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3">
-            {/* Panel de resumen del día - colapsable */}
-            <div className="p-4 rounded-2xl bg-card/95 backdrop-blur-xl border border-border/50 shadow-2xl max-w-xs">
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="text-sm font-medium text-foreground">Resumen del día</h3>
-                <div className="p-1.5 rounded-lg bg-primary/10">
-                  <CalendarDays size={14} className="text-primary" />
-                </div>
-              </div>
-              <div className="grid grid-cols-4 gap-2">
-                <div className="text-center p-2 rounded-xl bg-primary/10">
-                  <span className="text-lg font-bold text-primary">{dayStats.total}</span>
-                  <p className="text-[10px] text-muted-foreground">Total</p>
-                </div>
-                <div className="text-center p-2 rounded-xl bg-emerald-500/10">
-                  <span className="text-lg font-bold text-emerald-600">{dayStats.confirmed}</span>
-                  <p className="text-[10px] text-muted-foreground">Confirm.</p>
-                </div>
-                <div className="text-center p-2 rounded-xl bg-amber-500/10">
-                  <span className="text-lg font-bold text-amber-600">{dayStats.pending}</span>
-                  <p className="text-[10px] text-muted-foreground">Pend.</p>
-                </div>
-                <div className="text-center p-2 rounded-xl bg-rose-500/10">
-                  <span className="text-lg font-bold text-rose-600">{dayStats.cancelled}</span>
-                  <p className="text-[10px] text-muted-foreground">Cancel.</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Controles de vista y navegación */}
-            <div className="flex items-center gap-2 p-2 rounded-2xl bg-card/95 backdrop-blur-xl border border-border/50 shadow-2xl">
-              {/* Navegación de fecha */}
-              <Button 
-                variant="ghost" 
-                size="sm"
-                className="h-10 w-10 p-0 rounded-xl hover:bg-muted/50"
-                onClick={() => viewMode === 'day' ? changeDay(-1) : viewMode === 'week' ? changeWeek(-1) : setSelectedDate(new Date(selectedDate.setMonth(selectedDate.getMonth() - 1)))}
-              >
-                <ChevronLeft size={18} />
-              </Button>
-              
-              {/* Selector de vista */}
-              <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as AppointmentView)}>
-                <TabsList className="rounded-xl bg-muted/50 p-1">
-                  <TabsTrigger value="day" className="text-xs rounded-lg px-3 data-[state=active]:bg-background data-[state=active]:shadow-sm">Día</TabsTrigger>
-                  <TabsTrigger value="week" className="text-xs rounded-lg px-3 data-[state=active]:bg-background data-[state=active]:shadow-sm">Semana</TabsTrigger>
-                  <TabsTrigger value="month" className="text-xs rounded-lg px-3 data-[state=active]:bg-background data-[state=active]:shadow-sm">Mes</TabsTrigger>
-                </TabsList>
-              </Tabs>
-              
-              <Button 
-                variant="ghost" 
-                size="sm"
-                className="h-10 w-10 p-0 rounded-xl hover:bg-muted/50"
-                onClick={() => viewMode === 'day' ? changeDay(1) : viewMode === 'week' ? changeWeek(1) : setSelectedDate(new Date(selectedDate.setMonth(selectedDate.getMonth() + 1)))}
-              >
-                <ChevronRight size={18} />
-              </Button>
-              
-              <div className="h-6 w-px bg-border mx-1" />
-              
-              {/* Botón Nueva Cita */}
-              <Button 
-                onClick={handleCreateAppointment}
-                className="rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20 px-4"
-              >
-                <Plus className="mr-2" size={16} />
-                Nueva cita
-              </Button>
-            </div>
-          </div>
           
           {/* Layout de contenido principal - ahora ocupa todo el ancho */}
           <div className="mt-6">
@@ -876,23 +804,54 @@ const AppointmentList = () => {
                       <div className="p-2.5 rounded-xl bg-primary/10">
                         <Calendar className="text-primary" size={20} />
                       </div>
-                      <div>
-                        <h1 className="text-xl font-semibold text-foreground">
-                          {viewMode === 'day' && format(selectedDate, "EEEE, d 'de' MMMM 'de' yyyy", { locale: es })}
-                          {viewMode === 'week' && "Vista Semanal"}
-                          {viewMode === 'month' && format(selectedDate, "MMMM yyyy", { locale: es })}
-                        </h1>
-                        {filteredAppointments.length > 0 && (viewMode === 'week' || viewMode === 'month') && (
-                          <div className="flex items-center space-x-2 mt-1">
-                            <Checkbox
-                              checked={selectedAppointments.length === filteredAppointments.length}
-                              onCheckedChange={handleSelectAll}
-                              className="rounded-md"
-                            />
-                            <span className="text-sm text-muted-foreground">Seleccionar todo</span>
-                          </div>
-                        )}
+                      <div className="flex items-center gap-3">
+                        {/* Navegación de fecha */}
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          className="h-9 w-9 p-0 rounded-xl hover:bg-muted/50"
+                          onClick={() => viewMode === 'day' ? changeDay(-1) : viewMode === 'week' ? changeWeek(-1) : setSelectedDate(new Date(selectedDate.setMonth(selectedDate.getMonth() - 1)))}
+                        >
+                          <ChevronLeft size={18} />
+                        </Button>
+                        
+                        <div>
+                          <h1 className="text-xl font-semibold text-foreground">
+                            {viewMode === 'day' && format(selectedDate, "EEEE, d 'de' MMMM 'de' yyyy", { locale: es })}
+                            {viewMode === 'week' && "Vista Semanal"}
+                            {viewMode === 'month' && format(selectedDate, "MMMM yyyy", { locale: es })}
+                          </h1>
+                        </div>
+                        
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          className="h-9 w-9 p-0 rounded-xl hover:bg-muted/50"
+                          onClick={() => viewMode === 'day' ? changeDay(1) : viewMode === 'week' ? changeWeek(1) : setSelectedDate(new Date(selectedDate.setMonth(selectedDate.getMonth() + 1)))}
+                        >
+                          <ChevronRight size={18} />
+                        </Button>
+                        
+                        {/* Selector de vista */}
+                        <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as AppointmentView)} className="ml-4">
+                          <TabsList className="rounded-xl bg-muted/50 p-1">
+                            <TabsTrigger value="day" className="text-xs rounded-lg px-3 data-[state=active]:bg-background data-[state=active]:shadow-sm">Día</TabsTrigger>
+                            <TabsTrigger value="week" className="text-xs rounded-lg px-3 data-[state=active]:bg-background data-[state=active]:shadow-sm">Semana</TabsTrigger>
+                            <TabsTrigger value="month" className="text-xs rounded-lg px-3 data-[state=active]:bg-background data-[state=active]:shadow-sm">Mes</TabsTrigger>
+                          </TabsList>
+                        </Tabs>
                       </div>
+                      
+                      {filteredAppointments.length > 0 && (viewMode === 'week' || viewMode === 'month') && (
+                        <div className="flex items-center space-x-2 ml-4 pl-4 border-l border-border/50">
+                          <Checkbox
+                            checked={selectedAppointments.length === filteredAppointments.length}
+                            onCheckedChange={handleSelectAll}
+                            className="rounded-md"
+                          />
+                          <span className="text-sm text-muted-foreground">Seleccionar todo</span>
+                        </div>
+                      )}
                     </div>
                     
                     {/* Filtros de búsqueda modernos */}
