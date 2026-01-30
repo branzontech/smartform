@@ -788,128 +788,84 @@ const AppointmentList = () => {
         <div className="container mx-auto py-6 px-4">
           <BackButton />
           
-          {/* Layout con dos columnas: panel izquierdo y contenido principal */}
-          <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 mt-6">
-            {/* Panel izquierdo - Vista de estadísticas y acciones */}
-            <div className="lg:col-span-1 space-y-4">
-              {/* Navegación de fechas */}
-              <div className="p-4 rounded-2xl bg-card/60 backdrop-blur-xl border border-border/50">
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-sm font-medium text-muted-foreground">Vista</h3>
-                  <div className="p-1.5 rounded-lg bg-primary/10">
-                    <Filter size={14} className="text-primary" />
-                  </div>
-                </div>
-                <Tabs defaultValue={viewMode} onValueChange={(v) => setViewMode(v as AppointmentView)}>
-                  <TabsList className="grid w-full grid-cols-3 rounded-xl bg-muted/50 p-1">
-                    <TabsTrigger value="day" className="text-xs rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">Día</TabsTrigger>
-                    <TabsTrigger value="week" className="text-xs rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">Semana</TabsTrigger>
-                    <TabsTrigger value="month" className="text-xs rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">Mes</TabsTrigger>
-                  </TabsList>
-                </Tabs>
-              </div>
-
-              {/* Navegación de fecha específica */}
-              <div className="p-4 rounded-2xl bg-card/60 backdrop-blur-xl border border-border/50">
-                <div className="flex items-center justify-between mb-3">
-                  <Button 
-                    variant="ghost" 
-                    size="sm"
-                    className="h-8 w-8 p-0 rounded-xl hover:bg-muted/50"
-                    onClick={() => viewMode === 'day' ? changeDay(-1) : viewMode === 'week' ? changeWeek(-1) : setSelectedDate(new Date(selectedDate.setMonth(selectedDate.getMonth() - 1)))}
-                  >
-                    <ChevronLeft size={18} />
-                  </Button>
-                  <Button 
-                    variant="ghost" 
-                    size="sm"
-                    className="h-8 w-8 p-0 rounded-xl hover:bg-muted/50"
-                    onClick={() => viewMode === 'day' ? changeDay(1) : viewMode === 'week' ? changeWeek(1) : setSelectedDate(new Date(selectedDate.setMonth(selectedDate.getMonth() + 1)))}
-                  >
-                    <ChevronRight size={18} />
-                  </Button>
-                </div>
-                <div className="text-center">
-                  <h2 className="text-base font-semibold text-foreground">
-                    {viewMode === 'day' && format(selectedDate, "d 'de' MMMM 'de' yyyy", { locale: es })}
-                    {viewMode === 'week' && `${format(weekDays[0], "d MMM", { locale: es })} - ${format(weekDays[6], "d MMM", { locale: es })}`}
-                    {viewMode === 'month' && format(selectedDate, "MMMM yyyy", { locale: es })}
-                  </h2>
-                  {isToday(selectedDate) && viewMode === 'day' && (
-                    <span className="text-xs text-primary font-medium">Hoy</span>
-                  )}
+          {/* Barra flotante de controles - siempre visible */}
+          <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3">
+            {/* Panel de resumen del día - colapsable */}
+            <div className="p-4 rounded-2xl bg-card/95 backdrop-blur-xl border border-border/50 shadow-2xl max-w-xs">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-medium text-foreground">Resumen del día</h3>
+                <div className="p-1.5 rounded-lg bg-primary/10">
+                  <CalendarDays size={14} className="text-primary" />
                 </div>
               </div>
-
-              {/* Resumen del día */}
-              <div className="p-4 rounded-2xl bg-card/60 backdrop-blur-xl border border-border/50">
-                <h3 className="text-sm font-medium text-muted-foreground mb-4">
-                  Resumen del día
-                </h3>
-                <div className="space-y-3">
-                  {/* Total de citas */}
-                  <div className="flex items-center justify-between p-3 rounded-xl bg-primary/10 border border-primary/20">
-                    <div className="flex items-center space-x-2">
-                      <div className="p-1.5 rounded-lg bg-primary/20">
-                        <CalendarDays size={14} className="text-primary" />
-                      </div>
-                      <span className="text-sm font-medium text-foreground">Total citas</span>
-                    </div>
-                    <span className="text-2xl font-bold text-primary">{dayStats.total}</span>
-                  </div>
-
-                  {/* Confirmadas */}
-                  <div className="flex items-center justify-between p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
-                    <div className="flex items-center space-x-2">
-                      <div className="p-1.5 rounded-lg bg-emerald-500/20">
-                        <CheckCircle size={14} className="text-emerald-600" />
-                      </div>
-                      <span className="text-sm font-medium text-foreground">Confirmadas</span>
-                    </div>
-                    <span className="text-2xl font-bold text-emerald-600">{dayStats.confirmed}</span>
-                  </div>
-
-                  {/* Pendientes */}
-                  <div className="flex items-center justify-between p-3 rounded-xl bg-amber-500/10 border border-amber-500/20">
-                    <div className="flex items-center space-x-2">
-                      <div className="p-1.5 rounded-lg bg-amber-500/20">
-                        <AlertCircle size={14} className="text-amber-600" />
-                      </div>
-                      <span className="text-sm font-medium text-foreground">Pendientes</span>
-                    </div>
-                    <span className="text-2xl font-bold text-amber-600">{dayStats.pending}</span>
-                  </div>
-
-                  {/* Canceladas */}
-                  <div className="flex items-center justify-between p-3 rounded-xl bg-rose-500/10 border border-rose-500/20">
-                    <div className="flex items-center space-x-2">
-                      <div className="p-1.5 rounded-lg bg-rose-500/20">
-                        <XCircle size={14} className="text-rose-600" />
-                      </div>
-                      <span className="text-sm font-medium text-foreground">Canceladas</span>
-                    </div>
-                    <span className="text-2xl font-bold text-rose-600">{dayStats.cancelled}</span>
-                  </div>
+              <div className="grid grid-cols-4 gap-2">
+                <div className="text-center p-2 rounded-xl bg-primary/10">
+                  <span className="text-lg font-bold text-primary">{dayStats.total}</span>
+                  <p className="text-[10px] text-muted-foreground">Total</p>
                 </div>
-              </div>
-
-              {/* Acciones rápidas */}
-              <div className="p-4 rounded-2xl bg-card/60 backdrop-blur-xl border border-border/50">
-                <h3 className="text-sm font-medium text-muted-foreground mb-3">
-                  Acciones rápidas
-                </h3>
-                <Button 
-                  onClick={handleCreateAppointment}
-                  className="w-full rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20"
-                >
-                  <Plus className="mr-2" size={16} />
-                  Nueva cita
-                </Button>
+                <div className="text-center p-2 rounded-xl bg-emerald-500/10">
+                  <span className="text-lg font-bold text-emerald-600">{dayStats.confirmed}</span>
+                  <p className="text-[10px] text-muted-foreground">Confirm.</p>
+                </div>
+                <div className="text-center p-2 rounded-xl bg-amber-500/10">
+                  <span className="text-lg font-bold text-amber-600">{dayStats.pending}</span>
+                  <p className="text-[10px] text-muted-foreground">Pend.</p>
+                </div>
+                <div className="text-center p-2 rounded-xl bg-rose-500/10">
+                  <span className="text-lg font-bold text-rose-600">{dayStats.cancelled}</span>
+                  <p className="text-[10px] text-muted-foreground">Cancel.</p>
+                </div>
               </div>
             </div>
 
-            {/* Contenido principal - Lista de citas */}
-            <div className="lg:col-span-4">
+            {/* Controles de vista y navegación */}
+            <div className="flex items-center gap-2 p-2 rounded-2xl bg-card/95 backdrop-blur-xl border border-border/50 shadow-2xl">
+              {/* Navegación de fecha */}
+              <Button 
+                variant="ghost" 
+                size="sm"
+                className="h-10 w-10 p-0 rounded-xl hover:bg-muted/50"
+                onClick={() => viewMode === 'day' ? changeDay(-1) : viewMode === 'week' ? changeWeek(-1) : setSelectedDate(new Date(selectedDate.setMonth(selectedDate.getMonth() - 1)))}
+              >
+                <ChevronLeft size={18} />
+              </Button>
+              
+              {/* Selector de vista */}
+              <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as AppointmentView)}>
+                <TabsList className="rounded-xl bg-muted/50 p-1">
+                  <TabsTrigger value="day" className="text-xs rounded-lg px-3 data-[state=active]:bg-background data-[state=active]:shadow-sm">Día</TabsTrigger>
+                  <TabsTrigger value="week" className="text-xs rounded-lg px-3 data-[state=active]:bg-background data-[state=active]:shadow-sm">Semana</TabsTrigger>
+                  <TabsTrigger value="month" className="text-xs rounded-lg px-3 data-[state=active]:bg-background data-[state=active]:shadow-sm">Mes</TabsTrigger>
+                </TabsList>
+              </Tabs>
+              
+              <Button 
+                variant="ghost" 
+                size="sm"
+                className="h-10 w-10 p-0 rounded-xl hover:bg-muted/50"
+                onClick={() => viewMode === 'day' ? changeDay(1) : viewMode === 'week' ? changeWeek(1) : setSelectedDate(new Date(selectedDate.setMonth(selectedDate.getMonth() + 1)))}
+              >
+                <ChevronRight size={18} />
+              </Button>
+              
+              <div className="h-6 w-px bg-border mx-1" />
+              
+              {/* Botón Nueva Cita */}
+              <Button 
+                onClick={handleCreateAppointment}
+                className="rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20 px-4"
+              >
+                <Plus className="mr-2" size={16} />
+                Nueva cita
+              </Button>
+            </div>
+          </div>
+          
+          {/* Layout de contenido principal - ahora ocupa todo el ancho */}
+          <div className="mt-6">
+
+            {/* Contenido principal - Lista de citas - ancho completo */}
+            <div>
               <div className="h-full rounded-3xl bg-card/80 backdrop-blur-xl border border-border/50 shadow-xl overflow-hidden">
                 {/* Header con filtros modernos */}
                 <div className="p-6 border-b border-border/50">
@@ -1041,7 +997,7 @@ const AppointmentList = () => {
                     </div>
                   )}
                   
-                  <div className="overflow-auto max-h-[600px]">
+                  <div className="overflow-auto max-h-[600px] pb-32">
                     {renderViewContent()}
                   </div>
                 </div>
