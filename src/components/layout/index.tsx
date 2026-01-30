@@ -108,25 +108,21 @@ export const Layout = ({ children }: LayoutProps) => {
         
         <div className="flex-1 flex flex-col min-w-0 pt-20 px-6">
           {/* Main Content */}
-          <main className="flex-1 overflow-auto">
+          <main className="flex-1 overflow-hidden relative">
             <div className="container mx-auto px-4 py-4">
               <TenantStatusBar />
             </div>
-            {(() => {
-              console.log(`[Layout] Renderizando contenido para ruta: ${location.pathname}`);
-              console.log(`[Layout] Timestamp: ${new Date().toISOString()}`);
-              return null;
-            })()}
-            <AnimatePresence 
-              mode="wait"
-              onExitComplete={() => {
-                console.log(`[Layout] AnimatePresence: Exit animation completada`);
-              }}
-            >
-              <PageTransition key={location.pathname}>
-                {children}
-              </PageTransition>
-            </AnimatePresence>
+            {/* Contenedor aislado para animaciones - evita afectar el header */}
+            <div className="relative overflow-hidden">
+              <AnimatePresence 
+                mode="wait"
+                initial={false}
+              >
+                <PageTransition key={location.pathname}>
+                  {children}
+                </PageTransition>
+              </AnimatePresence>
+            </div>
           </main>
 
         <FloatingChatButton />

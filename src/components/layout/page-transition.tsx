@@ -1,61 +1,42 @@
 import { motion, Variants, Transition } from "framer-motion";
-import { ReactNode, useEffect } from "react";
-import { useLocation } from "react-router-dom";
+import { ReactNode } from "react";
 
 interface PageTransitionProps {
   children: ReactNode;
   className?: string;
 }
 
+// Animación más sutil que no afecta el layout externo
 const pageVariants: Variants = {
   initial: {
     opacity: 0,
-    y: 20,
-    scale: 0.98,
   },
   animate: {
     opacity: 1,
-    y: 0,
-    scale: 1,
   },
   exit: {
     opacity: 0,
-    y: -10,
-    scale: 0.99,
   },
 };
 
-const springTransition: Transition = {
-  type: "spring",
-  stiffness: 380,
-  damping: 30,
+const pageTransition: Transition = {
+  duration: 0.15,
+  ease: "easeOut",
 };
 
 export function PageTransition({ children, className }: PageTransitionProps) {
-  const location = useLocation();
-  
-  useEffect(() => {
-    console.log(`[PageTransition] Montando transición para ruta: ${location.pathname}`);
-    console.log(`[PageTransition] Timestamp: ${new Date().toISOString()}`);
-    
-    return () => {
-      console.log(`[PageTransition] Desmontando transición para ruta: ${location.pathname}`);
-    };
-  }, [location.pathname]);
-
   return (
     <motion.div
       initial="initial"
       animate="animate"
       exit="exit"
       variants={pageVariants}
-      transition={springTransition}
+      transition={pageTransition}
       className={className}
-      onAnimationStart={() => {
-        console.log(`[PageTransition] Animación iniciando para: ${location.pathname}`);
-      }}
-      onAnimationComplete={() => {
-        console.log(`[PageTransition] Animación completada para: ${location.pathname}`);
+      style={{ 
+        willChange: "opacity",
+        // Asegura que las transformaciones no afecten el layout externo
+        position: "relative",
       }}
     >
       {children}
@@ -131,6 +112,12 @@ const staggerItemVariants: Variants = {
   },
 };
 
+const staggerItemTransition: Transition = {
+  type: "spring",
+  stiffness: 400,
+  damping: 25,
+};
+
 export function StaggerContainer({ children, className }: StaggerContainerProps) {
   return (
     <motion.div
@@ -148,7 +135,7 @@ export function StaggerItem({ children, className }: PageTransitionProps) {
   return (
     <motion.div 
       variants={staggerItemVariants} 
-      transition={springTransition}
+      transition={staggerItemTransition}
       className={className}
     >
       {children}
