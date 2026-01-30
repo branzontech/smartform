@@ -72,7 +72,15 @@ function DockIcon({
         <motion.button
           ref={ref}
           style={{ width, height: width }}
-          onClick={item.onClick}
+          onClick={() => {
+            console.log(`[Dock] Click en item: "${item.label}" (id: ${item.id})`);
+            console.log(`[Dock] Timestamp: ${new Date().toISOString()}`);
+            if (item.onClick) {
+              console.log(`[Dock] Ejecutando onClick para: ${item.id}`);
+              item.onClick();
+              console.log(`[Dock] onClick ejecutado para: ${item.id}`);
+            }
+          }}
           disabled={item.disabled}
           className={cn(
             "relative flex items-center justify-center rounded-2xl transition-colors",
