@@ -319,53 +319,58 @@ const AppointmentCard = ({
   showSelection?: boolean
 }) => {
   return (
-    <Card 
-      className={`mb-2 hover:shadow-md transition-shadow cursor-pointer relative ${
-        isSelected ? 'ring-2 ring-blue-500 bg-blue-50' : 'bg-[#F1F0FB]'
-      } dark:bg-gray-800`}
+    <div 
+      className={`mb-3 p-4 rounded-2xl backdrop-blur-md border transition-all duration-200 cursor-pointer ${
+        isSelected 
+          ? 'ring-2 ring-primary bg-primary/10 border-primary/30' 
+          : 'bg-card/60 border-border/50 hover:bg-card/80 hover:border-border hover:shadow-lg'
+      }`}
     >
-      <CardContent className="p-3">
-        <div className="flex items-start justify-between">
-          <div className="flex items-start space-x-3">
-            {showSelection && onSelect && (
-              <Checkbox
-                checked={isSelected}
-                onCheckedChange={onSelect}
-                onClick={(e) => e.stopPropagation()}
-                className="mt-1"
-              />
-            )}
-            <div className="flex-1" onClick={onClick}>
-              <div className="font-medium">{appointment.patientName}</div>
-              <div className="text-sm text-gray-500 flex items-center mt-1">
-                <Clock size={14} className="mr-1" />
-                {appointment.time} ({appointment.duration} min)
+      <div className="flex items-start justify-between">
+        <div className="flex items-start space-x-3">
+          {showSelection && onSelect && (
+            <Checkbox
+              checked={isSelected}
+              onCheckedChange={onSelect}
+              onClick={(e) => e.stopPropagation()}
+              className="mt-1"
+            />
+          )}
+          <div className="flex-1" onClick={onClick}>
+            <div className="font-semibold text-foreground">{appointment.patientName}</div>
+            <div className="text-sm text-muted-foreground flex items-center mt-1.5">
+              <div className="p-1 rounded-md bg-muted/50 mr-2">
+                <Clock size={12} />
               </div>
-              <div className="text-sm mt-1">{appointment.reason}</div>
+              {appointment.time} ({appointment.duration} min)
             </div>
-          </div>
-          <div className="flex items-start gap-2">
-            <AppointmentStatusBadge status={appointment.status} />
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => e.stopPropagation()}>
-                  <MoreVertical size={16} />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={(e) => {
-                  e.stopPropagation();
-                  onStartConsultation();
-                }}>
-                  <Stethoscope className="mr-2 h-4 w-4" />
-                  <span>Iniciar consulta</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <div className="text-sm text-muted-foreground mt-1">{appointment.reason}</div>
           </div>
         </div>
-      </CardContent>
-    </Card>
+        <div className="flex items-start gap-2">
+          <AppointmentStatusBadge status={appointment.status} />
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-xl hover:bg-muted/50" onClick={(e) => e.stopPropagation()}>
+                <MoreVertical size={16} />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="rounded-xl backdrop-blur-xl bg-popover/95 border-border/50">
+              <DropdownMenuItem 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onStartConsultation();
+                }}
+                className="rounded-lg"
+              >
+                <Stethoscope className="mr-2 h-4 w-4" />
+                <span>Iniciar consulta</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </div>
+    </div>
   );
 };
 
@@ -788,190 +793,200 @@ const AppointmentList = () => {
             {/* Panel izquierdo - Vista de estadísticas y acciones */}
             <div className="lg:col-span-1 space-y-4">
               {/* Navegación de fechas */}
-              <Card>
-                <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-sm font-medium text-gray-500">Vista</h3>
-                    <Filter size={16} className="text-gray-400" />
+              <div className="p-4 rounded-2xl bg-card/60 backdrop-blur-xl border border-border/50">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-sm font-medium text-muted-foreground">Vista</h3>
+                  <div className="p-1.5 rounded-lg bg-primary/10">
+                    <Filter size={14} className="text-primary" />
                   </div>
-                </CardHeader>
-                <CardContent className="pt-0">
-                  <Tabs defaultValue={viewMode} onValueChange={(v) => setViewMode(v as AppointmentView)}>
-                    <TabsList className="grid w-full grid-cols-3">
-                      <TabsTrigger value="day" className="text-xs">Día</TabsTrigger>
-                      <TabsTrigger value="week" className="text-xs">Semana</TabsTrigger>
-                      <TabsTrigger value="month" className="text-xs">Mes</TabsTrigger>
-                    </TabsList>
-                  </Tabs>
-                </CardContent>
-              </Card>
+                </div>
+                <Tabs defaultValue={viewMode} onValueChange={(v) => setViewMode(v as AppointmentView)}>
+                  <TabsList className="grid w-full grid-cols-3 rounded-xl bg-muted/50 p-1">
+                    <TabsTrigger value="day" className="text-xs rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">Día</TabsTrigger>
+                    <TabsTrigger value="week" className="text-xs rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">Semana</TabsTrigger>
+                    <TabsTrigger value="month" className="text-xs rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">Mes</TabsTrigger>
+                  </TabsList>
+                </Tabs>
+              </div>
 
               {/* Navegación de fecha específica */}
-              <Card>
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      onClick={() => viewMode === 'day' ? changeDay(-1) : viewMode === 'week' ? changeWeek(-1) : setSelectedDate(new Date(selectedDate.setMonth(selectedDate.getMonth() - 1)))}
-                    >
-                      <ChevronLeft size={18} />
-                    </Button>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      onClick={() => viewMode === 'day' ? changeDay(1) : viewMode === 'week' ? changeWeek(1) : setSelectedDate(new Date(selectedDate.setMonth(selectedDate.getMonth() + 1)))}
-                    >
-                      <ChevronRight size={18} />
-                    </Button>
-                  </div>
-                  <div className="text-center">
-                    <h2 className="text-lg font-semibold">
-                      {viewMode === 'day' && format(selectedDate, "d 'de' MMMM 'de' yyyy", { locale: es })}
-                      {viewMode === 'week' && `${format(weekDays[0], "d MMM", { locale: es })} - ${format(weekDays[6], "d MMM", { locale: es })}`}
-                      {viewMode === 'month' && format(selectedDate, "MMMM yyyy", { locale: es })}
-                    </h2>
-                    {isToday(selectedDate) && viewMode === 'day' && (
-                      <span className="text-xs text-purple-500 font-medium">Hoy</span>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
+              <div className="p-4 rounded-2xl bg-card/60 backdrop-blur-xl border border-border/50">
+                <div className="flex items-center justify-between mb-3">
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    className="h-8 w-8 p-0 rounded-xl hover:bg-muted/50"
+                    onClick={() => viewMode === 'day' ? changeDay(-1) : viewMode === 'week' ? changeWeek(-1) : setSelectedDate(new Date(selectedDate.setMonth(selectedDate.getMonth() - 1)))}
+                  >
+                    <ChevronLeft size={18} />
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    className="h-8 w-8 p-0 rounded-xl hover:bg-muted/50"
+                    onClick={() => viewMode === 'day' ? changeDay(1) : viewMode === 'week' ? changeWeek(1) : setSelectedDate(new Date(selectedDate.setMonth(selectedDate.getMonth() + 1)))}
+                  >
+                    <ChevronRight size={18} />
+                  </Button>
+                </div>
+                <div className="text-center">
+                  <h2 className="text-base font-semibold text-foreground">
+                    {viewMode === 'day' && format(selectedDate, "d 'de' MMMM 'de' yyyy", { locale: es })}
+                    {viewMode === 'week' && `${format(weekDays[0], "d MMM", { locale: es })} - ${format(weekDays[6], "d MMM", { locale: es })}`}
+                    {viewMode === 'month' && format(selectedDate, "MMMM yyyy", { locale: es })}
+                  </h2>
+                  {isToday(selectedDate) && viewMode === 'day' && (
+                    <span className="text-xs text-primary font-medium">Hoy</span>
+                  )}
+                </div>
+              </div>
 
               {/* Resumen del día */}
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-medium text-gray-500">
-                    Resumen del día
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="pt-0 space-y-3">
+              <div className="p-4 rounded-2xl bg-card/60 backdrop-blur-xl border border-border/50">
+                <h3 className="text-sm font-medium text-muted-foreground mb-4">
+                  Resumen del día
+                </h3>
+                <div className="space-y-3">
                   {/* Total de citas */}
-                  <div className="flex items-center justify-between p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                  <div className="flex items-center justify-between p-3 rounded-xl bg-primary/10 border border-primary/20">
                     <div className="flex items-center space-x-2">
-                      <CalendarDays size={16} className="text-blue-600" />
-                      <span className="text-sm font-medium">Total citas</span>
+                      <div className="p-1.5 rounded-lg bg-primary/20">
+                        <CalendarDays size={14} className="text-primary" />
+                      </div>
+                      <span className="text-sm font-medium text-foreground">Total citas</span>
                     </div>
-                    <span className="text-2xl font-bold text-blue-600">{dayStats.total}</span>
+                    <span className="text-2xl font-bold text-primary">{dayStats.total}</span>
                   </div>
 
                   {/* Confirmadas */}
-                  <div className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                  <div className="flex items-center justify-between p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
                     <div className="flex items-center space-x-2">
-                      <CheckCircle size={16} className="text-green-600" />
-                      <span className="text-sm font-medium">Confirmadas</span>
+                      <div className="p-1.5 rounded-lg bg-emerald-500/20">
+                        <CheckCircle size={14} className="text-emerald-600" />
+                      </div>
+                      <span className="text-sm font-medium text-foreground">Confirmadas</span>
                     </div>
-                    <span className="text-2xl font-bold text-green-600">{dayStats.confirmed}</span>
+                    <span className="text-2xl font-bold text-emerald-600">{dayStats.confirmed}</span>
                   </div>
 
                   {/* Pendientes */}
-                  <div className="flex items-center justify-between p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
+                  <div className="flex items-center justify-between p-3 rounded-xl bg-amber-500/10 border border-amber-500/20">
                     <div className="flex items-center space-x-2">
-                      <AlertCircle size={16} className="text-yellow-600" />
-                      <span className="text-sm font-medium">Pendientes</span>
+                      <div className="p-1.5 rounded-lg bg-amber-500/20">
+                        <AlertCircle size={14} className="text-amber-600" />
+                      </div>
+                      <span className="text-sm font-medium text-foreground">Pendientes</span>
                     </div>
-                    <span className="text-2xl font-bold text-yellow-600">{dayStats.pending}</span>
+                    <span className="text-2xl font-bold text-amber-600">{dayStats.pending}</span>
                   </div>
 
                   {/* Canceladas */}
-                  <div className="flex items-center justify-between p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
+                  <div className="flex items-center justify-between p-3 rounded-xl bg-rose-500/10 border border-rose-500/20">
                     <div className="flex items-center space-x-2">
-                      <XCircle size={16} className="text-red-600" />
-                      <span className="text-sm font-medium">Canceladas</span>
+                      <div className="p-1.5 rounded-lg bg-rose-500/20">
+                        <XCircle size={14} className="text-rose-600" />
+                      </div>
+                      <span className="text-sm font-medium text-foreground">Canceladas</span>
                     </div>
-                    <span className="text-2xl font-bold text-red-600">{dayStats.cancelled}</span>
+                    <span className="text-2xl font-bold text-rose-600">{dayStats.cancelled}</span>
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
 
               {/* Acciones rápidas */}
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-medium text-gray-500">
-                    Acciones rápidas
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="pt-0">
-                  <Button 
-                    onClick={handleCreateAppointment}
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white"
-                  >
-                    <Plus className="mr-2" size={16} />
-                    Nueva cita
-                  </Button>
-                </CardContent>
-              </Card>
+              <div className="p-4 rounded-2xl bg-card/60 backdrop-blur-xl border border-border/50">
+                <h3 className="text-sm font-medium text-muted-foreground mb-3">
+                  Acciones rápidas
+                </h3>
+                <Button 
+                  onClick={handleCreateAppointment}
+                  className="w-full rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20"
+                >
+                  <Plus className="mr-2" size={16} />
+                  Nueva cita
+                </Button>
+              </div>
             </div>
 
             {/* Contenido principal - Lista de citas */}
             <div className="lg:col-span-4">
-              <Card className="h-full">
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
-                      <Calendar className="text-purple-500" size={20} />
-                      <h1 className="text-xl font-semibold">
-                        {viewMode === 'day' && format(selectedDate, "EEEE, d 'de' MMMM 'de' yyyy", { locale: es })}
-                        {viewMode === 'week' && "Vista Semanal"}
-                        {viewMode === 'month' && format(selectedDate, "MMMM yyyy", { locale: es })}
-                      </h1>
-                      {filteredAppointments.length > 0 && (viewMode === 'week' || viewMode === 'month') && (
-                        <div className="flex items-center space-x-2 ml-4">
-                          <Checkbox
-                            checked={selectedAppointments.length === filteredAppointments.length}
-                            onCheckedChange={handleSelectAll}
-                          />
-                          <span className="text-sm text-gray-600">Seleccionar todo</span>
-                        </div>
-                      )}
+              <div className="h-full rounded-3xl bg-card/80 backdrop-blur-xl border border-border/50 shadow-xl overflow-hidden">
+                {/* Header con filtros modernos */}
+                <div className="p-6 border-b border-border/50">
+                  <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                    <div className="flex items-center space-x-3">
+                      <div className="p-2.5 rounded-xl bg-primary/10">
+                        <Calendar className="text-primary" size={20} />
+                      </div>
+                      <div>
+                        <h1 className="text-xl font-semibold text-foreground">
+                          {viewMode === 'day' && format(selectedDate, "EEEE, d 'de' MMMM 'de' yyyy", { locale: es })}
+                          {viewMode === 'week' && "Vista Semanal"}
+                          {viewMode === 'month' && format(selectedDate, "MMMM yyyy", { locale: es })}
+                        </h1>
+                        {filteredAppointments.length > 0 && (viewMode === 'week' || viewMode === 'month') && (
+                          <div className="flex items-center space-x-2 mt-1">
+                            <Checkbox
+                              checked={selectedAppointments.length === filteredAppointments.length}
+                              onCheckedChange={handleSelectAll}
+                              className="rounded-md"
+                            />
+                            <span className="text-sm text-muted-foreground">Seleccionar todo</span>
+                          </div>
+                        )}
+                      </div>
                     </div>
                     
-                    {/* Filtros de búsqueda */}
-                    <div className="flex items-center space-x-2">
+                    {/* Filtros de búsqueda modernos */}
+                    <div className="flex items-center gap-3 flex-wrap">
                       <div className="relative">
-                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <Input
-                          placeholder="Buscar..."
+                          placeholder="Buscar citas..."
                           value={searchTerm}
                           onChange={(e) => setSearchTerm(e.target.value)}
-                          className="pl-10 w-48"
+                          className="pl-10 w-56 h-11 rounded-xl bg-muted/50 border-0 focus-visible:ring-1 focus-visible:ring-primary/50"
                         />
                       </div>
-                      <select
-                        className="rounded-md border border-input px-3 py-2 bg-background text-sm"
-                        value={statusFilter}
-                        onChange={(e) => setStatusFilter(e.target.value as any)}
-                      >
-                        <option value="Todas">Todas</option>
-                        <option value="Programada">Programadas</option>
-                        <option value="Pendiente">Pendientes</option>
-                        <option value="Completada">Completadas</option>
-                        <option value="Cancelada">Canceladas</option>
-                      </select>
-                      <select
-                        className="rounded-md border border-input px-3 py-2 bg-background text-sm"
-                        value={doctorFilter}
-                        onChange={(e) => setDoctorFilter(e.target.value)}
-                      >
-                        <option value="Todos">Todos los médicos</option>
-                        {mockDoctors.map((doctor) => (
-                          <option key={doctor.id} value={doctor.id}>
-                            {doctor.name}
-                          </option>
-                        ))}
-                      </select>
+                      <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as any)}>
+                        <SelectTrigger className="w-44 h-11 rounded-xl bg-muted/50 border-0 focus:ring-1 focus:ring-primary/50">
+                          <SelectValue placeholder="Estado" />
+                        </SelectTrigger>
+                        <SelectContent className="rounded-xl backdrop-blur-xl bg-popover/95 border-border/50">
+                          <SelectItem value="Todas" className="rounded-lg">Todas</SelectItem>
+                          <SelectItem value="Programada" className="rounded-lg">Programadas</SelectItem>
+                          <SelectItem value="Pendiente" className="rounded-lg">Pendientes</SelectItem>
+                          <SelectItem value="Completada" className="rounded-lg">Completadas</SelectItem>
+                          <SelectItem value="Cancelada" className="rounded-lg">Canceladas</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <Select value={doctorFilter} onValueChange={setDoctorFilter}>
+                        <SelectTrigger className="w-52 h-11 rounded-xl bg-muted/50 border-0 focus:ring-1 focus:ring-primary/50">
+                          <SelectValue placeholder="Médico" />
+                        </SelectTrigger>
+                        <SelectContent className="rounded-xl backdrop-blur-xl bg-popover/95 border-border/50">
+                          <SelectItem value="Todos" className="rounded-lg">Todos los médicos</SelectItem>
+                          {mockDoctors.map((doctor) => (
+                            <SelectItem key={doctor.id} value={doctor.id} className="rounded-lg">
+                              {doctor.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
-                </CardHeader>
+                </div>
                 
                 
                 {/* Alerta especial cuando se filtra por médico específico */}
                 {doctorFilter !== 'Todos' && (
-                  <div className="mb-4 p-4 bg-orange-50 border border-orange-200 rounded-lg">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-2">
-                        <Users className="h-4 w-4 text-orange-600" />
-                        <span className="text-sm font-medium text-orange-800">
+                  <div className="mx-6 mt-4 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20">
+                    <div className="flex items-center justify-between flex-wrap gap-3">
+                      <div className="flex items-center space-x-3">
+                        <div className="p-2 rounded-xl bg-amber-500/20">
+                          <Users className="h-4 w-4 text-amber-600" />
+                        </div>
+                        <span className="text-sm font-medium text-foreground">
                           Mostrando citas de: {mockDoctors.find(d => d.id === doctorFilter)?.name}
                         </span>
                       </div>
@@ -980,7 +995,7 @@ const AppointmentList = () => {
                           size="sm"
                           variant="outline"
                           onClick={() => handleSelectAllDoctorAppointments(doctorFilter)}
-                          className="text-orange-700 border-orange-300 hover:bg-orange-100"
+                          className="rounded-xl text-amber-700 border-amber-300 hover:bg-amber-500/10"
                         >
                           <Users size={14} className="mr-1" />
                           Seleccionar todas sus citas
@@ -989,26 +1004,32 @@ const AppointmentList = () => {
                           size="sm"
                           variant="ghost"
                           onClick={() => setDoctorFilter('Todos')}
-                          className="text-gray-600 hover:text-gray-800"
+                          className="rounded-xl h-8 w-8 p-0 hover:bg-muted/50"
                         >
                           <X size={14} />
                         </Button>
                       </div>
                     </div>
-                    <p className="text-xs text-orange-600 mt-1">
+                    <p className="text-xs text-muted-foreground mt-2 ml-11">
                       ⚠️ Útil para redistribuir citas cuando un médico se incapacita o no está disponible
                     </p>
                   </div>
                 )}
                 
-                <CardContent className="p-6">
+                <div className="p-6">
                   {viewMode === 'week' && (
-                    <div className={`grid grid-cols-7 gap-1 mb-6 ${isMobile ? 'overflow-x-auto' : ''}`}>
+                    <div className={`grid grid-cols-7 gap-2 mb-6 ${isMobile ? 'overflow-x-auto' : ''}`}>
                       {weekDays.map((day, i) => (
                         <Button
                           key={i}
-                          variant={isSameDay(day, selectedDate) ? "default" : "outline"}
-                          className={`text-xs h-auto py-2 ${isSameDay(day, new Date()) ? 'bg-purple-100 text-purple-700 border-purple-300' : ''} ${isMobile ? 'min-w-[5rem]' : ''}`}
+                          variant="ghost"
+                          className={`text-xs h-auto py-3 rounded-xl transition-all ${
+                            isSameDay(day, selectedDate) 
+                              ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20' 
+                              : isSameDay(day, new Date()) 
+                                ? 'bg-primary/10 text-primary border border-primary/30' 
+                                : 'hover:bg-muted/50'
+                          } ${isMobile ? 'min-w-[5rem]' : ''}`}
                           onClick={() => setSelectedDate(day)}
                         >
                           <div className="flex flex-col">
@@ -1023,123 +1044,124 @@ const AppointmentList = () => {
                   <div className="overflow-auto max-h-[600px]">
                     {renderViewContent()}
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             </div>
           </div>
           {/* Barra de acciones rápidas flotante */}
           {showBulkActions && (
             <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-40">
-              <Card className="shadow-lg border-2 border-blue-200 bg-white">
-                <CardContent className="p-4">
-                  <div className="flex items-center space-x-4">
-                    <div className="flex items-center space-x-2 text-sm font-medium">
-                      <Check className="h-4 w-4 text-blue-600" />
-                      <span>{selectedAppointments.length} cita{selectedAppointments.length > 1 ? 's' : ''} seleccionada{selectedAppointments.length > 1 ? 's' : ''}</span>
+              <div className="px-6 py-4 rounded-2xl bg-card/95 backdrop-blur-xl border border-border/50 shadow-2xl">
+                <div className="flex items-center space-x-4">
+                  <div className="flex items-center space-x-2 text-sm font-medium">
+                    <div className="p-1.5 rounded-lg bg-primary/10">
+                      <Check className="h-4 w-4 text-primary" />
                     </div>
-                    
-                    <div className="h-6 w-px bg-gray-300" />
-                    
-                    <div className="flex items-center space-x-2">
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={() => handleCancelAppointments(selectedAppointments)}
-                        className="flex items-center space-x-1"
-                      >
-                        <CalendarX size={16} />
-                        <span>Cancelar</span>
-                      </Button>
-                      
-                      <Dialog open={isReassignDialogOpen} onOpenChange={setIsReassignDialogOpen}>
-                        <DialogTrigger asChild>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="flex items-center space-x-1 border-blue-200 text-blue-600 hover:bg-blue-50"
-                          >
-                            <CalendarCheck size={16} />
-                            <span>Reasignar</span>
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                          <DialogHeader>
-                            <DialogTitle>
-                              Reasignar {selectedAppointments.length} cita{selectedAppointments.length > 1 ? 's' : ''}
-                            </DialogTitle>
-                          </DialogHeader>
-                          <div className="space-y-4 py-4">
-                            <div>
-                              <label className="text-sm font-medium">Nueva fecha</label>
-                              <Input
-                                type="date"
-                                value={reassignDate}
-                                onChange={(e) => setReassignDate(e.target.value)}
-                                className="mt-1"
-                              />
-                            </div>
-                            <div>
-                              <label className="text-sm font-medium">Nueva hora</label>
-                              <Select value={reassignTime} onValueChange={setReassignTime}>
-                                <SelectTrigger className="mt-1">
-                                  <SelectValue placeholder="Seleccionar hora" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {timeSlots.map((time) => (
-                                    <SelectItem key={time} value={time}>
-                                      {time}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </div>
-                            <div>
-                              <label className="text-sm font-medium">Médico (opcional)</label>
-                              <Select value={reassignDoctorId} onValueChange={setReassignDoctorId}>
-                                <SelectTrigger className="mt-1">
-                                  <SelectValue placeholder="Mantener médico actual o seleccionar nuevo" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="keep-current">Mantener médico actual</SelectItem>
-                                  {mockDoctors.filter(doctor => doctor.status === 'Activo').map((doctor) => (
-                                    <SelectItem key={doctor.id} value={doctor.id}>
-                                      {doctor.name} - {doctor.specialty}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </div>
-                            <div className="flex justify-end space-x-2 pt-4">
-                              <Button
-                                variant="outline"
-                                onClick={() => setIsReassignDialogOpen(false)}
-                              >
-                                Cancelar
-                              </Button>
-                              <Button
-                                onClick={handleReassignAppointments}
-                                className="bg-blue-600 hover:bg-blue-700"
-                              >
-                                Reasignar citas
-                              </Button>
-                            </div>
-                          </div>
-                        </DialogContent>
-                      </Dialog>
-                      
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setSelectedAppointments([])}
-                        className="flex items-center space-x-1"
-                      >
-                        <X size={16} />
-                        <span>Limpiar</span>
-                      </Button>
-                    </div>
+                    <span className="text-foreground">{selectedAppointments.length} cita{selectedAppointments.length > 1 ? 's' : ''} seleccionada{selectedAppointments.length > 1 ? 's' : ''}</span>
                   </div>
-                </CardContent>
-              </Card>
+                  
+                  <div className="h-6 w-px bg-border" />
+                  
+                  <div className="flex items-center space-x-2">
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => handleCancelAppointments(selectedAppointments)}
+                      className="flex items-center space-x-1 rounded-xl"
+                    >
+                      <CalendarX size={16} />
+                      <span>Cancelar</span>
+                    </Button>
+                    
+                    <Dialog open={isReassignDialogOpen} onOpenChange={setIsReassignDialogOpen}>
+                      <DialogTrigger asChild>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="flex items-center space-x-1 rounded-xl border-primary/30 text-primary hover:bg-primary/10"
+                        >
+                          <CalendarCheck size={16} />
+                          <span>Reasignar</span>
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="rounded-2xl">
+                        <DialogHeader>
+                          <DialogTitle>
+                            Reasignar {selectedAppointments.length} cita{selectedAppointments.length > 1 ? 's' : ''}
+                          </DialogTitle>
+                        </DialogHeader>
+                        <div className="space-y-4 py-4">
+                          <div>
+                            <label className="text-sm font-medium text-foreground">Nueva fecha</label>
+                            <Input
+                              type="date"
+                              value={reassignDate}
+                              onChange={(e) => setReassignDate(e.target.value)}
+                              className="mt-2 rounded-xl"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-sm font-medium text-foreground">Nueva hora</label>
+                            <Select value={reassignTime} onValueChange={setReassignTime}>
+                              <SelectTrigger className="mt-2 rounded-xl">
+                                <SelectValue placeholder="Seleccionar hora" />
+                              </SelectTrigger>
+                              <SelectContent className="rounded-xl">
+                                {timeSlots.map((time) => (
+                                  <SelectItem key={time} value={time} className="rounded-lg">
+                                    {time}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div>
+                            <label className="text-sm font-medium text-foreground">Médico (opcional)</label>
+                            <Select value={reassignDoctorId} onValueChange={setReassignDoctorId}>
+                              <SelectTrigger className="mt-2 rounded-xl">
+                                <SelectValue placeholder="Mantener médico actual o seleccionar nuevo" />
+                              </SelectTrigger>
+                              <SelectContent className="rounded-xl">
+                                <SelectItem value="keep-current" className="rounded-lg">Mantener médico actual</SelectItem>
+                                {mockDoctors.filter(doctor => doctor.status === 'Activo').map((doctor) => (
+                                  <SelectItem key={doctor.id} value={doctor.id} className="rounded-lg">
+                                    {doctor.name} - {doctor.specialty}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="flex justify-end space-x-2 pt-4">
+                            <Button
+                              variant="outline"
+                              onClick={() => setIsReassignDialogOpen(false)}
+                              className="rounded-xl"
+                            >
+                              Cancelar
+                            </Button>
+                            <Button
+                              onClick={handleReassignAppointments}
+                              className="rounded-xl bg-primary hover:bg-primary/90"
+                            >
+                              Reasignar citas
+                            </Button>
+                          </div>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+                    
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setSelectedAppointments([])}
+                      className="flex items-center space-x-1 rounded-xl hover:bg-muted/50"
+                    >
+                      <X size={16} />
+                      <span>Limpiar</span>
+                    </Button>
+                  </div>
+                </div>
+              </div>
             </div>
           )}
         </div>
