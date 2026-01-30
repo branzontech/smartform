@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { format, startOfWeek, endOfWeek, eachDayOfInterval, isToday, isSameDay, addDays, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
-import { Calendar, ChevronLeft, ChevronRight, Plus, Clock, User, Filter, Search, Stethoscope, CalendarDays, CheckCircle, XCircle, AlertCircle, X, CalendarX, CalendarCheck, Users, Check } from "lucide-react";
+import { Calendar, ChevronLeft, ChevronRight, Plus, Clock, User, Filter, Search, Stethoscope, CalendarDays, CheckCircle, XCircle, AlertCircle, X, CalendarX, CalendarCheck, Users, Check, LayoutGrid, CalendarRange, FileText, Settings } from "lucide-react";
 import { Header } from "@/components/layout/header";
 import { BackButton } from "@/App";
 import { Button } from "@/components/ui/button";
@@ -20,6 +20,8 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { MoreVertical } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { Dock, DockItem } from "@/components/ui/dock";
+import { AnimatePresence } from "framer-motion";
 
 // Datos mock de médicos disponibles
 const mockDoctors: Doctor[] = [
@@ -997,14 +999,60 @@ const AppointmentList = () => {
                     </div>
                   )}
                   
-                  <div className="overflow-auto max-h-[600px] pb-32">
+                  <div className="overflow-auto max-h-[600px] pb-40">
                     {renderViewContent()}
                   </div>
                 </div>
               </div>
             </div>
           </div>
-          {/* Barra de acciones rápidas flotante */}
+          
+          {/* Dock flotante con opciones principales */}
+          <AnimatePresence>
+            {!showBulkActions && (
+              <Dock
+                items={[
+                  {
+                    id: "new-appointment",
+                    label: "Nueva cita",
+                    icon: Plus,
+                    onClick: handleCreateAppointment,
+                    isActive: false,
+                  },
+                  {
+                    id: "day-summary",
+                    label: `Resumen: ${dayStats.total} citas`,
+                    icon: CalendarDays,
+                    badge: dayStats.total,
+                    badgeVariant: "default",
+                  },
+                  {
+                    id: "schedule",
+                    label: "Programación",
+                    icon: CalendarRange,
+                    onClick: () => setViewMode('week'),
+                    isActive: viewMode === 'week',
+                  },
+                  {
+                    id: "reports",
+                    label: "Reportes",
+                    icon: FileText,
+                    onClick: () => navigate('/app/informes'),
+                  },
+                  {
+                    id: "settings",
+                    label: "Configuración",
+                    icon: Settings,
+                    onClick: () => navigate('/app/configuracion'),
+                  },
+                ] as DockItem[]}
+                magnification={72}
+                baseSize={52}
+              />
+            )}
+          </AnimatePresence>
+          
+          {/* Barra de acciones rápidas flotante para selección múltiple */}
           {showBulkActions && (
             <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-40">
               <div className="px-6 py-4 rounded-2xl bg-card/95 backdrop-blur-xl border border-border/50 shadow-2xl">
