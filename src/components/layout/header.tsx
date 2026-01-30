@@ -208,20 +208,21 @@ export const Header = ({ showCreate = true }: HeaderProps) => {
           </div>
 
           <div className="flex items-center space-x-4">
-            <DropdownMenu>
+            <DropdownMenu modal={false}>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="p-2 flex items-center gap-2 hover:bg-white/10 text-white group rounded-full">
+                <Button variant="ghost" className="p-2 flex items-center gap-2 hover:bg-white/10 text-white group rounded-full shrink-0">
                   Menú <ChevronDown className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent 
-                className="w-56 max-h-[70vh] overflow-y-auto bg-white/20 dark:bg-gray-900/30 backdrop-blur-lg border border-white/20 dark:border-gray-700/30 shadow-lg" 
+                className="w-56 max-h-[70vh] overflow-y-auto bg-white/95 dark:bg-gray-900/95 backdrop-blur-lg border border-white/20 dark:border-gray-700/30 shadow-lg" 
                 align="end"
+                sideOffset={8}
               >
                 <DropdownMenuGroup>
                   {mainNavItems.map((item) => (
                     item.items ? (
-                      <DropdownMenu key={item.title}>
+                      <DropdownMenu key={item.title} modal={false}>
                         <DropdownMenuTrigger asChild className="w-full">
                           <DropdownMenuItem className="flex items-center justify-between cursor-default">
                             <div className="flex items-center gap-2">
@@ -231,7 +232,7 @@ export const Header = ({ showCreate = true }: HeaderProps) => {
                             <ChevronDown className="h-4 w-4" />
                           </DropdownMenuItem>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent className="w-56">
+                        <DropdownMenuContent className="w-56 bg-white/95 dark:bg-gray-900/95 backdrop-blur-lg">
                           {item.items.map((subItem) => (
                             <DropdownMenuItem key={subItem.title} asChild>
                               <Link to={subItem.path || "#"} className="flex items-center gap-2">
@@ -255,11 +256,11 @@ export const Header = ({ showCreate = true }: HeaderProps) => {
               </DropdownMenuContent>
             </DropdownMenu>
 
-            <DropdownMenu>
+            <DropdownMenu modal={false}>
               <DropdownMenuTrigger asChild>
                 <Button 
                   variant="ghost"
-                  className="p-2 hover:bg-white/10 text-white group relative rounded-full"
+                  className="p-2 hover:bg-white/10 text-white group relative rounded-full shrink-0"
                   size="icon"
                 >
                   <Bell size={18} className="group-hover:text-white" />
@@ -270,7 +271,7 @@ export const Header = ({ showCreate = true }: HeaderProps) => {
                   )}
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-80 p-0 bg-white/95 dark:bg-gray-900/95 backdrop-blur-md border-purple-100 dark:border-purple-900/30">
+              <DropdownMenuContent align="end" className="w-80 p-0 bg-white/95 dark:bg-gray-900/95 backdrop-blur-md border-purple-100 dark:border-purple-900/30" sideOffset={8}>
                 <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-gray-800">
                   <h3 className="font-medium text-gray-900 dark:text-gray-100">Notificaciones</h3>
                   {unreadNotificationsCount > 0 && (
@@ -328,21 +329,21 @@ export const Header = ({ showCreate = true }: HeaderProps) => {
               </DropdownMenuContent>
             </DropdownMenu>
 
-            <DropdownMenu>
+            <DropdownMenu modal={false}>
               <DropdownMenuTrigger asChild>
                 <Button 
                   variant="ghost"
-                  className="p-1 hover:bg-white/10 text-white group flex items-center gap-2 rounded-full"
+                  className="p-1 hover:bg-white/10 text-white group flex items-center gap-2 rounded-full shrink-0"
                 >
-                  <Avatar className="h-8 w-8 bg-white/20">
+                  <Avatar className="h-8 w-8 bg-white/20 shrink-0">
                     <AvatarFallback className="text-sm text-white">
                       {user.initials}
                     </AvatarFallback>
                   </Avatar>
-                  <span className="hidden md:block text-sm font-medium text-white">{user.name}</span>
+                  <span className="hidden md:block text-sm font-medium text-white whitespace-nowrap">{user.name}</span>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuContent align="end" className="w-56" sideOffset={8}>
                 <DropdownMenuItem className="flex items-center gap-2">
                   <UserCircle className="h-4 w-4" />
                   <span>Mi perfil</span>
