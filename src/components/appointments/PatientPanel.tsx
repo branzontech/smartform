@@ -104,7 +104,7 @@ export const PatientPanel: React.FC<PatientPanelProps> = ({
   // Versión colapsada
   if (isCollapsed) {
     return (
-      <div className="w-14 bg-card/50 backdrop-blur-sm border-r border-border/50 flex flex-col items-center py-4 gap-4">
+      <div className="w-14 bg-card/50 backdrop-blur-sm border-r border-border/50 flex flex-col items-center py-4 gap-4 sticky top-0 h-screen">
         <Button
           variant="ghost"
           size="icon"
@@ -146,7 +146,7 @@ export const PatientPanel: React.FC<PatientPanelProps> = ({
   }
 
   return (
-    <div className="w-80 lg:w-96 bg-card/50 backdrop-blur-sm border-r border-border/50 flex flex-col h-full">
+    <div className="w-80 lg:w-96 bg-card/50 backdrop-blur-sm border-r border-border/50 flex flex-col sticky top-0 h-screen">
       {/* Header */}
       <div className="p-4 border-b border-border/50">
         <div className="flex items-center justify-between mb-4">
