@@ -93,7 +93,7 @@ export const AppointmentWizard: React.FC<AppointmentWizardProps> = ({
           className="mb-8"
         >
           {/* Stepper Windows 11 style */}
-          <div className="relative flex items-center justify-around bg-card/60 backdrop-blur-xl rounded-3xl p-6 shadow-lg border border-border/30">
+          <div className="relative flex items-center justify-around bg-card/60 backdrop-blur-xl rounded-3xl p-4 shadow-lg border border-border/30 -mt-2">
             {/* Progress line - centered between steps */}
             <div className="absolute left-1/2 -translate-x-1/2 top-[38px] w-[60%] h-0.5 bg-muted/50 rounded-full z-0">
               <motion.div 
