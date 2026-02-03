@@ -203,21 +203,23 @@ export const PatientSearchStep: React.FC<PatientSearchStepProps> = ({
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="text-center py-12"
+                className="flex items-center justify-center gap-4 py-4"
               >
-                <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center mx-auto mb-6">
-                  <Sparkles className="w-10 h-10 text-primary" />
+                <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center shrink-0">
+                  <Sparkles className="w-5 h-5 text-primary" />
                 </div>
-                <p className="text-muted-foreground text-lg mb-6">
-                  Comienza escribiendo el nombre o documento del paciente
+                <p className="text-sm text-muted-foreground">
+                  Escribe el nombre o documento del paciente
                 </p>
+                <span className="text-muted-foreground/50">o</span>
                 <Button
                   variant="outline"
+                  size="sm"
                   onClick={() => setShowCreateForm(true)}
-                  className="rounded-2xl h-12 px-6 gap-2"
+                  className="rounded-xl gap-1.5 shrink-0"
                 >
-                  <UserPlus className="w-5 h-5" />
-                  O crea un nuevo paciente
+                  <UserPlus className="w-4 h-4" />
+                  Crear nuevo
                 </Button>
               </motion.div>
             )}
