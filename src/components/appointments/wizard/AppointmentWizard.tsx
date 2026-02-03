@@ -84,16 +84,16 @@ export const AppointmentWizard: React.FC<AppointmentWizardProps> = ({
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 p-4 md:p-8">
-      <div className="max-w-5xl mx-auto">
-        {/* Header con stepper - Sticky */}
-        <motion.div 
-          initial={{ y: -20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          className="sticky top-4 z-50 mb-8"
-        >
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
+      {/* Fixed Stepper Container */}
+      <motion.div 
+        initial={{ y: -20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        className="fixed top-20 left-0 right-0 z-50 px-4 md:px-8"
+      >
+        <div className="max-w-5xl mx-auto">
           {/* Stepper Windows 11 style */}
-          <div className="relative flex items-center justify-around bg-card/80 backdrop-blur-xl rounded-3xl p-4 shadow-lg border border-border/30">
+          <div className="relative flex items-center justify-around bg-card/95 backdrop-blur-xl rounded-3xl p-4 shadow-lg border border-border/30">
             {/* Progress line - centered between steps */}
             <div className="absolute left-1/2 -translate-x-1/2 top-[38px] w-[60%] h-0.5 bg-muted/50 rounded-full z-0">
               <motion.div 
@@ -157,10 +157,13 @@ export const AppointmentWizard: React.FC<AppointmentWizardProps> = ({
               );
             })}
           </div>
-        </motion.div>
+        </div>
+      </motion.div>
 
-        {/* Content area */}
-        <div className="relative overflow-hidden">
+      {/* Scrollable Content area */}
+      <div className="pt-40 px-4 md:px-8">
+        <div className="max-w-5xl mx-auto">
+          <div className="relative overflow-hidden">
           <AnimatePresence mode="wait" custom={direction}>
             <motion.div
               key={currentStep}
@@ -203,6 +206,7 @@ export const AppointmentWizard: React.FC<AppointmentWizardProps> = ({
               )}
             </motion.div>
           </AnimatePresence>
+          </div>
         </div>
       </div>
     </div>
