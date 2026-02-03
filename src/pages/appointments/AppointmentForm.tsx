@@ -1,12 +1,11 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { format } from "date-fns";
 import { Header } from "@/components/layout/header";
 import { toast } from "sonner";
 import { isUserSignedIn, createGoogleCalendarEvent, updateGoogleCalendarEvent } from "@/utils/google-calendar";
-import { PatientPanel, ExtendedPatient } from "@/components/appointments/PatientPanel";
-import { AppointmentScheduler } from "@/components/appointments/AppointmentScheduler";
-import { Appointment } from "@/types/patient-types";
+import { ExtendedPatient } from "@/components/appointments/PatientPanel";
+import { AppointmentWizard, WizardData } from "@/components/appointments/wizard";
 
 // Datos mock de pacientes extendidos
 const mockExtendedPatients: ExtendedPatient[] = [
@@ -96,7 +95,7 @@ const mockExtendedPatients: ExtendedPatient[] = [
 ];
 
 // Citas mock para mostrar en la agenda
-const mockAppointments: Appointment[] = [
+const mockAppointments = [
   {
     id: "1",
     patientId: "1",
@@ -138,24 +137,9 @@ const AppointmentForm = () => {
   const navigate = useNavigate();
   const isEditing = !!id;
 
-  // Estado del panel de paciente
   const [patients, setPatients] = useState<ExtendedPatient[]>([]);
-  const [selectedPatient, setSelectedPatient] = useState<ExtendedPatient | null>(null);
-  const [isPanelCollapsed, setIsPanelCollapsed] = useState(false);
-
-  // Estado de la cita
-  const [selectedDate, setSelectedDate] = useState(new Date());
-  const [selectedTime, setSelectedTime] = useState("");
-  const [duration, setDuration] = useState(30);
-  const [reason, setReason] = useState("");
-  const [notes, setNotes] = useState("");
   const [existingAppointments, setExistingAppointments] = useState<any[]>([]);
-
-  // Estado de Google Calendar
-  const [googleEventId, setGoogleEventId] = useState<string | undefined>();
-  const [syncWithGoogle, setSyncWithGoogle] = useState(false);
   const [googleConnected, setGoogleConnected] = useState(false);
-
   const [loading, setLoading] = useState(true);
 
   // Cargar datos iniciales
@@ -196,31 +180,6 @@ const AppointmentForm = () => {
         setExistingAppointments(mockAppointments);
       }
 
-      // Si estamos editando, cargar la cita
-      if (isEditing && id) {
-        const appointments = JSON.parse(localStorage.getItem("appointments") || "[]");
-        const appointmentToEdit = appointments.find((a: any) => a.id === id);
-        
-        if (appointmentToEdit) {
-          setSelectedDate(new Date(appointmentToEdit.date));
-          setSelectedTime(appointmentToEdit.time);
-          setDuration(appointmentToEdit.duration);
-          setReason(appointmentToEdit.reason);
-          setNotes(appointmentToEdit.notes || "");
-          
-          if (appointmentToEdit.googleEventId) {
-            setGoogleEventId(appointmentToEdit.googleEventId);
-            setSyncWithGoogle(true);
-          }
-
-          // Buscar y seleccionar el paciente
-          const patient = mockExtendedPatients.find(p => p.id === appointmentToEdit.patientId);
-          if (patient) {
-            setSelectedPatient(patient);
-          }
-        }
-      }
-
       setLoading(false);
     };
 
@@ -232,46 +191,14 @@ const AppointmentForm = () => {
     try {
       const connected = isUserSignedIn();
       setGoogleConnected(connected);
-      if (connected) {
-        const preferSync = localStorage.getItem('googleCalendarSync') === 'true';
-        setSyncWithGoogle(preferSync);
-      }
     } catch (error) {
       console.error("Error checking Google connection:", error);
     }
   }, []);
 
-  // Manejar creación de paciente
-  const handleCreatePatient = (patientData: Partial<ExtendedPatient>) => {
-    const newPatient: ExtendedPatient = {
-      id: Date.now().toString(),
-      firstName: patientData.firstName || "",
-      lastName: patientData.lastName || "",
-      documentId: patientData.documentId || "",
-      dateOfBirth: patientData.dateOfBirth || "",
-      gender: patientData.gender || "Otro",
-      contactNumber: patientData.contactNumber || "",
-      secondaryPhone: patientData.secondaryPhone,
-      email: patientData.email,
-      regime: patientData.regime,
-      address: patientData.address,
-      city: patientData.city,
-      state: patientData.state,
-      province: patientData.province,
-      zone: patientData.zone,
-      occupation: patientData.occupation,
-      companion: patientData.companion,
-    };
-
-    const updatedPatients = [...patients, newPatient];
-    setPatients(updatedPatients);
-    localStorage.setItem("extendedPatients", JSON.stringify(updatedPatients));
-    setSelectedPatient(newPatient);
-    toast.success("Paciente creado exitosamente");
-  };
-
   // Sincronizar con Google Calendar
   const syncAppointmentWithGoogle = async (appointment: any): Promise<string | undefined> => {
+    const syncWithGoogle = localStorage.getItem('googleCalendarSync') === 'true';
     if (!syncWithGoogle || !googleConnected) return undefined;
 
     try {
@@ -285,16 +212,10 @@ const AppointmentForm = () => {
         end: endDate
       };
 
-      if (isEditing && googleEventId) {
-        await updateGoogleCalendarEvent(googleEventId, appointmentData);
-        toast.success("Cita actualizada en Google Calendar");
-        return googleEventId;
-      } else {
-        const result = await createGoogleCalendarEvent(appointmentData);
-        if (result && result.id) {
-          toast.success("Cita sincronizada con Google Calendar");
-          return result.id;
-        }
+      const result = await createGoogleCalendarEvent(appointmentData);
+      if (result && result.id) {
+        toast.success("Cita sincronizada con Google Calendar");
+        return result.id;
       }
     } catch (error) {
       console.error("Error syncing with Google Calendar:", error);
@@ -304,44 +225,42 @@ const AppointmentForm = () => {
     return undefined;
   };
 
-  // Manejar envío del formulario
-  const handleSubmit = async () => {
-    if (!selectedPatient) {
-      toast.error("Por favor selecciona un paciente");
+  // Manejar finalización del wizard
+  const handleWizardComplete = async (data: WizardData) => {
+    if (!data.patient || !data.scheduling) {
+      toast.error("Datos incompletos");
       return;
     }
 
-    if (!selectedTime) {
-      toast.error("Por favor selecciona un horario");
-      return;
+    const { patient, admission, scheduling } = data;
+
+    // Guardar nuevo paciente si fue creado
+    const existingPatient = patients.find(p => p.id === patient.id);
+    if (!existingPatient) {
+      const updatedPatients = [...patients, patient];
+      setPatients(updatedPatients);
+      localStorage.setItem("extendedPatients", JSON.stringify(updatedPatients));
     }
 
-    if (!reason) {
-      toast.error("Por favor selecciona el motivo de la cita");
-      return;
-    }
-
+    // Crear la cita
     const newAppointment: any = {
-      id: isEditing ? id : Date.now().toString(),
-      patientId: selectedPatient.id,
-      patientName: `${selectedPatient.firstName} ${selectedPatient.lastName}`,
-      date: selectedDate,
-      time: selectedTime,
-      duration,
-      reason,
+      id: Date.now().toString(),
+      patientId: patient.id,
+      patientName: `${patient.firstName} ${patient.lastName}`,
+      date: scheduling.date,
+      time: scheduling.time,
+      duration: scheduling.duration,
+      reason: scheduling.reason,
       status: "Programada",
-      notes,
-      createdAt: isEditing ? new Date() : new Date(),
-      updatedAt: isEditing ? new Date() : undefined,
-      googleEventId,
+      notes: scheduling.notes,
+      createdAt: new Date(),
+      admission: admission || undefined,
     };
 
     // Sincronizar con Google Calendar
-    if (syncWithGoogle && googleConnected) {
-      const newEventId = await syncAppointmentWithGoogle(newAppointment);
-      if (newEventId) {
-        newAppointment.googleEventId = newEventId;
-      }
+    const googleEventId = await syncAppointmentWithGoogle(newAppointment);
+    if (googleEventId) {
+      newAppointment.googleEventId = googleEventId;
     }
 
     // Guardar en localStorage
@@ -351,13 +270,7 @@ const AppointmentForm = () => {
     if (savedAppointments) {
       try {
         appointmentsList = JSON.parse(savedAppointments);
-        if (isEditing) {
-          appointmentsList = appointmentsList.map(app => 
-            app.id === id ? newAppointment : app
-          );
-        } else {
-          appointmentsList.push(newAppointment);
-        }
+        appointmentsList.push(newAppointment);
       } catch (error) {
         appointmentsList = [newAppointment];
       }
@@ -366,21 +279,13 @@ const AppointmentForm = () => {
     }
 
     localStorage.setItem("appointments", JSON.stringify(appointmentsList));
-    toast.success(isEditing ? "Cita actualizada con éxito" : "Cita creada con éxito");
+    
+    toast.success("Cita creada con éxito", {
+      description: `${patient.firstName} ${patient.lastName} - ${format(scheduling.date, "dd/MM/yyyy")} a las ${scheduling.time}`
+    });
+    
     navigate("/app/citas");
   };
-
-  // Transformar citas para el scheduler
-  const schedulerAppointments = useMemo(() => {
-    return existingAppointments.map(apt => ({
-      id: apt.id,
-      patientName: apt.patientName,
-      time: apt.time,
-      duration: apt.duration,
-      reason: apt.reason,
-      status: apt.status,
-    }));
-  }, [existingAppointments]);
 
   if (loading) {
     return (
@@ -388,11 +293,9 @@ const AppointmentForm = () => {
         <Header />
         <div className="flex-1 flex items-center justify-center">
           <div className="animate-pulse text-center">
-            <div className="h-8 w-48 bg-muted rounded mb-6 mx-auto"></div>
-            <div className="flex gap-4">
-              <div className="h-96 w-80 bg-muted rounded-xl"></div>
-              <div className="h-96 w-[600px] bg-muted rounded-xl"></div>
-            </div>
+            <div className="h-16 w-16 bg-primary/20 rounded-3xl mb-6 mx-auto"></div>
+            <div className="h-6 w-48 bg-muted rounded-xl mb-4 mx-auto"></div>
+            <div className="h-4 w-64 bg-muted/50 rounded-lg mx-auto"></div>
           </div>
         </div>
       </div>
@@ -402,33 +305,11 @@ const AppointmentForm = () => {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
-      <main className="flex-1 flex overflow-hidden">
-        {/* Panel izquierdo - Paciente */}
-        <PatientPanel
-          patients={patients}
-          selectedPatient={selectedPatient}
-          onSelectPatient={setSelectedPatient}
-          onCreatePatient={handleCreatePatient}
-          isCollapsed={isPanelCollapsed}
-          onToggleCollapse={() => setIsPanelCollapsed(!isPanelCollapsed)}
-        />
-
-        {/* Panel derecho - Agenda */}
-        <AppointmentScheduler
-          existingAppointments={schedulerAppointments}
-          selectedDate={selectedDate}
-          onDateChange={setSelectedDate}
-          selectedTime={selectedTime}
-          onTimeChange={setSelectedTime}
-          duration={duration}
-          onDurationChange={setDuration}
-          reason={reason}
-          onReasonChange={setReason}
-          notes={notes}
-          onNotesChange={setNotes}
-          patientName={selectedPatient ? `${selectedPatient.firstName} ${selectedPatient.lastName}` : undefined}
-          onSubmit={handleSubmit}
-          isEditing={isEditing}
+      <main className="flex-1 overflow-auto">
+        <AppointmentWizard
+          onComplete={handleWizardComplete}
+          initialPatients={patients}
+          existingAppointments={existingAppointments}
         />
       </main>
     </div>
