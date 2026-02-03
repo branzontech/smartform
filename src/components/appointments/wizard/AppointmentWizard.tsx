@@ -86,13 +86,14 @@ export const AppointmentWizard: React.FC<AppointmentWizardProps> = ({
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 p-4 md:p-8">
       <div className="max-w-5xl mx-auto">
+        {/* Header con stepper */}
         <motion.div 
           initial={{ y: -20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          className="fixed top-0 left-1/2 -translate-x-1/2 z-[60] w-full max-w-5xl px-4"
+          className="mb-8"
         >
           {/* Stepper Windows 11 style */}
-          <div className="relative flex items-center justify-around bg-card/80 backdrop-blur-2xl rounded-3xl p-6 shadow-xl border border-border/40">
+          <div className="relative flex items-center justify-around bg-card/60 backdrop-blur-xl rounded-3xl p-6 shadow-lg border border-border/30">
             {/* Progress line - centered between steps */}
             <div className="absolute left-1/2 -translate-x-1/2 top-[38px] w-[60%] h-0.5 bg-muted/50 rounded-full z-0">
               <motion.div 
@@ -157,9 +158,6 @@ export const AppointmentWizard: React.FC<AppointmentWizardProps> = ({
             })}
           </div>
         </motion.div>
-
-        {/* Spacer para compensar el stepper fijo */}
-        <div className="h-32" />
 
         {/* Content area */}
         <div className="relative overflow-hidden">
