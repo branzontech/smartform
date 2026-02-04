@@ -502,7 +502,7 @@ export const SchedulingStep: React.FC<SchedulingStepProps> = ({
             </div>
 
             {/* Tabbed Content */}
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0 overflow-hidden">
               <div className="px-4 pt-2">
                 <TabsList className="w-full h-9 bg-muted/30 rounded-xl p-1">
                   <TabsTrigger value="scheduling" className="flex-1 text-[10px] rounded-lg data-[state=active]:bg-background">
