@@ -17,7 +17,10 @@ import {
   subYears,
   isSameMonth,
   getDay,
-  setMonth
+  setMonth,
+  isAfter,
+  isBefore,
+  isWithinInterval
 } from "date-fns";
 import { es } from "date-fns/locale";
 import { 
@@ -41,7 +44,9 @@ import {
   Settings2,
   Layers,
   Ban,
-  ListTodo
+  ListTodo,
+  CalendarRange,
+  Repeat
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -58,6 +63,7 @@ import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 import { ExtendedPatient } from "../PatientPanel";
 import {
@@ -68,7 +74,6 @@ import {
 import { AppointmentType, RecurrencePattern } from "@/types/appointment-types";
 import {
   AppointmentTypeInline,
-  DateRangeSelector,
   AvailabilityBlockManager,
   WaitingListPanel,
   AppointmentActionsPanel,
@@ -397,15 +402,66 @@ export const SchedulingStep: React.FC<SchedulingStepProps> = ({
   };
 
   const handleSelectDate = (date: Date) => {
-    setSelectedDate(date);
-    setCurrentDate(date);
-    setSelectedTime(""); // Reset time when date changes
-    if (viewMode === "year") {
-      setViewMode("month");
-    } else if (viewMode === "month" || viewMode === "week") {
-      setViewMode("day");
+    if (isRangeMode) {
+      // Range mode: first click = start, second click = end
+      if (!endDate && selectedDate && isAfter(date, selectedDate)) {
+        // Set end date
+        setEndDate(date);
+      } else {
+        // Set start date (reset end date)
+        setSelectedDate(date);
+        setCurrentDate(date);
+        setEndDate(null);
+      }
+      setSelectedTime(""); // Reset time when date changes
+    } else {
+      setSelectedDate(date);
+      setCurrentDate(date);
+      setSelectedTime(""); // Reset time when date changes
+      if (viewMode === "year") {
+        setViewMode("month");
+      } else if (viewMode === "month" || viewMode === "week") {
+        setViewMode("day");
+      }
     }
   };
+
+  // Check if a date is within the selected range
+  const isDateInRange = (date: Date) => {
+    if (!isRangeMode || !endDate) return false;
+    return isWithinInterval(date, { start: selectedDate, end: endDate });
+  };
+
+  // Calculate occurrences for range mode
+  const rangeOccurrences = useMemo(() => {
+    if (!isRangeMode || !endDate || !recurrencePattern) return 0;
+    
+    const days = eachDayOfInterval({ start: selectedDate, end: endDate });
+    let count = 0;
+    
+    days.forEach(day => {
+      const dayOfWeek = day.getDay();
+      if (selectedDays.includes(dayOfWeek)) {
+        switch (recurrencePattern) {
+          case "daily":
+            count++;
+            break;
+          case "weekly":
+            if (dayOfWeek === selectedDays[0]) count++;
+            break;
+          case "biweekly":
+            const weekDiff = Math.floor((day.getTime() - selectedDate.getTime()) / (7 * 24 * 60 * 60 * 1000));
+            if (weekDiff % 2 === 0 && dayOfWeek === selectedDays[0]) count++;
+            break;
+          case "monthly":
+            if (day.getDate() === selectedDate.getDate()) count++;
+            break;
+        }
+      }
+    });
+    
+    return Math.min(count, maxOccurrences);
+  }, [isRangeMode, endDate, recurrencePattern, selectedDate, selectedDays, maxOccurrences]);
 
   const handleSelectMonth = (monthIndex: number) => {
     setCurrentDate(setMonth(currentDate, monthIndex));
@@ -670,31 +726,47 @@ export const SchedulingStep: React.FC<SchedulingStepProps> = ({
                       />
                     </div>
 
-                    {/* Date Range Selection */}
+                    {/* Date Display - Simple summary since range is controlled from calendar */}
                     <div>
                       <div className="flex items-center gap-2 mb-3">
                         <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center">
                           <span className="text-[10px] font-bold">3</span>
                         </div>
-                        <span className="text-sm font-semibold">Fecha y Recurrencia</span>
+                        <span className="text-sm font-semibold">Fecha Seleccionada</span>
                       </div>
-                      <DateRangeSelector
-                        startDate={selectedDate}
-                        endDate={endDate}
-                        onStartDateChange={(date) => {
-                          setSelectedDate(date);
-                          setCurrentDate(date);
-                        }}
-                        onEndDateChange={setEndDate}
-                        isRangeMode={isRangeMode}
-                        onRangeModeChange={setIsRangeMode}
-                        recurrencePattern={recurrencePattern}
-                        onRecurrenceChange={setRecurrencePattern}
-                        selectedDays={selectedDays}
-                        onSelectedDaysChange={setSelectedDays}
-                        maxOccurrences={maxOccurrences}
-                        onMaxOccurrencesChange={setMaxOccurrences}
-                      />
+                      <div className="p-3 rounded-xl bg-muted/20 border border-border/20">
+                        <div className="flex items-center gap-2">
+                          <CalendarIcon className="w-4 h-4 text-muted-foreground" />
+                          <span className="text-sm font-medium capitalize">
+                            {format(selectedDate, "EEEE d 'de' MMMM", { locale: es })}
+                          </span>
+                        </div>
+                        {isRangeMode && endDate && (
+                          <div className="mt-2 pt-2 border-t border-border/20">
+                            <div className="flex items-center justify-between text-xs">
+                              <span className="text-muted-foreground">Rango:</span>
+                              <span className="font-medium">
+                                {format(selectedDate, "dd MMM", { locale: es })} → {format(endDate, "dd MMM", { locale: es })}
+                              </span>
+                            </div>
+                            {recurrencePattern && (
+                              <div className="flex items-center justify-between text-xs mt-1">
+                                <span className="text-muted-foreground">Patrón:</span>
+                                <Badge variant="secondary" className="text-[10px]">
+                                  {recurrencePattern === "daily" ? "Diario" : 
+                                   recurrencePattern === "weekly" ? "Semanal" :
+                                   recurrencePattern === "biweekly" ? "Quincenal" : "Mensual"}
+                                </Badge>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                        {isRangeMode && !endDate && (
+                          <p className="text-[10px] text-muted-foreground mt-2">
+                            Activa el modo rango en el calendario y selecciona la fecha final
+                          </p>
+                        )}
+                      </div>
                     </div>
 
                     {/* Resources - Only for procedure types */}
@@ -855,63 +927,173 @@ export const SchedulingStep: React.FC<SchedulingStepProps> = ({
         <ResizablePanel defaultSize={70} minSize={50} className="overflow-hidden">
           <div className="h-full flex flex-col overflow-hidden">
             {/* Calendar Header */}
-            <div className="p-4 border-b border-border/20 flex items-center justify-between">
-              {/* View Mode Tabs */}
-              <div className="flex items-center gap-1 bg-muted/30 p-1 rounded-xl">
-                {(["day", "week", "month", "year"] as ViewMode[]).map((mode) => (
-                  <button
-                    key={mode}
-                    onClick={() => setViewMode(mode)}
-                    className={cn(
-                      "px-3 py-1.5 rounded-lg text-xs font-medium transition-all capitalize",
-                      viewMode === mode
-                        ? "bg-background shadow-sm"
-                        : "hover:bg-muted/50 text-muted-foreground"
-                    )}
+            <div className="p-4 border-b border-border/20 space-y-3">
+              <div className="flex items-center justify-between">
+                {/* View Mode Tabs */}
+                <div className="flex items-center gap-1 bg-muted/30 p-1 rounded-xl">
+                  {(["day", "week", "month", "year"] as ViewMode[]).map((mode) => (
+                    <button
+                      key={mode}
+                      onClick={() => setViewMode(mode)}
+                      className={cn(
+                        "px-3 py-1.5 rounded-lg text-xs font-medium transition-all capitalize",
+                        viewMode === mode
+                          ? "bg-background shadow-sm"
+                          : "hover:bg-muted/50 text-muted-foreground"
+                      )}
+                    >
+                      {mode === "day" ? "Día" : mode === "week" ? "Semana" : mode === "month" ? "Mes" : "Año"}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Navigation */}
+                <div className="flex items-center gap-2">
+                  <Button 
+                    variant="ghost" 
+                    size="icon"
+                    onClick={() => handleNavigate("prev")}
+                    className="h-8 w-8 rounded-lg"
                   >
-                    {mode === "day" ? "Día" : mode === "week" ? "Semana" : mode === "month" ? "Mes" : "Año"}
-                  </button>
-                ))}
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  <span className="text-sm font-medium min-w-[120px] text-center capitalize">
+                    {viewMode === "day" && format(currentDate, "d MMMM", { locale: es })}
+                    {viewMode === "week" && `${format(weekStart, "d")} - ${format(addDays(weekStart, 6), "d MMM", { locale: es })}`}
+                    {viewMode === "month" && format(currentDate, "MMMM yyyy", { locale: es })}
+                    {viewMode === "year" && format(currentDate, "yyyy")}
+                  </span>
+                  <Button 
+                    variant="ghost" 
+                    size="icon"
+                    onClick={() => handleNavigate("next")}
+                    className="h-8 w-8 rounded-lg"
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+
+                {/* Range Mode Toggle & Today Button */}
+                <div className="flex items-center gap-2">
+                  <div className={cn(
+                    "flex items-center gap-2 px-3 py-1.5 rounded-xl transition-all",
+                    isRangeMode ? "bg-lime/20 border border-lime/30" : "bg-muted/30"
+                  )}>
+                    <CalendarRange className={cn("w-4 h-4", isRangeMode ? "text-lime-foreground" : "text-muted-foreground")} />
+                    <span className="text-xs font-medium">Rango</span>
+                    <Switch
+                      checked={isRangeMode}
+                      onCheckedChange={(checked) => {
+                        setIsRangeMode(checked);
+                        if (!checked) setEndDate(null);
+                      }}
+                      className="scale-75"
+                    />
+                  </div>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => {
+                      setCurrentDate(new Date());
+                      setSelectedDate(new Date());
+                      setEndDate(null);
+                    }}
+                    className="h-8 rounded-lg text-xs"
+                  >
+                    Hoy
+                  </Button>
+                </div>
               </div>
 
-              {/* Navigation */}
-              <div className="flex items-center gap-2">
-                <Button 
-                  variant="ghost" 
-                  size="icon"
-                  onClick={() => handleNavigate("prev")}
-                  className="h-8 w-8 rounded-lg"
+              {/* Range Mode Options - Inline */}
+              {isRangeMode && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="flex flex-wrap items-center gap-3 pt-2 border-t border-border/20"
                 >
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-                <span className="text-sm font-medium min-w-[120px] text-center capitalize">
-                  {viewMode === "day" && format(currentDate, "d MMMM", { locale: es })}
-                  {viewMode === "week" && `${format(weekStart, "d")} - ${format(addDays(weekStart, 6), "d MMM", { locale: es })}`}
-                  {viewMode === "month" && format(currentDate, "MMMM yyyy", { locale: es })}
-                  {viewMode === "year" && format(currentDate, "yyyy")}
-                </span>
-                <Button 
-                  variant="ghost" 
-                  size="icon"
-                  onClick={() => handleNavigate("next")}
-                  className="h-8 w-8 rounded-lg"
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-              </div>
+                  {/* Selected Range Display */}
+                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-muted/30">
+                    <CalendarIcon className="w-3.5 h-3.5 text-muted-foreground" />
+                    <span className="text-xs">
+                      {format(selectedDate, "dd MMM", { locale: es })}
+                      {endDate && (
+                        <> → {format(endDate, "dd MMM", { locale: es })}</>
+                      )}
+                      {!endDate && <span className="text-muted-foreground"> (selecciona fin)</span>}
+                    </span>
+                  </div>
 
-              {/* Today Button */}
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => {
-                  setCurrentDate(new Date());
-                  setSelectedDate(new Date());
-                }}
-                className="h-8 rounded-lg text-xs"
-              >
-                Hoy
-              </Button>
+                  {/* Recurrence Pattern */}
+                  <Select 
+                    value={recurrencePattern} 
+                    onValueChange={(v) => setRecurrencePattern(v as RecurrencePattern)}
+                  >
+                    <SelectTrigger className="h-8 w-[140px] rounded-xl text-xs">
+                      <Repeat className="w-3.5 h-3.5 mr-2 text-muted-foreground" />
+                      <SelectValue placeholder="Patrón" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="daily">Diario</SelectItem>
+                      <SelectItem value="weekly">Semanal</SelectItem>
+                      <SelectItem value="biweekly">Quincenal</SelectItem>
+                      <SelectItem value="monthly">Mensual</SelectItem>
+                    </SelectContent>
+                  </Select>
+
+                  {/* Day Selection */}
+                  <div className="flex items-center gap-1">
+                    {[
+                      { value: 1, label: "L" },
+                      { value: 2, label: "M" },
+                      { value: 3, label: "X" },
+                      { value: 4, label: "J" },
+                      { value: 5, label: "V" },
+                      { value: 6, label: "S" },
+                      { value: 0, label: "D" },
+                    ].map((day) => (
+                      <button
+                        key={day.value}
+                        onClick={() => {
+                          if (selectedDays.includes(day.value)) {
+                            setSelectedDays(selectedDays.filter(d => d !== day.value));
+                          } else {
+                            setSelectedDays([...selectedDays, day.value].sort());
+                          }
+                        }}
+                        className={cn(
+                          "w-7 h-7 rounded-lg text-[10px] font-medium transition-all",
+                          selectedDays.includes(day.value)
+                            ? "bg-lime text-lime-foreground"
+                            : "bg-muted/30 text-muted-foreground hover:bg-muted/50"
+                        )}
+                      >
+                        {day.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Max Occurrences */}
+                  <Select value={maxOccurrences.toString()} onValueChange={(v) => setMaxOccurrences(parseInt(v))}>
+                    <SelectTrigger className="h-8 w-[90px] rounded-xl text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {[5, 10, 15, 20, 30].map(n => (
+                        <SelectItem key={n} value={n.toString()}>Máx {n}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+
+                  {/* Summary Badge */}
+                  {recurrencePattern && endDate && (
+                    <Badge className="bg-lime text-lime-foreground">
+                      {rangeOccurrences} cita{rangeOccurrences !== 1 ? "s" : ""}
+                    </Badge>
+                  )}
+                </motion.div>
+              )}
             </div>
 
             {/* Legend - Subtle inline below header */}
@@ -1013,7 +1195,9 @@ export const SchedulingStep: React.FC<SchedulingStepProps> = ({
                         {weekDays.map((day) => {
                           const isWorking = isDoctorWorkingOnDay(day);
                           const occupancy = getDayOccupancy(day);
-                          const isSelected = isSameDay(day, selectedDate);
+                          const isStartDate = isSameDay(day, selectedDate);
+                          const isEndDate = endDate && isSameDay(day, endDate);
+                          const isInRange = isDateInRange(day);
                           const today = isToday(day);
 
                           const getOccupancyColor = () => {
@@ -1035,8 +1219,12 @@ export const SchedulingStep: React.FC<SchedulingStepProps> = ({
                               whileTap={{ scale: 0.98 }}
                               className={cn(
                                 "relative flex flex-col items-center justify-center p-4 rounded-2xl transition-all h-full min-h-[120px]",
-                                isSelected
+                                isStartDate
                                   ? "bg-lime text-lime-foreground shadow-lg ring-2 ring-lime/50"
+                                  : isEndDate
+                                  ? "bg-primary text-primary-foreground shadow-lg ring-2 ring-primary/50"
+                                  : isInRange
+                                  ? "bg-lime/30 ring-1 ring-lime/30"
                                   : today
                                   ? "ring-2 ring-primary/30 " + getOccupancyColor()
                                   : getOccupancyColor()
@@ -1052,6 +1240,12 @@ export const SchedulingStep: React.FC<SchedulingStepProps> = ({
                                 <Badge variant="secondary" className="mt-2 text-[9px]">
                                   No trabaja
                                 </Badge>
+                              )}
+                              {isStartDate && isRangeMode && (
+                                <Badge className="mt-2 text-[8px] bg-lime-foreground/20">Inicio</Badge>
+                              )}
+                              {isEndDate && (
+                                <Badge className="mt-2 text-[8px] bg-primary-foreground/20">Fin</Badge>
                               )}
                             </motion.button>
                           );
@@ -1074,7 +1268,9 @@ export const SchedulingStep: React.FC<SchedulingStepProps> = ({
                             const isCurrentMonth = isSameMonth(day, currentDate);
                             const isWorking = isDoctorWorkingOnDay(day);
                             const occupancy = getDayOccupancy(day);
-                            const isSelected = isSameDay(day, selectedDate);
+                            const isStartDate = isSameDay(day, selectedDate);
+                            const isEndDate = endDate && isSameDay(day, endDate);
+                            const isInRange = isDateInRange(day);
                             const today = isToday(day);
 
                             const getOccupancyIndicator = () => {
@@ -1100,18 +1296,22 @@ export const SchedulingStep: React.FC<SchedulingStepProps> = ({
                                   "relative aspect-square flex flex-col items-center justify-center rounded-xl text-sm transition-all",
                                   !isCurrentMonth && "opacity-25",
                                   !isWorking && isCurrentMonth && "opacity-40",
-                                  isSelected
+                                  isStartDate
                                     ? "bg-lime text-lime-foreground shadow-md"
+                                    : isEndDate
+                                    ? "bg-primary text-primary-foreground shadow-md"
+                                    : isInRange
+                                    ? "bg-lime/30 ring-1 ring-lime/20"
                                     : today
                                     ? "bg-primary/10 ring-2 ring-primary/30"
                                     : "hover:bg-muted/50"
                                 )}
                               >
                                 <span className="font-medium">{format(day, "d")}</span>
-                                {indicatorColor && (
+                                {indicatorColor && !isStartDate && !isEndDate && !isInRange && (
                                   <div className={cn(
                                     "absolute bottom-1.5 w-1.5 h-1.5 rounded-full",
-                                    isSelected ? "bg-lime-foreground" : indicatorColor
+                                    indicatorColor
                                   )} />
                                 )}
                               </motion.button>
