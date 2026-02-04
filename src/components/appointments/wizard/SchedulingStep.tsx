@@ -529,24 +529,22 @@ export const SchedulingStep: React.FC<SchedulingStepProps> = ({
     >
       {/* Fullscreen Header */}
       {isFullscreen && (
-        <div className="h-14 px-4 flex items-center justify-between border-b border-border/30 bg-card/80 backdrop-blur-xl">
+        <div className="h-12 px-4 flex items-center justify-between border-b border-border/30 bg-card/80 backdrop-blur-xl">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center">
-              <CalendarIcon className="w-4 h-4 text-primary" />
+            <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
+              <CalendarIcon className="w-3.5 h-3.5 text-primary" />
             </div>
             <div>
-              <h2 className="text-sm font-semibold">Agendamiento de Cita</h2>
-              <p className="text-xs text-muted-foreground">{patient.firstName} {patient.lastName}</p>
+              <p className="text-xs font-medium">{patient.firstName} {patient.lastName} • Agendamiento</p>
             </div>
           </div>
           <Button
-            variant="outline"
-            size="sm"
+            variant="ghost"
+            size="icon"
             onClick={() => setIsFullscreen(false)}
-            className="rounded-xl"
+            className="h-8 w-8 rounded-lg text-muted-foreground hover:text-foreground"
           >
-            <Minimize2 className="w-4 h-4 mr-2" />
-            Salir de Pantalla Completa
+            <Minimize2 className="w-4 h-4" />
           </Button>
         </div>
       )}
