@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { motion } from "framer-motion";
 import {
   UserPlus,
@@ -11,7 +11,10 @@ import {
   Calendar,
   Clock,
   FileText,
-  ArrowRight
+  ArrowRight,
+  Check,
+  ChevronsUpDown,
+  Search
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AppointmentType } from "@/types/appointment-types";
@@ -23,6 +26,20 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Button } from "@/components/ui/button";
 
 interface AppointmentTypeOption {
   type: AppointmentType;
@@ -184,7 +201,7 @@ export const AppointmentTypeSelector: React.FC<AppointmentTypeSelectorProps> = (
   );
 };
 
-// Compact inline selector
+// Searchable dropdown selector
 interface AppointmentTypeInlineProps {
   selectedType?: AppointmentType;
   onSelect: (type: AppointmentType, duration: number) => void;
@@ -194,70 +211,105 @@ export const AppointmentTypeInline: React.FC<AppointmentTypeInlineProps> = ({
   selectedType,
   onSelect
 }) => {
+  const [open, setOpen] = useState(false);
   const selected = appointmentTypes.find(t => t.type === selectedType);
 
   return (
-    <div className="space-y-2">
-      <div className="grid grid-cols-4 gap-1.5">
-        {appointmentTypes.slice(0, 4).map((apt) => (
-          <button
-            key={apt.type}
-            onClick={() => onSelect(apt.type, apt.duration)}
-            className={cn(
-              "p-2 rounded-xl text-center transition-all",
-              selectedType === apt.type
-                ? "bg-lime text-lime-foreground shadow-md"
-                : "bg-muted/30 hover:bg-muted/50"
-            )}
-          >
-            <div className="flex justify-center mb-1">
-              {React.cloneElement(apt.icon as React.ReactElement, { 
-                className: "w-4 h-4" 
-              })}
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          role="combobox"
+          aria-expanded={open}
+          className={cn(
+            "w-full justify-between h-auto py-3 px-4 rounded-xl border-border/30",
+            "hover:bg-muted/30 transition-all",
+            selected && "border-lime/50 bg-lime/5"
+          )}
+        >
+          {selected ? (
+            <div className="flex items-center gap-3 text-left">
+              <div className={cn(
+                "w-9 h-9 rounded-lg flex items-center justify-center",
+                selected.color
+              )}>
+                {React.cloneElement(selected.icon as React.ReactElement, { 
+                  className: "w-4 h-4" 
+                })}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-medium text-sm">{selected.label}</p>
+                <p className="text-xs text-muted-foreground">{selected.duration} min</p>
+              </div>
             </div>
-            <span className="text-[9px] font-medium block truncate">
-              {apt.label}
-            </span>
-          </button>
-        ))}
-      </div>
-      <div className="grid grid-cols-3 gap-1.5">
-        {appointmentTypes.slice(4).map((apt) => (
-          <button
-            key={apt.type}
-            onClick={() => onSelect(apt.type, apt.duration)}
-            className={cn(
-              "p-2 rounded-xl text-center transition-all",
-              selectedType === apt.type
-                ? "bg-lime text-lime-foreground shadow-md"
-                : "bg-muted/30 hover:bg-muted/50"
-            )}
-          >
-            <div className="flex justify-center mb-1">
-              {React.cloneElement(apt.icon as React.ReactElement, { 
-                className: "w-4 h-4" 
-              })}
+          ) : (
+            <div className="flex items-center gap-3 text-muted-foreground">
+              <Search className="w-4 h-4" />
+              <span className="text-sm">Buscar tipo de cita...</span>
             </div>
-            <span className="text-[9px] font-medium block truncate">
-              {apt.label}
-            </span>
-          </button>
-        ))}
-      </div>
-      
-      {selected && (
-        <div className={cn(
-          "p-2 rounded-xl text-xs flex items-center gap-2",
-          selected.color
-        )}>
-          {selected.icon}
-          <div className="flex-1">
-            <span className="font-medium">{selected.label}</span>
-            <span className="text-muted-foreground ml-1">• {selected.duration}min</span>
-          </div>
-        </div>
-      )}
-    </div>
+          )}
+          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent 
+        className="w-[var(--radix-popover-trigger-width)] p-0 bg-popover border border-border/50 shadow-xl rounded-xl z-50" 
+        align="start"
+        sideOffset={4}
+      >
+        <Command className="rounded-xl">
+          <CommandInput 
+            placeholder="Buscar tipo de cita..." 
+            className="h-10 text-sm"
+          />
+          <CommandList className="max-h-[280px]">
+            <CommandEmpty className="py-4 text-center text-sm text-muted-foreground">
+              No se encontró el tipo de cita.
+            </CommandEmpty>
+            <CommandGroup>
+              {appointmentTypes.map((apt) => (
+                <CommandItem
+                  key={apt.type}
+                  value={`${apt.label} ${apt.description}`}
+                  onSelect={() => {
+                    onSelect(apt.type, apt.duration);
+                    setOpen(false);
+                  }}
+                  className="px-3 py-3 cursor-pointer rounded-lg mx-1 my-0.5"
+                >
+                  <div className="flex items-center gap-3 flex-1">
+                    <div className={cn(
+                      "w-9 h-9 rounded-lg flex items-center justify-center shrink-0",
+                      apt.color
+                    )}>
+                      {React.cloneElement(apt.icon as React.ReactElement, { 
+                        className: "w-4 h-4" 
+                      })}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <p className="font-medium text-sm">{apt.label}</p>
+                        <Badge variant="secondary" className="text-[9px] rounded-md px-1.5">
+                          {apt.duration}min
+                        </Badge>
+                      </div>
+                      <p className="text-xs text-muted-foreground truncate">
+                        {apt.description}
+                      </p>
+                    </div>
+                    <Check
+                      className={cn(
+                        "h-4 w-4 shrink-0",
+                        selectedType === apt.type ? "opacity-100 text-lime" : "opacity-0"
+                      )}
+                    />
+                  </div>
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
   );
 };
 
