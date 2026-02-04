@@ -50,6 +50,10 @@ export default {
 					DEFAULT: 'hsl(var(--accent))',
 					foreground: 'hsl(var(--accent-foreground))'
 				},
+				lime: {
+					DEFAULT: 'hsl(var(--lime))',
+					foreground: 'hsl(var(--lime-foreground))'
+				},
 				popover: {
 					DEFAULT: 'hsl(var(--popover))',
 					foreground: 'hsl(var(--popover-foreground))'
