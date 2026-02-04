@@ -14,7 +14,6 @@ import {
   TrendingDown,
   Users,
   Clock,
-  Calendar,
   DollarSign,
   Star,
   Target,
@@ -89,44 +88,64 @@ const StatCard = ({
 }) => {
   const variantColors = {
     default: "text-primary",
-    success: "text-green-500",
-    warning: "text-amber-500",
-    danger: "text-red-500"
+    success: "text-lime",
+    warning: "text-amber-400",
+    danger: "text-destructive"
+  };
+
+  const progressColors = {
+    default: "[&>div]:bg-primary",
+    success: "[&>div]:bg-lime",
+    warning: "[&>div]:bg-amber-400",
+    danger: "[&>div]:bg-destructive"
   };
 
   return (
-    <div className="p-3 rounded-xl bg-muted/30 border border-border/20 space-y-2">
+    <div className="p-4 rounded-2xl bg-card/40 backdrop-blur-md border border-border/10 space-y-3 hover:bg-card/60 transition-all duration-300">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Icon className={cn("w-4 h-4", variantColors[variant])} />
-          <span className="text-xs text-muted-foreground">{label}</span>
+        <div className="flex items-center gap-2.5">
+          <div className={cn(
+            "w-8 h-8 rounded-xl flex items-center justify-center",
+            variant === "success" ? "bg-lime/20" : 
+            variant === "warning" ? "bg-amber-400/20" :
+            variant === "danger" ? "bg-destructive/20" : "bg-primary/20"
+          )}>
+            <Icon className={cn("w-4 h-4", variantColors[variant])} />
+          </div>
+          <span className="text-xs text-muted-foreground font-medium">{label}</span>
         </div>
         {trend && (
           <div className={cn(
-            "flex items-center gap-1 text-[10px]",
-            trend === "up" ? "text-green-500" : trend === "down" ? "text-red-500" : "text-muted-foreground"
+            "flex items-center gap-1 text-[10px] font-semibold px-2 py-1 rounded-full",
+            trend === "up" ? "text-lime bg-lime/10" : 
+            trend === "down" ? "text-destructive bg-destructive/10" : 
+            "text-muted-foreground bg-muted/30"
           )}>
-            {trend === "up" ? <TrendingUp className="w-3 h-3" /> : trend === "down" ? <TrendingDown className="w-3 h-3" /> : null}
+            {trend === "up" ? <TrendingUp className="w-3 h-3" /> : 
+             trend === "down" ? <TrendingDown className="w-3 h-3" /> : null}
             {trendValue}
           </div>
         )}
       </div>
       <div className="flex items-end justify-between">
-        <span className="text-lg font-bold">{value}{suffix}</span>
+        <span className="text-2xl font-bold tracking-tight">{value}{suffix}</span>
       </div>
       {progress !== undefined && (
-        <Progress value={progress} className="h-1.5" />
+        <Progress 
+          value={progress} 
+          className={cn("h-1.5 bg-muted/20 rounded-full", progressColors[variant])} 
+        />
       )}
     </div>
   );
 };
 
 const SectionTitle = ({ icon: Icon, title }: { icon: React.ElementType; title: string }) => (
-  <div className="flex items-center gap-2 mb-3">
-    <div className="w-6 h-6 rounded-lg bg-primary/10 flex items-center justify-center">
-      <Icon className="w-3.5 h-3.5 text-primary" />
+  <div className="flex items-center gap-3 mb-4">
+    <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center shadow-lg shadow-primary/20">
+      <Icon className="w-4 h-4 text-primary-foreground" />
     </div>
-    <span className="text-sm font-semibold">{title}</span>
+    <span className="text-sm font-bold tracking-tight">{title}</span>
   </div>
 );
 
@@ -141,33 +160,45 @@ export const DoctorStatsDrawer: React.FC<DoctorStatsDrawerProps> = ({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="w-[400px] sm:w-[450px] p-0">
-        <SheetHeader className="p-4 pb-0">
-          <div className="flex items-center gap-4">
-            {/* Doctor Photo */}
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center text-xl font-bold text-primary border-2 border-primary/20">
-              {doctor.avatar}
+      <SheetContent 
+        side="right" 
+        className="w-[420px] sm:w-[480px] p-0 border-l border-border/20 bg-gradient-to-b from-background via-background to-muted/20 backdrop-blur-xl"
+      >
+        {/* Header with gradient */}
+        <div className="relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-primary/10 to-transparent" />
+          <div className="absolute top-0 right-0 w-40 h-40 bg-lime/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+          
+          <SheetHeader className="relative p-6 pb-4">
+            <div className="flex items-center gap-4">
+              {/* Doctor Photo with gradient border */}
+              <div className="relative">
+                <div className="absolute inset-0 bg-gradient-to-br from-primary to-lime rounded-2xl blur-sm opacity-60" />
+                <div className="relative w-16 h-16 rounded-2xl bg-gradient-to-br from-primary/30 to-lime/20 flex items-center justify-center text-xl font-bold border-2 border-white/20 backdrop-blur-sm">
+                  {doctor.avatar}
+                </div>
+              </div>
+              <div className="flex-1">
+                <SheetTitle className="text-left text-lg font-bold">{doctor.name}</SheetTitle>
+                <Badge className="mt-1.5 text-xs bg-primary/20 text-primary hover:bg-primary/30 border-0 rounded-lg px-3">
+                  {doctor.specialty}
+                </Badge>
+              </div>
             </div>
-            <div className="flex-1">
-              <SheetTitle className="text-left">{doctor.name}</SheetTitle>
-              <Badge variant="secondary" className="mt-1 text-xs">
-                {doctor.specialty}
-              </Badge>
-            </div>
-          </div>
-        </SheetHeader>
+          </SheetHeader>
+        </div>
 
-        <Separator className="my-4" />
+        <Separator className="bg-border/10" />
 
         <ScrollArea className="h-[calc(100vh-160px)]">
-          <div className="px-4 pb-6 space-y-6">
+          <div className="px-6 py-6 space-y-8">
             {/* 1. Productividad y Gestión de Capacidad */}
             <section>
               <SectionTitle icon={Activity} title="Productividad y Capacidad" />
               <div className="grid grid-cols-2 gap-3">
                 <StatCard
                   icon={Target}
-                  label="Tasa de Ocupación"
+                  label="Tasa Ocupación"
                   value={stats.productivity.occupancyRate}
                   suffix="%"
                   trend="up"
@@ -177,7 +208,7 @@ export const DoctorStatsDrawer: React.FC<DoctorStatsDrawerProps> = ({
                 />
                 <StatCard
                   icon={UserX}
-                  label="Tasa No-Show"
+                  label="No-Show"
                   value={stats.productivity.noShowRate}
                   suffix="%"
                   trend="down"
@@ -187,40 +218,41 @@ export const DoctorStatsDrawer: React.FC<DoctorStatsDrawerProps> = ({
                 />
                 <StatCard
                   icon={Clock}
-                  label="Tiempo Prom. Consulta"
+                  label="Tiempo Consulta"
                   value={stats.productivity.avgConsultationTime}
                   suffix="min"
                   variant={stats.productivity.avgConsultationTime <= stats.productivity.scheduledTime ? "success" : "warning"}
                 />
                 <StatCard
-                  icon={Calendar}
-                  label="Tiempo Programado"
+                  icon={Clock}
+                  label="Programado"
                   value={stats.productivity.scheduledTime}
                   suffix="min"
                 />
               </div>
               
-              {/* Patients Volume */}
-              <div className="mt-3 p-3 rounded-xl bg-muted/30 border border-border/20">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs text-muted-foreground">Volumen de Pacientes</span>
-                  <Badge variant="outline" className="text-[10px]">Este mes</Badge>
+              {/* Patients Volume Card */}
+              <div className="mt-4 p-4 rounded-2xl bg-gradient-to-br from-card/60 to-card/40 backdrop-blur-md border border-border/10">
+                <div className="flex items-center justify-between mb-4">
+                  <span className="text-xs text-muted-foreground font-medium">Volumen de Pacientes</span>
+                  <Badge variant="outline" className="text-[10px] rounded-lg border-lime/30 text-lime">
+                    Este mes
+                  </Badge>
                 </div>
-                <div className="flex items-center gap-4">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <Users className="w-3.5 h-3.5 text-blue-500" />
-                      <span className="text-xs">Nuevos</span>
+                <div className="flex items-center gap-6">
+                  <div className="flex-1 p-3 rounded-xl bg-primary/10 border border-primary/20">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Users className="w-4 h-4 text-primary" />
+                      <span className="text-xs font-medium text-muted-foreground">Nuevos</span>
                     </div>
-                    <span className="text-lg font-bold">{stats.productivity.newPatients}</span>
+                    <span className="text-2xl font-bold">{stats.productivity.newPatients}</span>
                   </div>
-                  <Separator orientation="vertical" className="h-10" />
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <Repeat className="w-3.5 h-3.5 text-green-500" />
-                      <span className="text-xs">Recurrentes</span>
+                  <div className="flex-1 p-3 rounded-xl bg-lime/10 border border-lime/20">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Repeat className="w-4 h-4 text-lime" />
+                      <span className="text-xs font-medium text-muted-foreground">Recurrentes</span>
                     </div>
-                    <span className="text-lg font-bold">{stats.productivity.recurringPatients}</span>
+                    <span className="text-2xl font-bold">{stats.productivity.recurringPatients}</span>
                   </div>
                 </div>
               </div>
@@ -241,7 +273,7 @@ export const DoctorStatsDrawer: React.FC<DoctorStatsDrawerProps> = ({
                 />
                 <StatCard
                   icon={Clock}
-                  label="Tiempo Espera Sala"
+                  label="Espera en Sala"
                   value={stats.experience.waitTime}
                   suffix="min"
                   trend="down"
@@ -275,25 +307,28 @@ export const DoctorStatsDrawer: React.FC<DoctorStatsDrawerProps> = ({
                   trendValue="+12%"
                   variant="success"
                 />
-                <div className="p-3 rounded-xl bg-muted/30 border border-border/20">
-                  <span className="text-xs text-muted-foreground block mb-3">Rentabilidad por Convenio</span>
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs">Particular</span>
-                      <div className="flex items-center gap-2">
-                        <Progress value={stats.financial.privateConversion} className="w-20 h-1.5" />
-                        <span className="text-xs font-medium w-8">{stats.financial.privateConversion}%</span>
+                
+                {/* Profitability by Agreement */}
+                <div className="p-4 rounded-2xl bg-gradient-to-br from-card/60 to-card/40 backdrop-blur-md border border-border/10">
+                  <span className="text-xs text-muted-foreground font-medium block mb-4">Rentabilidad por Convenio</span>
+                  <div className="space-y-4">
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-xs font-medium">Particular</span>
+                        <span className="text-xs font-bold text-lime">{stats.financial.privateConversion}%</span>
                       </div>
+                      <Progress value={stats.financial.privateConversion} className="h-2 bg-muted/20 rounded-full [&>div]:bg-lime" />
                     </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs">Aseguradoras</span>
-                      <div className="flex items-center gap-2">
-                        <Progress value={stats.financial.insuranceConversion} className="w-20 h-1.5" />
-                        <span className="text-xs font-medium w-8">{stats.financial.insuranceConversion}%</span>
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-xs font-medium">Aseguradoras</span>
+                        <span className="text-xs font-bold text-primary">{stats.financial.insuranceConversion}%</span>
                       </div>
+                      <Progress value={stats.financial.insuranceConversion} className="h-2 bg-muted/20 rounded-full [&>div]:bg-primary" />
                     </div>
                   </div>
                 </div>
+                
                 <StatCard
                   icon={Target}
                   label="Conversión Procedimientos"
@@ -337,6 +372,13 @@ export const DoctorStatsDrawer: React.FC<DoctorStatsDrawerProps> = ({
                 />
               </div>
             </section>
+
+            {/* Footer branding */}
+            <div className="pt-4 pb-2 text-center">
+              <p className="text-[10px] text-muted-foreground/60">
+                Powered by <span className="font-semibold text-primary">Ker Hub</span>
+              </p>
+            </div>
           </div>
         </ScrollArea>
       </SheetContent>
