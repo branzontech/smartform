@@ -33,8 +33,13 @@ import {
   FileText,
   Briefcase,
   Circle,
-  AlertCircle
+  AlertCircle,
+  Search,
+  UserSearch,
+  CalendarPlus,
+  Filter
 } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { 
@@ -69,6 +74,8 @@ interface SchedulingStepProps {
   existingAppointments: any[];
   onComplete: (data: SchedulingData) => void;
   onBack: () => void;
+  onChangePatient?: () => void;
+  onNewAppointment?: () => void;
 }
 
 type ViewMode = "day" | "week" | "month" | "year";
@@ -226,7 +233,9 @@ export const SchedulingStep: React.FC<SchedulingStepProps> = ({
   patient,
   existingAppointments,
   onComplete,
-  onBack
+  onBack,
+  onChangePatient,
+  onNewAppointment
 }) => {
   const [viewMode, setViewMode] = useState<ViewMode>("day");
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -237,6 +246,27 @@ export const SchedulingStep: React.FC<SchedulingStepProps> = ({
   const [duration, setDuration] = useState(30);
   const [reason, setReason] = useState("");
   const [notes, setNotes] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [specialtyFilter, setSpecialtyFilter] = useState<string>("all");
+
+  // Get unique specialties for filter
+  const specialties = useMemo(() => {
+    const specs = [...new Set(mockDoctorsWithSchedule.map(d => d.specialty))];
+    return specs;
+  }, []);
+
+  // Filter doctors by search and specialty
+  const filteredDoctors = useMemo(() => {
+    return mockDoctorsWithSchedule.filter(doc => {
+      const matchesSearch = searchQuery === "" || 
+        doc.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        doc.specialty.toLowerCase().includes(searchQuery.toLowerCase());
+      
+      const matchesSpecialty = specialtyFilter === "all" || doc.specialty === specialtyFilter;
+      
+      return matchesSearch && matchesSpecialty;
+    });
+  }, [searchQuery, specialtyFilter]);
 
   const selectedDoctorData = useMemo(() => {
     return mockDoctorsWithSchedule.find(d => d.id === selectedDoctor);
@@ -378,9 +408,9 @@ export const SchedulingStep: React.FC<SchedulingStepProps> = ({
         {/* Left Panel - Control Panel (30%) */}
         <ResizablePanel defaultSize={30} minSize={25} maxSize={40}>
           <div className="h-full flex flex-col bg-muted/5">
-            {/* Patient Header */}
+            {/* Patient Header with Quick Actions */}
             <div className="p-4 border-b border-border/20">
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 mb-3">
                 <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
                   <User className="w-5 h-5 text-primary" />
                 </div>
@@ -388,6 +418,27 @@ export const SchedulingStep: React.FC<SchedulingStepProps> = ({
                   <p className="font-semibold text-sm truncate">{patient.firstName} {patient.lastName}</p>
                   <p className="text-xs text-muted-foreground">{patient.documentId}</p>
                 </div>
+              </div>
+              {/* Quick Actions */}
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={onChangePatient || onBack}
+                  className="flex-1 h-8 rounded-lg text-[10px]"
+                >
+                  <UserSearch className="w-3 h-3 mr-1" />
+                  Otro paciente
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={onNewAppointment || onBack}
+                  className="flex-1 h-8 rounded-lg text-[10px]"
+                >
+                  <CalendarPlus className="w-3 h-3 mr-1" />
+                  Nueva cita
+                </Button>
               </div>
             </div>
 
@@ -403,8 +454,40 @@ export const SchedulingStep: React.FC<SchedulingStepProps> = ({
                     <span className="text-sm font-semibold">Seleccionar Profesional</span>
                   </div>
                   
+                  {/* Search and Filter */}
+                  <div className="space-y-2 mb-3">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                      <Input
+                        placeholder="Buscar por nombre o especialidad..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="h-9 pl-9 rounded-xl text-xs"
+                      />
+                    </div>
+                    <Select value={specialtyFilter} onValueChange={setSpecialtyFilter}>
+                      <SelectTrigger className="h-8 rounded-xl text-xs">
+                        <Filter className="w-3 h-3 mr-2 text-muted-foreground" />
+                        <SelectValue placeholder="Filtrar por especialidad" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Todas las especialidades</SelectItem>
+                        {specialties.map((spec) => (
+                          <SelectItem key={spec} value={spec}>{spec}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Doctor List */}
                   <div className="space-y-2">
-                    {mockDoctorsWithSchedule.map((doc) => (
+                    {filteredDoctors.length === 0 ? (
+                      <div className="text-center py-6 text-muted-foreground">
+                        <Stethoscope className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                        <p className="text-xs">No se encontraron profesionales</p>
+                      </div>
+                    ) : (
+                      filteredDoctors.map((doc) => (
                       <motion.button
                         key={doc.id}
                         onClick={() => doc.available && handleDoctorSelect(doc.id)}
@@ -454,7 +537,8 @@ export const SchedulingStep: React.FC<SchedulingStepProps> = ({
                           )}
                         </div>
                       </motion.button>
-                    ))}
+                    ))
+                    )}
                   </div>
                 </div>
 
