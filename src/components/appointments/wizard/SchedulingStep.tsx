@@ -989,13 +989,12 @@ export const SchedulingStep: React.FC<SchedulingStepProps> = ({
                 <div className="flex items-center gap-2">
                   {!isFullscreen && (
                     <Button 
-                      variant="outline" 
-                      size="sm"
+                      variant="ghost" 
+                      size="icon"
                       onClick={() => setIsFullscreen(true)}
-                      className="h-8 rounded-lg text-xs mr-2"
+                      className="h-8 w-8 rounded-lg text-muted-foreground hover:text-foreground"
                     >
-                      <Maximize2 className="h-3.5 w-3.5 mr-1.5" />
-                      Expandir
+                      <Maximize2 className="h-4 w-4" />
                     </Button>
                   )}
                   <Button 
