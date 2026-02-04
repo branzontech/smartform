@@ -576,28 +576,6 @@ export const SchedulingStep: React.FC<SchedulingStepProps> = ({
                       />
                     </div>
 
-                    {/* Legend */}
-                    <div className="p-3 rounded-xl bg-muted/20">
-                      <p className="text-[10px] font-semibold mb-2 text-muted-foreground">LEYENDA</p>
-                      <div className="grid grid-cols-2 gap-2">
-                        <div className="flex items-center gap-2">
-                          <Circle className="w-3 h-3 fill-lime text-lime" />
-                          <span className="text-[10px]">Libre</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Circle className="w-3 h-3 fill-yellow-500 text-yellow-500" />
-                          <span className="text-[10px]">Parcial</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Circle className="w-3 h-3 fill-orange-500 text-orange-500" />
-                          <span className="text-[10px]">Ocupado</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Circle className="w-3 h-3 fill-muted text-muted" />
-                          <span className="text-[10px]">No trabaja</span>
-                        </div>
-                      </div>
-                    </div>
                   </>
                 )}
               </div>
@@ -711,6 +689,28 @@ export const SchedulingStep: React.FC<SchedulingStepProps> = ({
                 Hoy
               </Button>
             </div>
+
+            {/* Legend - Subtle inline below header */}
+            {selectedDoctor && (
+              <div className="px-4 py-2 border-b border-border/10 flex items-center justify-center gap-6 bg-muted/5">
+                <div className="flex items-center gap-1.5">
+                  <Circle className="w-2.5 h-2.5 fill-lime text-lime" />
+                  <span className="text-[10px] text-muted-foreground">Libre</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <Circle className="w-2.5 h-2.5 fill-yellow-500 text-yellow-500" />
+                  <span className="text-[10px] text-muted-foreground">Parcial</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <Circle className="w-2.5 h-2.5 fill-orange-500 text-orange-500" />
+                  <span className="text-[10px] text-muted-foreground">Ocupado</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <Circle className="w-2.5 h-2.5 fill-muted text-muted" />
+                  <span className="text-[10px] text-muted-foreground">No trabaja</span>
+                </div>
+              </div>
+            )}
 
             {/* Calendar Content */}
             <div className="flex-1 p-4 overflow-auto">
