@@ -175,13 +175,12 @@ export const Header = ({ showCreate = true }: HeaderProps) => {
           style={{ backgroundColor: 'rgba(139, 53, 233, 0.95)' }}
         >
           <div className="container mx-auto flex items-center justify-between h-16 px-8">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <button 
               onClick={() => setAppLauncherOpen(true)}
-              className="flex items-center space-x-2 hover:opacity-80 transition-opacity cursor-pointer"
+              className="flex items-center hover:opacity-80 transition-opacity cursor-pointer"
             >
-              <img src="/kerhub-logo.png" alt="Ker Hub" className="h-8 w-auto" />
-              <span className="text-xl font-semibold text-white">Ker Hub</span>
+              <img src="/kerhub-logo.png" alt="Ker Hub" className="h-10 w-auto" />
             </button>
             <button
               onClick={() => setAppLauncherOpen(true)}
