@@ -37,7 +37,11 @@ import {
   Search,
   UserSearch,
   CalendarPlus,
-  Filter
+  Filter,
+  Settings2,
+  Layers,
+  Ban,
+  ListTodo
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -53,6 +57,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import { ExtendedPatient } from "../PatientPanel";
 import {
@@ -60,13 +65,29 @@ import {
   ResizablePanel,
   ResizableHandle
 } from "@/components/ui/resizable";
+import { AppointmentType, RecurrencePattern } from "@/types/appointment-types";
+import {
+  AppointmentTypeInline,
+  DateRangeSelector,
+  AvailabilityBlockManager,
+  WaitingListPanel,
+  AppointmentActionsPanel,
+  ResourceAvailabilityPanel
+} from "../scheduling";
 
 export interface SchedulingData {
   date: Date;
+  endDate?: Date;
   time: string;
   duration: number;
   reason: string;
   notes: string;
+  appointmentType?: AppointmentType;
+  isRecurring?: boolean;
+  recurrencePattern?: RecurrencePattern;
+  selectedDays?: number[];
+  maxOccurrences?: number;
+  resourceIds?: string[];
 }
 
 interface SchedulingStepProps {
@@ -248,6 +269,16 @@ export const SchedulingStep: React.FC<SchedulingStepProps> = ({
   const [notes, setNotes] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [specialtyFilter, setSpecialtyFilter] = useState<string>("all");
+  
+  // New states for advanced scheduling
+  const [appointmentType, setAppointmentType] = useState<AppointmentType>("control");
+  const [isRangeMode, setIsRangeMode] = useState(false);
+  const [endDate, setEndDate] = useState<Date | null>(null);
+  const [recurrencePattern, setRecurrencePattern] = useState<RecurrencePattern | undefined>();
+  const [selectedDays, setSelectedDays] = useState<number[]>([1, 2, 3, 4, 5]);
+  const [maxOccurrences, setMaxOccurrences] = useState(10);
+  const [selectedResources, setSelectedResources] = useState<string[]>([]);
+  const [activeTab, setActiveTab] = useState("scheduling");
 
   // Get unique specialties for filter
   const specialties = useMemo(() => {
@@ -386,13 +417,41 @@ export const SchedulingStep: React.FC<SchedulingStepProps> = ({
     setSelectedTime(""); // Reset time when doctor changes
   };
 
+  const handleAppointmentTypeSelect = (type: AppointmentType, defaultDuration: number) => {
+    setAppointmentType(type);
+    setDuration(defaultDuration);
+    // Set reason based on appointment type
+    if (type === "first_time") setReason("Primera vez");
+    else if (type === "follow_up") setReason("Seguimiento");
+    else if (type === "control") setReason("Control");
+    else if (type === "emergency") setReason("Urgencia");
+    else if (type === "telemedicine") setReason("Telemedicina");
+    else if (type === "procedure") setReason("Procedimiento");
+    else if (type === "multispecialty") setReason("Multiespecialidad");
+  };
+
+  const handleResourceToggle = (resourceId: string) => {
+    setSelectedResources(prev => 
+      prev.includes(resourceId) 
+        ? prev.filter(id => id !== resourceId)
+        : [...prev, resourceId]
+    );
+  };
+
   const handleSubmit = () => {
     onComplete({
       date: selectedDate,
+      endDate: isRangeMode ? endDate || undefined : undefined,
       time: selectedTime,
       duration,
       reason,
-      notes
+      notes,
+      appointmentType,
+      isRecurring: isRangeMode,
+      recurrencePattern: isRangeMode ? recurrencePattern : undefined,
+      selectedDays: isRangeMode ? selectedDays : undefined,
+      maxOccurrences: isRangeMode ? maxOccurrences : undefined,
+      resourceIds: selectedResources.length > 0 ? selectedResources : undefined
     });
   };
 
@@ -442,9 +501,28 @@ export const SchedulingStep: React.FC<SchedulingStepProps> = ({
               </div>
             </div>
 
-            {/* Scrollable Content */}
-            <ScrollArea className="flex-1">
-              <div className="p-4 space-y-5">
+            {/* Tabbed Content */}
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
+              <div className="px-4 pt-2">
+                <TabsList className="w-full h-9 bg-muted/30 rounded-xl p-1">
+                  <TabsTrigger value="scheduling" className="flex-1 text-[10px] rounded-lg data-[state=active]:bg-background">
+                    <CalendarIcon className="w-3 h-3 mr-1" />
+                    Agendar
+                  </TabsTrigger>
+                  <TabsTrigger value="blocks" className="flex-1 text-[10px] rounded-lg data-[state=active]:bg-background">
+                    <Ban className="w-3 h-3 mr-1" />
+                    Bloqueos
+                  </TabsTrigger>
+                  <TabsTrigger value="waiting" className="flex-1 text-[10px] rounded-lg data-[state=active]:bg-background">
+                    <ListTodo className="w-3 h-3 mr-1" />
+                    Espera
+                  </TabsTrigger>
+                </TabsList>
+              </div>
+
+              <TabsContent value="scheduling" className="flex-1 mt-0 overflow-hidden">
+                <ScrollArea className="h-full">
+                  <div className="p-4 space-y-5">
                 {/* Step 1: Doctor Selection - PRIMARY */}
                 <div>
                   <div className="flex items-center gap-2 mb-3">
@@ -578,14 +656,80 @@ export const SchedulingStep: React.FC<SchedulingStepProps> = ({
                       </div>
                     )}
 
-                    {/* Service Selection */}
+                    {/* Appointment Type Selection */}
                     <div>
                       <div className="flex items-center gap-2 mb-3">
                         <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center">
                           <span className="text-[10px] font-bold">2</span>
                         </div>
-                        <span className="text-sm font-semibold">Servicio</span>
+                        <span className="text-sm font-semibold">Tipo de Cita</span>
                       </div>
+                      <AppointmentTypeInline
+                        selectedType={appointmentType}
+                        onSelect={handleAppointmentTypeSelect}
+                      />
+                    </div>
+
+                    {/* Date Range Selection */}
+                    <div>
+                      <div className="flex items-center gap-2 mb-3">
+                        <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center">
+                          <span className="text-[10px] font-bold">3</span>
+                        </div>
+                        <span className="text-sm font-semibold">Fecha y Recurrencia</span>
+                      </div>
+                      <DateRangeSelector
+                        startDate={selectedDate}
+                        endDate={endDate}
+                        onStartDateChange={(date) => {
+                          setSelectedDate(date);
+                          setCurrentDate(date);
+                        }}
+                        onEndDateChange={setEndDate}
+                        isRangeMode={isRangeMode}
+                        onRangeModeChange={setIsRangeMode}
+                        recurrencePattern={recurrencePattern}
+                        onRecurrenceChange={setRecurrencePattern}
+                        selectedDays={selectedDays}
+                        onSelectedDaysChange={setSelectedDays}
+                        maxOccurrences={maxOccurrences}
+                        onMaxOccurrencesChange={setMaxOccurrences}
+                      />
+                    </div>
+
+                    {/* Resources - Only for procedure types */}
+                    {(appointmentType === "procedure" || appointmentType === "multispecialty") && (
+                      <div>
+                        <div className="flex items-center gap-2 mb-3">
+                          <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center">
+                            <span className="text-[10px] font-bold">4</span>
+                          </div>
+                          <span className="text-sm font-semibold">Recursos</span>
+                        </div>
+                        <ResourceAvailabilityPanel
+                          selectedDate={selectedDate}
+                          selectedTime={selectedTime}
+                          duration={duration}
+                          selectedResources={selectedResources}
+                          onResourceToggle={handleResourceToggle}
+                        />
+                      </div>
+                    )}
+
+                    {/* Quick Actions Panel */}
+                    <div>
+                      <div className="flex items-center gap-2 mb-3">
+                        <Settings2 className="w-4 h-4 text-muted-foreground" />
+                        <span className="text-sm font-semibold">Acciones Rápidas</span>
+                      </div>
+                      <AppointmentActionsPanel />
+                    </div>
+
+                    <Separator className="bg-border/20" />
+
+                    {/* Additional Details - Collapsed by default */}
+                    <div>
+                      <Label className="text-xs mb-2 block text-muted-foreground">Servicio (Opcional)</Label>
                       <Select value={selectedService} onValueChange={(v) => {
                         setSelectedService(v);
                         const service = services.find(s => s.id === v);
@@ -604,31 +748,9 @@ export const SchedulingStep: React.FC<SchedulingStepProps> = ({
                       </Select>
                     </div>
 
-                    {/* Reason */}
-                    <div>
-                      <div className="flex items-center gap-2 mb-3">
-                        <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center">
-                          <span className="text-[10px] font-bold">3</span>
-                        </div>
-                        <span className="text-sm font-semibold">Motivo</span>
-                      </div>
-                      <Select value={reason} onValueChange={setReason}>
-                        <SelectTrigger className="h-9 rounded-xl text-xs">
-                          <SelectValue placeholder="Seleccionar motivo" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Consulta general">Consulta general</SelectItem>
-                          <SelectItem value="Seguimiento">Seguimiento</SelectItem>
-                          <SelectItem value="Control">Control</SelectItem>
-                          <SelectItem value="Examen médico">Examen médico</SelectItem>
-                          <SelectItem value="Urgencia">Urgencia</SelectItem>
-                          <SelectItem value="Primera vez">Primera vez</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
                     {/* Duration */}
                     <div>
+                      <Label className="text-xs mb-2 block text-muted-foreground">Duración</Label>
                       <Label className="text-xs mb-2 block text-muted-foreground">Duración</Label>
                       <div className="flex flex-wrap gap-1">
                         {durations.map((d) => (
@@ -664,6 +786,24 @@ export const SchedulingStep: React.FC<SchedulingStepProps> = ({
                 )}
               </div>
             </ScrollArea>
+              </TabsContent>
+
+              <TabsContent value="blocks" className="flex-1 mt-0 overflow-hidden">
+                <ScrollArea className="h-full">
+                  <div className="p-4">
+                    <AvailabilityBlockManager doctorId={selectedDoctor} />
+                  </div>
+                </ScrollArea>
+              </TabsContent>
+
+              <TabsContent value="waiting" className="flex-1 mt-0 overflow-hidden">
+                <ScrollArea className="h-full">
+                  <div className="p-4">
+                    <WaitingListPanel />
+                  </div>
+                </ScrollArea>
+              </TabsContent>
+            </Tabs>
 
             {/* Action Buttons - Always Visible */}
             <div className="p-4 border-t border-border/20 bg-background/50 space-y-2">
