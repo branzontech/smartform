@@ -336,7 +336,7 @@ export const SchedulingStep: React.FC<SchedulingStepProps> = ({
                             className={cn(
                               "relative flex flex-col items-center py-3 rounded-xl transition-all",
                               isSelected
-                                ? "bg-primary text-primary-foreground shadow-md"
+                                ? "bg-lime text-lime-foreground shadow-md"
                                 : today
                                 ? "bg-primary/10 hover:bg-primary/15"
                                 : "hover:bg-muted/50"
@@ -351,7 +351,7 @@ export const SchedulingStep: React.FC<SchedulingStepProps> = ({
                             {hasAppts && (
                               <div className={cn(
                                 "w-1 h-1 rounded-full mt-0.5",
-                                isSelected ? "bg-primary-foreground" : "bg-primary"
+                                isSelected ? "bg-lime-foreground" : "bg-primary"
                               )} />
                             )}
                           </motion.button>
@@ -388,7 +388,7 @@ export const SchedulingStep: React.FC<SchedulingStepProps> = ({
                               "relative aspect-square flex flex-col items-center justify-center rounded-lg text-sm transition-all",
                               !isCurrentMonth && "opacity-30",
                               isSelected
-                                ? "bg-primary text-primary-foreground shadow-sm"
+                                ? "bg-lime text-lime-foreground shadow-sm"
                                 : today
                                 ? "bg-primary/10"
                                 : "hover:bg-muted/50"
@@ -398,7 +398,7 @@ export const SchedulingStep: React.FC<SchedulingStepProps> = ({
                             {hasAppts && isCurrentMonth && (
                               <div className={cn(
                                 "absolute bottom-1 w-1 h-1 rounded-full",
-                                isSelected ? "bg-primary-foreground" : "bg-primary"
+                                isSelected ? "bg-lime-foreground" : "bg-lime"
                               )} />
                             )}
                           </motion.button>
@@ -503,7 +503,7 @@ export const SchedulingStep: React.FC<SchedulingStepProps> = ({
                                           occupied
                                             ? "bg-muted/30 text-muted-foreground/50 cursor-not-allowed line-through"
                                             : isSelected
-                                            ? "bg-primary text-primary-foreground shadow-sm"
+                                            ? "bg-lime text-lime-foreground shadow-sm"
                                             : "bg-background hover:bg-accent border border-border/40"
                                         )}
                                       >
@@ -562,7 +562,7 @@ export const SchedulingStep: React.FC<SchedulingStepProps> = ({
                           className={cn(
                             "py-1.5 px-3 rounded-lg text-xs font-medium transition-all",
                             duration === d.value
-                              ? "bg-primary text-primary-foreground shadow-sm"
+                              ? "bg-lime text-lime-foreground shadow-sm"
                               : "bg-muted/30 hover:bg-muted/50"
                           )}
                         >
