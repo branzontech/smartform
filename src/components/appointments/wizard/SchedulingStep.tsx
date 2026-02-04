@@ -520,8 +520,8 @@ export const SchedulingStep: React.FC<SchedulingStepProps> = ({
                 </TabsList>
               </div>
 
-              <TabsContent value="scheduling" className="flex-1 mt-0 overflow-hidden flex flex-col">
-                <ScrollArea className="flex-1 h-[calc(100vh-380px)]">
+              <TabsContent value="scheduling" className="flex-1 mt-0 flex flex-col min-h-0">
+                <ScrollArea className="flex-1 h-0 min-h-0">
                   <div className="p-4 space-y-5">
                 {/* Step 1: Doctor Selection - PRIMARY */}
                 <div>
