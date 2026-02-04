@@ -180,8 +180,8 @@ export const Header = ({ showCreate = true }: HeaderProps) => {
               onClick={() => setAppLauncherOpen(true)}
               className="flex items-center space-x-2 hover:opacity-80 transition-opacity cursor-pointer"
             >
-              <Stethoscope className="h-6 w-6 text-white" />
-              <span className="text-xl font-semibold text-white">Smart Doctor</span>
+              <img src="/kerhub-logo.png" alt="Ker Hub" className="h-8 w-auto" />
+              <span className="text-xl font-semibold text-white">Ker Hub</span>
             </button>
             <button
               onClick={() => setAppLauncherOpen(true)}

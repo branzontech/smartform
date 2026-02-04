@@ -106,14 +106,9 @@ const Register = () => {
       >
         {/* Logo */}
         <Link to="/" className="flex items-center gap-3 mb-12">
-          <div className="relative">
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center shadow-lg shadow-primary/25">
-              <Stethoscope className="w-6 h-6 text-primary-foreground" />
-            </div>
-            <div className="absolute -inset-1 bg-gradient-to-br from-primary/20 to-transparent rounded-xl blur-sm -z-10" />
-          </div>
+          <img src="/kerhub-logo.png" alt="Ker Hub" className="h-12 w-auto" />
           <span className="text-2xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
-            Smart Doctor
+            Ker Hub
           </span>
         </Link>
 
@@ -135,7 +130,7 @@ const Register = () => {
           transition={{ delay: 0.3 }}
           className="text-lg text-muted-foreground mb-10"
         >
-          Únete a más de 2,500 profesionales de la salud que ya optimizaron su consulta con Smart Doctor.
+          Únete a más de 2,500 profesionales de la salud que ya optimizaron su consulta con Ker Hub.
         </motion.p>
 
         {/* Benefits List */}
@@ -164,7 +159,7 @@ const Register = () => {
           className="mt-12 p-6 bg-card border border-border/50 rounded-2xl"
         >
           <p className="text-muted-foreground italic mb-4">
-            "Smart Doctor transformó mi práctica médica. Ahora puedo atender más pacientes sin perder tiempo en tareas administrativas."
+            "Ker Hub transformó mi práctica médica. Ahora puedo atender más pacientes sin perder tiempo en tareas administrativas."
           </p>
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center text-primary-foreground font-semibold text-sm">
@@ -188,10 +183,8 @@ const Register = () => {
         >
           {/* Mobile Logo */}
           <Link to="/" className="flex lg:hidden items-center gap-2 justify-center mb-8">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center">
-              <Stethoscope className="w-5 h-5 text-primary-foreground" />
-            </div>
-            <span className="text-xl font-bold">Smart Doctor</span>
+            <img src="/kerhub-logo.png" alt="Ker Hub" className="h-10 w-auto" />
+            <span className="text-xl font-bold">Ker Hub</span>
           </Link>
 
           {/* Form Card */}

@@ -51,14 +51,9 @@ const Navbar = () => {
             whileHover={{ scale: 1.02 }}
             className="flex items-center gap-2"
           >
-            <div className="relative">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center shadow-lg shadow-primary/25">
-                <Stethoscope className="w-5 h-5 text-primary-foreground" />
-              </div>
-              <div className="absolute -inset-1 bg-gradient-to-br from-primary/20 to-transparent rounded-xl blur-sm -z-10" />
-            </div>
+            <img src="/kerhub-logo.png" alt="Ker Hub" className="h-10 w-auto" />
             <span className="text-xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
-              Smart Doctor
+              Ker Hub
             </span>
           </motion.div>
 

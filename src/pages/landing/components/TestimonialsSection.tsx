@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 const testimonials = [
   {
     id: 1,
-    content: 'Smart Doctor transformó completamente mi práctica médica. Ahora puedo atender más pacientes sin sentirme abrumada con la administración. Los recordatorios automáticos redujeron las ausencias en un 40%.',
+    content: 'Ker Hub transformó completamente mi práctica médica. Ahora puedo atender más pacientes sin sentirme abrumada con la administración. Los recordatorios automáticos redujeron las ausencias en un 40%.',
     author: 'Dra. María González',
     role: 'Médico General',
     location: 'Bogotá, Colombia',
@@ -24,7 +24,7 @@ const testimonials = [
   },
   {
     id: 3,
-    content: 'Desde que implementamos Smart Doctor en nuestra clínica, la eficiencia aumentó dramáticamente. La telemedicina integrada nos permitió mantener la atención durante la pandemia.',
+    content: 'Desde que implementamos Ker Hub en nuestra clínica, la eficiencia aumentó dramáticamente. La telemedicina integrada nos permitió mantener la atención durante la pandemia.',
     author: 'Dra. Ana Martínez',
     role: 'Directora Clínica',
     location: 'Cali, Colombia',
@@ -94,7 +94,7 @@ const TestimonialsSection = () => {
             </span>
           </h2>
           <p className="text-lg text-muted-foreground">
-            Miles de profesionales de la salud confían en Smart Doctor para gestionar su práctica médica.
+            Miles de profesionales de la salud confían en Ker Hub para gestionar su práctica médica.
           </p>
         </motion.div>
 

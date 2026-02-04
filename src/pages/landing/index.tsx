@@ -13,10 +13,10 @@ const LandingPage = () => {
   return (
     <>
       <Helmet>
-        <title>Smart Doctor | Software Médico Integral para Clínicas y Consultorios</title>
-        <meta name="description" content="Gestiona tu clínica o consultorio médico con Smart Doctor. Citas, historias clínicas, facturación y más. Prueba gratis por 14 días." />
+        <title>Ker Hub | El futuro del cuidado, diseñado para personas</title>
+        <meta name="description" content="Gestiona tu clínica o consultorio médico con Ker Hub. Citas, historias clínicas, facturación y más. Prueba gratis por 14 días." />
         <meta name="keywords" content="software médico, gestión clínica, historia clínica electrónica, citas médicas, facturación médica, RIPS" />
-        <meta property="og:title" content="Smart Doctor | Software Médico Integral" />
+        <meta property="og:title" content="Ker Hub | El futuro del cuidado, diseñado para personas" />
         <meta property="og:description" content="La plataforma todo-en-uno para profesionales de la salud. Gestiona citas, pacientes y facturación." />
         <meta property="og:type" content="website" />
         <meta property="og:image" content="/og-image.png" />
@@ -26,7 +26,7 @@ const LandingPage = () => {
           {JSON.stringify({
             "@context": "https://schema.org",
             "@type": "SoftwareApplication",
-            "name": "Smart Doctor",
+            "name": "Ker Hub",
             "applicationCategory": "HealthApplication",
             "operatingSystem": "Web",
             "offers": {

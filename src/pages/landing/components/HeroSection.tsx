@@ -173,7 +173,7 @@ const HeroSection = () => {
                   </div>
                   <div className="flex-1 mx-4">
                     <div className="h-6 bg-background rounded-md flex items-center justify-center text-xs text-muted-foreground">
-                      app.smartdoctor.com
+                      app.kerhub.com
                     </div>
                   </div>
                 </div>
