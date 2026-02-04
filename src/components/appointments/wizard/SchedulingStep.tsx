@@ -735,9 +735,20 @@ export const SchedulingStep: React.FC<SchedulingStepProps> = ({
                     {/* Doctor Schedule Info */}
                     {selectedDoctorData && (
                       <div className="p-3 rounded-xl bg-primary/5 border border-primary/10">
-                        <div className="flex items-center gap-2 mb-2">
-                          <Clock className="w-4 h-4 text-primary" />
-                          <span className="text-xs font-semibold">Horario del Profesional</span>
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <Clock className="w-4 h-4 text-primary" />
+                            <span className="text-xs font-semibold">Horario del Profesional</span>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setIsDoctorStatsOpen(true)}
+                            className="h-7 w-7 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10"
+                            title="Ver estadísticas del profesional"
+                          >
+                            <BarChart3 className="w-3.5 h-3.5" />
+                          </Button>
                         </div>
                         <div className="grid grid-cols-7 gap-1">
                           {["L", "M", "X", "J", "V", "S", "D"].map((day, idx) => {
