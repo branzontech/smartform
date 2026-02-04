@@ -852,8 +852,8 @@ export const SchedulingStep: React.FC<SchedulingStepProps> = ({
         <ResizableHandle withHandle />
 
         {/* Right Panel - Calendar (70%) */}
-        <ResizablePanel defaultSize={70} minSize={50}>
-          <div className="h-full flex flex-col">
+        <ResizablePanel defaultSize={70} minSize={50} className="overflow-hidden">
+          <div className="h-full flex flex-col overflow-hidden">
             {/* Calendar Header */}
             <div className="p-4 border-b border-border/20 flex items-center justify-between">
               {/* View Mode Tabs */}
@@ -937,7 +937,8 @@ export const SchedulingStep: React.FC<SchedulingStepProps> = ({
             )}
 
             {/* Calendar Content */}
-            <div className="flex-1 p-4 overflow-auto">
+            <ScrollArea className="flex-1 h-0 min-h-0">
+              <div className="p-4">
               {!selectedDoctor ? (
                 <div className="h-full flex flex-col items-center justify-center text-center">
                   <div className="w-16 h-16 rounded-2xl bg-muted/30 flex items-center justify-center mb-4">
@@ -1151,7 +1152,8 @@ export const SchedulingStep: React.FC<SchedulingStepProps> = ({
                   </motion.div>
                 </AnimatePresence>
               )}
-            </div>
+              </div>
+            </ScrollArea>
           </div>
         </ResizablePanel>
       </ResizablePanelGroup>
