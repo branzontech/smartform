@@ -672,57 +672,84 @@ export const SchedulingStep: React.FC<SchedulingStepProps> = ({
                         <p className="text-xs">No se encontraron profesionales</p>
                       </div>
                     ) : (
-                      filteredDoctors.map((doc) => (
-                      <motion.button
-                        key={doc.id}
-                        onClick={() => doc.available && handleDoctorSelect(doc.id)}
-                        disabled={!doc.available}
-                        whileHover={doc.available ? { scale: 1.01 } : {}}
-                        whileTap={doc.available ? { scale: 0.99 } : {}}
-                        className={cn(
-                          "w-full p-3 rounded-xl text-left transition-all flex items-center gap-3",
-                          !doc.available 
-                            ? "opacity-50 cursor-not-allowed bg-muted/20"
-                            : selectedDoctor === doc.id
-                            ? "bg-lime text-lime-foreground shadow-md ring-2 ring-lime/50"
-                            : "bg-background hover:bg-muted/50 border border-border/30"
-                        )}
-                      >
-                        <div className={cn(
-                          "w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold",
-                          selectedDoctor === doc.id 
-                            ? "bg-lime-foreground/20 text-lime-foreground"
-                            : "bg-primary/10 text-primary"
-                        )}>
-                          {doc.avatar}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-medium text-sm truncate">{doc.name}</p>
-                          <p className={cn(
-                            "text-xs truncate",
-                            selectedDoctor === doc.id ? "opacity-80" : "text-muted-foreground"
-                          )}>
-                            {doc.specialty}
-                          </p>
-                        </div>
-                        <div className="flex flex-col items-end gap-1">
-                          {doc.available ? (
-                            <Badge variant="outline" className={cn(
-                              "text-[9px] rounded-md",
+                      filteredDoctors.map((doc) => {
+                        // Calculate today's appointments
+                        const todayKey = format(new Date(), "yyyy-MM-dd");
+                        const todayAppointments = doc.occupiedSlots[todayKey]?.length || 0;
+                        
+                        return (
+                          <motion.button
+                            key={doc.id}
+                            onClick={() => doc.available && handleDoctorSelect(doc.id)}
+                            disabled={!doc.available}
+                            whileHover={doc.available ? { scale: 1.01 } : {}}
+                            whileTap={doc.available ? { scale: 0.99 } : {}}
+                            className={cn(
+                              "w-full p-3 rounded-xl text-left transition-all flex items-center gap-3",
+                              !doc.available 
+                                ? "opacity-50 cursor-not-allowed bg-muted/20"
+                                : selectedDoctor === doc.id
+                                ? "bg-lime text-lime-foreground shadow-md ring-2 ring-lime/50"
+                                : "bg-background hover:bg-muted/50 border border-border/30"
+                            )}
+                          >
+                            <div className={cn(
+                              "w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold relative",
                               selectedDoctor === doc.id 
-                                ? "border-lime-foreground/30 text-lime-foreground"
-                                : "border-green-500/30 text-green-600"
+                                ? "bg-lime-foreground/20 text-lime-foreground"
+                                : "bg-primary/10 text-primary"
                             )}>
-                              Disponible
-                            </Badge>
-                          ) : (
-                            <Badge variant="secondary" className="text-[9px] rounded-md">
-                              No disponible
-                            </Badge>
-                          )}
-                        </div>
-                      </motion.button>
-                    ))
+                              {doc.avatar}
+                              {/* Appointment count badge */}
+                              {todayAppointments > 0 && (
+                                <span className={cn(
+                                  "absolute -top-1 -right-1 w-5 h-5 rounded-full text-[9px] font-bold flex items-center justify-center",
+                                  selectedDoctor === doc.id 
+                                    ? "bg-lime-foreground text-lime"
+                                    : "bg-primary text-primary-foreground"
+                                )}>
+                                  {todayAppointments}
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium text-sm truncate">{doc.name}</p>
+                              <div className="flex items-center gap-2">
+                                <p className={cn(
+                                  "text-xs truncate",
+                                  selectedDoctor === doc.id ? "opacity-80" : "text-muted-foreground"
+                                )}>
+                                  {doc.specialty}
+                                </p>
+                                {todayAppointments > 0 && (
+                                  <span className={cn(
+                                    "text-[10px] font-medium",
+                                    selectedDoctor === doc.id ? "opacity-70" : "text-muted-foreground"
+                                  )}>
+                                    • {todayAppointments} hoy
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                            <div className="flex flex-col items-end gap-1">
+                              {doc.available ? (
+                                <Badge variant="outline" className={cn(
+                                  "text-[9px] rounded-md",
+                                  selectedDoctor === doc.id 
+                                    ? "border-lime-foreground/30 text-lime-foreground"
+                                    : "border-lime/50 text-lime"
+                                )}>
+                                  Disponible
+                                </Badge>
+                              ) : (
+                                <Badge variant="secondary" className="text-[9px] rounded-md">
+                                  No disponible
+                                </Badge>
+                              )}
+                            </div>
+                          </motion.button>
+                        );
+                      })
                     )}
                   </div>
                 </div>
@@ -733,46 +760,84 @@ export const SchedulingStep: React.FC<SchedulingStepProps> = ({
                     <Separator className="bg-border/20" />
 
                     {/* Doctor Schedule Info */}
-                    {selectedDoctorData && (
-                      <div className="p-3 rounded-xl bg-primary/5 border border-primary/10">
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="flex items-center gap-2">
-                            <Clock className="w-4 h-4 text-primary" />
-                            <span className="text-xs font-semibold">Horario del Profesional</span>
+                    {selectedDoctorData && (() => {
+                      // Calculate appointment statistics
+                      const todayKey = format(new Date(), "yyyy-MM-dd");
+                      const todayAppointments = selectedDoctorData.occupiedSlots[todayKey]?.length || 0;
+                      
+                      // Calculate this week's appointments
+                      const weekAppointments = Object.entries(selectedDoctorData.occupiedSlots).reduce((total, [dateKey, slots]) => {
+                        const date = new Date(dateKey);
+                        const today = new Date();
+                        const weekStart = startOfWeek(today, { weekStartsOn: 1 });
+                        const weekEnd = addDays(weekStart, 6);
+                        if (date >= weekStart && date <= weekEnd) {
+                          return total + slots.length;
+                        }
+                        return total;
+                      }, 0);
+
+                      return (
+                        <div className="p-3 rounded-xl bg-primary/5 border border-primary/10 space-y-3">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <Clock className="w-4 h-4 text-primary" />
+                              <span className="text-xs font-semibold">Horario del Profesional</span>
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => setIsDoctorStatsOpen(true)}
+                              className="h-7 w-7 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10"
+                              title="Ver estadísticas del profesional"
+                            >
+                              <BarChart3 className="w-3.5 h-3.5" />
+                            </Button>
                           </div>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => setIsDoctorStatsOpen(true)}
-                            className="h-7 w-7 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10"
-                            title="Ver estadísticas del profesional"
-                          >
-                            <BarChart3 className="w-3.5 h-3.5" />
-                          </Button>
-                        </div>
-                        <div className="grid grid-cols-7 gap-1">
-                          {["L", "M", "X", "J", "V", "S", "D"].map((day, idx) => {
-                            const dayKey = dayNames[(idx + 1) % 7];
-                            const schedule = selectedDoctorData.schedule[dayKey];
-                            const isWorking = schedule?.working;
-                            
-                            return (
-                              <div
-                                key={day}
-                                className={cn(
-                                  "text-center py-1.5 rounded-md text-[10px] font-medium",
-                                  isWorking 
-                                    ? "bg-lime/20 text-lime-foreground"
-                                    : "bg-muted/30 text-muted-foreground"
-                                )}
-                              >
-                                {day}
+                          
+                          {/* Appointment counts */}
+                          <div className="flex gap-2">
+                            <div className="flex-1 p-2 rounded-lg bg-primary/10 border border-primary/20">
+                              <div className="flex items-center gap-1.5 mb-1">
+                                <CalendarIcon className="w-3 h-3 text-primary" />
+                                <span className="text-[10px] text-muted-foreground">Hoy</span>
                               </div>
-                            );
-                          })}
+                              <p className="text-lg font-bold text-primary">{todayAppointments}</p>
+                            </div>
+                            <div className="flex-1 p-2 rounded-lg bg-lime/10 border border-lime/20">
+                              <div className="flex items-center gap-1.5 mb-1">
+                                <CalendarRange className="w-3 h-3 text-lime" />
+                                <span className="text-[10px] text-muted-foreground">Semana</span>
+                              </div>
+                              <p className="text-lg font-bold text-lime">{weekAppointments}</p>
+                            </div>
+                          </div>
+                          
+                          {/* Weekly schedule */}
+                          <div className="grid grid-cols-7 gap-1">
+                            {["L", "M", "X", "J", "V", "S", "D"].map((day, idx) => {
+                              const dayKey = dayNames[(idx + 1) % 7];
+                              const schedule = selectedDoctorData.schedule[dayKey];
+                              const isWorking = schedule?.working;
+                              
+                              return (
+                                <div
+                                  key={day}
+                                  className={cn(
+                                    "text-center py-1.5 rounded-md text-[10px] font-medium",
+                                    isWorking 
+                                      ? "bg-lime/20 text-lime-foreground"
+                                      : "bg-muted/30 text-muted-foreground"
+                                  )}
+                                >
+                                  {day}
+                                </div>
+                              );
+                            })}
+                          </div>
                         </div>
-                      </div>
-                    )}
+                      );
+                    })()}
 
                     {/* Appointment Type Selection */}
                     <div>
