@@ -56,7 +56,7 @@ const DemoSection = () => {
             </h2>
             
             <p className="text-lg text-muted-foreground mb-8">
-              Agenda una demostración personalizada y descubre cómo Smart Doctor 
+              Agenda una demostración personalizada y descubre cómo Ker Hub 
               puede ayudarte a gestionar tu consulta de manera más eficiente.
             </p>
 

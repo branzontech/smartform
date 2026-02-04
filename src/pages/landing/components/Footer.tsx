@@ -54,20 +54,18 @@ const Footer = () => {
               className="mb-6"
             >
               <div className="flex items-center gap-2 mb-4">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center">
-                  <Stethoscope className="w-5 h-5 text-primary-foreground" />
-                </div>
-                <span className="text-xl font-bold">Smart Doctor</span>
+                <img src="/kerhub-logo.png" alt="Ker Hub" className="h-10 w-auto" />
+                <span className="text-xl font-bold">Ker Hub</span>
               </div>
               <p className="text-muted-foreground mb-6 max-w-xs">
-                La plataforma integral para profesionales de la salud. Gestiona tu práctica médica de manera eficiente.
+                El futuro del cuidado, diseñado para personas. Gestiona tu práctica médica de manera eficiente.
               </p>
               
               {/* Contact Info */}
               <div className="space-y-3 text-sm text-muted-foreground">
                 <div className="flex items-center gap-2">
                   <Mail className="w-4 h-4 text-primary" />
-                  <span>soporte@smartdoctor.co</span>
+                  <span>soporte@kerhub.co</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Phone className="w-4 h-4 text-primary" />
@@ -127,7 +125,7 @@ const Footer = () => {
       <div className="border-t border-border">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-muted-foreground">
-            <p>© {currentYear} Smart Doctor. Todos los derechos reservados.</p>
+            <p>© {currentYear} Ker Hub. Todos los derechos reservados.</p>
             <p>
               Hecho con ❤️ en Colombia 🇨🇴
             </p>

@@ -40,7 +40,7 @@ const FormCreator = () => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(!!id);
   const [activeTab, setActiveTab] = useState("content");
-  const [title, setTitle] = useState("Nuevo formulario Smart Doctor");
+  const [title, setTitle] = useState("Nuevo formulario Ker Hub");
   const [description, setDescription] = useState("Formulario para registro de datos clínicos");
   const [formType, setFormType] = useState<"forms" | "formato">("forms");
   const [questions, setQuestions] = useState<QuestionData[]>([]);

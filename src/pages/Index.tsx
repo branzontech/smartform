@@ -24,7 +24,7 @@ const Index = () => {
       <main className="flex-1 flex items-center justify-center p-6">
         <div className="max-w-4xl w-full text-center space-y-8">
           <h1 className="text-4xl md:text-5xl font-bold mb-4">
-            Bienvenido a Smart Doctor
+            Bienvenido a Ker Hub
           </h1>
           <p className="text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
             La plataforma integral para profesionales de la salud que facilita la gestión de pacientes, citas y registros médicos.
