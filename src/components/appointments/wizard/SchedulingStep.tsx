@@ -46,7 +46,9 @@ import {
   Ban,
   ListTodo,
   CalendarRange,
-  Repeat
+  Repeat,
+  Maximize2,
+  Minimize2
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -284,6 +286,7 @@ export const SchedulingStep: React.FC<SchedulingStepProps> = ({
   const [maxOccurrences, setMaxOccurrences] = useState(10);
   const [selectedResources, setSelectedResources] = useState<string[]>([]);
   const [activeTab, setActiveTab] = useState("scheduling");
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   // Get unique specialties for filter
   const specialties = useMemo(() => {
@@ -517,9 +520,44 @@ export const SchedulingStep: React.FC<SchedulingStepProps> = ({
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="h-[calc(100vh-180px)] min-h-[500px]"
+      className={cn(
+        "transition-all duration-300",
+        isFullscreen 
+          ? "fixed inset-0 z-50 bg-background" 
+          : "h-[calc(100vh-180px)] min-h-[500px]"
+      )}
     >
-      <ResizablePanelGroup direction="horizontal" className="h-full rounded-2xl border border-border/30 bg-card/60 backdrop-blur-xl overflow-hidden">
+      {/* Fullscreen Header */}
+      {isFullscreen && (
+        <div className="h-14 px-4 flex items-center justify-between border-b border-border/30 bg-card/80 backdrop-blur-xl">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center">
+              <CalendarIcon className="w-4 h-4 text-primary" />
+            </div>
+            <div>
+              <h2 className="text-sm font-semibold">Agendamiento de Cita</h2>
+              <p className="text-xs text-muted-foreground">{patient.firstName} {patient.lastName}</p>
+            </div>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setIsFullscreen(false)}
+            className="rounded-xl"
+          >
+            <Minimize2 className="w-4 h-4 mr-2" />
+            Salir de Pantalla Completa
+          </Button>
+        </div>
+      )}
+
+      <ResizablePanelGroup 
+        direction="horizontal" 
+        className={cn(
+          "rounded-2xl border border-border/30 bg-card/60 backdrop-blur-xl overflow-hidden",
+          isFullscreen ? "h-[calc(100vh-56px)] rounded-none border-0" : "h-full"
+        )}
+      >
         {/* Left Panel - Control Panel (30%) */}
         <ResizablePanel defaultSize={30} minSize={25} maxSize={40}>
           <div className="h-full flex flex-col bg-muted/5">
@@ -947,8 +985,19 @@ export const SchedulingStep: React.FC<SchedulingStepProps> = ({
                   ))}
                 </div>
 
-                {/* Navigation */}
+                {/* Navigation + Fullscreen */}
                 <div className="flex items-center gap-2">
+                  {!isFullscreen && (
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => setIsFullscreen(true)}
+                      className="h-8 rounded-lg text-xs mr-2"
+                    >
+                      <Maximize2 className="h-3.5 w-3.5 mr-1.5" />
+                      Expandir
+                    </Button>
+                  )}
                   <Button 
                     variant="ghost" 
                     size="icon"
