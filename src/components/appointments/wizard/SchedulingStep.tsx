@@ -48,7 +48,8 @@ import {
   CalendarRange,
   Repeat,
   Maximize2,
-  Minimize2
+  Minimize2,
+  BarChart3
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -79,7 +80,8 @@ import {
   AvailabilityBlockManager,
   WaitingListPanel,
   AppointmentActionsPanel,
-  ResourceAvailabilityPanel
+  ResourceAvailabilityPanel,
+  DoctorStatsDrawer
 } from "../scheduling";
 
 export interface SchedulingData {
@@ -287,6 +289,7 @@ export const SchedulingStep: React.FC<SchedulingStepProps> = ({
   const [selectedResources, setSelectedResources] = useState<string[]>([]);
   const [activeTab, setActiveTab] = useState("scheduling");
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isDoctorStatsOpen, setIsDoctorStatsOpen] = useState(false);
 
   // Get unique specialties for filter
   const specialties = useMemo(() => {
@@ -538,14 +541,26 @@ export const SchedulingStep: React.FC<SchedulingStepProps> = ({
               <p className="text-xs font-medium">{patient.firstName} {patient.lastName} • Agendamiento</p>
             </div>
           </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setIsFullscreen(false)}
-            className="h-8 w-8 rounded-lg text-muted-foreground hover:text-foreground"
-          >
-            <Minimize2 className="w-4 h-4" />
-          </Button>
+          <div className="flex items-center gap-1">
+            {selectedDoctorData && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setIsDoctorStatsOpen(true)}
+                className="h-8 w-8 rounded-lg text-muted-foreground hover:text-foreground"
+              >
+                <BarChart3 className="w-4 h-4" />
+              </Button>
+            )}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setIsFullscreen(false)}
+              className="h-8 w-8 rounded-lg text-muted-foreground hover:text-foreground"
+            >
+              <Minimize2 className="w-4 h-4" />
+            </Button>
+          </div>
         </div>
       )}
 
@@ -1403,6 +1418,18 @@ export const SchedulingStep: React.FC<SchedulingStepProps> = ({
           </div>
         </ResizablePanel>
       </ResizablePanelGroup>
+
+      {/* Doctor Stats Drawer */}
+      <DoctorStatsDrawer
+        open={isDoctorStatsOpen}
+        onOpenChange={setIsDoctorStatsOpen}
+        doctor={selectedDoctorData ? {
+          id: selectedDoctorData.id,
+          name: selectedDoctorData.name,
+          specialty: selectedDoctorData.specialty,
+          avatar: selectedDoctorData.avatar
+        } : null}
+      />
     </motion.div>
   );
 };

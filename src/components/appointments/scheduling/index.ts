@@ -6,3 +6,4 @@ export { WaitingListPanel } from "./WaitingListPanel";
 export { AppointmentActionsPanel } from "./AppointmentActionsPanel";
 export { ResourceAvailabilityPanel } from "./ResourceAvailabilityPanel";
 export { NotificationPreview, AppointmentSummaryCard } from "./NotificationPreview";
+export { DoctorStatsDrawer } from "./DoctorStatsDrawer";
