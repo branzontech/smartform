@@ -180,7 +180,7 @@ export const Header = ({ showCreate = true }: HeaderProps) => {
               onClick={() => setAppLauncherOpen(true)}
               className="flex items-center hover:opacity-80 transition-opacity cursor-pointer"
             >
-              <img src="/kerhub-logo.png" alt="Ker Hub" className="h-10 w-auto" />
+              <img src="/kerhub-logo.png" alt="Ker Hub" className="h-14 w-auto" />
             </button>
             <button
               onClick={() => setAppLauncherOpen(true)}
