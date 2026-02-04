@@ -25,7 +25,6 @@ import {
   Clock, 
   ChevronLeft, 
   ChevronRight,
-  ArrowLeft,
   Check,
   X,
   RefreshCw,
@@ -33,9 +32,8 @@ import {
   Stethoscope,
   FileText,
   Briefcase,
-  Sun,
-  Sunrise,
-  Sunset
+  Circle,
+  AlertCircle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -75,11 +73,117 @@ interface SchedulingStepProps {
 
 type ViewMode = "day" | "week" | "month" | "year";
 
-const timeSlotGroups = {
-  morning: { label: "Mañana", icon: Sunrise, slots: ["08:00", "08:30", "09:00", "09:30", "10:00", "10:30", "11:00", "11:30"] },
-  afternoon: { label: "Tarde", icon: Sun, slots: ["12:00", "12:30", "14:00", "14:30", "15:00", "15:30", "16:00", "16:30"] },
-  evening: { label: "Noche", icon: Sunset, slots: ["17:00", "17:30", "18:00"] }
-};
+type DaySchedule = { working: true; start: string; end: string } | { working: false };
+
+interface DoctorSchedule {
+  monday: DaySchedule;
+  tuesday: DaySchedule;
+  wednesday: DaySchedule;
+  thursday: DaySchedule;
+  friday: DaySchedule;
+  saturday: DaySchedule;
+  sunday: DaySchedule;
+}
+
+interface DoctorWithSchedule {
+  id: string;
+  name: string;
+  specialty: string;
+  available: boolean;
+  avatar: string;
+  schedule: DoctorSchedule;
+  occupiedSlots: Record<string, string[]>;
+}
+
+// Extended mock data for doctors with their schedules
+const mockDoctorsWithSchedule: DoctorWithSchedule[] = [
+  { 
+    id: "1", 
+    name: "Dr. Carlos Jiménez",
+    specialty: "Cardiología", 
+    available: true,
+    avatar: "CJ",
+    schedule: {
+      monday: { working: true, start: "08:00", end: "16:00" },
+      tuesday: { working: true, start: "08:00", end: "16:00" },
+      wednesday: { working: true, start: "08:00", end: "14:00" },
+      thursday: { working: true, start: "08:00", end: "16:00" },
+      friday: { working: true, start: "08:00", end: "12:00" },
+      saturday: { working: false },
+      sunday: { working: false },
+    },
+    // Occupied slots by date (format: "YYYY-MM-DD": ["HH:MM", ...])
+    occupiedSlots: {
+      [format(new Date(), "yyyy-MM-dd")]: ["09:00", "09:30", "10:00", "14:00", "14:30"],
+      [format(addDays(new Date(), 1), "yyyy-MM-dd")]: ["08:00", "08:30", "11:00"],
+      [format(addDays(new Date(), 2), "yyyy-MM-dd")]: ["10:00", "10:30", "11:00", "11:30"],
+    }
+  },
+  { 
+    id: "2", 
+    name: "Dra. Laura Sánchez", 
+    specialty: "Pediatría", 
+    available: true,
+    avatar: "LS",
+    schedule: {
+      monday: { working: true, start: "09:00", end: "17:00" },
+      tuesday: { working: true, start: "09:00", end: "17:00" },
+      wednesday: { working: true, start: "09:00", end: "17:00" },
+      thursday: { working: true, start: "09:00", end: "17:00" },
+      friday: { working: true, start: "09:00", end: "15:00" },
+      saturday: { working: true, start: "09:00", end: "12:00" },
+      sunday: { working: false },
+    },
+    occupiedSlots: {
+      [format(new Date(), "yyyy-MM-dd")]: ["09:00", "09:30", "12:00", "15:00", "15:30", "16:00"],
+      [format(addDays(new Date(), 1), "yyyy-MM-dd")]: ["10:00", "10:30", "14:00", "14:30"],
+    }
+  },
+  { 
+    id: "3", 
+    name: "Dr. Alejandro Martínez", 
+    specialty: "Traumatología", 
+    available: false,
+    avatar: "AM",
+    schedule: {
+      monday: { working: true, start: "07:00", end: "15:00" },
+      tuesday: { working: true, start: "07:00", end: "15:00" },
+      wednesday: { working: false },
+      thursday: { working: true, start: "07:00", end: "15:00" },
+      friday: { working: true, start: "07:00", end: "13:00" },
+      saturday: { working: false },
+      sunday: { working: false },
+    },
+    occupiedSlots: {}
+  },
+  { 
+    id: "4", 
+    name: "Dra. María González", 
+    specialty: "Dermatología", 
+    available: true,
+    avatar: "MG",
+    schedule: {
+      monday: { working: true, start: "10:00", end: "18:00" },
+      tuesday: { working: true, start: "10:00", end: "18:00" },
+      wednesday: { working: true, start: "10:00", end: "18:00" },
+      thursday: { working: false },
+      friday: { working: true, start: "10:00", end: "16:00" },
+      saturday: { working: false },
+      sunday: { working: false },
+    },
+    occupiedSlots: {
+      [format(new Date(), "yyyy-MM-dd")]: ["10:00", "10:30", "11:00", "14:00"],
+      [format(addDays(new Date(), 3), "yyyy-MM-dd")]: ["12:00", "12:30", "15:00", "15:30", "16:00"],
+    }
+  },
+];
+
+const services = [
+  { id: "1", name: "Consulta General", duration: 30 },
+  { id: "2", name: "Examen Completo", duration: 60 },
+  { id: "3", name: "Control", duration: 15 },
+  { id: "4", name: "Procedimiento Menor", duration: 45 },
+];
 
 const durations = [
   { value: 15, label: "15m" },
@@ -95,18 +199,28 @@ const months = [
   "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"
 ];
 
-const mockDoctors = [
-  { id: "1", name: "Dr. Carlos Jiménez", specialty: "Cardiología", available: true },
-  { id: "2", name: "Dra. Laura Sánchez", specialty: "Pediatría", available: true },
-  { id: "3", name: "Dr. Alejandro Martínez", specialty: "Traumatología", available: false },
-];
+const dayNames = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"] as const;
 
-const services = [
-  { id: "1", name: "Consulta General", duration: 30 },
-  { id: "2", name: "Examen Completo", duration: 60 },
-  { id: "3", name: "Control", duration: 15 },
-  { id: "4", name: "Procedimiento Menor", duration: 45 },
-];
+// Generate time slots from start to end time
+const generateTimeSlots = (start: string, end: string): string[] => {
+  const slots: string[] = [];
+  const [startHour, startMin] = start.split(":").map(Number);
+  const [endHour, endMin] = end.split(":").map(Number);
+  
+  let currentHour = startHour;
+  let currentMin = startMin;
+  
+  while (currentHour < endHour || (currentHour === endHour && currentMin < endMin)) {
+    slots.push(`${currentHour.toString().padStart(2, "0")}:${currentMin.toString().padStart(2, "0")}`);
+    currentMin += 30;
+    if (currentMin >= 60) {
+      currentMin = 0;
+      currentHour++;
+    }
+  }
+  
+  return slots;
+};
 
 export const SchedulingStep: React.FC<SchedulingStepProps> = ({
   patient,
@@ -123,6 +237,10 @@ export const SchedulingStep: React.FC<SchedulingStepProps> = ({
   const [duration, setDuration] = useState(30);
   const [reason, setReason] = useState("");
   const [notes, setNotes] = useState("");
+
+  const selectedDoctorData = useMemo(() => {
+    return mockDoctorsWithSchedule.find(d => d.id === selectedDoctor);
+  }, [selectedDoctor]);
 
   const weekStart = useMemo(() => startOfWeek(currentDate, { weekStartsOn: 1 }), [currentDate]);
   
@@ -142,15 +260,52 @@ export const SchedulingStep: React.FC<SchedulingStepProps> = ({
     return [...paddingDays, ...days];
   }, [currentDate]);
 
-  const dayAppointments = useMemo(() => {
-    return existingAppointments.filter(apt => {
-      const aptDate = new Date(apt.date || apt.time?.split("T")[0] || selectedDate);
-      return isSameDay(aptDate, selectedDate);
-    });
-  }, [existingAppointments, selectedDate]);
+  // Get doctor's working status for a specific day
+  const getDoctorDayStatus = (doctor: typeof mockDoctorsWithSchedule[0], date: Date) => {
+    const dayName = dayNames[date.getDay()];
+    const schedule = doctor.schedule[dayName];
+    return schedule;
+  };
 
-  const isTimeSlotOccupied = (time: string) => {
-    return dayAppointments.some(apt => apt.time === time);
+  // Get available time slots for selected doctor on selected date
+  const availableTimeSlots = useMemo(() => {
+    if (!selectedDoctorData) return [];
+    
+    const daySchedule = getDoctorDayStatus(selectedDoctorData, selectedDate);
+    if (!daySchedule || !daySchedule.working) return [];
+    
+    const allSlots = generateTimeSlots(daySchedule.start as string, daySchedule.end as string);
+    const dateKey = format(selectedDate, "yyyy-MM-dd");
+    const occupied = selectedDoctorData.occupiedSlots[dateKey] || [];
+    
+    return allSlots.map(slot => ({
+      time: slot,
+      available: !occupied.includes(slot)
+    }));
+  }, [selectedDoctorData, selectedDate]);
+
+  // Check if doctor works on a specific day
+  const isDoctorWorkingOnDay = (date: Date) => {
+    if (!selectedDoctorData) return false;
+    const daySchedule = getDoctorDayStatus(selectedDoctorData, date);
+    return daySchedule?.working || false;
+  };
+
+  // Get occupancy level for a day
+  const getDayOccupancy = (date: Date) => {
+    if (!selectedDoctorData) return "none";
+    const daySchedule = getDoctorDayStatus(selectedDoctorData, date);
+    if (!daySchedule || !daySchedule.working) return "none";
+    
+    const allSlots = generateTimeSlots(daySchedule.start as string, daySchedule.end as string);
+    const dateKey = format(date, "yyyy-MM-dd");
+    const occupied = selectedDoctorData.occupiedSlots[dateKey] || [];
+    
+    const occupancyRate = occupied.length / allSlots.length;
+    if (occupancyRate === 0) return "free";
+    if (occupancyRate < 0.5) return "low";
+    if (occupancyRate < 0.8) return "medium";
+    return "high";
   };
 
   const getEndTime = (startTime: string, durationMinutes: number) => {
@@ -159,13 +314,6 @@ export const SchedulingStep: React.FC<SchedulingStepProps> = ({
     const endHours = Math.floor(totalMinutes / 60);
     const endMinutes = totalMinutes % 60;
     return `${endHours.toString().padStart(2, "0")}:${endMinutes.toString().padStart(2, "0")}`;
-  };
-
-  const hasAppointmentsOnDay = (day: Date) => {
-    return existingAppointments.some(apt => {
-      const aptDate = new Date(apt.date || apt.time?.split("T")[0]);
-      return isSameDay(aptDate, day);
-    });
   };
 
   const handleNavigate = (direction: "prev" | "next") => {
@@ -190,9 +338,10 @@ export const SchedulingStep: React.FC<SchedulingStepProps> = ({
   const handleSelectDate = (date: Date) => {
     setSelectedDate(date);
     setCurrentDate(date);
+    setSelectedTime(""); // Reset time when date changes
     if (viewMode === "year") {
       setViewMode("month");
-    } else if (viewMode === "month") {
+    } else if (viewMode === "month" || viewMode === "week") {
       setViewMode("day");
     }
   };
@@ -200,6 +349,11 @@ export const SchedulingStep: React.FC<SchedulingStepProps> = ({
   const handleSelectMonth = (monthIndex: number) => {
     setCurrentDate(setMonth(currentDate, monthIndex));
     setViewMode("month");
+  };
+
+  const handleDoctorSelect = (doctorId: string) => {
+    setSelectedDoctor(doctorId);
+    setSelectedTime(""); // Reset time when doctor changes
   };
 
   const handleSubmit = () => {
@@ -212,7 +366,7 @@ export const SchedulingStep: React.FC<SchedulingStepProps> = ({
     });
   };
 
-  const canSubmit = selectedTime && reason;
+  const canSubmit = selectedTime && reason && selectedDoctor;
 
   return (
     <motion.div
@@ -240,170 +394,225 @@ export const SchedulingStep: React.FC<SchedulingStepProps> = ({
             {/* Scrollable Content */}
             <ScrollArea className="flex-1">
               <div className="p-4 space-y-5">
-                {/* Time Selection */}
+                {/* Step 1: Doctor Selection - PRIMARY */}
                 <div>
                   <div className="flex items-center gap-2 mb-3">
-                    <Clock className="w-4 h-4 text-primary" />
-                    <span className="text-sm font-semibold">Horarios</span>
-                    <Badge variant="outline" className="ml-auto text-[10px] rounded-md">
-                      {format(selectedDate, "d MMM", { locale: es })}
-                    </Badge>
+                    <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center">
+                      <span className="text-[10px] font-bold text-primary-foreground">1</span>
+                    </div>
+                    <span className="text-sm font-semibold">Seleccionar Profesional</span>
                   </div>
                   
                   <div className="space-y-2">
-                    {Object.entries(timeSlotGroups).map(([key, group]) => {
-                      const Icon = group.icon;
-                      const availableSlots = group.slots.filter(t => !isTimeSlotOccupied(t));
-                      
-                      return (
-                        <div key={key}>
-                          <div className="flex items-center gap-2 mb-1.5">
-                            <Icon className="w-3 h-3 text-muted-foreground" />
-                            <span className="text-xs text-muted-foreground">{group.label}</span>
-                            <span className="text-[10px] text-muted-foreground/60 ml-auto">{availableSlots.length} disp.</span>
-                          </div>
-                          <div className="grid grid-cols-4 gap-1">
-                            {group.slots.map((time) => {
-                              const occupied = isTimeSlotOccupied(time);
-                              const isSelected = time === selectedTime;
-                              
-                              return (
-                                <button
-                                  key={time}
-                                  onClick={() => !occupied && setSelectedTime(time)}
-                                  disabled={occupied}
-                                  className={cn(
-                                    "py-1.5 rounded-md text-[11px] font-medium transition-all",
-                                    occupied
-                                      ? "bg-muted/20 text-muted-foreground/40 cursor-not-allowed"
-                                      : isSelected
-                                      ? "bg-lime text-lime-foreground shadow-sm"
-                                      : "bg-background hover:bg-muted/50 border border-border/30"
-                                  )}
-                                >
-                                  {time}
-                                </button>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                <Separator className="bg-border/20" />
-
-                {/* Doctor Selection */}
-                <div>
-                  <div className="flex items-center gap-2 mb-3">
-                    <Stethoscope className="w-4 h-4 text-primary" />
-                    <span className="text-sm font-semibold">Médico</span>
-                  </div>
-                  <Select value={selectedDoctor} onValueChange={setSelectedDoctor}>
-                    <SelectTrigger className="h-9 rounded-xl text-xs">
-                      <SelectValue placeholder="Seleccionar médico" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {mockDoctors.map((doc) => (
-                        <SelectItem key={doc.id} value={doc.id} disabled={!doc.available}>
-                          <div className="flex items-center gap-2">
-                            <span>{doc.name}</span>
-                            {!doc.available && <Badge variant="secondary" className="text-[9px]">No disp.</Badge>}
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Service Selection */}
-                <div>
-                  <div className="flex items-center gap-2 mb-3">
-                    <Briefcase className="w-4 h-4 text-primary" />
-                    <span className="text-sm font-semibold">Servicio</span>
-                  </div>
-                  <Select value={selectedService} onValueChange={(v) => {
-                    setSelectedService(v);
-                    const service = services.find(s => s.id === v);
-                    if (service) setDuration(service.duration);
-                  }}>
-                    <SelectTrigger className="h-9 rounded-xl text-xs">
-                      <SelectValue placeholder="Seleccionar servicio" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {services.map((service) => (
-                        <SelectItem key={service.id} value={service.id}>
-                          {service.name} ({service.duration}min)
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Reason */}
-                <div>
-                  <div className="flex items-center gap-2 mb-3">
-                    <FileText className="w-4 h-4 text-primary" />
-                    <span className="text-sm font-semibold">Motivo</span>
-                  </div>
-                  <Select value={reason} onValueChange={setReason}>
-                    <SelectTrigger className="h-9 rounded-xl text-xs">
-                      <SelectValue placeholder="Seleccionar motivo" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Consulta general">Consulta general</SelectItem>
-                      <SelectItem value="Seguimiento">Seguimiento</SelectItem>
-                      <SelectItem value="Control">Control</SelectItem>
-                      <SelectItem value="Examen médico">Examen médico</SelectItem>
-                      <SelectItem value="Urgencia">Urgencia</SelectItem>
-                      <SelectItem value="Primera vez">Primera vez</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Duration */}
-                <div>
-                  <Label className="text-xs mb-2 block text-muted-foreground">Duración</Label>
-                  <div className="flex flex-wrap gap-1">
-                    {durations.map((d) => (
-                      <button
-                        key={d.value}
-                        onClick={() => setDuration(d.value)}
+                    {mockDoctorsWithSchedule.map((doc) => (
+                      <motion.button
+                        key={doc.id}
+                        onClick={() => doc.available && handleDoctorSelect(doc.id)}
+                        disabled={!doc.available}
+                        whileHover={doc.available ? { scale: 1.01 } : {}}
+                        whileTap={doc.available ? { scale: 0.99 } : {}}
                         className={cn(
-                          "py-1 px-2.5 rounded-md text-[11px] font-medium transition-all",
-                          duration === d.value
-                            ? "bg-lime text-lime-foreground"
-                            : "bg-muted/30 hover:bg-muted/50"
+                          "w-full p-3 rounded-xl text-left transition-all flex items-center gap-3",
+                          !doc.available 
+                            ? "opacity-50 cursor-not-allowed bg-muted/20"
+                            : selectedDoctor === doc.id
+                            ? "bg-lime text-lime-foreground shadow-md ring-2 ring-lime/50"
+                            : "bg-background hover:bg-muted/50 border border-border/30"
                         )}
                       >
-                        {d.label}
-                      </button>
+                        <div className={cn(
+                          "w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold",
+                          selectedDoctor === doc.id 
+                            ? "bg-lime-foreground/20 text-lime-foreground"
+                            : "bg-primary/10 text-primary"
+                        )}>
+                          {doc.avatar}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-sm truncate">{doc.name}</p>
+                          <p className={cn(
+                            "text-xs truncate",
+                            selectedDoctor === doc.id ? "opacity-80" : "text-muted-foreground"
+                          )}>
+                            {doc.specialty}
+                          </p>
+                        </div>
+                        <div className="flex flex-col items-end gap-1">
+                          {doc.available ? (
+                            <Badge variant="outline" className={cn(
+                              "text-[9px] rounded-md",
+                              selectedDoctor === doc.id 
+                                ? "border-lime-foreground/30 text-lime-foreground"
+                                : "border-green-500/30 text-green-600"
+                            )}>
+                              Disponible
+                            </Badge>
+                          ) : (
+                            <Badge variant="secondary" className="text-[9px] rounded-md">
+                              No disponible
+                            </Badge>
+                          )}
+                        </div>
+                      </motion.button>
                     ))}
                   </div>
                 </div>
 
-                {/* Notes */}
-                <div>
-                  <Label className="text-xs mb-2 block text-muted-foreground">Notas</Label>
-                  <Textarea
-                    placeholder="Indicaciones..."
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
-                    rows={2}
-                    className="rounded-xl resize-none text-xs"
-                  />
-                </div>
+                {/* Show rest of options only after doctor selection */}
+                {selectedDoctor && (
+                  <>
+                    <Separator className="bg-border/20" />
+
+                    {/* Doctor Schedule Info */}
+                    {selectedDoctorData && (
+                      <div className="p-3 rounded-xl bg-primary/5 border border-primary/10">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Clock className="w-4 h-4 text-primary" />
+                          <span className="text-xs font-semibold">Horario del Profesional</span>
+                        </div>
+                        <div className="grid grid-cols-7 gap-1">
+                          {["L", "M", "X", "J", "V", "S", "D"].map((day, idx) => {
+                            const dayKey = dayNames[(idx + 1) % 7];
+                            const schedule = selectedDoctorData.schedule[dayKey];
+                            const isWorking = schedule?.working;
+                            
+                            return (
+                              <div
+                                key={day}
+                                className={cn(
+                                  "text-center py-1.5 rounded-md text-[10px] font-medium",
+                                  isWorking 
+                                    ? "bg-lime/20 text-lime-foreground"
+                                    : "bg-muted/30 text-muted-foreground"
+                                )}
+                              >
+                                {day}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Service Selection */}
+                    <div>
+                      <div className="flex items-center gap-2 mb-3">
+                        <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center">
+                          <span className="text-[10px] font-bold">2</span>
+                        </div>
+                        <span className="text-sm font-semibold">Servicio</span>
+                      </div>
+                      <Select value={selectedService} onValueChange={(v) => {
+                        setSelectedService(v);
+                        const service = services.find(s => s.id === v);
+                        if (service) setDuration(service.duration);
+                      }}>
+                        <SelectTrigger className="h-9 rounded-xl text-xs">
+                          <SelectValue placeholder="Seleccionar servicio" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {services.map((service) => (
+                            <SelectItem key={service.id} value={service.id}>
+                              {service.name} ({service.duration}min)
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Reason */}
+                    <div>
+                      <div className="flex items-center gap-2 mb-3">
+                        <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center">
+                          <span className="text-[10px] font-bold">3</span>
+                        </div>
+                        <span className="text-sm font-semibold">Motivo</span>
+                      </div>
+                      <Select value={reason} onValueChange={setReason}>
+                        <SelectTrigger className="h-9 rounded-xl text-xs">
+                          <SelectValue placeholder="Seleccionar motivo" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Consulta general">Consulta general</SelectItem>
+                          <SelectItem value="Seguimiento">Seguimiento</SelectItem>
+                          <SelectItem value="Control">Control</SelectItem>
+                          <SelectItem value="Examen médico">Examen médico</SelectItem>
+                          <SelectItem value="Urgencia">Urgencia</SelectItem>
+                          <SelectItem value="Primera vez">Primera vez</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Duration */}
+                    <div>
+                      <Label className="text-xs mb-2 block text-muted-foreground">Duración</Label>
+                      <div className="flex flex-wrap gap-1">
+                        {durations.map((d) => (
+                          <button
+                            key={d.value}
+                            onClick={() => setDuration(d.value)}
+                            className={cn(
+                              "py-1 px-2.5 rounded-md text-[11px] font-medium transition-all",
+                              duration === d.value
+                                ? "bg-lime text-lime-foreground"
+                                : "bg-muted/30 hover:bg-muted/50"
+                            )}
+                          >
+                            {d.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Notes */}
+                    <div>
+                      <Label className="text-xs mb-2 block text-muted-foreground">Notas</Label>
+                      <Textarea
+                        placeholder="Indicaciones..."
+                        value={notes}
+                        onChange={(e) => setNotes(e.target.value)}
+                        rows={2}
+                        className="rounded-xl resize-none text-xs"
+                      />
+                    </div>
+
+                    {/* Legend */}
+                    <div className="p-3 rounded-xl bg-muted/20">
+                      <p className="text-[10px] font-semibold mb-2 text-muted-foreground">LEYENDA</p>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="flex items-center gap-2">
+                          <Circle className="w-3 h-3 fill-lime text-lime" />
+                          <span className="text-[10px]">Libre</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Circle className="w-3 h-3 fill-yellow-500 text-yellow-500" />
+                          <span className="text-[10px]">Parcial</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Circle className="w-3 h-3 fill-orange-500 text-orange-500" />
+                          <span className="text-[10px]">Ocupado</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Circle className="w-3 h-3 fill-muted text-muted" />
+                          <span className="text-[10px]">No trabaja</span>
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
             </ScrollArea>
 
             {/* Action Buttons - Always Visible */}
             <div className="p-4 border-t border-border/20 bg-background/50 space-y-2">
               {/* Selection Summary */}
-              {selectedTime && (
+              {selectedTime && selectedDoctor && (
                 <div className="p-2.5 rounded-xl bg-lime/10 border border-lime/20 mb-3">
                   <p className="text-xs font-medium capitalize">
                     {format(selectedDate, "EEE d MMM", { locale: es })} • {selectedTime} - {getEndTime(selectedTime, duration)}
+                  </p>
+                  <p className="text-[10px] text-muted-foreground mt-0.5">
+                    {selectedDoctorData?.name}
                   </p>
                 </div>
               )}
@@ -505,155 +714,219 @@ export const SchedulingStep: React.FC<SchedulingStepProps> = ({
 
             {/* Calendar Content */}
             <div className="flex-1 p-4 overflow-auto">
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={viewMode + currentDate.toISOString()}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  transition={{ duration: 0.15 }}
-                  className="h-full"
-                >
-                  {/* Day View */}
-                  {viewMode === "day" && (
-                    <div className="h-full flex flex-col items-center justify-center">
-                      <div className="text-center p-8 rounded-3xl bg-gradient-to-br from-primary/5 to-primary/10 max-w-md w-full">
-                        <p className="text-7xl font-bold text-primary mb-2">
-                          {format(currentDate, "d")}
-                        </p>
-                        <p className="text-xl capitalize text-muted-foreground">
-                          {format(currentDate, "EEEE", { locale: es })}
-                        </p>
-                        <p className="text-sm text-muted-foreground/60 mt-1 capitalize">
-                          {format(currentDate, "MMMM yyyy", { locale: es })}
-                        </p>
-                        {dayAppointments.length > 0 && (
-                          <Badge className="mt-4 rounded-lg bg-lime/20 text-lime-foreground hover:bg-lime/30">
-                            {dayAppointments.length} citas programadas
-                          </Badge>
+              {!selectedDoctor ? (
+                <div className="h-full flex flex-col items-center justify-center text-center">
+                  <div className="w-16 h-16 rounded-2xl bg-muted/30 flex items-center justify-center mb-4">
+                    <Stethoscope className="w-8 h-8 text-muted-foreground" />
+                  </div>
+                  <h3 className="text-lg font-semibold mb-2">Seleccione un profesional</h3>
+                  <p className="text-sm text-muted-foreground max-w-xs">
+                    Para ver la disponibilidad del calendario, primero seleccione un médico o profesional de la salud.
+                  </p>
+                </div>
+              ) : (
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={viewMode + currentDate.toISOString() + selectedDoctor}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    transition={{ duration: 0.15 }}
+                    className="h-full"
+                  >
+                    {/* Day View - Show Time Slots */}
+                    {viewMode === "day" && (
+                      <div className="h-full">
+                        <div className="text-center mb-6">
+                          <p className="text-5xl font-bold text-primary mb-1">
+                            {format(currentDate, "d")}
+                          </p>
+                          <p className="text-lg capitalize text-muted-foreground">
+                            {format(currentDate, "EEEE", { locale: es })}
+                          </p>
+                          <p className="text-sm text-muted-foreground/60 capitalize">
+                            {format(currentDate, "MMMM yyyy", { locale: es })}
+                          </p>
+                        </div>
+                        
+                        {!isDoctorWorkingOnDay(selectedDate) ? (
+                          <div className="flex flex-col items-center justify-center py-8">
+                            <AlertCircle className="w-12 h-12 text-muted-foreground mb-3" />
+                            <p className="text-sm text-muted-foreground">
+                              {selectedDoctorData?.name} no trabaja este día
+                            </p>
+                          </div>
+                        ) : (
+                          <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2">
+                            {availableTimeSlots.map((slot) => (
+                              <motion.button
+                                key={slot.time}
+                                onClick={() => slot.available && setSelectedTime(slot.time)}
+                                disabled={!slot.available}
+                                whileHover={slot.available ? { scale: 1.05 } : {}}
+                                whileTap={slot.available ? { scale: 0.95 } : {}}
+                                className={cn(
+                                  "py-3 px-2 rounded-xl text-sm font-medium transition-all",
+                                  !slot.available
+                                    ? "bg-orange-500/20 text-orange-600 cursor-not-allowed"
+                                    : selectedTime === slot.time
+                                    ? "bg-lime text-lime-foreground shadow-lg ring-2 ring-lime/50"
+                                    : "bg-lime/20 text-lime-foreground hover:bg-lime/30"
+                                )}
+                              >
+                                {slot.time}
+                              </motion.button>
+                            ))}
+                          </div>
                         )}
                       </div>
-                    </div>
-                  )}
+                    )}
 
-                  {/* Week View */}
-                  {viewMode === "week" && (
-                    <div className="grid grid-cols-7 gap-2 h-full">
-                      {weekDays.map((day) => {
-                        const hasAppts = hasAppointmentsOnDay(day);
-                        const isSelected = isSameDay(day, selectedDate);
-                        const today = isToday(day);
-
-                        return (
-                          <motion.button
-                            key={day.toISOString()}
-                            onClick={() => handleSelectDate(day)}
-                            whileHover={{ scale: 1.02 }}
-                            whileTap={{ scale: 0.98 }}
-                            className={cn(
-                              "relative flex flex-col items-center justify-center p-4 rounded-2xl transition-all h-full min-h-[120px]",
-                              isSelected
-                                ? "bg-lime text-lime-foreground shadow-lg"
-                                : today
-                                ? "bg-primary/10 hover:bg-primary/15"
-                                : "bg-muted/20 hover:bg-muted/40"
-                            )}
-                          >
-                            <span className="text-xs uppercase opacity-60 mb-1">
-                              {format(day, "EEE", { locale: es })}
-                            </span>
-                            <span className="font-bold text-3xl">
-                              {format(day, "d")}
-                            </span>
-                            {hasAppts && (
-                              <div className={cn(
-                                "w-1.5 h-1.5 rounded-full mt-2",
-                                isSelected ? "bg-lime-foreground" : "bg-primary"
-                              )} />
-                            )}
-                          </motion.button>
-                        );
-                      })}
-                    </div>
-                  )}
-
-                  {/* Month View */}
-                  {viewMode === "month" && (
-                    <div>
-                      <div className="grid grid-cols-7 gap-1 mb-2">
-                        {["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"].map((d) => (
-                          <div key={d} className="text-center text-xs text-muted-foreground py-2 font-medium">
-                            {d}
-                          </div>
-                        ))}
-                      </div>
-                      <div className="grid grid-cols-7 gap-1">
-                        {monthDays.map((day, idx) => {
-                          const isCurrentMonth = isSameMonth(day, currentDate);
-                          const hasAppts = hasAppointmentsOnDay(day);
+                    {/* Week View */}
+                    {viewMode === "week" && (
+                      <div className="grid grid-cols-7 gap-2 h-full">
+                        {weekDays.map((day) => {
+                          const isWorking = isDoctorWorkingOnDay(day);
+                          const occupancy = getDayOccupancy(day);
                           const isSelected = isSameDay(day, selectedDate);
                           const today = isToday(day);
 
+                          const getOccupancyColor = () => {
+                            if (!isWorking) return "bg-muted/30";
+                            switch (occupancy) {
+                              case "free": return "bg-lime/20 hover:bg-lime/30";
+                              case "low": return "bg-yellow-500/20 hover:bg-yellow-500/30";
+                              case "medium": return "bg-orange-500/20 hover:bg-orange-500/30";
+                              case "high": return "bg-red-500/20 hover:bg-red-500/30";
+                              default: return "bg-muted/20";
+                            }
+                          };
+
                           return (
                             <motion.button
-                              key={idx}
+                              key={day.toISOString()}
                               onClick={() => handleSelectDate(day)}
-                              whileHover={{ scale: 1.05 }}
-                              whileTap={{ scale: 0.95 }}
+                              whileHover={{ scale: 1.02 }}
+                              whileTap={{ scale: 0.98 }}
                               className={cn(
-                                "relative aspect-square flex flex-col items-center justify-center rounded-xl text-sm transition-all",
-                                !isCurrentMonth && "opacity-25",
+                                "relative flex flex-col items-center justify-center p-4 rounded-2xl transition-all h-full min-h-[120px]",
                                 isSelected
-                                  ? "bg-lime text-lime-foreground shadow-md"
+                                  ? "bg-lime text-lime-foreground shadow-lg ring-2 ring-lime/50"
                                   : today
-                                  ? "bg-primary/10 ring-2 ring-primary/30"
-                                  : "hover:bg-muted/50"
+                                  ? "ring-2 ring-primary/30 " + getOccupancyColor()
+                                  : getOccupancyColor()
                               )}
                             >
-                              <span className="font-medium">{format(day, "d")}</span>
-                              {hasAppts && isCurrentMonth && (
-                                <div className={cn(
-                                  "absolute bottom-1.5 w-1 h-1 rounded-full",
-                                  isSelected ? "bg-lime-foreground" : "bg-lime"
-                                )} />
+                              <span className="text-xs uppercase opacity-60 mb-1">
+                                {format(day, "EEE", { locale: es })}
+                              </span>
+                              <span className="font-bold text-3xl">
+                                {format(day, "d")}
+                              </span>
+                              {!isWorking && (
+                                <Badge variant="secondary" className="mt-2 text-[9px]">
+                                  No trabaja
+                                </Badge>
                               )}
                             </motion.button>
                           );
                         })}
                       </div>
-                    </div>
-                  )}
+                    )}
 
-                  {/* Year View */}
-                  {viewMode === "year" && (
-                    <div className="grid grid-cols-3 sm:grid-cols-4 gap-3 h-full content-center">
-                      {months.map((month, idx) => {
-                        const isCurrentMonth = new Date().getMonth() === idx && new Date().getFullYear() === currentDate.getFullYear();
-                        const isSelectedMonth = currentDate.getMonth() === idx;
-                        
-                        return (
-                          <motion.button
-                            key={month}
-                            onClick={() => handleSelectMonth(idx)}
-                            whileHover={{ scale: 1.03 }}
-                            whileTap={{ scale: 0.97 }}
-                            className={cn(
-                              "py-6 px-4 rounded-2xl text-sm font-medium transition-all",
-                              isCurrentMonth
-                                ? "bg-lime text-lime-foreground shadow-lg"
-                                : isSelectedMonth
-                                ? "bg-primary/20 ring-2 ring-primary/30"
-                                : "bg-muted/30 hover:bg-muted/50"
-                            )}
-                          >
-                            {month}
-                          </motion.button>
-                        );
-                      })}
-                    </div>
-                  )}
-                </motion.div>
-              </AnimatePresence>
+                    {/* Month View */}
+                    {viewMode === "month" && (
+                      <div>
+                        <div className="grid grid-cols-7 gap-1 mb-2">
+                          {["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"].map((d) => (
+                            <div key={d} className="text-center text-xs text-muted-foreground py-2 font-medium">
+                              {d}
+                            </div>
+                          ))}
+                        </div>
+                        <div className="grid grid-cols-7 gap-1">
+                          {monthDays.map((day, idx) => {
+                            const isCurrentMonth = isSameMonth(day, currentDate);
+                            const isWorking = isDoctorWorkingOnDay(day);
+                            const occupancy = getDayOccupancy(day);
+                            const isSelected = isSameDay(day, selectedDate);
+                            const today = isToday(day);
+
+                            const getOccupancyIndicator = () => {
+                              if (!isWorking || !isCurrentMonth) return null;
+                              switch (occupancy) {
+                                case "free": return "bg-lime";
+                                case "low": return "bg-yellow-500";
+                                case "medium": return "bg-orange-500";
+                                case "high": return "bg-red-500";
+                                default: return null;
+                              }
+                            };
+
+                            const indicatorColor = getOccupancyIndicator();
+
+                            return (
+                              <motion.button
+                                key={idx}
+                                onClick={() => handleSelectDate(day)}
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
+                                className={cn(
+                                  "relative aspect-square flex flex-col items-center justify-center rounded-xl text-sm transition-all",
+                                  !isCurrentMonth && "opacity-25",
+                                  !isWorking && isCurrentMonth && "opacity-40",
+                                  isSelected
+                                    ? "bg-lime text-lime-foreground shadow-md"
+                                    : today
+                                    ? "bg-primary/10 ring-2 ring-primary/30"
+                                    : "hover:bg-muted/50"
+                                )}
+                              >
+                                <span className="font-medium">{format(day, "d")}</span>
+                                {indicatorColor && (
+                                  <div className={cn(
+                                    "absolute bottom-1.5 w-1.5 h-1.5 rounded-full",
+                                    isSelected ? "bg-lime-foreground" : indicatorColor
+                                  )} />
+                                )}
+                              </motion.button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Year View */}
+                    {viewMode === "year" && (
+                      <div className="grid grid-cols-3 sm:grid-cols-4 gap-3 h-full content-center">
+                        {months.map((month, idx) => {
+                          const isCurrentMonth = new Date().getMonth() === idx && new Date().getFullYear() === currentDate.getFullYear();
+                          const isSelectedMonth = currentDate.getMonth() === idx;
+                          
+                          return (
+                            <motion.button
+                              key={month}
+                              onClick={() => handleSelectMonth(idx)}
+                              whileHover={{ scale: 1.03 }}
+                              whileTap={{ scale: 0.97 }}
+                              className={cn(
+                                "py-6 px-4 rounded-2xl text-sm font-medium transition-all",
+                                isCurrentMonth
+                                  ? "bg-lime text-lime-foreground shadow-lg"
+                                  : isSelectedMonth
+                                  ? "bg-primary/20 ring-2 ring-primary/30"
+                                  : "bg-muted/30 hover:bg-muted/50"
+                              )}
+                            >
+                              {month}
+                            </motion.button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </motion.div>
+                </AnimatePresence>
+              )}
             </div>
           </div>
         </ResizablePanel>
