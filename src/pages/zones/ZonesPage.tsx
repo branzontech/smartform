@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { MapPin, RefreshCw, Upload, Download, Settings2 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -96,6 +96,8 @@ const ZonesPage: React.FC = () => {
   const [zones, setZones] = useState<Zone[]>([]);
   const [locations, setLocations] = useState<GeocodedLocation[]>(MOCK_LOCATIONS);
   const [selectedZone, setSelectedZone] = useState<Zone | null>(null);
+  const [selectedZoneIds, setSelectedZoneIds] = useState<string[]>([]);
+  const [entityFilter, setEntityFilter] = useState<'all' | 'patient' | 'professional'>('all');
   const [drawingMode, setDrawingMode] = useState<DrawingMode>('none');
   const [pendingCoordinates, setPendingCoordinates] = useState<LatLng[]>([]);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -260,6 +262,32 @@ const ZonesPage: React.FC = () => {
     });
   };
 
+  // Zone filter handlers
+  const handleToggleZoneFilter = useCallback((zoneId: string) => {
+    setSelectedZoneIds(prev => 
+      prev.includes(zoneId) 
+        ? prev.filter(id => id !== zoneId)
+        : [...prev, zoneId]
+    );
+  }, []);
+
+  const handleSelectAllZones = useCallback(() => {
+    setSelectedZoneIds(zones.map(z => z.id));
+  }, [zones]);
+
+  const handleClearZoneFilters = useCallback(() => {
+    setSelectedZoneIds([]);
+  }, []);
+
+  // Filter locations based on selected zones and entity type
+  const filteredLocations = useMemo(() => {
+    return locations.filter(loc => {
+      if (entityFilter !== 'all' && loc.entity_type !== entityFilter) return false;
+      if (selectedZoneIds.length > 0 && !selectedZoneIds.includes(loc.zone_id || '')) return false;
+      return true;
+    });
+  }, [locations, entityFilter, selectedZoneIds]);
+
   // Show API key input if not set
   if (!apiKey) {
     return (
@@ -338,14 +366,20 @@ const ZonesPage: React.FC = () => {
               zones={zones}
               locations={locations}
               selectedZone={selectedZone}
+              selectedZoneIds={selectedZoneIds}
               drawingMode={drawingMode}
+              entityFilter={entityFilter}
               onSelectZone={setSelectedZone}
+              onToggleZoneFilter={handleToggleZoneFilter}
+              onSelectAllZones={handleSelectAllZones}
+              onClearZoneFilters={handleClearZoneFilters}
               onDeleteZone={handleDeleteZone}
               onStartDrawing={() => setDrawingMode('polygon')}
               onCancelDrawing={() => setDrawingMode('none')}
               onEditZone={(zone) => {
                 toast.info('Edición de zona próximamente');
               }}
+              onEntityFilterChange={setEntityFilter}
             />
           </ResizablePanel>
 
@@ -357,7 +391,7 @@ const ZonesPage: React.FC = () => {
               {isLoaded ? (
                 <ZoneMap
                   zones={zones}
-                  locations={locations}
+                  locations={filteredLocations}
                   selectedZone={selectedZone}
                   drawingMode={drawingMode}
                   onZoneCreated={handleZoneCreated}

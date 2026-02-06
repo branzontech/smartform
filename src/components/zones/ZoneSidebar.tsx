@@ -12,13 +12,17 @@ import {
   Search,
   Filter,
   BarChart3,
-  Navigation
+  Navigation,
+  Eye,
+  EyeOff,
+  Check
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
+import { Checkbox } from '@/components/ui/checkbox';
 import { 
   Select,
   SelectContent,
@@ -33,27 +37,38 @@ interface ZoneSidebarProps {
   zones: Zone[];
   locations: GeocodedLocation[];
   selectedZone: Zone | null;
+  selectedZoneIds: string[];
   drawingMode: DrawingMode;
+  entityFilter: 'all' | 'patient' | 'professional';
   onSelectZone: (zone: Zone | null) => void;
+  onToggleZoneFilter: (zoneId: string) => void;
+  onSelectAllZones: () => void;
+  onClearZoneFilters: () => void;
   onDeleteZone: (zoneId: string) => void;
   onStartDrawing: () => void;
   onCancelDrawing: () => void;
   onEditZone: (zone: Zone) => void;
+  onEntityFilterChange: (filter: 'all' | 'patient' | 'professional') => void;
 }
 
 export const ZoneSidebar: React.FC<ZoneSidebarProps> = ({
   zones,
   locations,
   selectedZone,
+  selectedZoneIds,
   drawingMode,
+  entityFilter,
   onSelectZone,
+  onToggleZoneFilter,
+  onSelectAllZones,
+  onClearZoneFilters,
   onDeleteZone,
   onStartDrawing,
   onCancelDrawing,
   onEditZone,
+  onEntityFilterChange,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [filterType, setFilterType] = useState<'all' | 'patient' | 'professional'>('all');
 
   // Filter zones by search
   const filteredZones = zones.filter(zone =>
@@ -78,10 +93,14 @@ export const ZoneSidebar: React.FC<ZoneSidebarProps> = ({
 
   // Filter locations
   const filteredLocations = locations.filter(loc => {
-    if (filterType !== 'all' && loc.entity_type !== filterType) return false;
-    if (selectedZone && loc.zone_id !== selectedZone.id) return false;
+    if (entityFilter !== 'all' && loc.entity_type !== entityFilter) return false;
+    if (selectedZoneIds.length > 0 && !selectedZoneIds.includes(loc.zone_id || '')) return false;
     return true;
   });
+
+  // Locations visible count
+  const visiblePatients = filteredLocations.filter(l => l.entity_type === 'patient').length;
+  const visibleProfessionals = filteredLocations.filter(l => l.entity_type === 'professional').length;
 
   return (
     <div className="h-full flex flex-col bg-card/50 backdrop-blur-sm border-r border-border/30">
@@ -238,64 +257,134 @@ export const ZoneSidebar: React.FC<ZoneSidebarProps> = ({
         </div>
       </ScrollArea>
 
-      {/* Locations panel */}
-      {selectedZone && (
-        <div className="border-t border-border/20">
-          <div className="p-4">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-sm font-semibold">Ubicaciones en zona</span>
-              <Select value={filterType} onValueChange={(v: any) => setFilterType(v)}>
-                <SelectTrigger className="w-32 h-7 text-xs">
-                  <Filter className="w-3 h-3 mr-1" />
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos</SelectItem>
-                  <SelectItem value="patient">Pacientes</SelectItem>
-                  <SelectItem value="professional">Profesionales</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <ScrollArea className="h-40">
-              <div className="space-y-1.5">
-                {filteredLocations.length === 0 ? (
-                  <p className="text-xs text-muted-foreground text-center py-4">
-                    No hay ubicaciones en esta zona
-                  </p>
-                ) : (
-                  filteredLocations.map((loc) => (
-                    <div
-                      key={loc.id}
-                      className="flex items-center gap-2 p-2 rounded-lg bg-muted/30 text-xs"
-                    >
-                      <div className={cn(
-                        "w-2 h-2 rounded-full",
-                        loc.entity_type === 'patient' ? "bg-emerald-500" : "bg-violet-500"
-                      )} />
-                      <span className="flex-1 truncate">{loc.entity_name}</span>
-                      <Navigation className="w-3 h-3 text-muted-foreground" />
-                    </div>
-                  ))
+      {/* Filter controls - always visible */}
+      <div className="border-t border-border/20">
+        <div className="p-4">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-sm font-semibold">Filtrar por zonas</span>
+            {selectedZoneIds.length > 0 ? (
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={onClearZoneFilters}
+                className="h-6 text-xs text-muted-foreground"
+              >
+                <EyeOff className="w-3 h-3 mr-1" />
+                Limpiar
+              </Button>
+            ) : (
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={onSelectAllZones}
+                className="h-6 text-xs text-muted-foreground"
+              >
+                <Eye className="w-3 h-3 mr-1" />
+                Todas
+              </Button>
+            )}
+          </div>
+          
+          <div className="flex flex-wrap gap-1.5 mb-3">
+            {zones.map((zone) => (
+              <Badge
+                key={zone.id}
+                variant={selectedZoneIds.includes(zone.id) ? "default" : "outline"}
+                className={cn(
+                  "cursor-pointer text-[10px] transition-all",
+                  selectedZoneIds.includes(zone.id) 
+                    ? "bg-primary" 
+                    : "hover:bg-muted"
                 )}
-              </div>
-            </ScrollArea>
+                onClick={() => onToggleZoneFilter(zone.id)}
+              >
+                <div 
+                  className="w-2 h-2 rounded-full mr-1"
+                  style={{ backgroundColor: zone.color }}
+                />
+                {zone.name}
+                {selectedZoneIds.includes(zone.id) && (
+                  <Check className="w-3 h-3 ml-1" />
+                )}
+              </Badge>
+            ))}
+          </div>
+
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-muted-foreground">Tipo de entidad</span>
+            <Select value={entityFilter} onValueChange={(v: any) => onEntityFilterChange(v)}>
+              <SelectTrigger className="w-32 h-7 text-xs">
+                <Filter className="w-3 h-3 mr-1" />
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos</SelectItem>
+                <SelectItem value="patient">
+                  <span className="flex items-center gap-1">
+                    <Users className="w-3 h-3 text-emerald-500" />
+                    Pacientes
+                  </span>
+                </SelectItem>
+                <SelectItem value="professional">
+                  <span className="flex items-center gap-1">
+                    <Stethoscope className="w-3 h-3 text-violet-500" />
+                    Profesionales
+                  </span>
+                </SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
-      )}
+
+        {/* Locations list */}
+        <ScrollArea className="h-32 px-4">
+          <div className="space-y-1.5 pb-2">
+            {filteredLocations.length === 0 ? (
+              <p className="text-xs text-muted-foreground text-center py-4">
+                No hay ubicaciones con estos filtros
+              </p>
+            ) : (
+              filteredLocations.map((loc) => (
+                <div
+                  key={loc.id}
+                  className="flex items-center gap-2 p-2 rounded-lg bg-muted/30 text-xs"
+                >
+                  {loc.entity_type === 'patient' ? (
+                    <Users className="w-3 h-3 text-emerald-500 shrink-0" />
+                  ) : (
+                    <Stethoscope className="w-3 h-3 text-violet-500 shrink-0" />
+                  )}
+                  <span className="flex-1 truncate">{loc.entity_name}</span>
+                  {loc.zone_id && zones.find(z => z.id === loc.zone_id) && (
+                    <div 
+                      className="w-2 h-2 rounded-full shrink-0"
+                      style={{ backgroundColor: zones.find(z => z.id === loc.zone_id)?.color }}
+                    />
+                  )}
+                </div>
+              ))
+            )}
+          </div>
+        </ScrollArea>
+      </div>
 
       {/* Stats footer */}
       <div className="p-4 border-t border-border/20 bg-muted/20">
+        <div className="flex items-center justify-center gap-1 mb-2">
+          <span className="text-xs text-muted-foreground">
+            Mostrando {filteredLocations.length} de {locations.length} ubicaciones
+          </span>
+        </div>
         <div className="grid grid-cols-2 gap-3">
           <div className="text-center">
             <p className="text-2xl font-bold text-emerald-500">
-              {locations.filter(l => l.entity_type === 'patient').length}
+              {visiblePatients}
             </p>
             <p className="text-[10px] text-muted-foreground">Pacientes</p>
           </div>
           <div className="text-center">
             <p className="text-2xl font-bold text-violet-500">
-              {locations.filter(l => l.entity_type === 'professional').length}
+              {visibleProfessionals}
             </p>
             <p className="text-[10px] text-muted-foreground">Profesionales</p>
           </div>
