@@ -365,10 +365,10 @@ const ZonesPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
+    <div className="h-screen flex flex-col bg-background overflow-hidden">
       <Header />
       <main className="flex-1 overflow-hidden">
-        <Tabs defaultValue="zones" className="h-[calc(100vh-64px)] flex flex-col">
+        <Tabs defaultValue="zones" className="h-full flex flex-col">
           {/* Tab Headers */}
           <div className="px-4 pt-3 pb-2 border-b border-border/30 bg-card/30 backdrop-blur-sm">
             <TabsList className="grid w-fit grid-cols-2">
@@ -384,10 +384,10 @@ const ZonesPage: React.FC = () => {
           </div>
 
           {/* Zones Tab */}
-          <TabsContent value="zones" className="flex-1 m-0 data-[state=inactive]:hidden">
-            <ResizablePanelGroup direction="horizontal" className="h-full">
+          <TabsContent value="zones" className="flex-1 m-0 overflow-hidden data-[state=inactive]:hidden">
+            <ResizablePanelGroup direction="horizontal" className="h-full overflow-hidden">
               {/* Sidebar */}
-              <ResizablePanel defaultSize={25} minSize={20} maxSize={35}>
+              <ResizablePanel defaultSize={25} minSize={20} maxSize={35} className="overflow-hidden">
                 <ZoneSidebar
                   zones={zones}
                   locations={locations}
@@ -412,8 +412,8 @@ const ZonesPage: React.FC = () => {
               <ResizableHandle withHandle />
 
               {/* Map */}
-              <ResizablePanel defaultSize={75}>
-                <div className="h-full p-4">
+              <ResizablePanel defaultSize={75} className="overflow-hidden">
+                <div className="h-full p-4 overflow-hidden">
                   {isLoaded ? (
                     <ZoneMap
                       zones={zones}
@@ -440,7 +440,7 @@ const ZonesPage: React.FC = () => {
           </TabsContent>
 
           {/* Distance Calculator Tab */}
-          <TabsContent value="distance" className="flex-1 m-0 data-[state=inactive]:hidden">
+          <TabsContent value="distance" className="flex-1 m-0 overflow-hidden data-[state=inactive]:hidden">
             {isLoaded ? (
               <DistanceCalculator apiKey={apiKey} className="h-full" />
             ) : (
