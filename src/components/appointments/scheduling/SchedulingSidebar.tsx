@@ -53,6 +53,16 @@ const dayNames = ["sunday", "monday", "tuesday", "wednesday", "thursday", "frida
 
 export type TimeAssignmentMode = "fixed" | "per_day" | "first_available" | "time_window";
 
+// Per-day schedule entry
+export interface PerDaySchedule {
+  date: Date;
+  dateKey: string;
+  dayLabel: string;
+  selectedTime: string;
+  availableSlots: string[];
+  isWorking: boolean;
+}
+
 // Generic doctor type that works with any schedule structure
 export interface DoctorForSidebar extends DoctorOption {
   schedule: {
@@ -89,8 +99,10 @@ interface SchedulingSidebarProps {
   // Time mode props
   timeAssignmentMode: TimeAssignmentMode;
   rangeTimeWindow: { start: string; end: string };
+  perDaySchedules: PerDaySchedule[];
   onTimeAssignmentModeChange: (mode: TimeAssignmentMode) => void;
   onRangeTimeWindowChange: (window: { start: string; end: string }) => void;
+  onPerDayTimeSelect: (dateKey: string, time: string) => void;
   
   // Callbacks
   onDoctorSelect: (doctorId: string) => void;
@@ -143,8 +155,10 @@ export const SchedulingSidebar: React.FC<SchedulingSidebarProps> = ({
   availableTimeSlots,
   timeAssignmentMode,
   rangeTimeWindow,
+  perDaySchedules,
   onTimeAssignmentModeChange,
   onRangeTimeWindowChange,
+  onPerDayTimeSelect,
   onDoctorSelect,
   onAppointmentTypeSelect,
   onDurationChange,
@@ -571,7 +585,93 @@ export const SchedulingSidebar: React.FC<SchedulingSidebarProps> = ({
                       </motion.div>
                     )}
 
-                    {/* Selected Time Display */}
+                    {/* Per Day Mode - List of days with time selectors */}
+                    {timeAssignmentMode === "per_day" && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        className="mt-3 space-y-2"
+                      >
+                        <Label className="text-xs text-muted-foreground">
+                          Configura horario por día
+                        </Label>
+                        <div className="space-y-1.5 max-h-[250px] overflow-y-auto scrollbar-thin scrollbar-thumb-border/50 pr-1">
+                          {perDaySchedules.map((day) => (
+                            <div
+                              key={day.dateKey}
+                              className={cn(
+                                "p-2.5 rounded-lg border transition-all",
+                                day.selectedTime 
+                                  ? "bg-lime/5 border-lime/20"
+                                  : day.isWorking
+                                  ? "bg-muted/10 border-border/20"
+                                  : "bg-destructive/5 border-destructive/20 opacity-60"
+                              )}
+                            >
+                              <div className="flex items-center justify-between gap-2">
+                                <div className="flex items-center gap-2 min-w-0">
+                                  <div className={cn(
+                                    "w-6 h-6 rounded-md flex items-center justify-center text-[10px] font-bold",
+                                    day.selectedTime 
+                                      ? "bg-lime/20 text-lime"
+                                      : day.isWorking
+                                      ? "bg-muted/30 text-muted-foreground"
+                                      : "bg-destructive/10 text-destructive"
+                                  )}>
+                                    {day.selectedTime ? <Check className="w-3 h-3" /> : format(day.date, "d")}
+                                  </div>
+                                  <div className="min-w-0">
+                                    <p className="text-[11px] font-medium capitalize truncate">
+                                      {day.dayLabel}
+                                    </p>
+                                    {!day.isWorking && (
+                                      <p className="text-[9px] text-destructive">No disponible</p>
+                                    )}
+                                  </div>
+                                </div>
+                                {day.isWorking && (
+                                  <Select
+                                    value={day.selectedTime}
+                                    onValueChange={(val) => onPerDayTimeSelect(day.dateKey, val)}
+                                  >
+                                    <SelectTrigger className={cn(
+                                      "h-7 w-[80px] text-[10px]",
+                                      day.selectedTime && "border-lime/30 bg-lime/10"
+                                    )}>
+                                      <SelectValue placeholder="Hora" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {day.availableSlots.length === 0 ? (
+                                        <div className="p-2 text-[10px] text-muted-foreground text-center">
+                                          Sin horarios
+                                        </div>
+                                      ) : (
+                                        day.availableSlots.map((slot) => (
+                                          <SelectItem key={slot} value={slot} className="text-[11px]">
+                                            {slot}
+                                          </SelectItem>
+                                        ))
+                                      )}
+                                    </SelectContent>
+                                  </Select>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                        {/* Summary */}
+                        <div className="pt-2 border-t border-border/20">
+                          <div className="flex items-center justify-between text-[10px]">
+                            <span className="text-muted-foreground">Configurados</span>
+                            <span className="font-semibold text-lime">
+                              {perDaySchedules.filter(d => d.selectedTime).length} / {perDaySchedules.filter(d => d.isWorking).length}
+                            </span>
+                          </div>
+                        </div>
+                      </motion.div>
+                    )}
+
+                    {/* Selected Time Display (fixed mode only) */}
                     {selectedTime && timeAssignmentMode === "fixed" && (
                       <div className="p-3 rounded-xl bg-lime/10 border border-lime/30 mt-3">
                         <div className="flex items-center gap-2">
@@ -588,11 +688,11 @@ export const SchedulingSidebar: React.FC<SchedulingSidebarProps> = ({
                       </div>
                     )}
 
-                    {/* Available Time Slots (only for fixed mode or per_day mode) */}
-                    {(timeAssignmentMode === "fixed" || timeAssignmentMode === "per_day") && (
+                    {/* Available Time Slots (fixed mode only) */}
+                    {timeAssignmentMode === "fixed" && (
                       <div className="space-y-2 mt-3">
                         <Label className="text-xs text-muted-foreground">
-                          {timeAssignmentMode === "fixed" ? "Horarios disponibles" : "Selecciona horario para este día"}
+                          Horarios disponibles
                         </Label>
                         
                         {availableTimeSlots.length === 0 ? (

@@ -82,7 +82,8 @@ import {
   AppointmentActionsPanel,
   ResourceAvailabilityPanel,
   DoctorStatsDrawer,
-  SchedulingSidebar
+  SchedulingSidebar,
+  type PerDaySchedule
 } from "../scheduling";
 
 export interface SchedulingData {
@@ -313,6 +314,7 @@ export const SchedulingStep: React.FC<SchedulingStepProps> = ({
   const [rangeTimeWindow, setRangeTimeWindow] = useState<{ start: string; end: string }>({ start: "08:00", end: "12:00" });
   const [rangeDaySchedules, setRangeDaySchedules] = useState<RangeDaySchedule[]>([]);
   const [showConflictPanel, setShowConflictPanel] = useState(false);
+  const [perDayTimes, setPerDayTimes] = useState<Record<string, string>>({});
 
   // Get unique specialties for filter
   const specialties = useMemo(() => {
@@ -378,6 +380,66 @@ export const SchedulingStep: React.FC<SchedulingStepProps> = ({
       available: !occupied.includes(slot)
     }));
   }, [selectedDoctorData, selectedDate]);
+
+  // Compute per-day schedules for "per_day" mode
+  const perDaySchedules = useMemo((): PerDaySchedule[] => {
+    if (!selectedDoctorData) return [];
+    
+    // For single date mode, just show the selected date
+    if (!isRangeMode || !endDate) {
+      const daySchedule = getDoctorDayStatus(selectedDoctorData, selectedDate);
+      const isWorking = daySchedule?.working || false;
+      const dateKey = format(selectedDate, "yyyy-MM-dd");
+      
+      let availableSlots: string[] = [];
+      if (isWorking && daySchedule && daySchedule.working) {
+        const allSlots = generateTimeSlots(daySchedule.start, daySchedule.end);
+        const occupied = selectedDoctorData.occupiedSlots[dateKey] || [];
+        availableSlots = allSlots.filter(s => !occupied.includes(s));
+      }
+      
+      return [{
+        date: selectedDate,
+        dateKey,
+        dayLabel: format(selectedDate, "EEE d", { locale: es }),
+        selectedTime: perDayTimes[dateKey] || "",
+        availableSlots,
+        isWorking
+      }];
+    }
+    
+    // For range mode, generate schedules for all days in range
+    const days = eachDayOfInterval({ start: selectedDate, end: endDate });
+    return days.map(day => {
+      const daySchedule = getDoctorDayStatus(selectedDoctorData, day);
+      const isWorking = daySchedule?.working || false;
+      const dateKey = format(day, "yyyy-MM-dd");
+      
+      let availableSlots: string[] = [];
+      if (isWorking && daySchedule && daySchedule.working) {
+        const allSlots = generateTimeSlots(daySchedule.start, daySchedule.end);
+        const occupied = selectedDoctorData.occupiedSlots[dateKey] || [];
+        availableSlots = allSlots.filter(s => !occupied.includes(s));
+      }
+      
+      return {
+        date: day,
+        dateKey,
+        dayLabel: format(day, "EEE d", { locale: es }),
+        selectedTime: perDayTimes[dateKey] || "",
+        availableSlots,
+        isWorking
+      };
+    });
+  }, [selectedDoctorData, selectedDate, endDate, isRangeMode, perDayTimes]);
+
+  // Handler for per-day time selection
+  const handlePerDayTimeSelect = (dateKey: string, time: string) => {
+    setPerDayTimes(prev => ({
+      ...prev,
+      [dateKey]: time
+    }));
+  };
 
   // Check if doctor works on a specific day
   const isDoctorWorkingOnDay = (date: Date) => {
@@ -766,8 +828,10 @@ export const SchedulingStep: React.FC<SchedulingStepProps> = ({
             availableTimeSlots={availableTimeSlots}
             timeAssignmentMode={timeAssignmentMode}
             rangeTimeWindow={rangeTimeWindow}
+            perDaySchedules={perDaySchedules}
             onTimeAssignmentModeChange={setTimeAssignmentMode}
             onRangeTimeWindowChange={setRangeTimeWindow}
+            onPerDayTimeSelect={handlePerDayTimeSelect}
             onDoctorSelect={handleDoctorSelect}
             onAppointmentTypeSelect={handleAppointmentTypeSelect}
             onDurationChange={setDuration}

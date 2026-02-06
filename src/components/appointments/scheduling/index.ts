@@ -8,4 +8,4 @@ export { ResourceAvailabilityPanel } from "./ResourceAvailabilityPanel";
 export { NotificationPreview, AppointmentSummaryCard } from "./NotificationPreview";
 export { DoctorStatsDrawer } from "./DoctorStatsDrawer";
 export { DoctorSearchCombobox, type DoctorOption } from "./DoctorSearchCombobox";
-export { SchedulingSidebar, type TimeAssignmentMode } from "./SchedulingSidebar";
+export { SchedulingSidebar, type TimeAssignmentMode, type PerDaySchedule } from "./SchedulingSidebar";
