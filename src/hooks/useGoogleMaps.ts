@@ -18,21 +18,52 @@ export const useGoogleMaps = ({ apiKey, libraries = ['drawing', 'geometry'] }: U
   const [loadError, setLoadError] = useState<Error | null>(null);
 
   useEffect(() => {
-    // Check if already loaded
-    if (window.google?.maps) {
-      setIsLoaded(true);
+    // Don't load if no API key provided
+    if (!apiKey) {
+      console.log('useGoogleMaps: No API key provided, waiting...');
       return;
     }
 
-    // Check if script is already in DOM
-    const existingScript = document.querySelector('script[src*="maps.googleapis.com"]');
+    // Check if already loaded with the correct key
+    if (window.google?.maps) {
+      // Verify it was loaded with a key (not empty)
+      const existingScript = document.querySelector('script[src*="maps.googleapis.com"]') as HTMLScriptElement;
+      if (existingScript && existingScript.src.includes(`key=${apiKey}`)) {
+        setIsLoaded(true);
+        return;
+      }
+      // If loaded with wrong/empty key, remove and reload
+      if (existingScript && existingScript.src.includes('key=&')) {
+        console.log('useGoogleMaps: Removing script loaded with empty key');
+        existingScript.remove();
+        // Clear the google object to force reload
+        // @ts-ignore
+        delete window.google;
+      } else {
+        setIsLoaded(true);
+        return;
+      }
+    }
+
+    // Check if script is already loading in DOM with correct key
+    const existingScript = document.querySelector(`script[src*="maps.googleapis.com"][src*="key=${apiKey}"]`);
     if (existingScript) {
       existingScript.addEventListener('load', () => setIsLoaded(true));
       return;
     }
 
+    // Remove any script with empty key
+    const emptyKeyScript = document.querySelector('script[src*="maps.googleapis.com"][src*="key=&"]');
+    if (emptyKeyScript) {
+      console.log('useGoogleMaps: Removing script with empty key');
+      emptyKeyScript.remove();
+    }
+
+    console.log('useGoogleMaps: Loading Google Maps with key:', apiKey.substring(0, 10) + '...');
+
     // Create callback function
     window.initGoogleMaps = () => {
+      console.log('useGoogleMaps: Google Maps loaded successfully');
       setIsLoaded(true);
     };
 
@@ -42,6 +73,7 @@ export const useGoogleMaps = ({ apiKey, libraries = ['drawing', 'geometry'] }: U
     script.async = true;
     script.defer = true;
     script.onerror = () => {
+      console.error('useGoogleMaps: Failed to load Google Maps script');
       setLoadError(new Error('Failed to load Google Maps script'));
     };
 
