@@ -147,16 +147,24 @@ export const AppointmentWizard: React.FC<AppointmentWizardProps> = ({
     },
   ];
 
+  // Header height (h-16 = 64px + top-4 = 16px + margin) = ~96px
+  // Stepper height = ~60px
+  // Total navigation height = ~156px (use 160px for safety)
+  const NAV_HEIGHT = 160;
+
   return (
     <TooltipProvider>
-      <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
-        {/* Fixed Stepper Area */}
-        <div className="fixed top-20 left-0 right-0 z-40">
+      <div className="h-full flex flex-col bg-gradient-to-br from-background via-background to-muted/20">
+        {/* Fixed Stepper Area - positioned below header */}
+        <div 
+          className="fixed left-0 right-0 z-30 bg-background/95 backdrop-blur-sm"
+          style={{ top: '96px' }}
+        >
           {/* Stepper Container */}
           <motion.div 
             initial={{ y: -10, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            className="px-4 md:px-8"
+            className="px-6 md:px-8 py-3"
           >
             <div className="max-w-xl mx-auto">
               {/* Stepper Windows 11 style - Compact */}
@@ -235,8 +243,14 @@ export const AppointmentWizard: React.FC<AppointmentWizardProps> = ({
           </motion.div>
         </div>
 
-        {/* Scrollable Content area - with enough top padding to clear the fixed stepper */}
-        <div className="pt-16 px-4 md:px-8 pb-24">
+        {/* Scrollable Content area - strictly below navigation */}
+        <div 
+          className="flex-1 overflow-y-auto px-6 md:px-8 pb-24"
+          style={{ 
+            marginTop: `${NAV_HEIGHT}px`,
+            height: `calc(100vh - ${NAV_HEIGHT}px)`
+          }}
+        >
           {/* Use full width for scheduling step (step 3), constrained width for others */}
           <div className={cn(
             "mx-auto transition-all duration-300",
