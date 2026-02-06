@@ -147,28 +147,28 @@ export const AppointmentWizard: React.FC<AppointmentWizardProps> = ({
     },
   ];
 
-  // Header: top-4 (16px) + h-16 (64px) + visual gap (8px) = 88px
-  // Stepper: ~52px (py-2 + content)
-  // Total navigation height = 140px
-  const NAV_HEIGHT = 140;
+  // Header: top-4 (16px) + h-16 (64px) + gap (4px) = 84px
+  // Stepper: ~48px (py-1.5 + content)
+  // Total navigation height = 132px
+  const NAV_HEIGHT = 132;
 
   return (
     <TooltipProvider>
       <div className="h-full flex flex-col bg-gradient-to-br from-background via-background to-muted/20">
         {/* Fixed Stepper Area - positioned below header */}
         <div 
-          className="fixed left-0 right-0 z-30 bg-background/80 backdrop-blur-sm"
-          style={{ top: '88px' }}
+          className="fixed left-0 right-0 z-30 bg-background"
+          style={{ top: '84px' }}
         >
           {/* Stepper Container */}
           <motion.div 
             initial={{ y: -10, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            className="px-6 md:px-8 py-2"
+            className="px-6 md:px-8 py-1.5"
           >
             <div className="max-w-xl mx-auto">
               {/* Stepper Windows 11 style - Compact */}
-              <div className="relative flex items-center bg-card backdrop-blur-xl rounded-2xl px-4 py-2 shadow-sm border border-border/20">
+              <div className="relative flex items-center bg-card/80 backdrop-blur rounded-2xl px-4 py-2 border border-border/10">
                 {steps.map((step, index) => {
                   const isCompleted = currentStep > step.id;
                   const isCurrent = currentStep === step.id;
@@ -245,7 +245,7 @@ export const AppointmentWizard: React.FC<AppointmentWizardProps> = ({
 
         {/* Scrollable Content area - strictly below navigation */}
         <div 
-          className="flex-1 overflow-y-auto px-6 md:px-8 pb-24 pt-3"
+          className="flex-1 overflow-y-auto px-6 md:px-8 pb-24"
           style={{ 
             marginTop: `${NAV_HEIGHT}px`,
             height: `calc(100vh - ${NAV_HEIGHT}px)`
