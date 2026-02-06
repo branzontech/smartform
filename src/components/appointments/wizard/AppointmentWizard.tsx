@@ -147,11 +147,9 @@ export const AppointmentWizard: React.FC<AppointmentWizardProps> = ({
     },
   ];
 
-  // Header: top-4 (16px) + h-16 (64px) + gap (4px) = 84px
-  // Stepper: ~46px (py-1 + content)
-  // Gap: 10px
-  // Total = 140px → reduced to fit tightly
-  const NAV_HEIGHT = 140;
+  // Header: 84px + Stepper: ~40px + Gap: 10px = 134px
+  // Reducido para acercar el contenido al stepper
+  const NAV_HEIGHT = 120;
 
   return (
     <TooltipProvider>
