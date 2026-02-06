@@ -90,15 +90,15 @@ export const AdmissionStep: React.FC<AdmissionStepProps> = ({
       animate="visible"
       className="space-y-6"
     >
-      {/* Header */}
-      <motion.div variants={itemVariants} className="text-center">
-        <div className="inline-flex items-center justify-center w-16 h-16 rounded-3xl bg-gradient-to-br from-primary/20 to-primary/10 mb-4">
-          <ClipboardList className="w-8 h-8 text-primary" />
+      {/* Header - Compact */}
+      <motion.div variants={itemVariants} className="flex items-center gap-3">
+        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center flex-shrink-0">
+          <ClipboardList className="w-5 h-5 text-primary" />
         </div>
-        <h2 className="text-2xl font-bold">¿Desea admitir al paciente?</h2>
-        <p className="text-muted-foreground mt-1">
-          Puedes registrar la admisión ahora o hacerlo después
-        </p>
+        <div>
+          <h2 className="text-lg font-bold">¿Desea admitir al paciente?</h2>
+          <p className="text-sm text-muted-foreground">Registra la admisión ahora o hazlo después</p>
+        </div>
       </motion.div>
 
       {/* Patient Summary Card */}
