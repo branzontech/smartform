@@ -249,6 +249,57 @@ const durations = [
   { value: 120, label: "2h" }
 ];
 
+// Mock patient appointments (will be filtered by patient ID)
+const generatePatientAppointments = (patientId: string) => {
+  const baseDate = new Date();
+  return [
+    {
+      id: "apt-1",
+      patientId,
+      doctorId: "1",
+      doctorName: "Dr. Carlos Jiménez",
+      specialty: "Cardiología",
+      date: addDays(baseDate, -5),
+      time: "10:00",
+      status: "completed" as const,
+      reason: "Control cardiológico"
+    },
+    {
+      id: "apt-2",
+      patientId,
+      doctorId: "2",
+      doctorName: "Dra. Laura Sánchez",
+      specialty: "Pediatría",
+      date: addDays(baseDate, 2),
+      time: "14:00",
+      status: "scheduled" as const,
+      reason: "Consulta general"
+    },
+    {
+      id: "apt-3",
+      patientId,
+      doctorId: "4",
+      doctorName: "Dra. María González",
+      specialty: "Dermatología",
+      date: addDays(baseDate, 7),
+      time: "11:30",
+      status: "scheduled" as const,
+      reason: "Revisión"
+    },
+    {
+      id: "apt-4",
+      patientId,
+      doctorId: "1",
+      doctorName: "Dr. Carlos Jiménez",
+      specialty: "Cardiología",
+      date: addDays(baseDate, 14),
+      time: "09:00",
+      status: "scheduled" as const,
+      reason: "Seguimiento"
+    },
+  ];
+};
+
 const months = [
   "Ene", "Feb", "Mar", "Abr", "May", "Jun",
   "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"
@@ -285,7 +336,7 @@ export const SchedulingStep: React.FC<SchedulingStepProps> = ({
   onChangePatient,
   onNewAppointment
 }) => {
-  const [viewMode, setViewMode] = useState<ViewMode>("day");
+  const [viewMode, setViewMode] = useState<ViewMode>("month");
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [selectedTime, setSelectedTime] = useState("");
@@ -321,6 +372,16 @@ export const SchedulingStep: React.FC<SchedulingStepProps> = ({
     const specs = [...new Set(mockDoctorsWithSchedule.map(d => d.specialty))];
     return specs;
   }, []);
+
+  // Get patient appointments
+  const patientAppointments = useMemo(() => {
+    return generatePatientAppointments(patient.id || "patient-1");
+  }, [patient.id]);
+
+  // Check if patient has appointments on a specific date
+  const getPatientAppointmentsOnDate = (date: Date) => {
+    return patientAppointments.filter(apt => isSameDay(apt.date, date));
+  };
 
   // Filter doctors by search and specialty
   const filteredDoctors = useMemo(() => {
@@ -1069,16 +1130,21 @@ export const SchedulingStep: React.FC<SchedulingStepProps> = ({
                   <span className="text-[10px] text-muted-foreground">Libre</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <Circle className="w-2.5 h-2.5 fill-yellow-500 text-yellow-500" />
+                  <Circle className="w-2.5 h-2.5 fill-warning text-warning" />
                   <span className="text-[10px] text-muted-foreground">Parcial</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <Circle className="w-2.5 h-2.5 fill-orange-500 text-orange-500" />
+                  <Circle className="w-2.5 h-2.5 fill-destructive text-destructive" />
                   <span className="text-[10px] text-muted-foreground">Ocupado</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <Circle className="w-2.5 h-2.5 fill-muted text-muted" />
                   <span className="text-[10px] text-muted-foreground">No trabaja</span>
+                </div>
+                <Separator orientation="vertical" className="h-3" />
+                <div className="flex items-center gap-1.5">
+                  <div className="w-2.5 h-2.5 rounded-full bg-primary animate-pulse" />
+                  <span className="text-[10px] text-muted-foreground">Cita del paciente</span>
                 </div>
               </div>
             )}
@@ -1140,7 +1206,7 @@ export const SchedulingStep: React.FC<SchedulingStepProps> = ({
                                 className={cn(
                                   "py-3 px-2 rounded-xl text-sm font-medium transition-all",
                                   !slot.available
-                                    ? "bg-orange-500/20 text-orange-600 cursor-not-allowed"
+                                    ? "bg-destructive/20 text-destructive cursor-not-allowed"
                                     : selectedTime === slot.time
                                     ? "bg-lime text-lime-foreground shadow-lg ring-2 ring-lime/50"
                                     : "bg-lime/20 text-lime-foreground hover:bg-lime/30"
@@ -1291,6 +1357,10 @@ export const SchedulingStep: React.FC<SchedulingStepProps> = ({
                             const isInRange = isDateInRange(day);
                             const today = isToday(day);
                             
+                            // Check for patient appointments on this day
+                            const patientAptsOnDay = getPatientAppointmentsOnDate(day);
+                            const hasPatientAppointment = patientAptsOnDay.length > 0;
+                            
                             // Calculate position in range for connectors
                             const colIndex = idx % 7;
                             const isFirstInRow = colIndex === 0;
@@ -1376,6 +1446,18 @@ export const SchedulingStep: React.FC<SchedulingStepProps> = ({
                                 )}
                                 
                                 <span className="font-medium">{format(day, "d")}</span>
+                                
+                                {/* Patient appointment indicator */}
+                                {hasPatientAppointment && isCurrentMonth && (
+                                  <div className="absolute top-1 right-1 flex items-center gap-0.5">
+                                    <div className="w-2 h-2 rounded-full bg-primary animate-pulse" 
+                                         title={`${patientAptsOnDay.length} cita${patientAptsOnDay.length > 1 ? 's' : ''}`} 
+                                    />
+                                    {patientAptsOnDay.length > 1 && (
+                                      <span className="text-[8px] font-bold text-primary">{patientAptsOnDay.length}</span>
+                                    )}
+                                  </div>
+                                )}
                                 
                                 {/* Occupancy indicator */}
                                 {indicatorColor && !isStartDate && !isEndDate && !isInRange && (
