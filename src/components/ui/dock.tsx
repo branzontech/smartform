@@ -1,5 +1,5 @@
 import * as React from "react";
-import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
+import { motion, useMotionValue, useSpring, useTransform, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { LucideIcon } from "lucide-react";
 import {
@@ -19,8 +19,19 @@ export interface DockItem {
   disabled?: boolean;
 }
 
+export interface DockActionItem {
+  id: string;
+  label: string;
+  icon: LucideIcon;
+  onClick?: () => void;
+  variant: "success" | "danger" | "warning" | "default" | "primary";
+  disabled?: boolean;
+}
+
 interface DockProps {
   items: DockItem[];
+  actionItems?: DockActionItem[];
+  showActions?: boolean;
   className?: string;
   position?: "bottom" | "top";
   magnification?: number;
@@ -32,6 +43,29 @@ const BADGE_VARIANTS = {
   success: "bg-emerald-500 text-white",
   warning: "bg-amber-500 text-white",
   danger: "bg-destructive text-destructive-foreground",
+};
+
+const ACTION_VARIANTS = {
+  success: {
+    bg: "bg-emerald-500/15 hover:bg-emerald-500/25 border-emerald-500/30",
+    text: "text-emerald-600 dark:text-emerald-400",
+  },
+  danger: {
+    bg: "bg-red-500/15 hover:bg-red-500/25 border-red-500/30",
+    text: "text-red-600 dark:text-red-400",
+  },
+  warning: {
+    bg: "bg-amber-500/15 hover:bg-amber-500/25 border-amber-500/30",
+    text: "text-amber-600 dark:text-amber-400",
+  },
+  default: {
+    bg: "bg-muted/50 hover:bg-muted/80 border-border/30",
+    text: "text-muted-foreground",
+  },
+  primary: {
+    bg: "bg-primary/15 hover:bg-primary/25 border-primary/30",
+    text: "text-primary",
+  },
 };
 
 function DockIcon({
@@ -140,8 +174,52 @@ function DockIcon({
   );
 }
 
+function DockActionButton({
+  item,
+}: {
+  item: DockActionItem;
+}) {
+  const variants = ACTION_VARIANTS[item.variant];
+  const Icon = item.icon;
+
+  return (
+    <Tooltip delayDuration={0}>
+      <TooltipTrigger asChild>
+        <motion.button
+          onClick={item.onClick}
+          disabled={item.disabled}
+          className={cn(
+            "relative flex items-center gap-2 px-3 py-2 rounded-xl transition-all",
+            "border",
+            variants.bg,
+            variants.text,
+            "focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
+            item.disabled && "opacity-50 cursor-not-allowed"
+          )}
+          whileHover={{ y: -4, scale: 1.02 }}
+          whileTap={{ scale: 0.95 }}
+          transition={{ type: "spring", stiffness: 400, damping: 17 }}
+        >
+          <Icon className="w-4 h-4" strokeWidth={2} />
+          <span className="text-xs font-semibold whitespace-nowrap">{item.label}</span>
+        </motion.button>
+      </TooltipTrigger>
+      <TooltipContent 
+        side="top" 
+        align="center"
+        sideOffset={8}
+        className="rounded-lg bg-popover/95 backdrop-blur-sm border-border/40 px-3 py-1.5 shadow-md"
+      >
+        <span className="text-sm font-medium">{item.label}</span>
+      </TooltipContent>
+    </Tooltip>
+  );
+}
+
 export function Dock({
   items,
+  actionItems = [],
+  showActions = false,
   className,
   position = "bottom",
   magnification = 56,
@@ -209,6 +287,7 @@ export function Dock({
           "shadow-lg shadow-black/5",
           "pointer-events-auto"
         )}
+        layout
       >
         {/* Left scroll indicator */}
         {canScrollLeft && (
@@ -235,12 +314,12 @@ export function Dock({
           </motion.button>
         )}
 
-        {/* Scrollable container */}
+        {/* Navigation items */}
         <div
           ref={scrollContainerRef}
           className={cn(
             "flex items-center gap-2 overflow-x-auto scrollbar-hide",
-            "max-w-[calc(100vw-120px)] md:max-w-[600px]",
+            "max-w-[calc(100vw-120px)] md:max-w-[400px]",
             "scroll-smooth py-1"
           )}
           style={{
@@ -283,6 +362,53 @@ export function Dock({
             </svg>
           </motion.button>
         )}
+
+        {/* Separator & Contextual Actions */}
+        <AnimatePresence>
+          {showActions && actionItems.length > 0 && (
+            <>
+              {/* Visual separator */}
+              <motion.div
+                initial={{ scaleY: 0, opacity: 0 }}
+                animate={{ scaleY: 1, opacity: 1 }}
+                exit={{ scaleY: 0, opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="h-8 w-px bg-border/50 mx-2 flex-shrink-0"
+              />
+
+              {/* Action buttons */}
+              <motion.div
+                initial={{ width: 0, opacity: 0 }}
+                animate={{ width: "auto", opacity: 1 }}
+                exit={{ width: 0, opacity: 0 }}
+                transition={{ 
+                  type: "spring", 
+                  stiffness: 300, 
+                  damping: 25,
+                  opacity: { duration: 0.15 }
+                }}
+                className="flex items-center gap-2 overflow-hidden"
+              >
+                {actionItems.map((action, index) => (
+                  <motion.div
+                    key={action.id}
+                    initial={{ x: 20, opacity: 0 }}
+                    animate={{ x: 0, opacity: 1 }}
+                    exit={{ x: 20, opacity: 0 }}
+                    transition={{ 
+                      delay: index * 0.05,
+                      type: "spring",
+                      stiffness: 400,
+                      damping: 25
+                    }}
+                  >
+                    <DockActionButton item={action} />
+                  </motion.div>
+                ))}
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>
       </motion.div>
     </motion.div>
   );

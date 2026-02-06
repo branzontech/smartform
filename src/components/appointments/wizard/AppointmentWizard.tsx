@@ -1,15 +1,16 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Check, User, ClipboardList, Calendar, MapPin, MessageSquare, Bell, FileText } from "lucide-react";
+import { Check, User, ClipboardList, Calendar, MapPin, MessageSquare, Bell, FileText, CheckCircle, XCircle, RefreshCw, Ban } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ExtendedPatient } from "../PatientPanel";
 import { PatientSearchStep } from "./PatientSearchStep";
 import { AdmissionStep, AdmissionData } from "./AdmissionStep";
 import { SchedulingStep, SchedulingData } from "./SchedulingStep";
 import { MapPanelDrawer } from "./MapPanelDrawer";
-import { Dock, DockItem } from "@/components/ui/dock";
+import { Dock, DockItem, DockActionItem } from "@/components/ui/dock";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 export interface WizardData {
   patient: ExtendedPatient | null;
@@ -146,6 +147,37 @@ export const AppointmentWizard: React.FC<AppointmentWizardProps> = ({
       disabled: true,
     },
   ];
+
+  // Contextual action items for step 3 (Agenda)
+  const schedulingActions: DockActionItem[] = useMemo(() => [
+    {
+      id: "confirm",
+      label: "Confirmar",
+      icon: CheckCircle,
+      variant: "success",
+      onClick: () => {
+        toast.info("Acción: Confirmar cita", { description: "Esta función estará disponible pronto" });
+      },
+    },
+    {
+      id: "reschedule",
+      label: "Reprogramar",
+      icon: RefreshCw,
+      variant: "warning",
+      onClick: () => {
+        toast.info("Acción: Reprogramar", { description: "Esta función estará disponible pronto" });
+      },
+    },
+    {
+      id: "cancel",
+      label: "Cancelar",
+      icon: Ban,
+      variant: "danger",
+      onClick: () => {
+        toast.info("Acción: Cancelar cita", { description: "Esta función estará disponible pronto" });
+      },
+    },
+  ], []);
 
   // Header: 84px + Stepper: ~40px + Gap: 10px = 134px
   // Reducido para acercar el contenido al stepper
@@ -302,8 +334,14 @@ export const AppointmentWizard: React.FC<AppointmentWizardProps> = ({
           </div>
         </div>
 
-        {/* Dock - Always visible */}
-        <Dock items={dockItems} magnification={56} baseSize={42} />
+        {/* Dock - Always visible with contextual actions on step 3 */}
+        <Dock 
+          items={dockItems} 
+          actionItems={schedulingActions}
+          showActions={currentStep === 3}
+          magnification={56} 
+          baseSize={42} 
+        />
 
         {/* Map Panel Drawer */}
         <MapPanelDrawer
