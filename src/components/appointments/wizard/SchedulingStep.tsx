@@ -631,7 +631,66 @@ export const SchedulingStep: React.FC<SchedulingStepProps> = ({
     });
   };
 
-  const canSubmit = selectedTime && reason && selectedDoctor;
+  // Enhanced validation for range mode
+  const isRangeComplete = useMemo(() => {
+    if (!isRangeMode || !endDate) return true;
+    
+    switch (timeAssignmentMode) {
+      case "fixed":
+        return !!selectedTime;
+      case "per_day":
+        return rangeDaySchedules.length > 0 && rangeDaySchedules.every(d => d.selectedTime);
+      case "first_available":
+      case "time_window":
+        return true; // Auto-assigned
+      default:
+        return !!selectedTime;
+    }
+  }, [isRangeMode, endDate, timeAssignmentMode, selectedTime, rangeDaySchedules]);
+
+  const canSubmit = selectedDoctor && reason && (isRangeMode ? (endDate && isRangeComplete) : selectedTime);
+
+  // Dynamic progress steps
+  const progressSteps = useMemo(() => {
+    const steps = [
+      {
+        id: "doctor",
+        label: "Profesional",
+        description: selectedDoctorData ? selectedDoctorData.name : "Selecciona un profesional",
+        completed: !!selectedDoctor,
+        icon: Stethoscope,
+      },
+      {
+        id: "date",
+        label: isRangeMode ? "Rango de fechas" : "Fecha",
+        description: isRangeMode 
+          ? (endDate ? `${format(selectedDate, "dd/MM")} - ${format(endDate, "dd/MM")}` : "Selecciona inicio y fin")
+          : format(selectedDate, "EEE d MMM", { locale: es }),
+        completed: isRangeMode ? !!endDate : true, // Single date is always selected
+        icon: CalendarIcon,
+      },
+      {
+        id: "time",
+        label: "Horario",
+        description: isRangeMode 
+          ? (isRangeComplete ? `Modo: ${timeAssignmentMode === "fixed" ? "Fijo" : timeAssignmentMode === "per_day" ? "Por día" : timeAssignmentMode === "first_available" ? "Auto" : "Ventana"}` : "Configura los horarios")
+          : (selectedTime ? `${selectedTime} - ${getEndTime(selectedTime, duration)}` : "Selecciona un horario"),
+        completed: isRangeMode ? isRangeComplete : !!selectedTime,
+        icon: Clock,
+      },
+      {
+        id: "reason",
+        label: "Motivo",
+        description: reason || "Escribe el motivo de la cita",
+        completed: !!reason,
+        icon: FileText,
+      },
+    ];
+    return steps;
+  }, [selectedDoctor, selectedDoctorData, selectedDate, endDate, isRangeMode, selectedTime, duration, reason, timeAssignmentMode, isRangeComplete]);
+
+  const completedSteps = progressSteps.filter(s => s.completed).length;
+  const nextIncompleteStep = progressSteps.find(s => !s.completed);
 
   return (
     <motion.div
@@ -1585,27 +1644,112 @@ export const SchedulingStep: React.FC<SchedulingStepProps> = ({
               </TabsContent>
             </Tabs>
 
-            {/* Action Buttons - Always Visible */}
-            <div className="p-4 border-t border-border/20 bg-background/50 space-y-2">
-              {/* Selection Summary */}
-              {selectedTime && selectedDoctor && (
-                <div className="p-2.5 rounded-xl bg-lime/10 border border-lime/20 mb-3">
-                  <p className="text-xs font-medium capitalize">
-                    {format(selectedDate, "EEE d MMM", { locale: es })} • {selectedTime} - {getEndTime(selectedTime, duration)}
-                  </p>
-                  <p className="text-[10px] text-muted-foreground mt-0.5">
-                    {selectedDoctorData?.name}
-                  </p>
+            {/* Progress Guide & Action Buttons - Always Visible */}
+            <div className="p-4 border-t border-border/20 bg-background/50 space-y-3">
+              {/* Dynamic Progress Guide */}
+              <div className="space-y-2">
+                {/* Progress Header */}
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">
+                    Progreso
+                  </span>
+                  <div className="flex items-center gap-1.5">
+                    <div className="flex gap-0.5">
+                      {progressSteps.map((step, idx) => (
+                        <div 
+                          key={step.id}
+                          className={cn(
+                            "w-2 h-2 rounded-full transition-all",
+                            step.completed ? "bg-lime" : "bg-muted"
+                          )}
+                        />
+                      ))}
+                    </div>
+                    <span className="text-[10px] font-semibold text-muted-foreground">
+                      {completedSteps}/{progressSteps.length}
+                    </span>
+                  </div>
                 </div>
-              )}
-              
+
+                {/* Steps List */}
+                <div className="space-y-1">
+                  {progressSteps.map((step, idx) => {
+                    const Icon = step.icon;
+                    const isNext = nextIncompleteStep?.id === step.id;
+                    
+                    return (
+                      <motion.div
+                        key={step.id}
+                        initial={false}
+                        animate={{ 
+                          scale: isNext ? 1 : 1,
+                          opacity: step.completed ? 0.7 : 1 
+                        }}
+                        className={cn(
+                          "flex items-center gap-2 p-2 rounded-lg transition-all",
+                          isNext && "bg-primary/10 ring-1 ring-primary/20",
+                          step.completed && "opacity-60"
+                        )}
+                      >
+                        <div className={cn(
+                          "w-6 h-6 rounded-lg flex items-center justify-center shrink-0 transition-all",
+                          step.completed 
+                            ? "bg-lime text-lime-foreground" 
+                            : isNext 
+                              ? "bg-primary text-primary-foreground animate-pulse"
+                              : "bg-muted text-muted-foreground"
+                        )}>
+                          {step.completed ? (
+                            <Check className="w-3.5 h-3.5" />
+                          ) : (
+                            <Icon className="w-3.5 h-3.5" />
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className={cn(
+                            "text-xs font-medium truncate",
+                            step.completed && "line-through decoration-lime"
+                          )}>
+                            {step.label}
+                          </p>
+                          <p className={cn(
+                            "text-[10px] truncate",
+                            step.completed ? "text-lime" : isNext ? "text-primary" : "text-muted-foreground"
+                          )}>
+                            {step.description}
+                          </p>
+                        </div>
+                        {isNext && (
+                          <Badge variant="outline" className="text-[8px] h-4 bg-primary/10 border-primary/30 text-primary shrink-0">
+                            Siguiente
+                          </Badge>
+                        )}
+                      </motion.div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Confirm Button */}
               <Button 
                 onClick={handleSubmit}
                 disabled={!canSubmit}
-                className="w-full h-10 rounded-xl font-semibold text-sm"
+                className={cn(
+                  "w-full h-11 rounded-xl font-semibold text-sm transition-all",
+                  canSubmit && "bg-lime hover:bg-lime/90 text-lime-foreground shadow-lg shadow-lime/25"
+                )}
               >
-                <Check className="mr-2 w-4 h-4" />
-                Confirmar Cita
+                {canSubmit ? (
+                  <>
+                    <Check className="mr-2 w-4 h-4" />
+                    Confirmar Cita
+                  </>
+                ) : (
+                  <>
+                    <AlertCircle className="mr-2 w-4 h-4" />
+                    Completa los pasos
+                  </>
+                )}
               </Button>
               
               <div className="grid grid-cols-2 gap-2">
