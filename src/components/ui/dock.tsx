@@ -176,32 +176,63 @@ function DockIcon({
 
 function DockActionButton({
   item,
+  mouseX,
+  baseSize,
 }: {
   item: DockActionItem;
+  mouseX: ReturnType<typeof useMotionValue<number>>;
+  baseSize: number;
 }) {
+  const ref = React.useRef<HTMLButtonElement>(null);
   const variants = ACTION_VARIANTS[item.variant];
   const Icon = item.icon;
+
+  const distance = useTransform(mouseX, (val) => {
+    const bounds = ref.current?.getBoundingClientRect() ?? { x: 0, width: 0 };
+    return val - bounds.x - bounds.width / 2;
+  });
+
+  const widthSync = useTransform(
+    distance,
+    [-150, 0, 150],
+    [baseSize, baseSize * 1.2, baseSize]
+  );
+
+  const width = useSpring(widthSync, {
+    mass: 0.1,
+    stiffness: 150,
+    damping: 12,
+  });
 
   return (
     <Tooltip delayDuration={0}>
       <TooltipTrigger asChild>
         <motion.button
+          ref={ref}
+          style={{ width, height: width }}
           onClick={item.onClick}
           disabled={item.disabled}
           className={cn(
-            "relative flex items-center gap-2 px-3 py-2 rounded-xl transition-all",
+            "relative flex items-center justify-center rounded-xl transition-colors",
             "border",
             variants.bg,
             variants.text,
             "focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
             item.disabled && "opacity-50 cursor-not-allowed"
           )}
-          whileHover={{ y: -4, scale: 1.02 }}
+          whileHover={{ y: -6 }}
           whileTap={{ scale: 0.95 }}
           transition={{ type: "spring", stiffness: 400, damping: 17 }}
         >
-          <Icon className="w-4 h-4" strokeWidth={2} />
-          <span className="text-xs font-semibold whitespace-nowrap">{item.label}</span>
+          <motion.div
+            className="flex items-center justify-center"
+            style={{
+              width: useTransform(width, (w) => w * 0.5),
+              height: useTransform(width, (w) => w * 0.5),
+            }}
+          >
+            <Icon className="w-full h-full" strokeWidth={1.75} />
+          </motion.div>
         </motion.button>
       </TooltipTrigger>
       <TooltipContent 
@@ -402,7 +433,7 @@ export function Dock({
                       damping: 25
                     }}
                   >
-                    <DockActionButton item={action} />
+                    <DockActionButton item={action} mouseX={mouseX} baseSize={baseSize} />
                   </motion.div>
                 ))}
               </motion.div>
