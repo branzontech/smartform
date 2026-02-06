@@ -289,7 +289,7 @@ const AppointmentForm = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex flex-col bg-background">
+      <div className="h-screen flex flex-col bg-background overflow-hidden">
         <Header />
         <div className="flex-1 flex items-center justify-center">
           <div className="animate-pulse text-center">
@@ -303,9 +303,9 @@ const AppointmentForm = () => {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
+    <div className="h-screen flex flex-col bg-background overflow-hidden">
       <Header />
-      <main className="flex-1 overflow-auto">
+      <main className="flex-1 overflow-hidden">
         <AppointmentWizard
           onComplete={handleWizardComplete}
           initialPatients={patients}

@@ -96,9 +96,20 @@
     @apply border-border;
   }
 
+  html {
+    @apply overflow-hidden;
+    height: 100%;
+  }
+
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground overflow-hidden;
     font-feature-settings: "rlig" 1, "calt" 1;
+    height: 100%;
+  }
+
+  #root {
+    height: 100%;
+    overflow: hidden;
   }
 
   h1, h2, h3, h4, h5, h6 {
