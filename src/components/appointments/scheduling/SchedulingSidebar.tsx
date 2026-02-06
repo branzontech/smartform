@@ -18,6 +18,10 @@ import {
   BarChart3,
   Ban,
   ListTodo,
+  Repeat,
+  Target,
+  Zap,
+  Timer,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -32,6 +36,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { cn } from "@/lib/utils";
 import { ExtendedPatient } from "../PatientPanel";
 import { AppointmentType, RecurrencePattern } from "@/types/appointment-types";
@@ -45,6 +50,8 @@ import {
 import { DoctorSearchCombobox, DoctorOption } from "./DoctorSearchCombobox";
 
 const dayNames = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"] as const;
+
+export type TimeAssignmentMode = "fixed" | "per_day" | "first_available" | "time_window";
 
 // Generic doctor type that works with any schedule structure
 export interface DoctorForSidebar extends DoctorOption {
@@ -78,6 +85,12 @@ interface SchedulingSidebarProps {
   selectedResources: string[];
   canSubmit: boolean;
   availableTimeSlots: { time: string; available: boolean }[];
+  
+  // Time mode props
+  timeAssignmentMode: TimeAssignmentMode;
+  rangeTimeWindow: { start: string; end: string };
+  onTimeAssignmentModeChange: (mode: TimeAssignmentMode) => void;
+  onRangeTimeWindowChange: (window: { start: string; end: string }) => void;
   
   // Callbacks
   onDoctorSelect: (doctorId: string) => void;
@@ -128,6 +141,10 @@ export const SchedulingSidebar: React.FC<SchedulingSidebarProps> = ({
   selectedResources,
   canSubmit,
   availableTimeSlots,
+  timeAssignmentMode,
+  rangeTimeWindow,
+  onTimeAssignmentModeChange,
+  onRangeTimeWindowChange,
   onDoctorSelect,
   onAppointmentTypeSelect,
   onDurationChange,
@@ -150,6 +167,25 @@ export const SchedulingSidebar: React.FC<SchedulingSidebarProps> = ({
     reason: false,
   }));
   const [selectedService, setSelectedService] = useState("");
+
+  // Time mode options
+  const timeModeOptions = [
+    { value: "fixed" as TimeAssignmentMode, label: "Fijo", icon: Target, description: "Mismo horario" },
+    { value: "per_day" as TimeAssignmentMode, label: "Por día", icon: CalendarRange, description: "Diferente cada día" },
+    { value: "first_available" as TimeAssignmentMode, label: "Auto", icon: Zap, description: "Primera disponible" },
+    { value: "time_window" as TimeAssignmentMode, label: "Ventana", icon: Timer, description: "Rango de horas" },
+  ];
+
+  // Generate time options for window selector
+  const timeOptions = useMemo(() => {
+    const options: string[] = [];
+    for (let h = 6; h <= 20; h++) {
+      for (let m = 0; m < 60; m += 30) {
+        options.push(`${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}`);
+      }
+    }
+    return options;
+  }, []);
 
   // Progress steps
   const progressSteps: ProgressStep[] = useMemo(() => [
@@ -431,9 +467,113 @@ export const SchedulingSidebar: React.FC<SchedulingSidebarProps> = ({
                     onToggle={() => toggleStep("time")}
                     isNext={nextIncompleteStep?.id === "time"}
                   >
+                    {/* Time Mode Selector */}
+                    <div className="space-y-3">
+                      <Label className="text-xs text-muted-foreground">
+                        Modo de asignación
+                      </Label>
+                      <div className="grid grid-cols-2 gap-1.5">
+                        {timeModeOptions.map((mode) => {
+                          const Icon = mode.icon;
+                          const isActive = timeAssignmentMode === mode.value;
+                          return (
+                            <button
+                              key={mode.value}
+                              onClick={() => onTimeAssignmentModeChange(mode.value)}
+                              className={cn(
+                                "p-2 rounded-lg border transition-all text-left",
+                                isActive
+                                  ? "bg-primary/10 border-primary/30 ring-1 ring-primary/20"
+                                  : "bg-muted/10 border-border/20 hover:bg-muted/20"
+                              )}
+                            >
+                              <div className="flex items-center gap-1.5 mb-0.5">
+                                <Icon className={cn(
+                                  "w-3 h-3",
+                                  isActive ? "text-primary" : "text-muted-foreground"
+                                )} />
+                                <span className={cn(
+                                  "text-[10px] font-semibold",
+                                  isActive ? "text-primary" : "text-foreground"
+                                )}>
+                                  {mode.label}
+                                </span>
+                              </div>
+                              <p className="text-[9px] text-muted-foreground leading-tight">
+                                {mode.description}
+                              </p>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Time Window Selector (only for time_window mode) */}
+                    {timeAssignmentMode === "time_window" && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        className="mt-3 p-3 rounded-xl bg-primary/5 border border-primary/10"
+                      >
+                        <Label className="text-xs text-muted-foreground mb-2 block">
+                          Ventana de tiempo preferida
+                        </Label>
+                        <div className="flex items-center gap-2">
+                          <Select
+                            value={rangeTimeWindow.start}
+                            onValueChange={(val) => onRangeTimeWindowChange({ ...rangeTimeWindow, start: val })}
+                          >
+                            <SelectTrigger className="h-8 text-xs flex-1">
+                              <SelectValue placeholder="Desde" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {timeOptions.map((t) => (
+                                <SelectItem key={t} value={t} className="text-xs">
+                                  {t}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <span className="text-xs text-muted-foreground">a</span>
+                          <Select
+                            value={rangeTimeWindow.end}
+                            onValueChange={(val) => onRangeTimeWindowChange({ ...rangeTimeWindow, end: val })}
+                          >
+                            <SelectTrigger className="h-8 text-xs flex-1">
+                              <SelectValue placeholder="Hasta" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {timeOptions.map((t) => (
+                                <SelectItem key={t} value={t} className="text-xs">
+                                  {t}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </motion.div>
+                    )}
+
+                    {/* Auto mode info */}
+                    {timeAssignmentMode === "first_available" && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        className="mt-3 p-3 rounded-xl bg-lime/10 border border-lime/20"
+                      >
+                        <div className="flex items-center gap-2">
+                          <Zap className="w-4 h-4 text-lime" />
+                          <span className="text-xs font-medium text-lime">Modo automático</span>
+                        </div>
+                        <p className="text-[10px] text-muted-foreground mt-1">
+                          Se asignará el primer horario disponible del día
+                        </p>
+                      </motion.div>
+                    )}
+
                     {/* Selected Time Display */}
-                    {selectedTime && (
-                      <div className="p-3 rounded-xl bg-lime/10 border border-lime/30 mb-3">
+                    {selectedTime && timeAssignmentMode === "fixed" && (
+                      <div className="p-3 rounded-xl bg-lime/10 border border-lime/30 mt-3">
                         <div className="flex items-center gap-2">
                           <div className="w-8 h-8 rounded-lg bg-lime/20 flex items-center justify-center">
                             <Check className="w-4 h-4 text-lime" />
@@ -448,45 +588,47 @@ export const SchedulingSidebar: React.FC<SchedulingSidebarProps> = ({
                       </div>
                     )}
 
-                    {/* Available Time Slots */}
-                    <div className="space-y-2">
-                      <Label className="text-xs text-muted-foreground">
-                        Horarios disponibles
-                      </Label>
-                      
-                      {availableTimeSlots.length === 0 ? (
-                        <div className="p-4 rounded-xl bg-muted/20 border border-border/20 text-center">
-                          <Clock className="w-6 h-6 mx-auto mb-2 text-muted-foreground/50" />
-                          <p className="text-xs text-muted-foreground">
-                            No hay horarios disponibles para esta fecha
-                          </p>
-                          <p className="text-[10px] text-muted-foreground mt-1">
-                            El profesional no trabaja este día o selecciona otra fecha
-                          </p>
-                        </div>
-                      ) : (
-                        <div className="grid grid-cols-4 gap-1.5 max-h-[180px] overflow-y-auto scrollbar-thin scrollbar-thumb-border/50 pr-1">
-                          {availableTimeSlots.map((slot) => (
-                            <button
-                              key={slot.time}
-                              onClick={() => slot.available && onTimeSelect(slot.time)}
-                              disabled={!slot.available}
-                              className={cn(
-                                "py-2 px-1 rounded-lg text-[11px] font-medium transition-all",
-                                !slot.available && "opacity-40 cursor-not-allowed bg-muted/20 line-through",
-                                slot.available && selectedTime === slot.time
-                                  ? "bg-lime text-lime-foreground shadow-md ring-2 ring-lime/30"
-                                  : slot.available
-                                  ? "bg-background hover:bg-primary/10 border border-border/30"
-                                  : ""
-                              )}
-                            >
-                              {slot.time}
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                    </div>
+                    {/* Available Time Slots (only for fixed mode or per_day mode) */}
+                    {(timeAssignmentMode === "fixed" || timeAssignmentMode === "per_day") && (
+                      <div className="space-y-2 mt-3">
+                        <Label className="text-xs text-muted-foreground">
+                          {timeAssignmentMode === "fixed" ? "Horarios disponibles" : "Selecciona horario para este día"}
+                        </Label>
+                        
+                        {availableTimeSlots.length === 0 ? (
+                          <div className="p-4 rounded-xl bg-muted/20 border border-border/20 text-center">
+                            <Clock className="w-6 h-6 mx-auto mb-2 text-muted-foreground/50" />
+                            <p className="text-xs text-muted-foreground">
+                              No hay horarios disponibles para esta fecha
+                            </p>
+                            <p className="text-[10px] text-muted-foreground mt-1">
+                              El profesional no trabaja este día o selecciona otra fecha
+                            </p>
+                          </div>
+                        ) : (
+                          <div className="grid grid-cols-4 gap-1.5 max-h-[180px] overflow-y-auto scrollbar-thin scrollbar-thumb-border/50 pr-1">
+                            {availableTimeSlots.map((slot) => (
+                              <button
+                                key={slot.time}
+                                onClick={() => slot.available && onTimeSelect(slot.time)}
+                                disabled={!slot.available}
+                                className={cn(
+                                  "py-2 px-1 rounded-lg text-[11px] font-medium transition-all",
+                                  !slot.available && "opacity-40 cursor-not-allowed bg-muted/20 line-through",
+                                  slot.available && selectedTime === slot.time
+                                    ? "bg-lime text-lime-foreground shadow-md ring-2 ring-lime/30"
+                                    : slot.available
+                                    ? "bg-background hover:bg-primary/10 border border-border/30"
+                                    : ""
+                                )}
+                              >
+                                {slot.time}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
 
                     {/* Duration selector */}
                     <div className="mt-3 pt-3 border-t border-border/20">
