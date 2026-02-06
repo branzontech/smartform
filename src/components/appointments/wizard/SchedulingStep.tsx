@@ -527,7 +527,7 @@ export const SchedulingStep: React.FC<SchedulingStepProps> = ({
         "transition-all duration-300",
         isFullscreen 
           ? "fixed inset-0 z-50 bg-background" 
-          : "h-[calc(100vh-180px)] min-h-[500px]"
+          : "h-[calc(100vh-145px)] min-h-[500px]"
       )}
     >
       {/* Fullscreen Header */}

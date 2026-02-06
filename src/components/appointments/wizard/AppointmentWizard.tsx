@@ -170,8 +170,8 @@ export const AppointmentWizard: React.FC<AppointmentWizardProps> = ({
         </motion.div>
       </div>
 
-      {/* Scrollable Content area - tight gap below stepper */}
-      <div className="pt-[136px] px-4 md:px-8 pb-8">
+      {/* Scrollable Content area - minimal gap below stepper */}
+      <div className="pt-[120px] px-4 md:px-8 pb-8">
         <div className="max-w-5xl mx-auto">
           <div className="relative overflow-hidden">
           <AnimatePresence mode="wait" custom={direction}>
