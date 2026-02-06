@@ -1083,28 +1083,196 @@ export const SchedulingStep: React.FC<SchedulingStepProps> = ({
                           ))}
                         </div>
 
-                        {/* Fixed time selector */}
+                        {/* Fixed time selector - Show all available slots */}
                         {timeAssignmentMode === "fixed" && (
-                          <div className="p-3 rounded-xl bg-muted/10 border border-border/20">
-                            <Label className="text-[10px] text-muted-foreground mb-2 block">
-                              Selecciona el horario para todas las citas
+                          <div className="p-3 rounded-xl bg-muted/10 border border-border/20 space-y-3">
+                            <Label className="text-[10px] text-muted-foreground block">
+                              Selecciona el horario para todas las citas del rango
                             </Label>
-                            <div className="grid grid-cols-4 gap-1.5">
-                              {availableTimeSlots.filter(s => s.available).slice(0, 8).map((slot) => (
-                                <button
-                                  key={slot.time}
-                                  onClick={() => setSelectedTime(slot.time)}
-                                  className={cn(
-                                    "py-2 px-2 rounded-lg text-[11px] font-medium transition-all",
-                                    selectedTime === slot.time
-                                      ? "bg-lime text-lime-foreground"
-                                      : "bg-background hover:bg-muted/50"
-                                  )}
-                                >
-                                  {slot.time}
-                                </button>
-                              ))}
+                            <ScrollArea className="h-[120px]">
+                              <div className="grid grid-cols-4 gap-1.5 pr-2">
+                                {availableTimeSlots.filter(s => s.available).map((slot) => (
+                                  <button
+                                    key={slot.time}
+                                    onClick={() => setSelectedTime(slot.time)}
+                                    className={cn(
+                                      "py-2 px-2 rounded-lg text-[11px] font-medium transition-all",
+                                      selectedTime === slot.time
+                                        ? "bg-lime text-lime-foreground shadow-md"
+                                        : "bg-background hover:bg-muted/50 border border-border/20"
+                                    )}
+                                  >
+                                    {slot.time}
+                                  </button>
+                                ))}
+                              </div>
+                            </ScrollArea>
+                            {selectedTime && (
+                              <div className="pt-2 border-t border-border/20">
+                                <p className="text-[10px] text-lime font-medium flex items-center gap-1">
+                                  <Check className="w-3 h-3" />
+                                  Todas las citas serán a las {selectedTime}
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Per day time selector - List each day with time selection */}
+                        {timeAssignmentMode === "per_day" && rangeAnalysis.validDays.length > 0 && (
+                          <div className="p-3 rounded-xl bg-muted/10 border border-border/20 space-y-3">
+                            <Label className="text-[10px] text-muted-foreground block">
+                              Selecciona el horario para cada día
+                            </Label>
+                            <ScrollArea className="h-[180px]">
+                              <div className="space-y-2 pr-2">
+                                {rangeAnalysis.validDays.slice(0, maxOccurrences).map((day, idx) => {
+                                  const daySchedule = rangeDaySchedules.find(s => isSameDay(s.date, day));
+                                  const dayName = dayNames[day.getDay()];
+                                  const doctorSchedule = selectedDoctorData?.schedule[dayName];
+                                  const daySlots = doctorSchedule?.working 
+                                    ? generateTimeSlots(doctorSchedule.start as string, doctorSchedule.end as string)
+                                    : [];
+                                  const dateKey = format(day, "yyyy-MM-dd");
+                                  const occupiedSlots = selectedDoctorData?.occupiedSlots[dateKey] || [];
+                                  const availableSlots = daySlots.filter(s => !occupiedSlots.includes(s));
+                                  
+                                  return (
+                                    <div 
+                                      key={idx}
+                                      className="flex items-center gap-3 p-2 rounded-lg bg-background border border-border/20"
+                                    >
+                                      <div className="w-10 h-10 rounded-lg bg-primary/10 flex flex-col items-center justify-center">
+                                        <span className="text-[10px] text-muted-foreground uppercase">
+                                          {format(day, "EEE", { locale: es })}
+                                        </span>
+                                        <span className="text-sm font-bold text-primary">
+                                          {format(day, "d")}
+                                        </span>
+                                      </div>
+                                      <div className="flex-1">
+                                        <Select
+                                          value={daySchedule?.selectedTime || ""}
+                                          onValueChange={(time) => {
+                                            setRangeDaySchedules(prev => {
+                                              const existing = prev.find(s => isSameDay(s.date, day));
+                                              if (existing) {
+                                                return prev.map(s => 
+                                                  isSameDay(s.date, day) 
+                                                    ? { ...s, selectedTime: time }
+                                                    : s
+                                                );
+                                              }
+                                              return [...prev, {
+                                                date: day,
+                                                selectedTime: time,
+                                                isConflict: false,
+                                                availableSlots
+                                              }];
+                                            });
+                                          }}
+                                        >
+                                          <SelectTrigger className="h-8 rounded-lg text-xs">
+                                            <Clock className="w-3 h-3 mr-2 text-muted-foreground" />
+                                            <SelectValue placeholder="Seleccionar hora" />
+                                          </SelectTrigger>
+                                          <SelectContent className="max-h-[200px]">
+                                            {availableSlots.map(slot => (
+                                              <SelectItem key={slot} value={slot}>{slot}</SelectItem>
+                                            ))}
+                                          </SelectContent>
+                                        </Select>
+                                      </div>
+                                      {daySchedule?.selectedTime && (
+                                        <div className="w-6 h-6 rounded-full bg-lime flex items-center justify-center">
+                                          <Check className="w-3 h-3 text-lime-foreground" />
+                                        </div>
+                                      )}
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </ScrollArea>
+                            <div className="pt-2 border-t border-border/20 flex items-center justify-between">
+                              <p className="text-[10px] text-muted-foreground">
+                                {rangeDaySchedules.filter(s => s.selectedTime).length} de {rangeAnalysis.validDays.length} días configurados
+                              </p>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-6 text-[10px]"
+                                onClick={() => {
+                                  // Auto-fill remaining days with first available slot
+                                  const updated = rangeAnalysis.validDays.slice(0, maxOccurrences).map(day => {
+                                    const existing = rangeDaySchedules.find(s => isSameDay(s.date, day));
+                                    if (existing?.selectedTime) return existing;
+                                    
+                                    const dayName = dayNames[day.getDay()];
+                                    const doctorSchedule = selectedDoctorData?.schedule[dayName];
+                                    const daySlots = doctorSchedule?.working 
+                                      ? generateTimeSlots(doctorSchedule.start as string, doctorSchedule.end as string)
+                                      : [];
+                                    const dateKey = format(day, "yyyy-MM-dd");
+                                    const occupiedSlots = selectedDoctorData?.occupiedSlots[dateKey] || [];
+                                    const availableSlots = daySlots.filter(s => !occupiedSlots.includes(s));
+                                    
+                                    return {
+                                      date: day,
+                                      selectedTime: availableSlots[0] || "",
+                                      isConflict: false,
+                                      availableSlots
+                                    };
+                                  });
+                                  setRangeDaySchedules(updated);
+                                }}
+                              >
+                                Autocompletar
+                              </Button>
                             </div>
+                          </div>
+                        )}
+
+                        {/* First available - Auto-assigned preview */}
+                        {timeAssignmentMode === "first_available" && rangeAnalysis.validDays.length > 0 && (
+                          <div className="p-3 rounded-xl bg-muted/10 border border-border/20 space-y-3">
+                            <div className="flex items-center gap-2 mb-2">
+                              <div className="w-6 h-6 rounded-full bg-lime/20 flex items-center justify-center">
+                                <Check className="w-3 h-3 text-lime" />
+                              </div>
+                              <Label className="text-[10px] text-muted-foreground">
+                                El sistema asignará el primer horario disponible de cada día
+                              </Label>
+                            </div>
+                            <ScrollArea className="h-[120px]">
+                              <div className="space-y-1.5 pr-2">
+                                {rangeAnalysis.validDays.slice(0, maxOccurrences).map((day, idx) => {
+                                  const dayName = dayNames[day.getDay()];
+                                  const doctorSchedule = selectedDoctorData?.schedule[dayName];
+                                  const daySlots = doctorSchedule?.working 
+                                    ? generateTimeSlots(doctorSchedule.start as string, doctorSchedule.end as string)
+                                    : [];
+                                  const dateKey = format(day, "yyyy-MM-dd");
+                                  const occupiedSlots = selectedDoctorData?.occupiedSlots[dateKey] || [];
+                                  const firstAvailable = daySlots.find(s => !occupiedSlots.includes(s));
+                                  
+                                  return (
+                                    <div 
+                                      key={idx}
+                                      className="flex items-center justify-between p-2 rounded-lg bg-background/50"
+                                    >
+                                      <div className="flex items-center gap-2">
+                                        <span className="text-[10px] font-medium capitalize w-16">
+                                          {format(day, "EEE d", { locale: es })}
+                                        </span>
+                                      </div>
+                                      <Badge variant="secondary" className="text-[10px]">
+                                        {firstAvailable || "Sin disponibilidad"}
+                                      </Badge>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </ScrollArea>
                           </div>
                         )}
 
@@ -1115,31 +1283,84 @@ export const SchedulingStep: React.FC<SchedulingStepProps> = ({
                               Define la ventana de tiempo preferida
                             </Label>
                             <div className="flex items-center gap-2">
-                              <Select value={rangeTimeWindow.start} onValueChange={(v) => setRangeTimeWindow(prev => ({ ...prev, start: v }))}>
-                                <SelectTrigger className="h-8 rounded-lg text-xs flex-1">
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {["07:00", "08:00", "09:00", "10:00", "11:00", "12:00", "13:00", "14:00"].map(t => (
-                                    <SelectItem key={t} value={t}>{t}</SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                              <span className="text-xs text-muted-foreground">a</span>
-                              <Select value={rangeTimeWindow.end} onValueChange={(v) => setRangeTimeWindow(prev => ({ ...prev, end: v }))}>
-                                <SelectTrigger className="h-8 rounded-lg text-xs flex-1">
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {["10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00"].map(t => (
-                                    <SelectItem key={t} value={t}>{t}</SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
+                              <div className="flex-1">
+                                <Label className="text-[9px] text-muted-foreground mb-1 block">Desde</Label>
+                                <Select value={rangeTimeWindow.start} onValueChange={(v) => setRangeTimeWindow(prev => ({ ...prev, start: v }))}>
+                                  <SelectTrigger className="h-9 rounded-lg text-xs">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {["07:00", "08:00", "09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00"].map(t => (
+                                      <SelectItem key={t} value={t}>{t}</SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              <div className="pt-4">
+                                <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                              </div>
+                              <div className="flex-1">
+                                <Label className="text-[9px] text-muted-foreground mb-1 block">Hasta</Label>
+                                <Select value={rangeTimeWindow.end} onValueChange={(v) => setRangeTimeWindow(prev => ({ ...prev, end: v }))}>
+                                  <SelectTrigger className="h-9 rounded-lg text-xs">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {["09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00"].map(t => (
+                                      <SelectItem key={t} value={t}>{t}</SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
                             </div>
-                            <p className="text-[10px] text-muted-foreground">
-                              Las citas se asignarán dentro de este rango según disponibilidad
-                            </p>
+                            
+                            {/* Preview of assignments within window */}
+                            {rangeAnalysis.validDays.length > 0 && (
+                              <div className="pt-2 border-t border-border/20">
+                                <Label className="text-[9px] text-muted-foreground mb-2 block">
+                                  Vista previa de asignaciones ({rangeTimeWindow.start} - {rangeTimeWindow.end})
+                                </Label>
+                                <ScrollArea className="h-[100px]">
+                                  <div className="space-y-1 pr-2">
+                                    {rangeAnalysis.validDays.slice(0, maxOccurrences).map((day, idx) => {
+                                      const dayName = dayNames[day.getDay()];
+                                      const doctorSchedule = selectedDoctorData?.schedule[dayName];
+                                      const daySlots = doctorSchedule?.working 
+                                        ? generateTimeSlots(doctorSchedule.start as string, doctorSchedule.end as string)
+                                        : [];
+                                      const dateKey = format(day, "yyyy-MM-dd");
+                                      const occupiedSlots = selectedDoctorData?.occupiedSlots[dateKey] || [];
+                                      
+                                      // Filter slots within the time window
+                                      const windowSlots = daySlots.filter(s => {
+                                        return s >= rangeTimeWindow.start && s < rangeTimeWindow.end && !occupiedSlots.includes(s);
+                                      });
+                                      const assignedTime = windowSlots[0];
+                                      
+                                      return (
+                                        <div 
+                                          key={idx}
+                                          className="flex items-center justify-between p-1.5 rounded-md bg-background/50"
+                                        >
+                                          <span className="text-[10px] capitalize">
+                                            {format(day, "EEE d MMM", { locale: es })}
+                                          </span>
+                                          <Badge 
+                                            variant={assignedTime ? "default" : "secondary"} 
+                                            className={cn(
+                                              "text-[9px]",
+                                              assignedTime && "bg-lime text-lime-foreground"
+                                            )}
+                                          >
+                                            {assignedTime || "Fuera de ventana"}
+                                          </Badge>
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                </ScrollArea>
+                              </div>
+                            )}
                           </div>
                         )}
 
