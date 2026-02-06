@@ -172,7 +172,11 @@ export const AppointmentWizard: React.FC<AppointmentWizardProps> = ({
 
       {/* Scrollable Content area - with enough top padding to clear the fixed stepper */}
       <div className="pt-36 px-4 md:px-8 pb-8">
-        <div className="max-w-5xl mx-auto">
+        {/* Use full width for scheduling step (step 3), constrained width for others */}
+        <div className={cn(
+          "mx-auto transition-all duration-300",
+          currentStep === 3 ? "max-w-[1600px]" : "max-w-5xl"
+        )}>
           <div className="relative overflow-hidden">
           <AnimatePresence mode="wait" custom={direction}>
             <motion.div
