@@ -341,18 +341,27 @@ export const ZoneMap: React.FC<ZoneMapProps> = ({
       if (!location.lat || !location.lng) return;
 
       const isPatient = location.entity_type === 'patient';
+      
+      // Custom SVG paths for different entity types
+      // Patient: Person icon path
+      const patientPath = 'M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z';
+      // Professional: Stethoscope-like icon path  
+      const professionalPath = 'M19.5 5.5c0 1.38-1.12 2.5-2.5 2.5S14.5 6.88 14.5 5.5 15.62 3 17 3s2.5 1.12 2.5 2.5zM17 10c-1.93 0-3.5-1.57-3.5-3.5V5c0-.55-.45-1-1-1h-1c-.55 0-1 .45-1 1v1.5C10.5 8.43 8.93 10 7 10c-1.93 0-3.5-1.57-3.5-3.5V5c0-.55-.45-1-1-1S1.5 4.45 1.5 5v1.5C1.5 9.54 4.21 12 7.5 12h.5v6c0 2.21 1.79 4 4 4s4-1.79 4-4v-6h.5c3.29 0 6-2.46 6-5.5V5c0-.55-.45-1-1-1s-1 .45-1 1v1.5c0 1.93-1.57 3.5-3.5 3.5H17z';
+      
       const marker = new google.maps.Marker({
         position: { lat: location.lat, lng: location.lng },
         map: googleMapRef.current,
-        title: location.entity_name,
+        title: `${isPatient ? '👤' : '🩺'} ${location.entity_name}\n${location.address}`,
         icon: {
-          path: google.maps.SymbolPath.CIRCLE,
-          scale: 8,
+          path: isPatient ? google.maps.SymbolPath.CIRCLE : google.maps.SymbolPath.BACKWARD_CLOSED_ARROW,
+          scale: isPatient ? 10 : 6,
           fillColor: isPatient ? '#10B981' : '#8B5CF6',
-          fillOpacity: 0.9,
+          fillOpacity: 1,
           strokeColor: '#fff',
           strokeWeight: 2,
+          anchor: isPatient ? undefined : new google.maps.Point(0, 0),
         },
+        zIndex: isPatient ? 100 : 200, // Professionals on top
       });
 
       marker.addListener('click', () => {
@@ -435,12 +444,16 @@ export const ZoneMap: React.FC<ZoneMapProps> = ({
         <p className="text-[10px] font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Leyenda</p>
         <div className="space-y-1.5">
           <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-emerald-500" />
+            <div className="w-4 h-4 rounded-full bg-emerald-500 border-2 border-white shadow-sm" />
             <span className="text-xs">Pacientes</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-violet-500" />
+            <div className="w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[10px] border-t-violet-500 ml-0.5" />
             <span className="text-xs">Profesionales</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 rounded-full bg-primary border-2 border-white shadow-sm" />
+            <span className="text-xs">Mi ubicación</span>
           </div>
         </div>
       </div>
