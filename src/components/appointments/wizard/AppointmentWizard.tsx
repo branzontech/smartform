@@ -85,16 +85,13 @@ export const AppointmentWizard: React.FC<AppointmentWizardProps> = ({
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
-      {/* Fixed Stepper Area with solid background mask */}
-      <div className="fixed top-20 left-0 right-0 z-50">
-        {/* Background mask to hide scrolling content */}
-        <div className="absolute inset-x-0 -top-4 h-24 bg-gradient-to-b from-background via-background to-transparent pointer-events-none" />
-        
+      {/* Fixed Stepper Area */}
+      <div className="fixed top-20 left-0 right-0 z-40">
         {/* Stepper Container */}
         <motion.div 
           initial={{ y: -10, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          className="relative px-4 md:px-8"
+          className="px-4 md:px-8"
         >
           <div className="max-w-xl mx-auto">
             {/* Stepper Windows 11 style - Compact */}
