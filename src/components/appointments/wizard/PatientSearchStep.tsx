@@ -81,11 +81,11 @@ export const PatientSearchStep: React.FC<PatientSearchStepProps> = ({
       variants={containerVariants}
       initial="hidden"
       animate="visible"
-      className="space-y-6"
+      className="space-y-4 max-w-3xl mx-auto"
     >
       {/* Header - Compact */}
       <motion.div variants={itemVariants} className="flex items-center gap-3">
-        <div className="flex items-center justify-center w-10 h-10 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/10">
+        <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-primary/20 to-primary/10">
           <User className="w-5 h-5 text-primary" />
         </div>
         <div>
@@ -98,10 +98,10 @@ export const PatientSearchStep: React.FC<PatientSearchStepProps> = ({
 
       {/* Search Card */}
       <motion.div variants={itemVariants}>
-        <Card className="bg-card/60 backdrop-blur-xl border-border/30 shadow-xl rounded-3xl overflow-hidden">
-          <CardContent className="p-6">
+        <Card className="bg-card/60 backdrop-blur-xl border-border/30 shadow-lg rounded-2xl overflow-hidden">
+          <CardContent className="p-5">
             {/* Search Input */}
-            <div className="relative mb-6">
+            <div className="relative mb-5">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
               <Input
                 placeholder="Buscar por nombre o número de documento..."
@@ -110,7 +110,7 @@ export const PatientSearchStep: React.FC<PatientSearchStepProps> = ({
                   setSearchTerm(e.target.value);
                   setShowCreateForm(false);
                 }}
-                className="pl-12 h-14 text-lg bg-background/50 border-border/50 rounded-2xl focus:ring-2 focus:ring-primary/20"
+                className="pl-12 h-12 text-base bg-background/50 border-border/50 rounded-xl focus:ring-2 focus:ring-primary/20"
               />
             </div>
 
@@ -123,11 +123,11 @@ export const PatientSearchStep: React.FC<PatientSearchStepProps> = ({
               >
                 {filteredPatients.length > 0 ? (
                   <>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-sm text-muted-foreground mb-2">
                       {filteredPatients.length} resultado(s) encontrado(s)
                     </p>
-                    <ScrollArea className="h-[300px]">
-                      <div className="space-y-3 pr-4">
+                    <ScrollArea className="h-[260px]">
+                      <div className="space-y-2 pr-4">
                         {filteredPatients.map((patient, index) => (
                           <motion.div
                             key={patient.id}
@@ -137,22 +137,22 @@ export const PatientSearchStep: React.FC<PatientSearchStepProps> = ({
                           >
                             <Card
                               className={cn(
-                                "cursor-pointer transition-all duration-200 border-border/30",
-                                "hover:bg-primary/5 hover:border-primary/30 hover:shadow-lg",
-                                "active:scale-[0.98]"
+                                "cursor-pointer transition-all duration-200 border-border/30 rounded-xl",
+                                "hover:bg-primary/5 hover:border-primary/30 hover:shadow-md",
+                                "active:scale-[0.99]"
                               )}
                               onClick={() => onPatientSelected(patient)}
                             >
-                              <CardContent className="p-4">
-                                <div className="flex items-center gap-4">
-                                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center text-primary font-semibold text-lg">
+                              <CardContent className="p-3">
+                                <div className="flex items-center gap-3">
+                                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center text-primary font-semibold">
                                     {patient.firstName.charAt(0)}{patient.lastName.charAt(0)}
                                   </div>
                                   <div className="flex-1 min-w-0">
-                                    <p className="font-semibold text-lg truncate">
+                                    <p className="font-semibold text-base truncate">
                                       {patient.firstName} {patient.lastName}
                                     </p>
-                                    <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                       <span>{patient.documentId}</span>
                                       {patient.contactNumber && (
                                         <>
@@ -165,7 +165,7 @@ export const PatientSearchStep: React.FC<PatientSearchStepProps> = ({
                                       )}
                                     </div>
                                   </div>
-                                  <ArrowRight className="w-5 h-5 text-muted-foreground" />
+                                  <ArrowRight className="w-4 h-4 text-muted-foreground" />
                                 </div>
                               </CardContent>
                             </Card>
@@ -178,19 +178,19 @@ export const PatientSearchStep: React.FC<PatientSearchStepProps> = ({
                   <motion.div
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    className="text-center py-8"
+                    className="text-center py-6"
                   >
-                    <div className="w-16 h-16 rounded-3xl bg-muted/50 flex items-center justify-center mx-auto mb-4">
-                      <Search className="w-8 h-8 text-muted-foreground" />
+                    <div className="w-14 h-14 rounded-2xl bg-muted/50 flex items-center justify-center mx-auto mb-3">
+                      <Search className="w-7 h-7 text-muted-foreground" />
                     </div>
-                    <p className="text-muted-foreground mb-4">
+                    <p className="text-muted-foreground mb-3">
                       No se encontraron pacientes con "{searchTerm}"
                     </p>
                     <Button
                       onClick={() => setShowCreateForm(true)}
-                      className="rounded-2xl h-12 px-6 gap-2"
+                      className="rounded-xl h-10 px-5 gap-2"
                     >
-                      <UserPlus className="w-5 h-5" />
+                      <UserPlus className="w-4 h-4" />
                       Crear nuevo paciente
                     </Button>
                   </motion.div>

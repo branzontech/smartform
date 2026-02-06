@@ -88,7 +88,7 @@ export const AdmissionStep: React.FC<AdmissionStepProps> = ({
       variants={containerVariants}
       initial="hidden"
       animate="visible"
-      className="space-y-6"
+      className="space-y-4 max-w-3xl mx-auto"
     >
       {/* Header - Compact */}
       <motion.div variants={itemVariants} className="flex items-center gap-3">
@@ -103,17 +103,17 @@ export const AdmissionStep: React.FC<AdmissionStepProps> = ({
 
       {/* Patient Summary Card */}
       <motion.div variants={itemVariants}>
-        <Card className="bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20 rounded-3xl">
+        <Card className="bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20 rounded-2xl">
           <CardContent className="p-4">
             <div className="flex items-center gap-4">
-              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary/30 to-primary/20 flex items-center justify-center text-primary text-xl font-bold">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary/30 to-primary/20 flex items-center justify-center text-primary text-lg font-bold">
                 {patient.firstName.charAt(0)}{patient.lastName.charAt(0)}
               </div>
-              <div className="flex-1">
-                <p className="font-semibold text-lg">
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-base truncate">
                   {patient.firstName} {patient.lastName}
                 </p>
-                <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                <div className="flex items-center gap-3 text-sm text-muted-foreground">
                   <span>{patient.documentId}</span>
                   {patient.contactNumber && (
                     <span className="flex items-center gap-1">
@@ -124,7 +124,7 @@ export const AdmissionStep: React.FC<AdmissionStepProps> = ({
                 </div>
               </div>
               {patient.regime && (
-                <Badge variant="secondary" className="rounded-xl">
+                <Badge variant="secondary" className="rounded-lg text-xs">
                   {patient.regime}
                 </Badge>
               )}
@@ -138,38 +138,38 @@ export const AdmissionStep: React.FC<AdmissionStepProps> = ({
         <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Card
             className={cn(
-              "cursor-pointer transition-all duration-300 border-2 rounded-3xl overflow-hidden",
-              "hover:shadow-xl hover:scale-[1.02] hover:border-primary/50",
-              "active:scale-[0.98]"
+              "cursor-pointer transition-all duration-300 border-2 rounded-2xl overflow-hidden",
+              "hover:shadow-lg hover:scale-[1.01] hover:border-primary/50",
+              "active:scale-[0.99]"
             )}
             onClick={() => setWantsAdmission(true)}
           >
-            <CardContent className="p-8 text-center">
-              <div className="w-16 h-16 rounded-3xl bg-gradient-to-br from-green-500/20 to-green-500/10 flex items-center justify-center mx-auto mb-4">
-                <CheckCircle2 className="w-8 h-8 text-green-600" />
+            <CardContent className="p-6 text-center">
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-green-500/20 to-green-500/10 flex items-center justify-center mx-auto mb-3">
+                <CheckCircle2 className="w-7 h-7 text-green-600" />
               </div>
-              <h3 className="text-xl font-semibold mb-2">Sí, admitir ahora</h3>
+              <h3 className="text-lg font-semibold mb-1">Sí, admitir ahora</h3>
               <p className="text-muted-foreground text-sm">
-                Registrar motivo de consulta, tipo de cita, prioridad y otros datos de admisión
+                Registrar motivo, tipo de cita y prioridad
               </p>
             </CardContent>
           </Card>
 
           <Card
             className={cn(
-              "cursor-pointer transition-all duration-300 border-2 rounded-3xl overflow-hidden",
-              "hover:shadow-xl hover:scale-[1.02] hover:border-muted-foreground/30",
-              "active:scale-[0.98]"
+              "cursor-pointer transition-all duration-300 border-2 rounded-2xl overflow-hidden",
+              "hover:shadow-lg hover:scale-[1.01] hover:border-muted-foreground/30",
+              "active:scale-[0.99]"
             )}
             onClick={handleSkip}
           >
-            <CardContent className="p-8 text-center">
-              <div className="w-16 h-16 rounded-3xl bg-muted/50 flex items-center justify-center mx-auto mb-4">
-                <ArrowRight className="w-8 h-8 text-muted-foreground" />
+            <CardContent className="p-6 text-center">
+              <div className="w-14 h-14 rounded-2xl bg-muted/50 flex items-center justify-center mx-auto mb-3">
+                <ArrowRight className="w-7 h-7 text-muted-foreground" />
               </div>
-              <h3 className="text-xl font-semibold mb-2">No, solo agendar</h3>
+              <h3 className="text-lg font-semibold mb-1">No, solo agendar</h3>
               <p className="text-muted-foreground text-sm">
-                Ir directamente a seleccionar fecha y hora de la cita
+                Ir directamente a seleccionar fecha y hora
               </p>
             </CardContent>
           </Card>
@@ -182,8 +182,8 @@ export const AdmissionStep: React.FC<AdmissionStepProps> = ({
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
         >
-          <Card className="bg-card/60 backdrop-blur-xl border-border/30 shadow-xl rounded-3xl overflow-hidden">
-            <CardContent className="p-6 space-y-6">
+          <Card className="bg-card/60 backdrop-blur-xl border-border/30 shadow-lg rounded-2xl overflow-hidden">
+            <CardContent className="p-5 space-y-5">
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-semibold flex items-center gap-2">
                   <FileText className="w-5 h-5 text-primary" />
@@ -332,7 +332,7 @@ export const AdmissionStep: React.FC<AdmissionStepProps> = ({
       )}
 
       {/* Back button */}
-      <motion.div variants={itemVariants} className="flex justify-start">
+      <motion.div variants={itemVariants} className="flex justify-start pt-2">
         <Button
           variant="ghost"
           onClick={onBack}
