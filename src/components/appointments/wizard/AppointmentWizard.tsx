@@ -236,7 +236,7 @@ export const AppointmentWizard: React.FC<AppointmentWizardProps> = ({
         </div>
 
         {/* Scrollable Content area - with enough top padding to clear the fixed stepper */}
-        <div className="pt-36 px-4 md:px-8 pb-24">
+        <div className="pt-28 px-4 md:px-8 pb-24">
           {/* Use full width for scheduling step (step 3), constrained width for others */}
           <div className={cn(
             "mx-auto transition-all duration-300",
