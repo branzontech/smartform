@@ -85,90 +85,96 @@ export const AppointmentWizard: React.FC<AppointmentWizardProps> = ({
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
-      {/* Fixed Stepper Container - Compact */}
-      <motion.div 
-        initial={{ y: -10, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        className="fixed top-20 left-0 right-0 z-50 px-4 md:px-8"
-      >
-        <div className="max-w-xl mx-auto">
-          {/* Stepper Windows 11 style - Compact */}
-          <div className="relative flex items-center bg-card/95 backdrop-blur-xl rounded-2xl px-4 py-2.5 shadow-md border border-border/30">
-            {steps.map((step, index) => {
-              const isCompleted = currentStep > step.id;
-              const isCurrent = currentStep === step.id;
-              const Icon = step.icon;
-              const isLast = index === steps.length - 1;
+      {/* Fixed Stepper Area with solid background mask */}
+      <div className="fixed top-20 left-0 right-0 z-50">
+        {/* Background mask to hide scrolling content */}
+        <div className="absolute inset-x-0 -top-4 h-24 bg-gradient-to-b from-background via-background to-transparent pointer-events-none" />
+        
+        {/* Stepper Container */}
+        <motion.div 
+          initial={{ y: -10, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          className="relative px-4 md:px-8"
+        >
+          <div className="max-w-xl mx-auto">
+            {/* Stepper Windows 11 style - Compact */}
+            <div className="relative flex items-center bg-card backdrop-blur-xl rounded-2xl px-4 py-2.5 shadow-md border border-border/30">
+              {steps.map((step, index) => {
+                const isCompleted = currentStep > step.id;
+                const isCurrent = currentStep === step.id;
+                const Icon = step.icon;
+                const isLast = index === steps.length - 1;
 
-              return (
-                <React.Fragment key={step.id}>
-                  {/* Step button */}
-                  <motion.button
-                    onClick={() => {
-                      if (step.id < currentStep || (step.id === 2 && wizardData.patient)) {
-                        goToStep(step.id);
-                      }
-                    }}
-                    disabled={step.id > currentStep && !(step.id === 2 && wizardData.patient)}
-                    className={cn(
-                      "relative z-10 flex items-center gap-2 transition-all duration-300 flex-shrink-0",
-                      (step.id <= currentStep || (step.id === 2 && wizardData.patient)) && "cursor-pointer"
-                    )}
-                    whileHover={{ scale: step.id <= currentStep ? 1.02 : 1 }}
-                    whileTap={{ scale: step.id <= currentStep ? 0.98 : 1 }}
-                  >
-                    <motion.div
-                      className={cn(
-                        "w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-300 shadow-sm",
-                        isCompleted && "bg-gradient-to-br from-primary to-primary/80 text-primary-foreground",
-                        isCurrent && "bg-gradient-to-br from-primary/90 to-primary text-primary-foreground ring-2 ring-primary/20",
-                        !isCompleted && !isCurrent && "bg-muted text-muted-foreground"
-                      )}
-                      animate={{
-                        scale: isCurrent ? 1.05 : 1,
+                return (
+                  <React.Fragment key={step.id}>
+                    {/* Step button */}
+                    <motion.button
+                      onClick={() => {
+                        if (step.id < currentStep || (step.id === 2 && wizardData.patient)) {
+                          goToStep(step.id);
+                        }
                       }}
-                    >
-                      {isCompleted ? (
-                        <Check className="w-4 h-4" />
-                      ) : (
-                        <Icon className="w-4 h-4" />
+                      disabled={step.id > currentStep && !(step.id === 2 && wizardData.patient)}
+                      className={cn(
+                        "relative z-10 flex items-center gap-2 transition-all duration-300 flex-shrink-0",
+                        (step.id <= currentStep || (step.id === 2 && wizardData.patient)) && "cursor-pointer"
                       )}
-                    </motion.div>
-                    <div className="text-left hidden sm:block">
-                      <p className={cn(
-                        "font-medium text-sm leading-tight transition-colors",
-                        (isCurrent || isCompleted) ? "text-foreground" : "text-muted-foreground"
-                      )}>
-                        {step.title}
-                      </p>
-                      <p className="text-[10px] text-muted-foreground leading-tight">
-                        {step.description}
-                      </p>
-                    </div>
-                  </motion.button>
-
-                  {/* Connector line between steps */}
-                  {!isLast && (
-                    <div className="flex-1 mx-3 h-0.5 bg-muted rounded-full overflow-hidden">
-                      <motion.div 
-                        className="h-full bg-primary rounded-full"
-                        initial={{ width: "0%" }}
-                        animate={{ 
-                          width: isCompleted ? "100%" : "0%" 
+                      whileHover={{ scale: step.id <= currentStep ? 1.02 : 1 }}
+                      whileTap={{ scale: step.id <= currentStep ? 0.98 : 1 }}
+                    >
+                      <motion.div
+                        className={cn(
+                          "w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-300 shadow-sm",
+                          isCompleted && "bg-gradient-to-br from-primary to-primary/80 text-primary-foreground",
+                          isCurrent && "bg-gradient-to-br from-primary/90 to-primary text-primary-foreground ring-2 ring-primary/20",
+                          !isCompleted && !isCurrent && "bg-muted text-muted-foreground"
+                        )}
+                        animate={{
+                          scale: isCurrent ? 1.05 : 1,
                         }}
-                        transition={{ duration: 0.4, ease: "easeOut" }}
-                      />
-                    </div>
-                  )}
-                </React.Fragment>
-              );
-            })}
-          </div>
-        </div>
-      </motion.div>
+                      >
+                        {isCompleted ? (
+                          <Check className="w-4 h-4" />
+                        ) : (
+                          <Icon className="w-4 h-4" />
+                        )}
+                      </motion.div>
+                      <div className="text-left hidden sm:block">
+                        <p className={cn(
+                          "font-medium text-sm leading-tight transition-colors",
+                          (isCurrent || isCompleted) ? "text-foreground" : "text-muted-foreground"
+                        )}>
+                          {step.title}
+                        </p>
+                        <p className="text-[10px] text-muted-foreground leading-tight">
+                          {step.description}
+                        </p>
+                      </div>
+                    </motion.button>
 
-      {/* Scrollable Content area */}
-      <div className="pt-28 px-4 md:px-8">
+                    {/* Connector line between steps */}
+                    {!isLast && (
+                      <div className="flex-1 mx-3 h-0.5 bg-muted rounded-full overflow-hidden">
+                        <motion.div 
+                          className="h-full bg-primary rounded-full"
+                          initial={{ width: "0%" }}
+                          animate={{ 
+                            width: isCompleted ? "100%" : "0%" 
+                          }}
+                          transition={{ duration: 0.4, ease: "easeOut" }}
+                        />
+                      </div>
+                    )}
+                  </React.Fragment>
+                );
+              })}
+            </div>
+          </div>
+        </motion.div>
+      </div>
+
+      {/* Scrollable Content area - with enough top padding to clear the fixed stepper */}
+      <div className="pt-36 px-4 md:px-8 pb-8">
         <div className="max-w-5xl mx-auto">
           <div className="relative overflow-hidden">
           <AnimatePresence mode="wait" custom={direction}>
