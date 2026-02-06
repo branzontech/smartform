@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { MapPin, RefreshCw, Upload, Download, Settings2 } from 'lucide-react';
+import { MapPin, RefreshCw, Upload, Download, Settings2, Route, Layers } from 'lucide-react';
 import { toast } from 'sonner';
 import { Header } from '@/components/layout/header';
 import { Button } from '@/components/ui/button';
-import { ZoneMap, ZoneSidebar, CreateZoneModal } from '@/components/zones';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { ZoneMap, ZoneSidebar, CreateZoneModal, DistanceCalculator } from '@/components/zones';
 import { useGoogleMaps } from '@/hooks/useGoogleMaps';
 import { Zone, GeocodedLocation, LatLng, DrawingMode } from '@/types/zone-types';
 import { supabase } from '@/integrations/supabase/client';
@@ -359,58 +360,91 @@ const ZonesPage: React.FC = () => {
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
       <main className="flex-1 overflow-hidden">
-        <ResizablePanelGroup direction="horizontal" className="h-[calc(100vh-64px)]">
-          {/* Sidebar */}
-          <ResizablePanel defaultSize={25} minSize={20} maxSize={35}>
-            <ZoneSidebar
-              zones={zones}
-              locations={locations}
-              selectedZone={selectedZone}
-              selectedZoneIds={selectedZoneIds}
-              drawingMode={drawingMode}
-              entityFilter={entityFilter}
-              onSelectZone={setSelectedZone}
-              onToggleZoneFilter={handleToggleZoneFilter}
-              onSelectAllZones={handleSelectAllZones}
-              onClearZoneFilters={handleClearZoneFilters}
-              onDeleteZone={handleDeleteZone}
-              onStartDrawing={() => setDrawingMode('polygon')}
-              onCancelDrawing={() => setDrawingMode('none')}
-              onEditZone={(zone) => {
-                toast.info('Edición de zona próximamente');
-              }}
-              onEntityFilterChange={setEntityFilter}
-            />
-          </ResizablePanel>
+        <Tabs defaultValue="zones" className="h-[calc(100vh-64px)] flex flex-col">
+          {/* Tab Headers */}
+          <div className="px-4 pt-3 pb-2 border-b border-border/30 bg-card/30 backdrop-blur-sm">
+            <TabsList className="grid w-fit grid-cols-2">
+              <TabsTrigger value="zones" className="gap-2">
+                <Layers className="w-4 h-4" />
+                Zonas
+              </TabsTrigger>
+              <TabsTrigger value="distance" className="gap-2">
+                <Route className="w-4 h-4" />
+                Calcular Distancia
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
-          <ResizableHandle withHandle />
-
-          {/* Map */}
-          <ResizablePanel defaultSize={75}>
-            <div className="h-full p-4">
-              {isLoaded ? (
-                <ZoneMap
+          {/* Zones Tab */}
+          <TabsContent value="zones" className="flex-1 m-0 data-[state=inactive]:hidden">
+            <ResizablePanelGroup direction="horizontal" className="h-full">
+              {/* Sidebar */}
+              <ResizablePanel defaultSize={25} minSize={20} maxSize={35}>
+                <ZoneSidebar
                   zones={zones}
-                  locations={filteredLocations}
+                  locations={locations}
                   selectedZone={selectedZone}
+                  selectedZoneIds={selectedZoneIds}
                   drawingMode={drawingMode}
-                  onZoneCreated={handleZoneCreated}
-                  onZoneSelected={setSelectedZone}
-                  onLocationSelected={handleLocationSelected}
-                  apiKey={apiKey}
-                  className="h-full"
+                  entityFilter={entityFilter}
+                  onSelectZone={setSelectedZone}
+                  onToggleZoneFilter={handleToggleZoneFilter}
+                  onSelectAllZones={handleSelectAllZones}
+                  onClearZoneFilters={handleClearZoneFilters}
+                  onDeleteZone={handleDeleteZone}
+                  onStartDrawing={() => setDrawingMode('polygon')}
+                  onCancelDrawing={() => setDrawingMode('none')}
+                  onEditZone={(zone) => {
+                    toast.info('Edición de zona próximamente');
+                  }}
+                  onEntityFilterChange={setEntityFilter}
                 />
-              ) : (
-                <div className="h-full flex items-center justify-center bg-muted/20 rounded-2xl">
-                  <div className="text-center">
-                    <RefreshCw className="w-8 h-8 animate-spin mx-auto mb-2 text-primary" />
-                    <p className="text-sm text-muted-foreground">Cargando mapa...</p>
-                  </div>
+              </ResizablePanel>
+
+              <ResizableHandle withHandle />
+
+              {/* Map */}
+              <ResizablePanel defaultSize={75}>
+                <div className="h-full p-4">
+                  {isLoaded ? (
+                    <ZoneMap
+                      zones={zones}
+                      locations={filteredLocations}
+                      selectedZone={selectedZone}
+                      drawingMode={drawingMode}
+                      onZoneCreated={handleZoneCreated}
+                      onZoneSelected={setSelectedZone}
+                      onLocationSelected={handleLocationSelected}
+                      apiKey={apiKey}
+                      className="h-full"
+                    />
+                  ) : (
+                    <div className="h-full flex items-center justify-center bg-muted/20 rounded-2xl">
+                      <div className="text-center">
+                        <RefreshCw className="w-8 h-8 animate-spin mx-auto mb-2 text-primary" />
+                        <p className="text-sm text-muted-foreground">Cargando mapa...</p>
+                      </div>
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
-          </ResizablePanel>
-        </ResizablePanelGroup>
+              </ResizablePanel>
+            </ResizablePanelGroup>
+          </TabsContent>
+
+          {/* Distance Calculator Tab */}
+          <TabsContent value="distance" className="flex-1 m-0 data-[state=inactive]:hidden">
+            {isLoaded ? (
+              <DistanceCalculator apiKey={apiKey} className="h-full" />
+            ) : (
+              <div className="h-full flex items-center justify-center bg-muted/20">
+                <div className="text-center">
+                  <RefreshCw className="w-8 h-8 animate-spin mx-auto mb-2 text-primary" />
+                  <p className="text-sm text-muted-foreground">Cargando mapa...</p>
+                </div>
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
       </main>
 
       {/* Create Zone Modal */}
