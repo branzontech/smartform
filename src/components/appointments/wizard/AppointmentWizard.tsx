@@ -91,69 +91,76 @@ export const AppointmentWizard: React.FC<AppointmentWizardProps> = ({
         animate={{ y: 0, opacity: 1 }}
         className="fixed top-20 left-0 right-0 z-50 px-4 md:px-8"
       >
-        <div className="max-w-2xl mx-auto">
+        <div className="max-w-xl mx-auto">
           {/* Stepper Windows 11 style - Compact */}
-          <div className="relative flex items-center justify-between bg-card/95 backdrop-blur-xl rounded-2xl px-6 py-2.5 shadow-md border border-border/30">
-            {/* Progress line - centered between steps */}
-            <div className="absolute left-[15%] right-[15%] top-1/2 -translate-y-1/2 h-0.5 bg-muted/50 rounded-full z-0">
-              <motion.div 
-                className="h-full bg-gradient-to-r from-primary via-primary to-primary/60 rounded-full"
-                initial={{ width: "0%" }}
-                animate={{ width: `${((currentStep - 1) / (steps.length - 1)) * 100}%` }}
-                transition={{ duration: 0.4, ease: "easeOut" }}
-              />
-            </div>
-
-            {steps.map((step) => {
+          <div className="relative flex items-center bg-card/95 backdrop-blur-xl rounded-2xl px-4 py-2.5 shadow-md border border-border/30">
+            {steps.map((step, index) => {
               const isCompleted = currentStep > step.id;
               const isCurrent = currentStep === step.id;
               const Icon = step.icon;
+              const isLast = index === steps.length - 1;
 
               return (
-                <motion.button
-                  key={step.id}
-                  onClick={() => {
-                    if (step.id < currentStep || (step.id === 2 && wizardData.patient)) {
-                      goToStep(step.id);
-                    }
-                  }}
-                  disabled={step.id > currentStep && !(step.id === 2 && wizardData.patient)}
-                  className={cn(
-                    "relative z-10 flex items-center gap-2 transition-all duration-300",
-                    (step.id <= currentStep || (step.id === 2 && wizardData.patient)) && "cursor-pointer"
-                  )}
-                  whileHover={{ scale: step.id <= currentStep ? 1.02 : 1 }}
-                  whileTap={{ scale: step.id <= currentStep ? 0.98 : 1 }}
-                >
-                  <motion.div
-                    className={cn(
-                      "w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-300 shadow-sm",
-                      isCompleted && "bg-gradient-to-br from-primary to-primary/80 text-primary-foreground",
-                      isCurrent && "bg-gradient-to-br from-primary/90 to-primary text-primary-foreground ring-2 ring-primary/20",
-                      !isCompleted && !isCurrent && "bg-muted/80 text-muted-foreground"
-                    )}
-                    animate={{
-                      scale: isCurrent ? 1.05 : 1,
+                <React.Fragment key={step.id}>
+                  {/* Step button */}
+                  <motion.button
+                    onClick={() => {
+                      if (step.id < currentStep || (step.id === 2 && wizardData.patient)) {
+                        goToStep(step.id);
+                      }
                     }}
-                  >
-                    {isCompleted ? (
-                      <Check className="w-4 h-4" />
-                    ) : (
-                      <Icon className="w-4 h-4" />
+                    disabled={step.id > currentStep && !(step.id === 2 && wizardData.patient)}
+                    className={cn(
+                      "relative z-10 flex items-center gap-2 transition-all duration-300 flex-shrink-0",
+                      (step.id <= currentStep || (step.id === 2 && wizardData.patient)) && "cursor-pointer"
                     )}
-                  </motion.div>
-                  <div className="text-left hidden sm:block">
-                    <p className={cn(
-                      "font-medium text-sm leading-tight transition-colors",
-                      (isCurrent || isCompleted) ? "text-foreground" : "text-muted-foreground"
-                    )}>
-                      {step.title}
-                    </p>
-                    <p className="text-[10px] text-muted-foreground leading-tight">
-                      {step.description}
-                    </p>
-                  </div>
-                </motion.button>
+                    whileHover={{ scale: step.id <= currentStep ? 1.02 : 1 }}
+                    whileTap={{ scale: step.id <= currentStep ? 0.98 : 1 }}
+                  >
+                    <motion.div
+                      className={cn(
+                        "w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-300 shadow-sm",
+                        isCompleted && "bg-gradient-to-br from-primary to-primary/80 text-primary-foreground",
+                        isCurrent && "bg-gradient-to-br from-primary/90 to-primary text-primary-foreground ring-2 ring-primary/20",
+                        !isCompleted && !isCurrent && "bg-muted text-muted-foreground"
+                      )}
+                      animate={{
+                        scale: isCurrent ? 1.05 : 1,
+                      }}
+                    >
+                      {isCompleted ? (
+                        <Check className="w-4 h-4" />
+                      ) : (
+                        <Icon className="w-4 h-4" />
+                      )}
+                    </motion.div>
+                    <div className="text-left hidden sm:block">
+                      <p className={cn(
+                        "font-medium text-sm leading-tight transition-colors",
+                        (isCurrent || isCompleted) ? "text-foreground" : "text-muted-foreground"
+                      )}>
+                        {step.title}
+                      </p>
+                      <p className="text-[10px] text-muted-foreground leading-tight">
+                        {step.description}
+                      </p>
+                    </div>
+                  </motion.button>
+
+                  {/* Connector line between steps */}
+                  {!isLast && (
+                    <div className="flex-1 mx-3 h-0.5 bg-muted rounded-full overflow-hidden">
+                      <motion.div 
+                        className="h-full bg-primary rounded-full"
+                        initial={{ width: "0%" }}
+                        animate={{ 
+                          width: isCompleted ? "100%" : "0%" 
+                        }}
+                        transition={{ duration: 0.4, ease: "easeOut" }}
+                      />
+                    </div>
+                  )}
+                </React.Fragment>
               );
             })}
           </div>
