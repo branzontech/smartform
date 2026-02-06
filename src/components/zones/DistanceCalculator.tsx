@@ -9,7 +9,8 @@ import {
   Route,
   DollarSign,
   Clock,
-  Ruler
+  Ruler,
+  AlertCircle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,6 +20,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import { LatLng } from '@/types/zone-types';
+import { toast } from 'sonner';
 
 interface DistanceCalculatorProps {
   apiKey: string;
@@ -292,8 +294,24 @@ export const DistanceCalculator: React.FC<DistanceCalculatorProps> = ({
 
         directionsRendererRef.current?.setDirections(result);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error calculating route:', error);
+      
+      // Show user-friendly error message
+      if (error?.code === 'REQUEST_DENIED') {
+        toast.error('Error al calcular la ruta', {
+          description: 'La Directions API no está habilitada. Habilítala en Google Cloud Console.',
+          duration: 10000,
+        });
+      } else if (error?.code === 'ZERO_RESULTS') {
+        toast.error('No se encontró ruta', {
+          description: 'No hay ruta disponible entre los puntos seleccionados.',
+        });
+      } else {
+        toast.error('Error al calcular la ruta', {
+          description: error?.message || 'Ocurrió un error inesperado.',
+        });
+      }
     } finally {
       setIsCalculating(false);
     }
