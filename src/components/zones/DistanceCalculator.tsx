@@ -374,17 +374,17 @@ export const DistanceCalculator: React.FC<DistanceCalculatorProps> = ({
 
   return (
     <div className={cn("h-full flex", className)}>
-      {/* Sidebar */}
-      <div className="w-80 flex flex-col bg-card/50 backdrop-blur-sm border-r border-border/30 overflow-hidden">
-        {/* Header */}
-        <div className="p-4 border-b border-border/20 shrink-0">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center">
-              <Route className="w-5 h-5 text-emerald-500" />
+      {/* Sidebar - Fixed with internal scroll */}
+      <div className="w-72 flex flex-col bg-card/50 backdrop-blur-sm border-r border-border/30 overflow-hidden shrink-0">
+        {/* Header - Fixed */}
+        <div className="p-3 border-b border-border/20 shrink-0">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center">
+              <Route className="w-4 h-4 text-emerald-500" />
             </div>
             <div>
-              <h2 className="font-semibold">Calcular Distancia</h2>
-              <p className="text-xs text-muted-foreground">Estima el costo del trayecto</p>
+              <h2 className="text-sm font-semibold">Calcular Distancia</h2>
+              <p className="text-[10px] text-muted-foreground">Estima el costo del trayecto</p>
             </div>
           </div>
         </div>
@@ -392,42 +392,42 @@ export const DistanceCalculator: React.FC<DistanceCalculatorProps> = ({
         {/* Scrollable content */}
         <ScrollArea className="flex-1">
           {/* Waypoints */}
-          <div className="p-4 space-y-3">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium">Puntos del trayecto</span>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={addWaypoint}
-              disabled={waypoints.length >= 6}
-              className="h-7 text-xs"
-            >
-              <Plus className="w-3 h-3 mr-1" />
-              Agregar
-            </Button>
-          </div>
-
-          <AnimatePresence>
-            {waypoints.map((wp, index) => (
-              <motion.div
-                key={wp.id}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                className={cn(
-                  "p-3 rounded-xl border transition-all cursor-pointer",
-                  activeWaypointId === wp.id
-                    ? "bg-primary/10 border-primary/30 ring-2 ring-primary/20"
-                    : wp.position
-                      ? "bg-muted/30 border-border/30"
-                      : "bg-background border-dashed border-muted-foreground/30"
-                )}
-                onClick={() => !wp.position && setActiveWaypointId(wp.id)}
+          <div className="p-3 space-y-2">
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-xs font-medium">Puntos del trayecto</span>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={addWaypoint}
+                disabled={waypoints.length >= 6}
+                className="h-6 text-[10px] px-2"
               >
-                <div className="flex items-start gap-3">
-                  <div 
-                    className={cn(
-                      "w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm shrink-0",
+                <Plus className="w-2.5 h-2.5 mr-1" />
+                Agregar
+              </Button>
+            </div>
+
+            <AnimatePresence>
+              {waypoints.map((wp, index) => (
+                <motion.div
+                  key={wp.id}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  className={cn(
+                    "p-2 rounded-lg border transition-all cursor-pointer",
+                    activeWaypointId === wp.id
+                      ? "bg-primary/10 border-primary/30 ring-2 ring-primary/20"
+                      : wp.position
+                        ? "bg-muted/30 border-border/30"
+                        : "bg-background border-dashed border-muted-foreground/30"
+                  )}
+                  onClick={() => !wp.position && setActiveWaypointId(wp.id)}
+                >
+                  <div className="flex items-start gap-2">
+                    <div 
+                      className={cn(
+                        "w-6 h-6 rounded-full flex items-center justify-center text-white font-bold text-[10px] shrink-0",
                       index === 0 ? "bg-emerald-500" :
                       index === waypoints.length - 1 ? "bg-red-500" :
                       "bg-amber-500"
@@ -437,7 +437,7 @@ export const DistanceCalculator: React.FC<DistanceCalculatorProps> = ({
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-medium text-muted-foreground">
+                      <span className="text-[10px] font-medium text-muted-foreground">
                         {wp.label}
                       </span>
                       {index > 0 && index < waypoints.length - 1 && (
@@ -448,16 +448,16 @@ export const DistanceCalculator: React.FC<DistanceCalculatorProps> = ({
                             e.stopPropagation();
                             removeWaypoint(wp.id);
                           }}
-                          className="h-6 w-6 p-0 text-muted-foreground hover:text-destructive"
+                          className="h-5 w-5 p-0 text-muted-foreground hover:text-destructive"
                         >
-                          <Trash2 className="w-3 h-3" />
+                          <Trash2 className="w-2.5 h-2.5" />
                         </Button>
                       )}
                     </div>
                     {wp.position ? (
-                      <p className="text-xs mt-1 line-clamp-2">{wp.address}</p>
+                      <p className="text-[10px] mt-0.5 line-clamp-2">{wp.address}</p>
                     ) : (
-                      <p className="text-xs text-muted-foreground mt-1 italic">
+                      <p className="text-[10px] text-muted-foreground mt-0.5 italic">
                         {activeWaypointId === wp.id 
                           ? "Haz clic en el mapa..." 
                           : "Sin seleccionar"}
@@ -473,139 +473,140 @@ export const DistanceCalculator: React.FC<DistanceCalculatorProps> = ({
             variant="outline"
             size="sm"
             onClick={clearAll}
-            className="w-full mt-2"
+            className="w-full mt-2 h-7 text-[10px]"
           >
-            <Trash2 className="w-3 h-3 mr-2" />
+            <Trash2 className="w-2.5 h-2.5 mr-1.5" />
             Limpiar todo
           </Button>
           </div>
-        {/* Pricing config */}
-        <div className="p-4 border-t border-border/20 space-y-3">
-          <span className="text-sm font-medium">Configuración de tarifa</span>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <Label className="text-xs text-muted-foreground">Base</Label>
-              <div className="relative">
-                <DollarSign className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground" />
-                <Input
-                  type="number"
-                  value={baseFare}
-                  onChange={(e) => setBaseFare(Number(e.target.value))}
-                  className="h-8 pl-7 text-xs"
-                />
+
+          {/* Pricing config */}
+          <div className="p-3 border-t border-border/20 space-y-2">
+            <span className="text-xs font-medium">Configuración de tarifa</span>
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <Label className="text-[10px] text-muted-foreground">Base</Label>
+                <div className="relative">
+                  <DollarSign className="absolute left-2 top-1/2 -translate-y-1/2 w-2.5 h-2.5 text-muted-foreground" />
+                  <Input
+                    type="number"
+                    value={baseFare}
+                    onChange={(e) => setBaseFare(Number(e.target.value))}
+                    className="h-7 pl-6 text-[10px]"
+                  />
+                </div>
               </div>
-            </div>
-            <div>
-              <Label className="text-xs text-muted-foreground">Por km</Label>
-              <div className="relative">
-                <DollarSign className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground" />
-                <Input
-                  type="number"
-                  value={pricePerKm}
-                  onChange={(e) => setPricePerKm(Number(e.target.value))}
-                  className="h-8 pl-7 text-xs"
-                />
+              <div>
+                <Label className="text-[10px] text-muted-foreground">Por km</Label>
+                <div className="relative">
+                  <DollarSign className="absolute left-2 top-1/2 -translate-y-1/2 w-2.5 h-2.5 text-muted-foreground" />
+                  <Input
+                    type="number"
+                    value={pricePerKm}
+                    onChange={(e) => setPricePerKm(Number(e.target.value))}
+                    className="h-7 pl-6 text-[10px]"
+                  />
+                </div>
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Results */}
-        {routeResult && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="p-4 border-t border-border/20 bg-emerald-500/5"
-          >
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Ruler className="w-4 h-4" />
-                  <span className="text-xs">Distancia</span>
+          {/* Results */}
+          {routeResult && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="p-3 border-t border-border/20 bg-emerald-500/5"
+            >
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5 text-muted-foreground">
+                    <Ruler className="w-3 h-3" />
+                    <span className="text-[10px]">Distancia</span>
+                  </div>
+                  <span className="text-xs font-semibold">{routeResult.distance.toFixed(2)} km</span>
                 </div>
-                <span className="font-semibold">{routeResult.distance.toFixed(2)} km</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Clock className="w-4 h-4" />
-                  <span className="text-xs">Tiempo estimado</span>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5 text-muted-foreground">
+                    <Clock className="w-3 h-3" />
+                    <span className="text-[10px]">Tiempo estimado</span>
+                  </div>
+                  <span className="text-xs font-semibold">{routeResult.duration} min</span>
                 </div>
-                <span className="font-semibold">{routeResult.duration} min</span>
-              </div>
-              <Separator />
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Calculator className="w-4 h-4" />
-                  <span className="text-xs">Precio base</span>
+                <Separator />
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5 text-muted-foreground">
+                    <Calculator className="w-3 h-3" />
+                    <span className="text-[10px]">Precio base</span>
+                  </div>
+                  <span className="text-[10px]">{formatCOP(baseFare)}</span>
                 </div>
-                <span className="text-sm">{formatCOP(baseFare)}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Route className="w-4 h-4" />
-                  <span className="text-xs">Por distancia</span>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5 text-muted-foreground">
+                    <Route className="w-3 h-3" />
+                    <span className="text-[10px]">Por distancia</span>
+                  </div>
+                  <span className="text-[10px]">{formatCOP(routeResult.distance * pricePerKm)}</span>
                 </div>
-                <span className="text-sm">{formatCOP(routeResult.distance * pricePerKm)}</span>
+                <Separator />
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold">Total estimado</span>
+                  <Badge className="text-sm bg-emerald-500 hover:bg-emerald-600">
+                    {formatCOP(totalPrice)}
+                  </Badge>
+                </div>
               </div>
-              <Separator />
-              <div className="flex items-center justify-between">
-                <span className="font-semibold">Total estimado</span>
-                <Badge className="text-lg bg-emerald-500 hover:bg-emerald-600">
-                  {formatCOP(totalPrice)}
-                </Badge>
-              </div>
-            </div>
-          </motion.div>
-        )}
+            </motion.div>
+          )}
         </ScrollArea>
       </div>
 
-      {/* Map */}
-      <div className="flex-1 relative">
+      {/* Map - Fixed container */}
+      <div className="flex-1 relative overflow-hidden">
         <div ref={mapRef} className="w-full h-full" />
         
         {!isMapLoaded && (
           <div className="absolute inset-0 bg-background/80 flex items-center justify-center">
             <div className="text-center">
-              <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-2" />
-              <p className="text-sm text-muted-foreground">Cargando mapa...</p>
+              <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+              <p className="text-xs text-muted-foreground">Cargando mapa...</p>
             </div>
           </div>
         )}
 
         {isCalculating && (
-          <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-card/95 backdrop-blur-sm rounded-xl px-4 py-2 shadow-lg border border-border/30">
+          <div className="absolute top-3 left-1/2 -translate-x-1/2 bg-card/95 backdrop-blur-sm rounded-lg px-3 py-1.5 shadow-lg border border-border/30">
             <div className="flex items-center gap-2">
-              <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-              <span className="text-sm">Calculando ruta...</span>
+              <div className="w-3 h-3 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+              <span className="text-xs">Calculando ruta...</span>
             </div>
           </div>
         )}
 
         {/* Instructions */}
         {activeWaypointId && (
-          <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-card/95 backdrop-blur-sm rounded-xl px-4 py-2 shadow-lg border border-border/30">
-            <p className="text-sm">
+          <div className="absolute top-3 left-1/2 -translate-x-1/2 bg-card/95 backdrop-blur-sm rounded-lg px-3 py-1.5 shadow-lg border border-border/30">
+            <p className="text-xs">
               Haz clic en el mapa para marcar el punto <span className="font-bold">{activeWaypointId}</span>
             </p>
           </div>
         )}
 
         {/* Legend */}
-        <div className="absolute bottom-4 right-4 bg-card/95 backdrop-blur-sm rounded-xl p-3 shadow-lg border border-border/30">
-          <p className="text-[10px] font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Ruta</p>
-          <div className="space-y-1.5">
-            <div className="flex items-center gap-2">
-              <div className="w-4 h-4 rounded-full bg-emerald-500" />
-              <span className="text-xs">Origen</span>
+        <div className="absolute bottom-3 right-3 bg-card/95 backdrop-blur-sm rounded-lg p-2 shadow-lg border border-border/30">
+          <p className="text-[9px] font-semibold text-muted-foreground mb-1.5 uppercase tracking-wide">Ruta</p>
+          <div className="space-y-1">
+            <div className="flex items-center gap-1.5">
+              <div className="w-3 h-3 rounded-full bg-emerald-500" />
+              <span className="text-[10px]">Origen</span>
             </div>
-            <div className="flex items-center gap-2">
-              <div className="w-4 h-4 rounded-full bg-amber-500" />
-              <span className="text-xs">Paradas</span>
+            <div className="flex items-center gap-1.5">
+              <div className="w-3 h-3 rounded-full bg-amber-500" />
+              <span className="text-[10px]">Paradas</span>
             </div>
-            <div className="flex items-center gap-2">
-              <div className="w-4 h-4 rounded-full bg-red-500" />
-              <span className="text-xs">Destino</span>
+            <div className="flex items-center gap-1.5">
+              <div className="w-3 h-3 rounded-full bg-red-500" />
+              <span className="text-[10px]">Destino</span>
             </div>
           </div>
         </div>
