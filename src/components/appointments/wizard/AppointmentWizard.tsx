@@ -148,9 +148,10 @@ export const AppointmentWizard: React.FC<AppointmentWizardProps> = ({
   ];
 
   // Header: top-4 (16px) + h-16 (64px) + gap (4px) = 84px
-  // Stepper: ~48px (py-1.5 + content)
-  // Total navigation height = 132px
-  const NAV_HEIGHT = 132;
+  // Stepper: ~46px (py-1 + content)
+  // Gap: 10px
+  // Total = 140px → reduced to fit tightly
+  const NAV_HEIGHT = 140;
 
   return (
     <TooltipProvider>
@@ -164,11 +165,11 @@ export const AppointmentWizard: React.FC<AppointmentWizardProps> = ({
           <motion.div 
             initial={{ y: -10, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            className="px-6 md:px-8 py-1.5"
+            className="px-6 md:px-8 py-1"
           >
             <div className="max-w-xl mx-auto">
               {/* Stepper Windows 11 style - Compact */}
-              <div className="relative flex items-center bg-card/80 backdrop-blur rounded-2xl px-4 py-2 border border-border/10">
+              <div className="relative flex items-center bg-card/80 backdrop-blur rounded-2xl px-4 py-1.5 border border-border/10">
                 {steps.map((step, index) => {
                   const isCompleted = currentStep > step.id;
                   const isCurrent = currentStep === step.id;
