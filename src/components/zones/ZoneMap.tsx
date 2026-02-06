@@ -1,8 +1,10 @@
 /// <reference types="@types/google.maps" />
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
+import { Undo2, X } from 'lucide-react';
 import { Zone, GeocodedLocation, LatLng, DrawingMode } from '@/types/zone-types';
 import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
 
 interface ZoneMapProps {
   zones: Zone[];
@@ -104,6 +106,25 @@ export const ZoneMap: React.FC<ZoneMapProps> = ({
       drawingPolylineRef.current = null;
     }
     setDrawingPointsCount(0);
+  }, []);
+
+  // Helper: Undo last point
+  const undoLastPoint = useCallback(() => {
+    if (drawingPointsRef.current.length === 0) return;
+    
+    // Remove last point
+    drawingPointsRef.current.pop();
+    
+    // Remove last marker
+    const lastMarker = drawingMarkersRef.current.pop();
+    if (lastMarker) lastMarker.setMap(null);
+    
+    // Update polyline
+    if (drawingPolylineRef.current) {
+      drawingPolylineRef.current.setPath(drawingPointsRef.current);
+    }
+    
+    setDrawingPointsCount(drawingPointsRef.current.length);
   }, []);
 
   // Helper: Update polyline
@@ -373,8 +394,8 @@ export const ZoneMap: React.FC<ZoneMapProps> = ({
 
       {/* Drawing instructions */}
       {drawingMode === 'polygon' && (
-        <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-card/95 backdrop-blur-sm rounded-xl px-4 py-2 shadow-lg border border-border/30">
-          <p className="text-sm font-medium">
+        <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-card/95 backdrop-blur-sm rounded-xl px-4 py-3 shadow-lg border border-border/30 flex flex-col items-center gap-2">
+          <p className="text-sm font-medium text-center">
             {drawingPointsCount === 0 && 'Haz clic en el mapa para comenzar a dibujar'}
             {drawingPointsCount === 1 && 'Continúa haciendo clic para agregar puntos'}
             {drawingPointsCount === 2 && 'Agrega al menos un punto más'}
@@ -384,6 +405,28 @@ export const ZoneMap: React.FC<ZoneMapProps> = ({
               </span>
             )}
           </p>
+          {drawingPointsCount > 0 && (
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={undoLastPoint}
+                className="h-8 text-xs"
+              >
+                <Undo2 className="w-3 h-3 mr-1" />
+                Deshacer punto
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={clearDrawing}
+                className="h-8 text-xs text-destructive hover:text-destructive"
+              >
+                <X className="w-3 h-3 mr-1" />
+                Cancelar
+              </Button>
+            </div>
+          )}
         </div>
       )}
 
