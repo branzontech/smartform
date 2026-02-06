@@ -7,3 +7,5 @@ export { AppointmentActionsPanel } from "./AppointmentActionsPanel";
 export { ResourceAvailabilityPanel } from "./ResourceAvailabilityPanel";
 export { NotificationPreview, AppointmentSummaryCard } from "./NotificationPreview";
 export { DoctorStatsDrawer } from "./DoctorStatsDrawer";
+export { DoctorSearchCombobox, type DoctorOption } from "./DoctorSearchCombobox";
+export { SchedulingSidebar } from "./SchedulingSidebar";
