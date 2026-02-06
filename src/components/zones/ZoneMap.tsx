@@ -16,8 +16,9 @@ interface ZoneMapProps {
   className?: string;
 }
 
-const DEFAULT_CENTER = { lat: 4.7110, lng: -74.0721 }; // Bogotá, Colombia
-const DEFAULT_ZOOM = 12;
+// Fallback to Cartagena de Indias if geolocation fails
+const CARTAGENA_CENTER = { lat: 10.3910, lng: -75.4794 };
+const DEFAULT_ZOOM = 13;
 
 export const ZoneMap: React.FC<ZoneMapProps> = ({
   zones,
@@ -35,14 +36,38 @@ export const ZoneMap: React.FC<ZoneMapProps> = ({
   const drawingManagerRef = useRef<google.maps.drawing.DrawingManager | null>(null);
   const polygonsRef = useRef<Map<string, google.maps.Polygon>>(new Map());
   const markersRef = useRef<Map<string, google.maps.Marker>>(new Map());
+  const userMarkerRef = useRef<google.maps.Marker | null>(null);
   const [isMapLoaded, setIsMapLoaded] = useState(false);
+  const [userLocation, setUserLocation] = useState<LatLng | null>(null);
+
+  // Get user location
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setUserLocation({
+            lat: position.coords.latitude,
+            lng: position.coords.longitude,
+          });
+        },
+        (error) => {
+          console.warn('Geolocation error:', error.message);
+          // Fallback to Cartagena
+          setUserLocation(CARTAGENA_CENTER);
+        },
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 300000 }
+      );
+    } else {
+      setUserLocation(CARTAGENA_CENTER);
+    }
+  }, []);
 
   // Initialize map
   useEffect(() => {
-    if (!mapRef.current || !window.google?.maps) return;
+    if (!mapRef.current || !window.google?.maps || !userLocation) return;
 
     const map = new google.maps.Map(mapRef.current, {
-      center: DEFAULT_CENTER,
+      center: userLocation,
       zoom: DEFAULT_ZOOM,
       styles: [
         { featureType: 'poi', elementType: 'labels', stylers: [{ visibility: 'off' }] },
@@ -63,8 +88,35 @@ export const ZoneMap: React.FC<ZoneMapProps> = ({
       // Cleanup
       polygonsRef.current.forEach(p => p.setMap(null));
       markersRef.current.forEach(m => m.setMap(null));
+      if (userMarkerRef.current) userMarkerRef.current.setMap(null);
     };
-  }, [apiKey]);
+  }, [apiKey, userLocation]);
+
+  // Add user location marker
+  useEffect(() => {
+    if (!googleMapRef.current || !isMapLoaded || !userLocation) return;
+
+    // Remove previous marker
+    if (userMarkerRef.current) {
+      userMarkerRef.current.setMap(null);
+    }
+
+    // Create user location marker
+    userMarkerRef.current = new google.maps.Marker({
+      position: userLocation,
+      map: googleMapRef.current,
+      title: 'Mi ubicación',
+      icon: {
+        path: google.maps.SymbolPath.CIRCLE,
+        scale: 10,
+        fillColor: '#3B82F6',
+        fillOpacity: 1,
+        strokeColor: '#fff',
+        strokeWeight: 3,
+      },
+      zIndex: 1000,
+    });
+  }, [isMapLoaded, userLocation]);
 
   // Setup drawing manager
   useEffect(() => {
