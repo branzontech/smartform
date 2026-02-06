@@ -19,6 +19,7 @@ interface ZoneMapProps {
 // Fallback to Cartagena de Indias if geolocation fails
 const CARTAGENA_CENTER = { lat: 10.3910, lng: -75.4794 };
 const DEFAULT_ZOOM = 13;
+const CLOSE_THRESHOLD_PIXELS = 20; // Distance in pixels to close polygon
 
 export const ZoneMap: React.FC<ZoneMapProps> = ({
   zones,
@@ -33,12 +34,19 @@ export const ZoneMap: React.FC<ZoneMapProps> = ({
 }) => {
   const mapRef = useRef<HTMLDivElement>(null);
   const googleMapRef = useRef<google.maps.Map | null>(null);
-  const drawingManagerRef = useRef<google.maps.drawing.DrawingManager | null>(null);
   const polygonsRef = useRef<Map<string, google.maps.Polygon>>(new Map());
   const markersRef = useRef<Map<string, google.maps.Marker>>(new Map());
   const userMarkerRef = useRef<google.maps.Marker | null>(null);
+  
+  // Custom drawing state
+  const drawingPointsRef = useRef<LatLng[]>([]);
+  const drawingMarkersRef = useRef<google.maps.Marker[]>([]);
+  const drawingPolylineRef = useRef<google.maps.Polyline | null>(null);
+  const mapClickListenerRef = useRef<google.maps.MapsEventListener | null>(null);
+  
   const [isMapLoaded, setIsMapLoaded] = useState(false);
   const [userLocation, setUserLocation] = useState<LatLng | null>(null);
+  const [drawingPointsCount, setDrawingPointsCount] = useState(0);
 
   // Get user location
   useEffect(() => {
@@ -52,13 +60,67 @@ export const ZoneMap: React.FC<ZoneMapProps> = ({
         },
         (error) => {
           console.warn('Geolocation error:', error.message);
-          // Fallback to Cartagena
           setUserLocation(CARTAGENA_CENTER);
         },
         { enableHighAccuracy: true, timeout: 10000, maximumAge: 300000 }
       );
     } else {
       setUserLocation(CARTAGENA_CENTER);
+    }
+  }, []);
+
+  // Helper: Check if click is near starting point
+  const isNearStartingPoint = useCallback((clickLatLng: google.maps.LatLng): boolean => {
+    if (drawingPointsRef.current.length < 3) return false;
+    
+    const map = googleMapRef.current;
+    if (!map) return false;
+    
+    const startPoint = drawingPointsRef.current[0];
+    const projection = map.getProjection();
+    if (!projection) return false;
+    
+    const scale = Math.pow(2, map.getZoom() || 0);
+    const startPixel = projection.fromLatLngToPoint(new google.maps.LatLng(startPoint.lat, startPoint.lng));
+    const clickPixel = projection.fromLatLngToPoint(clickLatLng);
+    
+    if (!startPixel || !clickPixel) return false;
+    
+    const distance = Math.sqrt(
+      Math.pow((clickPixel.x - startPixel.x) * scale, 2) +
+      Math.pow((clickPixel.y - startPixel.y) * scale, 2)
+    );
+    
+    return distance < CLOSE_THRESHOLD_PIXELS;
+  }, []);
+
+  // Helper: Clear drawing state
+  const clearDrawing = useCallback(() => {
+    drawingMarkersRef.current.forEach(m => m.setMap(null));
+    drawingMarkersRef.current = [];
+    drawingPointsRef.current = [];
+    if (drawingPolylineRef.current) {
+      drawingPolylineRef.current.setMap(null);
+      drawingPolylineRef.current = null;
+    }
+    setDrawingPointsCount(0);
+  }, []);
+
+  // Helper: Update polyline
+  const updatePolyline = useCallback(() => {
+    const map = googleMapRef.current;
+    if (!map) return;
+    
+    if (drawingPolylineRef.current) {
+      drawingPolylineRef.current.setPath(drawingPointsRef.current);
+    } else {
+      drawingPolylineRef.current = new google.maps.Polyline({
+        path: drawingPointsRef.current,
+        strokeColor: '#3B82F6',
+        strokeWeight: 3,
+        strokeOpacity: 0.8,
+        map: map,
+      });
     }
   }, []);
 
@@ -79,29 +141,28 @@ export const ZoneMap: React.FC<ZoneMapProps> = ({
       },
       fullscreenControl: true,
       streetViewControl: false,
+      disableDoubleClickZoom: true, // Prevent double-click zoom while drawing
     });
 
     googleMapRef.current = map;
     setIsMapLoaded(true);
 
     return () => {
-      // Cleanup
       polygonsRef.current.forEach(p => p.setMap(null));
       markersRef.current.forEach(m => m.setMap(null));
       if (userMarkerRef.current) userMarkerRef.current.setMap(null);
+      clearDrawing();
     };
-  }, [apiKey, userLocation]);
+  }, [apiKey, userLocation, clearDrawing]);
 
   // Add user location marker
   useEffect(() => {
     if (!googleMapRef.current || !isMapLoaded || !userLocation) return;
 
-    // Remove previous marker
     if (userMarkerRef.current) {
       userMarkerRef.current.setMap(null);
     }
 
-    // Create user location marker
     userMarkerRef.current = new google.maps.Marker({
       position: userLocation,
       map: googleMapRef.current,
@@ -118,69 +179,95 @@ export const ZoneMap: React.FC<ZoneMapProps> = ({
     });
   }, [isMapLoaded, userLocation]);
 
-  // Setup drawing manager
+  // Handle drawing mode changes
   useEffect(() => {
-    if (!googleMapRef.current || !isMapLoaded) return;
+    const map = googleMapRef.current;
+    if (!map || !isMapLoaded) return;
 
-    const drawingManager = new google.maps.drawing.DrawingManager({
-      drawingMode: null,
-      drawingControl: false,
-      polygonOptions: {
-        fillColor: '#3B82F6',
-        fillOpacity: 0.3,
-        strokeColor: '#3B82F6',
-        strokeWeight: 2,
-        editable: true,
-        draggable: true,
-      },
-    });
+    // Remove previous listener
+    if (mapClickListenerRef.current) {
+      google.maps.event.removeListener(mapClickListenerRef.current);
+      mapClickListenerRef.current = null;
+    }
 
-    drawingManager.setMap(googleMapRef.current);
-    drawingManagerRef.current = drawingManager;
+    // Clear any existing drawing when mode changes
+    if (drawingMode === 'none') {
+      clearDrawing();
+      map.setOptions({ draggableCursor: null });
+      return;
+    }
 
-    // Listen for polygon complete
-    google.maps.event.addListener(drawingManager, 'polygoncomplete', (polygon: google.maps.Polygon) => {
-      const path = polygon.getPath();
-      const coordinates: LatLng[] = [];
+    // Set crosshair cursor when in drawing mode
+    map.setOptions({ draggableCursor: 'crosshair' });
+
+    // Add click listener for drawing
+    mapClickListenerRef.current = map.addListener('click', (e: google.maps.MapMouseEvent) => {
+      if (!e.latLng) return;
       
-      for (let i = 0; i < path.getLength(); i++) {
-        const point = path.getAt(i);
-        coordinates.push({ lat: point.lat(), lng: point.lng() });
+      const clickLatLng = e.latLng;
+      
+      // Check if clicking near starting point to close polygon
+      if (isNearStartingPoint(clickLatLng)) {
+        if (drawingPointsRef.current.length >= 3) {
+          // Complete the polygon
+          const coordinates = [...drawingPointsRef.current];
+          onZoneCreated(coordinates);
+          clearDrawing();
+        }
+        return;
       }
       
-      // Remove the drawn polygon (we'll manage it ourselves)
-      polygon.setMap(null);
+      // Add new point
+      const newPoint: LatLng = { lat: clickLatLng.lat(), lng: clickLatLng.lng() };
+      drawingPointsRef.current.push(newPoint);
+      setDrawingPointsCount(drawingPointsRef.current.length);
       
-      // Notify parent
-      onZoneCreated(coordinates);
+      // Create marker for this point
+      const isFirstPoint = drawingPointsRef.current.length === 1;
+      const marker = new google.maps.Marker({
+        position: newPoint,
+        map: map,
+        icon: {
+          path: google.maps.SymbolPath.CIRCLE,
+          scale: isFirstPoint ? 12 : 8,
+          fillColor: isFirstPoint ? '#22C55E' : '#3B82F6',
+          fillOpacity: 1,
+          strokeColor: '#fff',
+          strokeWeight: 2,
+        },
+        zIndex: 2000,
+        title: isFirstPoint ? 'Punto inicial (clic aquí para cerrar)' : `Punto ${drawingPointsRef.current.length}`,
+      });
       
-      // Reset drawing mode
-      drawingManager.setDrawingMode(null);
+      // If first point, add special click listener to close
+      if (isFirstPoint) {
+        marker.addListener('click', () => {
+          if (drawingPointsRef.current.length >= 3) {
+            const coordinates = [...drawingPointsRef.current];
+            onZoneCreated(coordinates);
+            clearDrawing();
+          }
+        });
+      }
+      
+      drawingMarkersRef.current.push(marker);
+      updatePolyline();
     });
 
     return () => {
-      drawingManager.setMap(null);
+      if (mapClickListenerRef.current) {
+        google.maps.event.removeListener(mapClickListenerRef.current);
+      }
     };
-  }, [isMapLoaded, onZoneCreated]);
-
-  // Update drawing mode
-  useEffect(() => {
-    if (!drawingManagerRef.current) return;
-    
-    drawingManagerRef.current.setDrawingMode(
-      drawingMode === 'polygon' ? google.maps.drawing.OverlayType.POLYGON : null
-    );
-  }, [drawingMode]);
+  }, [drawingMode, isMapLoaded, isNearStartingPoint, onZoneCreated, clearDrawing, updatePolyline]);
 
   // Render zones as polygons
   useEffect(() => {
     if (!googleMapRef.current || !isMapLoaded) return;
 
-    // Clear existing polygons
     polygonsRef.current.forEach(p => p.setMap(null));
     polygonsRef.current.clear();
 
-    // Create new polygons
     zones.forEach(zone => {
       const polygon = new google.maps.Polygon({
         paths: zone.polygon_coordinates,
@@ -194,12 +281,10 @@ export const ZoneMap: React.FC<ZoneMapProps> = ({
       polygon.setMap(googleMapRef.current);
       polygonsRef.current.set(zone.id, polygon);
 
-      // Add click listener
       polygon.addListener('click', () => {
         onZoneSelected(zone);
       });
 
-      // Add label at center
       if (zone.center_lat && zone.center_lng) {
         const label = new google.maps.Marker({
           position: { lat: zone.center_lat, lng: zone.center_lng },
@@ -224,7 +309,6 @@ export const ZoneMap: React.FC<ZoneMapProps> = ({
   useEffect(() => {
     if (!googleMapRef.current || !isMapLoaded) return;
 
-    // Clear existing location markers (not labels)
     markersRef.current.forEach((marker, key) => {
       if (!key.startsWith('label-')) {
         marker.setMap(null);
@@ -232,7 +316,6 @@ export const ZoneMap: React.FC<ZoneMapProps> = ({
       }
     });
 
-    // Create location markers
     locations.forEach(location => {
       if (!location.lat || !location.lng) return;
 
@@ -285,6 +368,22 @@ export const ZoneMap: React.FC<ZoneMapProps> = ({
             <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-2" />
             <p className="text-sm text-muted-foreground">Cargando mapa...</p>
           </div>
+        </div>
+      )}
+
+      {/* Drawing instructions */}
+      {drawingMode === 'polygon' && (
+        <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-card/95 backdrop-blur-sm rounded-xl px-4 py-2 shadow-lg border border-border/30">
+          <p className="text-sm font-medium">
+            {drawingPointsCount === 0 && 'Haz clic en el mapa para comenzar a dibujar'}
+            {drawingPointsCount === 1 && 'Continúa haciendo clic para agregar puntos'}
+            {drawingPointsCount === 2 && 'Agrega al menos un punto más'}
+            {drawingPointsCount >= 3 && (
+              <span>
+                <span className="text-emerald-500 font-semibold">●</span> Haz clic en el punto verde para cerrar el polígono
+              </span>
+            )}
+          </p>
         </div>
       )}
 
