@@ -1328,65 +1328,118 @@ export const SchedulingStep: React.FC<SchedulingStepProps> = ({
 
                     {/* Week View */}
                     {viewMode === "week" && (
-                      <div className="grid grid-cols-7 gap-2 h-full">
-                        {weekDays.map((day) => {
-                          const isWorking = isDoctorWorkingOnDay(day);
-                          const occupancy = getDayOccupancy(day);
-                          const isStartDate = isSameDay(day, selectedDate);
-                          const isEndDate = endDate && isSameDay(day, endDate);
-                          const isInRange = isDateInRange(day);
-                          const today = isToday(day);
+                      <div className="relative">
+                        {/* Range connector bar - positioned behind the grid */}
+                        {isRangeMode && endDate && (() => {
+                          const startIdx = weekDays.findIndex(d => isSameDay(d, selectedDate));
+                          const endIdx = weekDays.findIndex(d => isSameDay(d, endDate));
+                          
+                          if (startIdx >= 0 && endIdx >= 0 && startIdx <= endIdx) {
+                            const leftPercent = (startIdx / 7) * 100 + (100 / 14);
+                            const widthPercent = ((endIdx - startIdx) / 7) * 100;
+                            
+                            return (
+                              <motion.div
+                                initial={{ scaleX: 0, opacity: 0 }}
+                                animate={{ scaleX: 1, opacity: 1 }}
+                                className="absolute top-1/2 -translate-y-1/2 h-2 bg-gradient-to-r from-lime via-lime/60 to-primary rounded-full z-0"
+                                style={{
+                                  left: `${leftPercent}%`,
+                                  width: `${widthPercent}%`,
+                                }}
+                              />
+                            );
+                          }
+                          return null;
+                        })()}
+                        
+                        <div className="grid grid-cols-7 gap-2 h-full relative z-10">
+                          {weekDays.map((day, dayIndex) => {
+                            const isWorking = isDoctorWorkingOnDay(day);
+                            const occupancy = getDayOccupancy(day);
+                            const isStartDate = isSameDay(day, selectedDate);
+                            const isEndDate = endDate && isSameDay(day, endDate);
+                            const isInRange = isDateInRange(day);
+                            const today = isToday(day);
 
-                          const getOccupancyColor = () => {
-                            if (!isWorking) return "bg-muted/30";
-                            switch (occupancy) {
-                              case "free": return "bg-lime/20 hover:bg-lime/30";
-                              case "low": return "bg-yellow-500/20 hover:bg-yellow-500/30";
-                              case "medium": return "bg-orange-500/20 hover:bg-orange-500/30";
-                              case "high": return "bg-red-500/20 hover:bg-red-500/30";
-                              default: return "bg-muted/20";
-                            }
-                          };
+                            const getOccupancyColor = () => {
+                              if (!isWorking) return "bg-muted/30";
+                              switch (occupancy) {
+                                case "free": return "bg-lime/20 hover:bg-lime/30";
+                                case "low": return "bg-yellow-500/20 hover:bg-yellow-500/30";
+                                case "medium": return "bg-orange-500/20 hover:bg-orange-500/30";
+                                case "high": return "bg-red-500/20 hover:bg-red-500/30";
+                                default: return "bg-muted/20";
+                              }
+                            };
 
-                          return (
-                            <motion.button
-                              key={day.toISOString()}
-                              onClick={() => handleSelectDate(day)}
-                              whileHover={{ scale: 1.02 }}
-                              whileTap={{ scale: 0.98 }}
-                              className={cn(
-                                "relative flex flex-col items-center justify-center p-4 rounded-2xl transition-all h-full min-h-[120px]",
-                                isStartDate
-                                  ? "bg-lime text-lime-foreground shadow-lg ring-2 ring-lime/50"
-                                  : isEndDate
-                                  ? "bg-primary text-primary-foreground shadow-lg ring-2 ring-primary/50"
-                                  : isInRange
-                                  ? "bg-lime/30 ring-1 ring-lime/30"
-                                  : today
-                                  ? "ring-2 ring-primary/30 " + getOccupancyColor()
-                                  : getOccupancyColor()
-                              )}
-                            >
-                              <span className="text-xs uppercase opacity-60 mb-1">
-                                {format(day, "EEE", { locale: es })}
-                              </span>
-                              <span className="font-bold text-3xl">
-                                {format(day, "d")}
-                              </span>
-                              {!isWorking && (
-                                <Badge variant="secondary" className="mt-2 text-[9px]">
-                                  No trabaja
-                                </Badge>
-                              )}
-                              {isStartDate && isRangeMode && (
-                                <Badge className="mt-2 text-[8px] bg-lime-foreground/20">Inicio</Badge>
-                              )}
-                              {isEndDate && (
-                                <Badge className="mt-2 text-[8px] bg-primary-foreground/20">Fin</Badge>
-                              )}
-                            </motion.button>
-                          );
-                        })}
+                            // Check if this day is first or last in range within this week
+                            const isFirstInWeekRange = isInRange && (dayIndex === 0 || isSameDay(day, selectedDate));
+                            const isLastInWeekRange = isInRange && (dayIndex === 6 || (endDate && isSameDay(day, endDate)));
+
+                            return (
+                              <motion.button
+                                key={day.toISOString()}
+                                onClick={() => handleSelectDate(day)}
+                                whileHover={{ scale: 1.02 }}
+                                whileTap={{ scale: 0.98 }}
+                                className={cn(
+                                  "relative flex flex-col items-center justify-center p-4 rounded-2xl transition-all h-full min-h-[120px]",
+                                  isStartDate
+                                    ? "bg-lime text-lime-foreground shadow-lg ring-2 ring-lime/50"
+                                    : isEndDate
+                                    ? "bg-primary text-primary-foreground shadow-lg ring-2 ring-primary/50"
+                                    : isInRange
+                                    ? "bg-lime/20 border-2 border-lime/40 border-dashed"
+                                    : today
+                                    ? "ring-2 ring-primary/30 " + getOccupancyColor()
+                                    : getOccupancyColor()
+                                )}
+                              >
+                                {/* Range position indicators */}
+                                {isStartDate && isRangeMode && endDate && (
+                                  <div className="absolute -right-1 top-1/2 -translate-y-1/2 w-3 h-3 bg-lime rounded-full border-2 border-background shadow-md z-20">
+                                    <ChevronRight className="w-2 h-2 text-lime-foreground absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+                                  </div>
+                                )}
+                                {isEndDate && (
+                                  <div className="absolute -left-1 top-1/2 -translate-y-1/2 w-3 h-3 bg-primary rounded-full border-2 border-background shadow-md z-20">
+                                    <ChevronLeft className="w-2 h-2 text-primary-foreground absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+                                  </div>
+                                )}
+                                
+                                <span className="text-xs uppercase opacity-60 mb-1">
+                                  {format(day, "EEE", { locale: es })}
+                                </span>
+                                <span className="font-bold text-3xl">
+                                  {format(day, "d")}
+                                </span>
+                                {!isWorking && (
+                                  <Badge variant="secondary" className="mt-2 text-[9px]">
+                                    No trabaja
+                                  </Badge>
+                                )}
+                                {isStartDate && isRangeMode && (
+                                  <Badge className="mt-2 text-[8px] bg-lime-foreground/20 gap-1">
+                                    <CalendarIcon className="w-2.5 h-2.5" />
+                                    Inicio
+                                  </Badge>
+                                )}
+                                {isEndDate && (
+                                  <Badge className="mt-2 text-[8px] bg-primary-foreground/20 gap-1">
+                                    <Check className="w-2.5 h-2.5" />
+                                    Fin
+                                  </Badge>
+                                )}
+                                {isInRange && !isStartDate && !isEndDate && (
+                                  <div className="absolute top-2 right-2">
+                                    <div className="w-2 h-2 rounded-full bg-lime/60 animate-pulse" />
+                                  </div>
+                                )}
+                              </motion.button>
+                            );
+                          })}
+                        </div>
                       </div>
                     )}
 
@@ -1409,6 +1462,21 @@ export const SchedulingStep: React.FC<SchedulingStepProps> = ({
                             const isEndDate = endDate && isSameDay(day, endDate);
                             const isInRange = isDateInRange(day);
                             const today = isToday(day);
+                            
+                            // Calculate position in range for connectors
+                            const colIndex = idx % 7;
+                            const isFirstInRow = colIndex === 0;
+                            const isLastInRow = colIndex === 6;
+                            
+                            // Check adjacent days for connector logic
+                            const prevDay = idx > 0 ? monthDays[idx - 1] : null;
+                            const nextDay = idx < monthDays.length - 1 ? monthDays[idx + 1] : null;
+                            const isPrevInRange = prevDay && isDateInRange(prevDay);
+                            const isNextInRange = nextDay && isDateInRange(nextDay);
+                            
+                            // Determine if we need left/right connectors
+                            const showLeftConnector = isInRange && !isFirstInRow && (isPrevInRange || isSameDay(day, selectedDate));
+                            const showRightConnector = isInRange && !isLastInRow && (isNextInRange || (endDate && isSameDay(day, endDate)));
 
                             const getOccupancyIndicator = () => {
                               if (!isWorking || !isCurrentMonth) return null;
@@ -1430,31 +1498,101 @@ export const SchedulingStep: React.FC<SchedulingStepProps> = ({
                                 whileHover={{ scale: 1.05 }}
                                 whileTap={{ scale: 0.95 }}
                                 className={cn(
-                                  "relative aspect-square flex flex-col items-center justify-center rounded-xl text-sm transition-all",
+                                  "relative aspect-square flex flex-col items-center justify-center text-sm transition-all",
                                   !isCurrentMonth && "opacity-25",
                                   !isWorking && isCurrentMonth && "opacity-40",
+                                  // Base rounded corners
+                                  "rounded-xl",
+                                  // Range styling with connected look
                                   isStartDate
-                                    ? "bg-lime text-lime-foreground shadow-md"
+                                    ? "bg-lime text-lime-foreground shadow-md z-10"
                                     : isEndDate
-                                    ? "bg-primary text-primary-foreground shadow-md"
+                                    ? "bg-primary text-primary-foreground shadow-md z-10"
                                     : isInRange
-                                    ? "bg-lime/30 ring-1 ring-lime/20"
+                                    ? "bg-gradient-to-r from-lime/30 to-lime/20 border-y-2 border-lime/30 border-dashed rounded-none"
                                     : today
                                     ? "bg-primary/10 ring-2 ring-primary/30"
                                     : "hover:bg-muted/50"
                                 )}
                               >
+                                {/* Horizontal connector lines for range */}
+                                {isInRange && !isStartDate && !isEndDate && (
+                                  <>
+                                    {/* Left connector */}
+                                    {!isFirstInRow && isPrevInRange && (
+                                      <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-1 -ml-1 bg-lime/50 rounded-full" />
+                                    )}
+                                    {/* Right connector */}
+                                    {!isLastInRow && isNextInRange && (
+                                      <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-1 -mr-1 bg-lime/50 rounded-full" />
+                                    )}
+                                  </>
+                                )}
+                                
+                                {/* Start date arrow indicator */}
+                                {isStartDate && isRangeMode && endDate && (
+                                  <div className="absolute -right-0.5 top-1/2 -translate-y-1/2 z-20">
+                                    <div className="w-2 h-4 bg-lime rounded-r-full flex items-center justify-center">
+                                      <ChevronRight className="w-2 h-2 text-lime-foreground" />
+                                    </div>
+                                  </div>
+                                )}
+                                
+                                {/* End date arrow indicator */}
+                                {isEndDate && (
+                                  <div className="absolute -left-0.5 top-1/2 -translate-y-1/2 z-20">
+                                    <div className="w-2 h-4 bg-primary rounded-l-full flex items-center justify-center">
+                                      <ChevronLeft className="w-2 h-2 text-primary-foreground" />
+                                    </div>
+                                  </div>
+                                )}
+                                
                                 <span className="font-medium">{format(day, "d")}</span>
+                                
+                                {/* Occupancy indicator */}
                                 {indicatorColor && !isStartDate && !isEndDate && !isInRange && (
                                   <div className={cn(
                                     "absolute bottom-1.5 w-1.5 h-1.5 rounded-full",
                                     indicatorColor
                                   )} />
                                 )}
+                                
+                                {/* Range day indicator - small dot for days in range */}
+                                {isInRange && !isStartDate && !isEndDate && (
+                                  <div className="absolute bottom-1 w-1 h-1 rounded-full bg-lime animate-pulse" />
+                                )}
                               </motion.button>
                             );
                           })}
                         </div>
+                        
+                        {/* Range summary bar */}
+                        {isRangeMode && endDate && (
+                          <motion.div
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="mt-4 p-3 rounded-xl bg-gradient-to-r from-lime/20 via-lime/10 to-primary/20 border border-lime/30 flex items-center justify-between"
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className="flex items-center gap-2">
+                                <div className="w-3 h-3 rounded-full bg-lime" />
+                                <span className="text-xs font-medium">{format(selectedDate, "dd MMM", { locale: es })}</span>
+                              </div>
+                              <div className="flex items-center gap-1 text-muted-foreground">
+                                <div className="w-8 h-0.5 bg-gradient-to-r from-lime to-primary rounded-full" />
+                                <span className="text-[10px]">rango</span>
+                                <div className="w-8 h-0.5 bg-gradient-to-r from-lime to-primary rounded-full" />
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <div className="w-3 h-3 rounded-full bg-primary" />
+                                <span className="text-xs font-medium">{format(endDate, "dd MMM", { locale: es })}</span>
+                              </div>
+                            </div>
+                            <Badge className="bg-lime/20 text-lime-foreground border border-lime/30">
+                              {rangeOccurrences} cita{rangeOccurrences !== 1 ? "s" : ""}
+                            </Badge>
+                          </motion.div>
+                        )}
                       </div>
                     )}
 
