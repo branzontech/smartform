@@ -94,6 +94,7 @@ interface SchedulingSidebarProps {
   recurrencePattern?: RecurrencePattern;
   selectedResources: string[];
   canSubmit: boolean;
+  missingSteps: string[];
   availableTimeSlots: { time: string; available: boolean }[];
   
   // Time mode props
@@ -152,6 +153,7 @@ export const SchedulingSidebar: React.FC<SchedulingSidebarProps> = ({
   recurrencePattern,
   selectedResources,
   canSubmit,
+  missingSteps,
   availableTimeSlots,
   timeAssignmentMode,
   rangeTimeWindow,
@@ -834,6 +836,23 @@ export const SchedulingSidebar: React.FC<SchedulingSidebarProps> = ({
 
           {/* Fixed Bottom Actions */}
           <div className="p-4 border-t border-border/20 bg-background/95 backdrop-blur-sm shrink-0 z-10">
+            {/* Missing steps indicator */}
+            {!canSubmit && missingSteps.length > 0 && (
+              <div className="mb-3 p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20">
+                <div className="flex items-start gap-2">
+                  <AlertCircle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-[11px] font-medium text-amber-600 dark:text-amber-400">
+                      Faltan campos requeridos:
+                    </p>
+                    <p className="text-[10px] text-muted-foreground mt-0.5">
+                      {missingSteps.join(" • ")}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+            
             <Button
               onClick={onSubmit}
               disabled={!canSubmit}

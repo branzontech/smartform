@@ -711,7 +711,34 @@ export const SchedulingStep: React.FC<SchedulingStepProps> = ({
     }
   }, [isRangeMode, endDate, timeAssignmentMode, selectedTime, rangeDaySchedules]);
 
-  const canSubmit = selectedDoctor && reason && (isRangeMode ? (endDate && isRangeComplete) : selectedTime);
+  // Improved canSubmit logic that considers time assignment modes
+  const isTimeComplete = useMemo(() => {
+    switch (timeAssignmentMode) {
+      case "fixed":
+        return !!selectedTime;
+      case "per_day":
+        // Check if at least one day has a time selected
+        const workingDays = perDaySchedules.filter(d => d.isWorking);
+        const configuredDays = workingDays.filter(d => d.selectedTime);
+        return configuredDays.length > 0;
+      case "first_available":
+      case "time_window":
+        return true; // Auto-assigned modes are always valid
+      default:
+        return !!selectedTime;
+    }
+  }, [timeAssignmentMode, selectedTime, perDaySchedules]);
+
+  const canSubmit = selectedDoctor && reason.trim() && isTimeComplete;
+
+  // Missing steps for user feedback
+  const missingSteps = useMemo(() => {
+    const missing: string[] = [];
+    if (!selectedDoctor) missing.push("Profesional");
+    if (!isTimeComplete) missing.push("Horario");
+    if (!reason.trim()) missing.push("Motivo");
+    return missing;
+  }, [selectedDoctor, isTimeComplete, reason]);
 
   // Dynamic progress steps
   const progressSteps = useMemo(() => {
@@ -825,6 +852,7 @@ export const SchedulingStep: React.FC<SchedulingStepProps> = ({
             recurrencePattern={recurrencePattern}
             selectedResources={selectedResources}
             canSubmit={!!canSubmit}
+            missingSteps={missingSteps}
             availableTimeSlots={availableTimeSlots}
             timeAssignmentMode={timeAssignmentMode}
             rangeTimeWindow={rangeTimeWindow}
