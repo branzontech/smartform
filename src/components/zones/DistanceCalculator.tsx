@@ -78,6 +78,11 @@ export const DistanceCalculator: React.FC<DistanceCalculatorProps> = ({
   const googleMapRef = useRef<google.maps.Map | null>(null);
   const directionsRendererRef = useRef<google.maps.DirectionsRenderer | null>(null);
   const markersRef = useRef<Map<string, google.maps.Marker>>(new Map());
+  const clickListenerRef = useRef<google.maps.MapsEventListener | null>(null);
+  
+  // Refs to track current state for click handler (avoid stale closures)
+  const waypointsRef = useRef<Waypoint[]>([]);
+  const activeWaypointIdRef = useRef<string | null>('A');
   
   const [isMapLoaded, setIsMapLoaded] = useState(false);
   const [waypoints, setWaypoints] = useState<Waypoint[]>([
@@ -89,6 +94,15 @@ export const DistanceCalculator: React.FC<DistanceCalculatorProps> = ({
   const [pricePerKm, setPricePerKm] = useState<number>(3500);
   const [baseFare, setBaseFare] = useState<number>(5000);
   const [isCalculating, setIsCalculating] = useState(false);
+
+  // Keep refs in sync with state
+  useEffect(() => {
+    waypointsRef.current = waypoints;
+  }, [waypoints]);
+
+  useEffect(() => {
+    activeWaypointIdRef.current = activeWaypointId;
+  }, [activeWaypointId]);
 
   // Initialize map
   useEffect(() => {
@@ -120,36 +134,6 @@ export const DistanceCalculator: React.FC<DistanceCalculatorProps> = ({
       },
     });
 
-    // Add click listener for placing waypoints
-    map.addListener('click', (e: google.maps.MapMouseEvent) => {
-      if (!e.latLng || !activeWaypointId) return;
-      
-      const position = { lat: e.latLng.lat(), lng: e.latLng.lng() };
-      
-      // Reverse geocode to get address
-      const geocoder = new google.maps.Geocoder();
-      geocoder.geocode({ location: e.latLng }, (results, status) => {
-        const address = status === 'OK' && results?.[0] 
-          ? results[0].formatted_address 
-          : `${position.lat.toFixed(6)}, ${position.lng.toFixed(6)}`;
-        
-        setWaypoints(prev => prev.map(wp => 
-          wp.id === activeWaypointId 
-            ? { ...wp, position, address }
-            : wp
-        ));
-        
-        // Move to next waypoint
-        const currentIndex = waypoints.findIndex(wp => wp.id === activeWaypointId);
-        const nextWaypoint = waypoints[currentIndex + 1];
-        if (nextWaypoint && !nextWaypoint.position) {
-          setActiveWaypointId(nextWaypoint.id);
-        } else {
-          setActiveWaypointId(null);
-        }
-      });
-    });
-
     setIsMapLoaded(true);
 
     return () => {
@@ -157,8 +141,72 @@ export const DistanceCalculator: React.FC<DistanceCalculatorProps> = ({
       if (directionsRendererRef.current) {
         directionsRendererRef.current.setMap(null);
       }
+      if (clickListenerRef.current) {
+        google.maps.event.removeListener(clickListenerRef.current);
+      }
     };
   }, [apiKey]);
+
+  // Setup click listener (separate effect to handle state changes)
+  useEffect(() => {
+    const map = googleMapRef.current;
+    if (!map || !isMapLoaded) return;
+
+    // Remove previous listener
+    if (clickListenerRef.current) {
+      google.maps.event.removeListener(clickListenerRef.current);
+    }
+
+    // Add click listener for placing waypoints
+    clickListenerRef.current = map.addListener('click', (e: google.maps.MapMouseEvent) => {
+      const currentActiveId = activeWaypointIdRef.current;
+      if (!e.latLng || !currentActiveId) return;
+      
+      const position = { lat: e.latLng.lat(), lng: e.latLng.lng() };
+      const currentWaypoints = waypointsRef.current;
+      
+      // Create address string (geocoding may fail without proper API key)
+      const address = `${position.lat.toFixed(6)}, ${position.lng.toFixed(6)}`;
+      
+      // Update waypoint
+      setWaypoints(prev => prev.map(wp => 
+        wp.id === currentActiveId 
+          ? { ...wp, position, address }
+          : wp
+      ));
+      
+      // Move to next waypoint
+      const currentIndex = currentWaypoints.findIndex(wp => wp.id === currentActiveId);
+      const nextWaypoint = currentWaypoints[currentIndex + 1];
+      if (nextWaypoint && !nextWaypoint.position) {
+        setActiveWaypointId(nextWaypoint.id);
+      } else {
+        setActiveWaypointId(null);
+      }
+      
+      // Try to reverse geocode (optional, don't block on failure)
+      try {
+        const geocoder = new google.maps.Geocoder();
+        geocoder.geocode({ location: e.latLng }, (results, status) => {
+          if (status === 'OK' && results?.[0]) {
+            setWaypoints(prev => prev.map(wp => 
+              wp.id === currentActiveId 
+                ? { ...wp, address: results[0].formatted_address }
+                : wp
+            ));
+          }
+        });
+      } catch (error) {
+        console.warn('Geocoding failed:', error);
+      }
+    });
+
+    return () => {
+      if (clickListenerRef.current) {
+        google.maps.event.removeListener(clickListenerRef.current);
+      }
+    };
+  }, [isMapLoaded]);
 
   // Update markers when waypoints change
   useEffect(() => {
