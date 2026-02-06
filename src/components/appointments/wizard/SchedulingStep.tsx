@@ -1130,11 +1130,11 @@ export const SchedulingStep: React.FC<SchedulingStepProps> = ({
                   <span className="text-[10px] text-muted-foreground">Libre</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <Circle className="w-2.5 h-2.5 fill-warning text-warning" />
+                  <Circle className="w-2.5 h-2.5 fill-primary/50 text-primary/50" />
                   <span className="text-[10px] text-muted-foreground">Parcial</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <Circle className="w-2.5 h-2.5 fill-destructive text-destructive" />
+                  <Circle className="w-2.5 h-2.5 fill-primary text-primary" />
                   <span className="text-[10px] text-muted-foreground">Ocupado</span>
                 </div>
                 <div className="flex items-center gap-1.5">
@@ -1260,9 +1260,9 @@ export const SchedulingStep: React.FC<SchedulingStepProps> = ({
                               if (!isWorking) return "bg-muted/30";
                               switch (occupancy) {
                                 case "free": return "bg-lime/20 hover:bg-lime/30";
-                                case "low": return "bg-yellow-500/20 hover:bg-yellow-500/30";
-                                case "medium": return "bg-orange-500/20 hover:bg-orange-500/30";
-                                case "high": return "bg-red-500/20 hover:bg-red-500/30";
+                                case "low": return "bg-primary/10 hover:bg-primary/20";
+                                case "medium": return "bg-primary/25 hover:bg-primary/35";
+                                case "high": return "bg-destructive/20 hover:bg-destructive/30";
                                 default: return "bg-muted/20";
                               }
                             };
@@ -1380,9 +1380,9 @@ export const SchedulingStep: React.FC<SchedulingStepProps> = ({
                               if (!isWorking || !isCurrentMonth) return null;
                               switch (occupancy) {
                                 case "free": return "bg-lime";
-                                case "low": return "bg-yellow-500";
-                                case "medium": return "bg-orange-500";
-                                case "high": return "bg-red-500";
+                                case "low": return "bg-primary/50";
+                                case "medium": return "bg-primary";
+                                case "high": return "bg-destructive";
                                 default: return null;
                               }
                             };
