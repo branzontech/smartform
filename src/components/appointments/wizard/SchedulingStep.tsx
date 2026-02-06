@@ -109,6 +109,22 @@ interface SchedulingStepProps {
 }
 
 type ViewMode = "day" | "week" | "month" | "year";
+type TimeAssignmentMode = "fixed" | "per_day" | "first_available" | "time_window";
+
+interface RangeConflict {
+  date: Date;
+  reason: "no_working" | "fully_occupied" | "partial";
+  availableSlots: number;
+  totalSlots: number;
+  suggestedAlternative?: Date;
+}
+
+interface RangeDaySchedule {
+  date: Date;
+  selectedTime: string;
+  isConflict: boolean;
+  availableSlots: string[];
+}
 
 type DaySchedule = { working: true; start: string; end: string } | { working: false };
 
@@ -290,6 +306,12 @@ export const SchedulingStep: React.FC<SchedulingStepProps> = ({
   const [activeTab, setActiveTab] = useState("scheduling");
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isDoctorStatsOpen, setIsDoctorStatsOpen] = useState(false);
+  
+  // Range scheduling states
+  const [timeAssignmentMode, setTimeAssignmentMode] = useState<TimeAssignmentMode>("fixed");
+  const [rangeTimeWindow, setRangeTimeWindow] = useState<{ start: string; end: string }>({ start: "08:00", end: "12:00" });
+  const [rangeDaySchedules, setRangeDaySchedules] = useState<RangeDaySchedule[]>([]);
+  const [showConflictPanel, setShowConflictPanel] = useState(false);
 
   // Get unique specialties for filter
   const specialties = useMemo(() => {
@@ -439,6 +461,98 @@ export const SchedulingStep: React.FC<SchedulingStepProps> = ({
   };
 
   // Calculate occurrences for range mode
+  // Analyze range for conflicts and available slots
+  const rangeAnalysis = useMemo(() => {
+    if (!isRangeMode || !endDate || !selectedDoctorData) return { conflicts: [], validDays: [], totalDays: 0 };
+    
+    const days = eachDayOfInterval({ start: selectedDate, end: endDate });
+    const conflicts: RangeConflict[] = [];
+    const validDays: Date[] = [];
+    
+    days.forEach(day => {
+      const dayOfWeek = day.getDay();
+      if (!selectedDays.includes(dayOfWeek)) return;
+      
+      // Check recurrence pattern
+      let shouldInclude = false;
+      switch (recurrencePattern) {
+        case "daily":
+          shouldInclude = true;
+          break;
+        case "weekly":
+          shouldInclude = dayOfWeek === selectedDays[0];
+          break;
+        case "biweekly":
+          const weekDiff = Math.floor((day.getTime() - selectedDate.getTime()) / (7 * 24 * 60 * 60 * 1000));
+          shouldInclude = weekDiff % 2 === 0 && dayOfWeek === selectedDays[0];
+          break;
+        case "monthly":
+          shouldInclude = day.getDate() === selectedDate.getDate();
+          break;
+        default:
+          shouldInclude = true;
+      }
+      
+      if (!shouldInclude) return;
+      
+      const daySchedule = getDoctorDayStatus(selectedDoctorData, day);
+      
+      if (!daySchedule?.working) {
+        // Find nearest working day as alternative
+        let alternative: Date | undefined;
+        for (let i = 1; i <= 3; i++) {
+          const nextDay = addDays(day, i);
+          const prevDay = addDays(day, -i);
+          const nextSchedule = getDoctorDayStatus(selectedDoctorData, nextDay);
+          const prevSchedule = getDoctorDayStatus(selectedDoctorData, prevDay);
+          if (nextSchedule?.working && isAfter(nextDay, selectedDate) && (!endDate || isBefore(nextDay, addDays(endDate, 1)))) {
+            alternative = nextDay;
+            break;
+          }
+          if (prevSchedule?.working && isAfter(prevDay, selectedDate)) {
+            alternative = prevDay;
+            break;
+          }
+        }
+        
+        conflicts.push({
+          date: day,
+          reason: "no_working",
+          availableSlots: 0,
+          totalSlots: 0,
+          suggestedAlternative: alternative
+        });
+        return;
+      }
+      
+      const allSlots = generateTimeSlots(daySchedule.start as string, daySchedule.end as string);
+      const dateKey = format(day, "yyyy-MM-dd");
+      const occupied = selectedDoctorData.occupiedSlots[dateKey] || [];
+      const availableCount = allSlots.filter(s => !occupied.includes(s)).length;
+      
+      if (availableCount === 0) {
+        conflicts.push({
+          date: day,
+          reason: "fully_occupied",
+          availableSlots: 0,
+          totalSlots: allSlots.length
+        });
+      } else if (availableCount < allSlots.length * 0.3) {
+        conflicts.push({
+          date: day,
+          reason: "partial",
+          availableSlots: availableCount,
+          totalSlots: allSlots.length
+        });
+        validDays.push(day);
+      } else {
+        validDays.push(day);
+      }
+    });
+    
+    return { conflicts, validDays, totalDays: validDays.length + conflicts.length };
+  }, [isRangeMode, endDate, selectedDoctorData, selectedDate, selectedDays, recurrencePattern]);
+
   const rangeOccurrences = useMemo(() => {
     if (!isRangeMode || !endDate || !recurrencePattern) return 0;
     
@@ -896,6 +1010,253 @@ export const SchedulingStep: React.FC<SchedulingStepProps> = ({
                       </div>
                     </div>
 
+                    {/* Range Time Assignment Mode - Only shown in range mode with end date */}
+                    {isRangeMode && endDate && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                      >
+                        <div className="flex items-center gap-2 mb-3">
+                          <div className="w-6 h-6 rounded-full bg-lime/20 flex items-center justify-center">
+                            <Clock className="w-3 h-3 text-lime" />
+                          </div>
+                          <span className="text-sm font-semibold">Modo de Horario</span>
+                        </div>
+                        
+                        {/* Time assignment mode selector */}
+                        <div className="space-y-2 mb-4">
+                          {[
+                            { 
+                              mode: "fixed" as TimeAssignmentMode, 
+                              label: "Mismo horario", 
+                              description: "Todas las citas a la misma hora",
+                              icon: Clock
+                            },
+                            { 
+                              mode: "per_day" as TimeAssignmentMode, 
+                              label: "Por día", 
+                              description: "Elegir horario para cada día",
+                              icon: CalendarIcon
+                            },
+                            { 
+                              mode: "first_available" as TimeAssignmentMode, 
+                              label: "Primera disponibilidad", 
+                              description: "El sistema asigna automáticamente",
+                              icon: Check
+                            },
+                            { 
+                              mode: "time_window" as TimeAssignmentMode, 
+                              label: "Ventana de tiempo", 
+                              description: "Definir rango horario preferido",
+                              icon: CalendarRange
+                            },
+                          ].map(({ mode, label, description, icon: Icon }) => (
+                            <button
+                              key={mode}
+                              onClick={() => setTimeAssignmentMode(mode)}
+                              className={cn(
+                                "w-full p-3 rounded-xl text-left transition-all flex items-center gap-3",
+                                timeAssignmentMode === mode
+                                  ? "bg-lime/20 border-2 border-lime/50"
+                                  : "bg-muted/20 border border-border/20 hover:bg-muted/30"
+                              )}
+                            >
+                              <div className={cn(
+                                "w-8 h-8 rounded-lg flex items-center justify-center",
+                                timeAssignmentMode === mode
+                                  ? "bg-lime text-lime-foreground"
+                                  : "bg-muted/50 text-muted-foreground"
+                              )}>
+                                <Icon className="w-4 h-4" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-xs font-medium">{label}</p>
+                                <p className="text-[10px] text-muted-foreground">{description}</p>
+                              </div>
+                              {timeAssignmentMode === mode && (
+                                <div className="w-5 h-5 rounded-full bg-lime flex items-center justify-center">
+                                  <Check className="w-3 h-3 text-lime-foreground" />
+                                </div>
+                              )}
+                            </button>
+                          ))}
+                        </div>
+
+                        {/* Fixed time selector */}
+                        {timeAssignmentMode === "fixed" && (
+                          <div className="p-3 rounded-xl bg-muted/10 border border-border/20">
+                            <Label className="text-[10px] text-muted-foreground mb-2 block">
+                              Selecciona el horario para todas las citas
+                            </Label>
+                            <div className="grid grid-cols-4 gap-1.5">
+                              {availableTimeSlots.filter(s => s.available).slice(0, 8).map((slot) => (
+                                <button
+                                  key={slot.time}
+                                  onClick={() => setSelectedTime(slot.time)}
+                                  className={cn(
+                                    "py-2 px-2 rounded-lg text-[11px] font-medium transition-all",
+                                    selectedTime === slot.time
+                                      ? "bg-lime text-lime-foreground"
+                                      : "bg-background hover:bg-muted/50"
+                                  )}
+                                >
+                                  {slot.time}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Time window selector */}
+                        {timeAssignmentMode === "time_window" && (
+                          <div className="p-3 rounded-xl bg-muted/10 border border-border/20 space-y-3">
+                            <Label className="text-[10px] text-muted-foreground block">
+                              Define la ventana de tiempo preferida
+                            </Label>
+                            <div className="flex items-center gap-2">
+                              <Select value={rangeTimeWindow.start} onValueChange={(v) => setRangeTimeWindow(prev => ({ ...prev, start: v }))}>
+                                <SelectTrigger className="h-8 rounded-lg text-xs flex-1">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {["07:00", "08:00", "09:00", "10:00", "11:00", "12:00", "13:00", "14:00"].map(t => (
+                                    <SelectItem key={t} value={t}>{t}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              <span className="text-xs text-muted-foreground">a</span>
+                              <Select value={rangeTimeWindow.end} onValueChange={(v) => setRangeTimeWindow(prev => ({ ...prev, end: v }))}>
+                                <SelectTrigger className="h-8 rounded-lg text-xs flex-1">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {["10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00"].map(t => (
+                                    <SelectItem key={t} value={t}>{t}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <p className="text-[10px] text-muted-foreground">
+                              Las citas se asignarán dentro de este rango según disponibilidad
+                            </p>
+                          </div>
+                        )}
+
+                        {/* Conflicts panel */}
+                        {rangeAnalysis.conflicts.length > 0 && (
+                          <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            className="mt-4 p-3 rounded-xl bg-amber-500/10 border border-amber-500/30"
+                          >
+                            <div className="flex items-center justify-between mb-2">
+                              <div className="flex items-center gap-2">
+                                <AlertCircle className="w-4 h-4 text-amber-500" />
+                                <span className="text-xs font-semibold text-amber-600">
+                                  {rangeAnalysis.conflicts.length} día{rangeAnalysis.conflicts.length > 1 ? "s" : ""} con conflictos
+                                </span>
+                              </div>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setShowConflictPanel(!showConflictPanel)}
+                                className="h-6 text-[10px] text-amber-600"
+                              >
+                                {showConflictPanel ? "Ocultar" : "Ver detalles"}
+                              </Button>
+                            </div>
+                            
+                            <AnimatePresence>
+                              {showConflictPanel && (
+                                <motion.div
+                                  initial={{ height: 0, opacity: 0 }}
+                                  animate={{ height: "auto", opacity: 1 }}
+                                  exit={{ height: 0, opacity: 0 }}
+                                  className="space-y-2 mt-2 pt-2 border-t border-amber-500/20"
+                                >
+                                  {rangeAnalysis.conflicts.map((conflict, idx) => (
+                                    <div 
+                                      key={idx}
+                                      className="flex items-center justify-between p-2 rounded-lg bg-background/50"
+                                    >
+                                      <div className="flex items-center gap-2">
+                                        <div className={cn(
+                                          "w-6 h-6 rounded-md flex items-center justify-center text-[10px] font-bold",
+                                          conflict.reason === "no_working" 
+                                            ? "bg-muted text-muted-foreground"
+                                            : conflict.reason === "fully_occupied"
+                                            ? "bg-red-500/20 text-red-600"
+                                            : "bg-amber-500/20 text-amber-600"
+                                        )}>
+                                          {format(conflict.date, "d")}
+                                        </div>
+                                        <div>
+                                          <p className="text-[10px] font-medium capitalize">
+                                            {format(conflict.date, "EEE d MMM", { locale: es })}
+                                          </p>
+                                          <p className="text-[9px] text-muted-foreground">
+                                            {conflict.reason === "no_working" 
+                                              ? "No trabaja" 
+                                              : conflict.reason === "fully_occupied"
+                                              ? "Sin disponibilidad"
+                                              : `${conflict.availableSlots}/${conflict.totalSlots} espacios`}
+                                          </p>
+                                        </div>
+                                      </div>
+                                      
+                                      {conflict.suggestedAlternative && (
+                                        <Button
+                                          variant="outline"
+                                          size="sm"
+                                          className="h-6 text-[9px] rounded-md"
+                                          onClick={() => {
+                                            // Replace conflict date with alternative
+                                          }}
+                                        >
+                                          Usar {format(conflict.suggestedAlternative, "EEE d", { locale: es })}
+                                        </Button>
+                                      )}
+                                    </div>
+                                  ))}
+                                  
+                                  <div className="pt-2 flex gap-2">
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      className="flex-1 h-7 text-[10px] rounded-lg"
+                                    >
+                                      Saltar conflictos
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      className="flex-1 h-7 text-[10px] rounded-lg bg-amber-500 hover:bg-amber-600"
+                                    >
+                                      Aplicar alternativas
+                                    </Button>
+                                  </div>
+                                </motion.div>
+                              )}
+                            </AnimatePresence>
+                            
+                            {!showConflictPanel && (
+                              <p className="text-[10px] text-amber-600/80">
+                                Se encontraron alternativas cercanas disponibles
+                              </p>
+                            )}
+                          </motion.div>
+                        )}
+
+                        {/* Summary of valid appointments */}
+                        <div className="mt-3 p-2 rounded-lg bg-lime/10 border border-lime/20 flex items-center justify-between">
+                          <span className="text-[10px] text-muted-foreground">Citas a crear:</span>
+                          <Badge className="bg-lime text-lime-foreground">
+                            {rangeAnalysis.validDays.length} de {rangeAnalysis.totalDays}
+                          </Badge>
+                        </div>
+                      </motion.div>
+                    )}
+
                     {/* Resources - Only for procedure types */}
                     {(appointmentType === "procedure" || appointmentType === "multispecialty") && (
                       <div>
@@ -949,7 +1310,6 @@ export const SchedulingStep: React.FC<SchedulingStepProps> = ({
 
                     {/* Duration */}
                     <div>
-                      <Label className="text-xs mb-2 block text-muted-foreground">Duración</Label>
                       <Label className="text-xs mb-2 block text-muted-foreground">Duración</Label>
                       <div className="flex flex-wrap gap-1">
                         {durations.map((d) => (
