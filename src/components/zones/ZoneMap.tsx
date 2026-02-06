@@ -1,7 +1,7 @@
 /// <reference types="@types/google.maps" />
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { Undo2, X } from 'lucide-react';
+import { Undo2, X, User, Stethoscope, MapPin } from 'lucide-react';
 import { Zone, GeocodedLocation, LatLng, DrawingMode } from '@/types/zone-types';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -342,26 +342,26 @@ export const ZoneMap: React.FC<ZoneMapProps> = ({
 
       const isPatient = location.entity_type === 'patient';
       
-      // Custom SVG paths for different entity types
-      // Patient: Person icon path
-      const patientPath = 'M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z';
-      // Professional: Stethoscope-like icon path  
-      const professionalPath = 'M19.5 5.5c0 1.38-1.12 2.5-2.5 2.5S14.5 6.88 14.5 5.5 15.62 3 17 3s2.5 1.12 2.5 2.5zM17 10c-1.93 0-3.5-1.57-3.5-3.5V5c0-.55-.45-1-1-1h-1c-.55 0-1 .45-1 1v1.5C10.5 8.43 8.93 10 7 10c-1.93 0-3.5-1.57-3.5-3.5V5c0-.55-.45-1-1-1S1.5 4.45 1.5 5v1.5C1.5 9.54 4.21 12 7.5 12h.5v6c0 2.21 1.79 4 4 4s4-1.79 4-4v-6h.5c3.29 0 6-2.46 6-5.5V5c0-.55-.45-1-1-1s-1 .45-1 1v1.5c0 1.93-1.57 3.5-3.5 3.5H17z';
+      // Custom SVG paths (from Lucide icons, centered at 12,12 in 24x24 viewBox)
+      // Patient: User icon
+      const userPath = 'M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2 M12 3a4 4 0 1 0 0 8 4 4 0 0 0 0-8z';
+      // Professional: Stethoscope icon  
+      const stethoscopePath = 'M4.8 2.3A.3.3 0 1 0 5 2H4a2 2 0 0 0-2 2v5a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6V4a2 2 0 0 0-2-2h-1a.2.2 0 1 0 .3.3 M8 15v1a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6v-4 M22 10a2 2 0 1 0-4 0 2 2 0 0 0 4 0z';
       
       const marker = new google.maps.Marker({
         position: { lat: location.lat, lng: location.lng },
         map: googleMapRef.current,
         title: `${isPatient ? '👤' : '🩺'} ${location.entity_name}\n${location.address}`,
         icon: {
-          path: isPatient ? google.maps.SymbolPath.CIRCLE : google.maps.SymbolPath.BACKWARD_CLOSED_ARROW,
-          scale: isPatient ? 10 : 6,
+          path: isPatient ? userPath : stethoscopePath,
+          scale: 1.2,
           fillColor: isPatient ? '#10B981' : '#8B5CF6',
           fillOpacity: 1,
-          strokeColor: '#fff',
+          strokeColor: isPatient ? '#10B981' : '#8B5CF6',
           strokeWeight: 2,
-          anchor: isPatient ? undefined : new google.maps.Point(0, 0),
+          anchor: new google.maps.Point(12, 12),
         },
-        zIndex: isPatient ? 100 : 200, // Professionals on top
+        zIndex: isPatient ? 100 : 200,
       });
 
       marker.addListener('click', () => {
@@ -444,15 +444,15 @@ export const ZoneMap: React.FC<ZoneMapProps> = ({
         <p className="text-[10px] font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Leyenda</p>
         <div className="space-y-1.5">
           <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded-full bg-emerald-500 border-2 border-white shadow-sm" />
+            <User className="w-4 h-4 text-emerald-500" />
             <span className="text-xs">Pacientes</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[10px] border-t-violet-500 ml-0.5" />
+            <Stethoscope className="w-4 h-4 text-violet-500" />
             <span className="text-xs">Profesionales</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded-full bg-primary border-2 border-white shadow-sm" />
+            <MapPin className="w-4 h-4 text-primary" />
             <span className="text-xs">Mi ubicación</span>
           </div>
         </div>
