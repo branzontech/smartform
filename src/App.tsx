@@ -81,6 +81,9 @@ import ShiftModification from "./pages/shifts/ShiftModification";
 // Importamos las páginas de workflows
 import WorkflowPage from "./pages/workflow/WorkflowPage";
 
+// Importamos la página de zonas geográficas
+import ZonesPage from "./pages/zones/ZonesPage";
+
 export const BackButton = () => {
   const navigate = useNavigate();
   
@@ -211,6 +214,9 @@ function App() {
                       
                       {/* Centro de notificaciones */}
                       <Route path="notificaciones/centro" element={<NotificationCenter />} />
+                      
+                      {/* Zonas geográficas */}
+                      <Route path="zonas" element={<ZonesPage />} />
                     </Routes>
                   </Layout>
                 } />

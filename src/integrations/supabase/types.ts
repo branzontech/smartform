@@ -14,7 +14,133 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      geocoded_locations: {
+        Row: {
+          address: string
+          city: string | null
+          created_at: string
+          entity_id: string
+          entity_name: string
+          entity_type: string
+          geocoded_at: string | null
+          id: string
+          lat: number | null
+          lng: number | null
+          state: string | null
+          updated_at: string
+          zone_id: string | null
+        }
+        Insert: {
+          address: string
+          city?: string | null
+          created_at?: string
+          entity_id: string
+          entity_name: string
+          entity_type: string
+          geocoded_at?: string | null
+          id?: string
+          lat?: number | null
+          lng?: number | null
+          state?: string | null
+          updated_at?: string
+          zone_id?: string | null
+        }
+        Update: {
+          address?: string
+          city?: string | null
+          created_at?: string
+          entity_id?: string
+          entity_name?: string
+          entity_type?: string
+          geocoded_at?: string | null
+          id?: string
+          lat?: number | null
+          lng?: number | null
+          state?: string | null
+          updated_at?: string
+          zone_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "geocoded_locations_zone_id_fkey"
+            columns: ["zone_id"]
+            isOneToOne: false
+            referencedRelation: "zones"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      zone_statistics: {
+        Row: {
+          calculated_at: string
+          id: string
+          occupancy_level: string | null
+          total_patients: number
+          total_professionals: number
+          zone_id: string
+        }
+        Insert: {
+          calculated_at?: string
+          id?: string
+          occupancy_level?: string | null
+          total_patients?: number
+          total_professionals?: number
+          zone_id: string
+        }
+        Update: {
+          calculated_at?: string
+          id?: string
+          occupancy_level?: string | null
+          total_patients?: number
+          total_professionals?: number
+          zone_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "zone_statistics_zone_id_fkey"
+            columns: ["zone_id"]
+            isOneToOne: false
+            referencedRelation: "zones"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      zones: {
+        Row: {
+          center_lat: number | null
+          center_lng: number | null
+          color: string
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          polygon_coordinates: Json
+          updated_at: string
+        }
+        Insert: {
+          center_lat?: number | null
+          center_lng?: number | null
+          color?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          polygon_coordinates: Json
+          updated_at?: string
+        }
+        Update: {
+          center_lat?: number | null
+          center_lng?: number | null
+          color?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          polygon_coordinates?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
