@@ -75,14 +75,14 @@ function DockIcon({
           onClick={item.onClick}
           disabled={item.disabled}
           className={cn(
-            "relative flex items-center justify-center rounded-2xl transition-colors",
-            "bg-card/80 backdrop-blur-md border border-border/50",
-            "hover:bg-primary/10 hover:border-primary/30",
+            "relative flex items-center justify-center rounded-xl transition-colors",
+            "bg-transparent",
+            "hover:bg-muted/60",
             "focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
-            item.isActive && "bg-primary/15 border-primary/40 shadow-lg shadow-primary/20",
+            item.isActive && "bg-primary/15 shadow-sm",
             item.disabled && "opacity-50 cursor-not-allowed"
           )}
-          whileHover={{ y: -8 }}
+          whileHover={{ y: -6 }}
           whileTap={{ scale: 0.95 }}
           transition={{ type: "spring", stiffness: 400, damping: 17 }}
         >
@@ -93,7 +93,13 @@ function DockIcon({
               height: useTransform(width, (w) => w * 0.5),
             }}
           >
-            <Icon className="w-full h-full text-foreground" />
+            <Icon 
+              className={cn(
+                "w-full h-full",
+                item.isActive ? "text-primary" : "text-muted-foreground"
+              )}
+              strokeWidth={1.75}
+            />
           </motion.div>
 
           {/* Badge */}
@@ -102,9 +108,9 @@ function DockIcon({
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
               className={cn(
-                "absolute -top-0.5 -right-0.5 min-w-[16px] h-[16px] px-0.5",
-                "text-[9px] font-bold rounded-full flex items-center justify-center",
-                "shadow-sm border border-background/50",
+                "absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1",
+                "text-[10px] font-bold rounded-full flex items-center justify-center",
+                "shadow-sm border-2 border-background",
                 BADGE_VARIANTS[item.badgeVariant || "default"]
               )}
             >
@@ -112,11 +118,11 @@ function DockIcon({
             </motion.span>
           )}
 
-          {/* Active indicator */}
+          {/* Active indicator dot */}
           {item.isActive && (
             <motion.div
               layoutId="dock-active-indicator"
-              className="absolute -bottom-1 w-1.5 h-1.5 rounded-full bg-primary"
+              className="absolute -bottom-0.5 w-1 h-1 rounded-full bg-primary"
               transition={{ type: "spring", stiffness: 380, damping: 30 }}
             />
           )}
@@ -124,8 +130,9 @@ function DockIcon({
       </TooltipTrigger>
       <TooltipContent 
         side="top" 
-        sideOffset={12}
-        className="rounded-xl bg-card/95 backdrop-blur-xl border-border/50 px-3 py-1.5"
+        align="center"
+        sideOffset={8}
+        className="rounded-lg bg-popover/95 backdrop-blur-sm border-border/40 px-3 py-1.5 shadow-md"
       >
         <span className="text-sm font-medium">{item.label}</span>
       </TooltipContent>
@@ -137,8 +144,8 @@ export function Dock({
   items,
   className,
   position = "bottom",
-  magnification = 64,
-  baseSize = 48,
+  magnification = 56,
+  baseSize = 42,
 }: DockProps) {
   const mouseX = useMotionValue(Infinity);
   const scrollContainerRef = React.useRef<HTMLDivElement>(null);
@@ -172,7 +179,7 @@ export function Dock({
   const scroll = (direction: "left" | "right") => {
     const container = scrollContainerRef.current;
     if (!container) return;
-    const scrollAmount = baseSize + 16; // item size + gap
+    const scrollAmount = baseSize + 16;
     container.scrollBy({
       left: direction === "left" ? -scrollAmount * 2 : scrollAmount * 2,
       behavior: "smooth",
@@ -188,7 +195,7 @@ export function Dock({
       className={cn(
         "fixed z-50",
         position === "bottom" ? "bottom-6" : "top-6",
-        "left-0 right-0 flex justify-center",
+        "left-0 right-0 flex justify-center pointer-events-none",
         className
       )}
     >
@@ -196,10 +203,11 @@ export function Dock({
         onMouseMove={(e) => mouseX.set(e.clientX)}
         onMouseLeave={() => mouseX.set(Infinity)}
         className={cn(
-          "flex items-center gap-1 p-3",
-          "bg-card/80 backdrop-blur-xl",
-          "border border-border/50 rounded-3xl",
-          "shadow-2xl shadow-black/10"
+          "flex items-center gap-1 px-3 py-2",
+          "bg-card/90 backdrop-blur-xl",
+          "border border-border/40 rounded-2xl",
+          "shadow-lg shadow-black/5",
+          "pointer-events-auto"
         )}
       >
         {/* Left scroll indicator */}
@@ -209,11 +217,11 @@ export function Dock({
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.8 }}
             onClick={() => scroll("left")}
-            className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-xl bg-muted/50 hover:bg-muted transition-colors"
+            className="flex-shrink-0 w-7 h-7 flex items-center justify-center rounded-lg bg-muted/50 hover:bg-muted transition-colors"
           >
             <svg
-              width="16"
-              height="16"
+              width="14"
+              height="14"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
@@ -231,9 +239,9 @@ export function Dock({
         <div
           ref={scrollContainerRef}
           className={cn(
-            "flex items-end gap-4 overflow-x-auto scrollbar-hide",
+            "flex items-center gap-2 overflow-x-auto scrollbar-hide",
             "max-w-[calc(100vw-120px)] md:max-w-[600px]",
-            "scroll-smooth"
+            "scroll-smooth py-1"
           )}
           style={{
             scrollbarWidth: "none",
@@ -258,11 +266,11 @@ export function Dock({
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.8 }}
             onClick={() => scroll("right")}
-            className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-xl bg-muted/50 hover:bg-muted transition-colors"
+            className="flex-shrink-0 w-7 h-7 flex items-center justify-center rounded-lg bg-muted/50 hover:bg-muted transition-colors"
           >
             <svg
-              width="16"
-              height="16"
+              width="14"
+              height="14"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
