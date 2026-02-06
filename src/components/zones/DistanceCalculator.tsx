@@ -15,9 +15,9 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { LatLng } from '@/types/zone-types';
 import { toast } from 'sonner';
@@ -377,7 +377,7 @@ export const DistanceCalculator: React.FC<DistanceCalculatorProps> = ({
       {/* Sidebar */}
       <div className="w-80 flex flex-col bg-card/50 backdrop-blur-sm border-r border-border/30 overflow-hidden">
         {/* Header */}
-        <div className="p-4 border-b border-border/20">
+        <div className="p-4 border-b border-border/20 shrink-0">
           <div className="flex items-center gap-3 mb-2">
             <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center">
               <Route className="w-5 h-5 text-emerald-500" />
@@ -389,8 +389,10 @@ export const DistanceCalculator: React.FC<DistanceCalculatorProps> = ({
           </div>
         </div>
 
-        {/* Waypoints */}
-        <div className="flex-1 overflow-auto p-4 space-y-3">
+        {/* Scrollable content */}
+        <ScrollArea className="flex-1">
+          {/* Waypoints */}
+          <div className="p-4 space-y-3">
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm font-medium">Puntos del trayecto</span>
             <Button
@@ -476,8 +478,7 @@ export const DistanceCalculator: React.FC<DistanceCalculatorProps> = ({
             <Trash2 className="w-3 h-3 mr-2" />
             Limpiar todo
           </Button>
-        </div>
-
+          </div>
         {/* Pricing config */}
         <div className="p-4 border-t border-border/20 space-y-3">
           <span className="text-sm font-medium">Configuración de tarifa</span>
@@ -556,6 +557,7 @@ export const DistanceCalculator: React.FC<DistanceCalculatorProps> = ({
             </div>
           </motion.div>
         )}
+        </ScrollArea>
       </div>
 
       {/* Map */}
