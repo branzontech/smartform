@@ -239,7 +239,7 @@ export const MapPanelDrawer: React.FC<MapPanelDrawerProps> = ({
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: "100%", opacity: 0 }}
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            className="fixed bottom-0 left-0 right-0 z-[70] h-[75vh] bg-card border-t border-border/50 rounded-t-3xl shadow-2xl overflow-hidden"
+            className="fixed inset-0 z-[70] bg-card shadow-2xl overflow-hidden"
           >
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-3 border-b border-border/30 bg-card/95 backdrop-blur-xl">
