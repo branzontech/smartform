@@ -85,17 +85,17 @@ export const AppointmentWizard: React.FC<AppointmentWizardProps> = ({
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
-      {/* Fixed Stepper Container */}
+      {/* Fixed Stepper Container - Compact */}
       <motion.div 
-        initial={{ y: -20, opacity: 0 }}
+        initial={{ y: -10, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         className="fixed top-20 left-0 right-0 z-50 px-4 md:px-8"
       >
-        <div className="max-w-5xl mx-auto">
-          {/* Stepper Windows 11 style */}
-          <div className="relative flex items-center justify-around bg-card/95 backdrop-blur-xl rounded-3xl p-4 shadow-lg border border-border/30">
+        <div className="max-w-2xl mx-auto">
+          {/* Stepper Windows 11 style - Compact */}
+          <div className="relative flex items-center justify-between bg-card/95 backdrop-blur-xl rounded-2xl px-6 py-2.5 shadow-md border border-border/30">
             {/* Progress line - centered between steps */}
-            <div className="absolute left-1/2 -translate-x-1/2 top-[38px] w-[60%] h-0.5 bg-muted/50 rounded-full z-0">
+            <div className="absolute left-[15%] right-[15%] top-1/2 -translate-y-1/2 h-0.5 bg-muted/50 rounded-full z-0">
               <motion.div 
                 className="h-full bg-gradient-to-r from-primary via-primary to-primary/60 rounded-full"
                 initial={{ width: "0%" }}
@@ -119,37 +119,37 @@ export const AppointmentWizard: React.FC<AppointmentWizardProps> = ({
                   }}
                   disabled={step.id > currentStep && !(step.id === 2 && wizardData.patient)}
                   className={cn(
-                    "relative z-10 flex flex-col items-center gap-2 transition-all duration-300",
+                    "relative z-10 flex items-center gap-2 transition-all duration-300",
                     (step.id <= currentStep || (step.id === 2 && wizardData.patient)) && "cursor-pointer"
                   )}
-                  whileHover={{ scale: step.id <= currentStep ? 1.05 : 1 }}
-                  whileTap={{ scale: step.id <= currentStep ? 0.95 : 1 }}
+                  whileHover={{ scale: step.id <= currentStep ? 1.02 : 1 }}
+                  whileTap={{ scale: step.id <= currentStep ? 0.98 : 1 }}
                 >
                   <motion.div
                     className={cn(
-                      "w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-300 shadow-lg",
+                      "w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-300 shadow-sm",
                       isCompleted && "bg-gradient-to-br from-primary to-primary/80 text-primary-foreground",
-                      isCurrent && "bg-gradient-to-br from-primary/90 to-primary text-primary-foreground ring-4 ring-primary/20",
+                      isCurrent && "bg-gradient-to-br from-primary/90 to-primary text-primary-foreground ring-2 ring-primary/20",
                       !isCompleted && !isCurrent && "bg-muted/80 text-muted-foreground"
                     )}
                     animate={{
-                      scale: isCurrent ? 1.1 : 1,
+                      scale: isCurrent ? 1.05 : 1,
                     }}
                   >
                     {isCompleted ? (
-                      <Check className="w-6 h-6" />
+                      <Check className="w-4 h-4" />
                     ) : (
-                      <Icon className="w-6 h-6" />
+                      <Icon className="w-4 h-4" />
                     )}
                   </motion.div>
-                  <div className="text-center">
+                  <div className="text-left hidden sm:block">
                     <p className={cn(
-                      "font-semibold text-sm transition-colors",
+                      "font-medium text-sm leading-tight transition-colors",
                       (isCurrent || isCompleted) ? "text-foreground" : "text-muted-foreground"
                     )}>
                       {step.title}
                     </p>
-                    <p className="text-xs text-muted-foreground hidden sm:block">
+                    <p className="text-[10px] text-muted-foreground leading-tight">
                       {step.description}
                     </p>
                   </div>
@@ -161,7 +161,7 @@ export const AppointmentWizard: React.FC<AppointmentWizardProps> = ({
       </motion.div>
 
       {/* Scrollable Content area */}
-      <div className="pt-40 px-4 md:px-8">
+      <div className="pt-28 px-4 md:px-8">
         <div className="max-w-5xl mx-auto">
           <div className="relative overflow-hidden">
           <AnimatePresence mode="wait" custom={direction}>
