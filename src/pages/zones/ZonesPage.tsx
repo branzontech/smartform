@@ -113,20 +113,28 @@ const ZonesPage: React.FC = () => {
   useEffect(() => {
     const fetchApiKey = async () => {
       try {
-        // For demo, use env variable directly
-        // In production, you'd fetch this from a secure endpoint
-        const key = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
-        if (key) {
-          setApiKey(key);
-        } else {
-          // Try to get from localStorage for demo
-          const stored = localStorage.getItem('google_maps_api_key');
-          if (stored) {
-            setApiKey(stored);
-          }
+        // First try localStorage (for user-entered keys)
+        const stored = localStorage.getItem('google_maps_api_key');
+        if (stored && stored.length > 10) {
+          setApiKey(stored);
+          return;
         }
+
+        // Then try to fetch from edge function (for configured secrets)
+        const response = await supabase.functions.invoke('get-maps-config');
+        if (response.data?.apiKey) {
+          setApiKey(response.data.apiKey);
+          // Cache it in localStorage for faster subsequent loads
+          localStorage.setItem('google_maps_api_key', response.data.apiKey);
+          return;
+        }
+
+        // Clear any invalid cached value
+        localStorage.removeItem('google_maps_api_key');
       } catch (error) {
         console.error('Error fetching API key:', error);
+        // Clear any invalid cached value on error
+        localStorage.removeItem('google_maps_api_key');
       }
     };
     fetchApiKey();
