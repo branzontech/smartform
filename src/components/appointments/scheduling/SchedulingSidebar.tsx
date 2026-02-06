@@ -77,11 +77,13 @@ interface SchedulingSidebarProps {
   recurrencePattern?: RecurrencePattern;
   selectedResources: string[];
   canSubmit: boolean;
+  availableTimeSlots: { time: string; available: boolean }[];
   
   // Callbacks
   onDoctorSelect: (doctorId: string) => void;
   onAppointmentTypeSelect: (type: AppointmentType, defaultDuration?: number) => void;
   onDurationChange: (duration: number) => void;
+  onTimeSelect: (time: string) => void;
   onReasonChange: (reason: string) => void;
   onNotesChange: (notes: string) => void;
   onResourceToggle: (resourceId: string) => void;
@@ -125,9 +127,11 @@ export const SchedulingSidebar: React.FC<SchedulingSidebarProps> = ({
   recurrencePattern,
   selectedResources,
   canSubmit,
+  availableTimeSlots,
   onDoctorSelect,
   onAppointmentTypeSelect,
   onDurationChange,
+  onTimeSelect,
   onReasonChange,
   onNotesChange,
   onResourceToggle,
@@ -139,12 +143,12 @@ export const SchedulingSidebar: React.FC<SchedulingSidebarProps> = ({
   isFullscreen,
 }) => {
   const [activeTab, setActiveTab] = useState("scheduling");
-  const [expandedSteps, setExpandedSteps] = useState<Record<string, boolean>>({
-    professional: true,
+  const [expandedSteps, setExpandedSteps] = useState<Record<string, boolean>>(() => ({
+    professional: !selectedDoctorId, // Collapse if doctor already selected
     date: false,
-    time: false,
+    time: !!selectedDoctorId, // Open time if doctor selected
     reason: false,
-  });
+  }));
   const [selectedService, setSelectedService] = useState("");
 
   // Progress steps
@@ -195,7 +199,8 @@ export const SchedulingSidebar: React.FC<SchedulingSidebarProps> = ({
     setExpandedSteps((prev) => ({
       ...prev,
       professional: false,
-      date: true,
+      date: false,
+      time: true, // Auto-open time step to show available slots
     }));
   };
 
@@ -426,28 +431,65 @@ export const SchedulingSidebar: React.FC<SchedulingSidebarProps> = ({
                     onToggle={() => toggleStep("time")}
                     isNext={nextIncompleteStep?.id === "time"}
                   >
-                    <div className="p-3 rounded-xl bg-muted/20 border border-border/20">
-                      {selectedTime ? (
+                    {/* Selected Time Display */}
+                    {selectedTime && (
+                      <div className="p-3 rounded-xl bg-lime/10 border border-lime/30 mb-3">
                         <div className="flex items-center gap-2">
                           <div className="w-8 h-8 rounded-lg bg-lime/20 flex items-center justify-center">
-                            <Clock className="w-4 h-4 text-lime" />
+                            <Check className="w-4 h-4 text-lime" />
                           </div>
                           <div>
-                            <p className="text-sm font-semibold">{selectedTime}</p>
+                            <p className="text-sm font-semibold text-lime">{selectedTime}</p>
                             <p className="text-[10px] text-muted-foreground">
                               Duración: {duration} min
                             </p>
                           </div>
                         </div>
+                      </div>
+                    )}
+
+                    {/* Available Time Slots */}
+                    <div className="space-y-2">
+                      <Label className="text-xs text-muted-foreground">
+                        Horarios disponibles
+                      </Label>
+                      
+                      {availableTimeSlots.length === 0 ? (
+                        <div className="p-4 rounded-xl bg-muted/20 border border-border/20 text-center">
+                          <Clock className="w-6 h-6 mx-auto mb-2 text-muted-foreground/50" />
+                          <p className="text-xs text-muted-foreground">
+                            No hay horarios disponibles para esta fecha
+                          </p>
+                          <p className="text-[10px] text-muted-foreground mt-1">
+                            El profesional no trabaja este día o selecciona otra fecha
+                          </p>
+                        </div>
                       ) : (
-                        <p className="text-xs text-muted-foreground">
-                          Selecciona un horario en el calendario →
-                        </p>
+                        <div className="grid grid-cols-4 gap-1.5 max-h-[180px] overflow-y-auto scrollbar-thin scrollbar-thumb-border/50 pr-1">
+                          {availableTimeSlots.map((slot) => (
+                            <button
+                              key={slot.time}
+                              onClick={() => slot.available && onTimeSelect(slot.time)}
+                              disabled={!slot.available}
+                              className={cn(
+                                "py-2 px-1 rounded-lg text-[11px] font-medium transition-all",
+                                !slot.available && "opacity-40 cursor-not-allowed bg-muted/20 line-through",
+                                slot.available && selectedTime === slot.time
+                                  ? "bg-lime text-lime-foreground shadow-md ring-2 ring-lime/30"
+                                  : slot.available
+                                  ? "bg-background hover:bg-primary/10 border border-border/30"
+                                  : ""
+                              )}
+                            >
+                              {slot.time}
+                            </button>
+                          ))}
+                        </div>
                       )}
                     </div>
 
                     {/* Duration selector */}
-                    <div className="mt-3">
+                    <div className="mt-3 pt-3 border-t border-border/20">
                       <Label className="text-xs mb-2 block text-muted-foreground">
                         Duración
                       </Label>
