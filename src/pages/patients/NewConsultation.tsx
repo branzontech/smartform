@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Header } from "@/components/layout/header";
+
 import { BackButton } from "@/App";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -478,9 +478,8 @@ const NewConsultation = () => {
   };
 
   return (
-    <div className="h-full flex flex-col overflow-hidden">
-      <Header />
-      <main className="flex-1 overflow-y-auto container mx-auto py-8 px-4">
+    <div className="w-full">
+      <div className="container mx-auto py-8 px-4">
         <BackButton />
         <h1 className="text-2xl font-bold mb-6">Nueva consulta médica</h1>
         
@@ -1242,7 +1241,7 @@ const NewConsultation = () => {
             </div>
           </form>
         )}
-      </main>
+      </div>
     </div>
   );
 };
