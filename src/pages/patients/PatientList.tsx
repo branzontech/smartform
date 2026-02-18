@@ -251,9 +251,9 @@ const PatientList = () => {
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="h-full flex flex-col overflow-hidden">
       <Header />
-      <main className="flex-1 container mx-auto py-8 px-4 max-w-7xl">
+      <main className="flex-1 overflow-y-auto container mx-auto py-8 px-4 max-w-7xl">
         <BackButton />
         
         {/* Header */}
