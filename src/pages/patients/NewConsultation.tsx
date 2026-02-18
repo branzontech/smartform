@@ -478,9 +478,9 @@ const NewConsultation = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="h-full flex flex-col overflow-hidden">
       <Header />
-      <main className="flex-1 container mx-auto py-8 px-4">
+      <main className="flex-1 overflow-y-auto container mx-auto py-8 px-4">
         <BackButton />
         <h1 className="text-2xl font-bold mb-6">Nueva consulta médica</h1>
         
