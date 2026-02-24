@@ -209,54 +209,6 @@ export const Header = ({ showCreate = true }: HeaderProps) => {
           <div className="flex items-center space-x-2">
             <DropdownMenu modal={false}>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="p-2 flex items-center gap-2 hover:bg-white/10 text-white group rounded-full shrink-0">
-                  Menú <ChevronDown className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent 
-                className="w-56 max-h-[70vh] overflow-y-auto bg-white/95 dark:bg-gray-900/95 backdrop-blur-lg border border-white/20 dark:border-gray-700/30 shadow-lg" 
-                align="end"
-                sideOffset={8}
-              >
-                <DropdownMenuGroup>
-                  {mainNavItems.map((item) => (
-                    item.items ? (
-                      <DropdownMenu key={item.title} modal={false}>
-                        <DropdownMenuTrigger asChild className="w-full">
-                          <DropdownMenuItem className="flex items-center justify-between cursor-default">
-                            <div className="flex items-center gap-2">
-                              {item.icon && <item.icon className="h-4 w-4" />}
-                              <span>{item.title}</span>
-                            </div>
-                            <ChevronDown className="h-4 w-4" />
-                          </DropdownMenuItem>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent className="w-56 bg-white/95 dark:bg-gray-900/95 backdrop-blur-lg">
-                          {item.items.map((subItem) => (
-                            <DropdownMenuItem key={subItem.title} asChild>
-                              <Link to={subItem.path || "#"} className="flex items-center gap-2">
-                                {subItem.icon && <subItem.icon className="h-4 w-4" />}
-                                <span>{subItem.title}</span>
-                              </Link>
-                            </DropdownMenuItem>
-                          ))}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    ) : (
-                      <DropdownMenuItem key={item.title} asChild>
-                        <Link to={item.path || "#"} className="flex items-center gap-2">
-                          {item.icon && <item.icon className="h-4 w-4" />}
-                          <span>{item.title}</span>
-                        </Link>
-                      </DropdownMenuItem>
-                    )
-                  ))}
-                </DropdownMenuGroup>
-              </DropdownMenuContent>
-            </DropdownMenu>
-
-            <DropdownMenu modal={false}>
-              <DropdownMenuTrigger asChild>
                 <Button 
                   variant="ghost"
                   className="p-2 hover:bg-white/10 text-white group relative rounded-full shrink-0"
