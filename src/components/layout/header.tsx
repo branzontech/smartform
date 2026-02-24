@@ -206,7 +206,7 @@ export const Header = ({ showCreate = true }: HeaderProps) => {
             </Button>
           </div>
 
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-2">
             <DropdownMenu modal={false}>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="p-2 flex items-center gap-2 hover:bg-white/10 text-white group rounded-full shrink-0">
