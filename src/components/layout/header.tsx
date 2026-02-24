@@ -412,23 +412,23 @@ export const Header = ({ showCreate = true }: HeaderProps) => {
       >
         <CommandInput 
           placeholder="Buscar en toda la navegación..." 
-          className="rounded-full border-none focus:ring-2 focus:ring-purple-300 dark:focus:ring-purple-700"
+          className="border-none focus:ring-2 focus:ring-primary/20"
         />
-        <CommandList className="rounded-b-3xl">
+        <CommandList>
           <CommandEmpty>No se encontraron resultados.</CommandEmpty>
           {mainNavItems.map((section) => (
             section.items ? (
-              <CommandGroup key={section.title} heading={section.title} className="hover:bg-purple-50/30 dark:hover:bg-purple-900/20">
+              <CommandGroup key={section.title} heading={section.title}>
                 {section.items.map((item) => (
                   <CommandItem
                     key={item.path}
                     value={`${section.title} ${item.title}`}
                     onSelect={() => handleSelect(item.path)}
-                    className="rounded-xl hover:bg-purple-100 dark:hover:bg-purple-800/50 cursor-pointer transition-colors duration-200"
+                    className="cursor-pointer transition-colors duration-200"
                   >
                     <div className="flex items-center gap-3">
-                      <item.icon className="h-5 w-5 text-purple-600 dark:text-purple-300" />
-                      <span className="text-gray-700 dark:text-gray-200">{item.title}</span>
+                      <item.icon className="h-4 w-4 text-primary" />
+                      <span>{item.title}</span>
                     </div>
                   </CommandItem>
                 ))}
@@ -438,11 +438,11 @@ export const Header = ({ showCreate = true }: HeaderProps) => {
                 <CommandItem
                   value={section.title}
                   onSelect={() => handleSelect(section.path)}
-                  className="rounded-xl hover:bg-purple-100 dark:hover:bg-purple-800/50 cursor-pointer transition-colors duration-200"
+                  className="cursor-pointer transition-colors duration-200"
                 >
                   <div className="flex items-center gap-3">
-                    <section.icon className="h-5 w-5 text-purple-600 dark:text-purple-300" />
-                    <span className="text-gray-700 dark:text-gray-200">{section.title}</span>
+                    <section.icon className="h-4 w-4 text-primary" />
+                    <span>{section.title}</span>
                   </div>
                 </CommandItem>
               </CommandGroup>
