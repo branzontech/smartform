@@ -84,8 +84,10 @@ const Register = () => {
         transition={{ duration: 0.6 }}
         className="hidden lg:flex w-1/2 flex-col justify-center p-12 xl:p-20"
       >
-        <Link to="/" className="flex items-center gap-3 mb-12">
-          <img src="/kerhub-logo.png" alt="Ker Hub" className="h-14 w-auto" />
+        <Link to="/" className="inline-flex items-center mb-12">
+          <div className="bg-foreground/90 rounded-2xl px-6 py-4 shadow-lg">
+            <img src="/kerhub-logo.png" alt="Ker Hub" className="h-20 xl:h-24 w-auto" />
+          </div>
         </Link>
 
         <motion.h1
@@ -156,7 +158,9 @@ const Register = () => {
           className="w-full max-w-md"
         >
           <Link to="/" className="flex lg:hidden items-center justify-center mb-8">
-            <img src="/kerhub-logo.png" alt="Ker Hub" className="h-12 w-auto" />
+            <div className="bg-foreground/90 rounded-2xl px-5 py-3 shadow-lg">
+              <img src="/kerhub-logo.png" alt="Ker Hub" className="h-16 w-auto" />
+            </div>
           </Link>
 
           <div className="bg-card border border-border/50 rounded-3xl p-8 shadow-xl">
