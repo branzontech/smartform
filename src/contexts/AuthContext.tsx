@@ -28,10 +28,23 @@ interface Profile {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+const defaultAuthContext: AuthContextType = {
+  user: null,
+  session: null,
+  profile: null,
+  roles: [],
+  isLoading: true,
+  signUp: async () => ({ error: new Error("AuthProvider not mounted") }),
+  signIn: async () => ({ error: new Error("AuthProvider not mounted") }),
+  signOut: async () => {},
+  resetPassword: async () => ({ error: new Error("AuthProvider not mounted") }),
+  updatePassword: async () => ({ error: new Error("AuthProvider not mounted") }),
+  hasRole: () => false,
+};
+
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (!context) throw new Error("useAuth must be used within AuthProvider");
-  return context;
+  return context ?? defaultAuthContext;
 };
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
