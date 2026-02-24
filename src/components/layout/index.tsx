@@ -28,6 +28,7 @@ import {
 } from "@/components/ui/command";
 import { mainNavItems } from "@/config/navigation";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -38,10 +39,11 @@ export const Layout = ({ children }: LayoutProps) => {
   const [searchOpen, setSearchOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
+  const { profile, signOut } = useAuth();
 
   const user = {
-    name: "Dr. Martínez",
-    initials: "DM",
+    name: profile?.full_name || "Usuario",
+    initials: (profile?.full_name || "U").slice(0, 2).toUpperCase(),
   };
 
   useEffect(() => {
@@ -96,9 +98,9 @@ export const Layout = ({ children }: LayoutProps) => {
     navigate(path);
   };
 
-  const handleLogout = () => {
-    console.log("Cerrando sesión...");
-    // navigate("/login");
+  const handleLogout = async () => {
+    await signOut();
+    navigate("/app/login");
   };
 
   return (
