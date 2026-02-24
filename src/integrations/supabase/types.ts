@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      configuracion_campos_paciente: {
+        Row: {
+          created_at: string
+          es_requerido: boolean
+          id: string
+          label: string
+          orden: number
+          tipo_dato: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          es_requerido?: boolean
+          id?: string
+          label: string
+          orden?: number
+          tipo_dato?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          es_requerido?: boolean
+          id?: string
+          label?: string
+          orden?: number
+          tipo_dato?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       geocoded_locations: {
         Row: {
           address: string
@@ -69,6 +99,69 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      pacientes: {
+        Row: {
+          apellidos: string
+          ciudad: string | null
+          created_at: string
+          direccion: string | null
+          email: string | null
+          estado: string | null
+          fecha_nacimiento: string | null
+          fhir_extensions: Json
+          id: string
+          nombres: string
+          numero_documento: string
+          ocupacion: string | null
+          regimen: string | null
+          telefono_principal: string
+          telefono_secundario: string | null
+          updated_at: string
+          user_id: string | null
+          zona: string | null
+        }
+        Insert: {
+          apellidos: string
+          ciudad?: string | null
+          created_at?: string
+          direccion?: string | null
+          email?: string | null
+          estado?: string | null
+          fecha_nacimiento?: string | null
+          fhir_extensions?: Json
+          id?: string
+          nombres: string
+          numero_documento: string
+          ocupacion?: string | null
+          regimen?: string | null
+          telefono_principal: string
+          telefono_secundario?: string | null
+          updated_at?: string
+          user_id?: string | null
+          zona?: string | null
+        }
+        Update: {
+          apellidos?: string
+          ciudad?: string | null
+          created_at?: string
+          direccion?: string | null
+          email?: string | null
+          estado?: string | null
+          fecha_nacimiento?: string | null
+          fhir_extensions?: Json
+          id?: string
+          nombres?: string
+          numero_documento?: string
+          ocupacion?: string | null
+          regimen?: string | null
+          telefono_principal?: string
+          telefono_secundario?: string | null
+          updated_at?: string
+          user_id?: string | null
+          zona?: string | null
+        }
+        Relationships: []
       }
       profiles: {
         Row: {
