@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Header } from "@/components/layout/header";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, FileText, Palette, Bell, Save, User, Shield, Plus, Cog, HelpCircle, Trash2, UserCog, ClipboardList } from "lucide-react";
+import { ArrowLeft, FileText, Palette, Bell, Save, User, Shield, Plus, Cog, HelpCircle, Trash2, SlidersHorizontal, ClipboardList } from "lucide-react";
 import { PatientFieldsConfig } from "@/components/config/PatientFieldsConfig";
 import { AdmissionFieldsConfig } from "@/components/config/AdmissionFieldsConfig";
 import { Button } from "@/components/ui/button";
@@ -35,8 +35,7 @@ const categories = [
   { id: "general", label: "General", icon: <Cog size={18} /> },
   { id: "appearance", label: "Apariencia", icon: <Palette size={18} /> },
   { id: "forms", label: "Formularios", icon: <FileText size={18} /> },
-  { id: "patient-fields", label: "Campos Paciente", icon: <UserCog size={18} /> },
-  { id: "admission-fields", label: "Campos Admisión", icon: <ClipboardList size={18} /> },
+  { id: "customization", label: "Personalización", icon: <SlidersHorizontal size={18} /> },
   { id: "notifications", label: "Notificaciones", icon: <Bell size={18} /> },
   { id: "account", label: "Cuenta", icon: <User size={18} /> },
   { id: "advanced", label: "Avanzado", icon: <Shield size={18} /> },
@@ -320,14 +319,41 @@ export const SettingsPage = () => {
               </div>
             )}
 
-            {/* Patient Fields Config */}
-            {activeCategory === "patient-fields" && (
-              <PatientFieldsConfig />
-            )}
-
-            {/* Admission Fields Config */}
-            {activeCategory === "admission-fields" && (
-              <AdmissionFieldsConfig />
+            {/* Customization - Tabbed view */}
+            {activeCategory === "customization" && (
+              <div className="space-y-6">
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="flex items-center gap-2">
+                      <SlidersHorizontal className="w-5 h-5 text-primary" />
+                      Personalización de Campos
+                    </CardTitle>
+                    <CardDescription>
+                      Configura campos personalizados para tus formularios. Estos campos se almacenan como extensiones FHIR y aparecen automáticamente en los formularios correspondientes.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <Tabs defaultValue="patient" className="w-full">
+                      <TabsList className="grid w-full grid-cols-2 mb-6">
+                        <TabsTrigger value="patient" className="gap-2">
+                          <User size={16} />
+                          Pacientes
+                        </TabsTrigger>
+                        <TabsTrigger value="admission" className="gap-2">
+                          <ClipboardList size={16} />
+                          Admisiones
+                        </TabsTrigger>
+                      </TabsList>
+                      <TabsContent value="patient">
+                        <PatientFieldsConfig />
+                      </TabsContent>
+                      <TabsContent value="admission">
+                        <AdmissionFieldsConfig />
+                      </TabsContent>
+                    </Tabs>
+                  </CardContent>
+                </Card>
+              </div>
             )}
               
             {/* Notifications Settings */}
