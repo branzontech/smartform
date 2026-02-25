@@ -197,6 +197,56 @@ export type Database = {
         }
         Relationships: []
       }
+      contratos: {
+        Row: {
+          created_at: string
+          estado: string
+          fecha_fin: string | null
+          fecha_inicio: string
+          id: string
+          nombre_convenio: string
+          notas: string | null
+          pagador_id: string
+          reglas_facturacion: Json
+          tipo_contratacion: Database["public"]["Enums"]["tipo_contratacion"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          estado?: string
+          fecha_fin?: string | null
+          fecha_inicio?: string
+          id?: string
+          nombre_convenio: string
+          notas?: string | null
+          pagador_id: string
+          reglas_facturacion?: Json
+          tipo_contratacion?: Database["public"]["Enums"]["tipo_contratacion"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          estado?: string
+          fecha_fin?: string | null
+          fecha_inicio?: string
+          id?: string
+          nombre_convenio?: string
+          notas?: string | null
+          pagador_id?: string
+          reglas_facturacion?: Json
+          tipo_contratacion?: Database["public"]["Enums"]["tipo_contratacion"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contratos_pagador_id_fkey"
+            columns: ["pagador_id"]
+            isOneToOne: false
+            referencedRelation: "pagadores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       geocoded_locations: {
         Row: {
           address: string
@@ -328,6 +378,42 @@ export type Database = {
           updated_at?: string
           user_id?: string | null
           zona?: string | null
+        }
+        Relationships: []
+      }
+      pagadores: {
+        Row: {
+          activo: boolean
+          created_at: string
+          es_particular: boolean
+          id: string
+          nombre: string
+          numero_identificacion: string | null
+          pais: string
+          tipo_identificacion: string | null
+          updated_at: string
+        }
+        Insert: {
+          activo?: boolean
+          created_at?: string
+          es_particular?: boolean
+          id?: string
+          nombre: string
+          numero_identificacion?: string | null
+          pais?: string
+          tipo_identificacion?: string | null
+          updated_at?: string
+        }
+        Update: {
+          activo?: boolean
+          created_at?: string
+          es_particular?: boolean
+          id?: string
+          nombre?: string
+          numero_identificacion?: string | null
+          pais?: string
+          tipo_identificacion?: string | null
+          updated_at?: string
         }
         Relationships: []
       }
@@ -510,6 +596,7 @@ export type Database = {
         | "receptionist"
         | "patient"
         | "user"
+      tipo_contratacion: "evento" | "capita" | "paquete" | "particular"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -638,6 +725,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "doctor", "nurse", "receptionist", "patient", "user"],
+      tipo_contratacion: ["evento", "capita", "paquete", "particular"],
     },
   },
 } as const

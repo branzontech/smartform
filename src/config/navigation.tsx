@@ -194,6 +194,11 @@ export const mainNavItems: SubmenuItem[] = [
         icon: PieChart,
       },
       {
+        title: "Convenios",
+        path: "/app/facturacion/convenios",
+        icon: Briefcase,
+      },
+      {
         title: "Nueva Factura",
         path: "/app/facturacion/nueva",
         icon: DollarSign,
