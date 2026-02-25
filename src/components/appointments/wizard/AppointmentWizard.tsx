@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Check, User, ClipboardList, Calendar, MapPin, MessageSquare, Bell, FileText, CheckCircle, XCircle, RefreshCw, Ban, Eye } from "lucide-react";
+import { Check, User, ClipboardList, Calendar, MapPin, MessageSquare, Bell, FileText, CheckCircle, XCircle, RefreshCw, Ban, Eye, ArrowLeft, ArrowRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { ExtendedPatient } from "../PatientPanel";
 import { PatientSearchStep } from "./PatientSearchStep";
@@ -281,6 +282,32 @@ export const AppointmentWizard: React.FC<AppointmentWizardProps> = ({
               </div>
             </div>
           </motion.div>
+        </div>
+
+        {/* Navigation buttons - always visible below stepper */}
+        <div className="shrink-0 px-6 md:px-8 pb-2">
+          <div className={cn(
+            "mx-auto flex items-center justify-between",
+            currentStep === 4 ? "max-w-[1600px]" : "max-w-5xl"
+          )}>
+            {currentStep > 1 ? (
+              <Button variant="ghost" onClick={handleBack} className="rounded-xl gap-2 h-9">
+                <ArrowLeft className="w-4 h-4" />
+                Atrás
+              </Button>
+            ) : (
+              <div />
+            )}
+            {currentStep === 2 && wizardData.patient && (
+              <Button onClick={handlePatientDetailContinue} className="rounded-xl h-9 px-5 gap-2">
+                Continuar
+                <ArrowRight className="w-4 h-4" />
+              </Button>
+            )}
+            {currentStep === 3 && !wizardData.admission && (
+              <div />
+            )}
+          </div>
         </div>
 
         {/* Content area - no scroll here, each step manages its own */}

@@ -371,17 +371,6 @@ export const PatientDetailStep: React.FC<PatientDetailStepProps> = ({
         </motion.div>
       </div>
 
-      {/* Footer - fixed */}
-      <div className="shrink-0 flex-none pt-3 flex items-center justify-between">
-        <Button variant="ghost" onClick={onBack} className="rounded-xl gap-2">
-          <ArrowLeft className="w-4 h-4" />
-          Buscar otro
-        </Button>
-        <Button onClick={onContinue} className="rounded-xl h-10 px-5 gap-2">
-          Continuar
-          <ArrowRight className="w-4 h-4" />
-        </Button>
-      </div>
     </motion.div>
   );
 };

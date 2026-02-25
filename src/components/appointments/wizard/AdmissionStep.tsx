@@ -453,17 +453,6 @@ export const AdmissionStep: React.FC<AdmissionStepProps> = ({
         </motion.div>
       )}
 
-      {/* Back button */}
-      <motion.div variants={itemVariants} className="flex justify-start pt-2">
-        <Button
-          variant="ghost"
-          onClick={onBack}
-          className="rounded-xl gap-2"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Volver al paciente
-        </Button>
-      </motion.div>
     </motion.div>
   );
 };
