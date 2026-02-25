@@ -267,7 +267,7 @@ const ContractsPage: React.FC = () => {
 
   return (
     <Layout>
-      <div className="flex flex-col h-[calc(100vh-theme(spacing.16))] w-full overflow-hidden">
+      <div className="flex flex-col h-full w-full overflow-hidden">
         {/* Header - shrink-0 */}
         <div className="shrink-0 px-6 py-4 border-b border-border/40">
           <div className="flex items-center justify-between">
