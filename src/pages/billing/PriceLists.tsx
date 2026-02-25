@@ -144,9 +144,27 @@ const PriceLists: React.FC = () => {
   const [paisClinica, setPaisClinica] = useState("CO");
   const [regulatoryForm, setRegulatoryForm] = useState<Record<string, string>>({});
 
+  // Edit servicio state
+  const [editingServicio, setEditingServicio] = useState<TarifarioServicio | null>(null);
+  const [editServicioForm, setEditServicioForm] = useState({
+    sistema_codificacion: "CUPS",
+    codigo_servicio: "",
+    descripcion_servicio: "",
+    valor: "",
+  });
+  const [editPaisClinica, setEditPaisClinica] = useState("CO");
+  const [editRegulatoryForm, setEditRegulatoryForm] = useState<Record<string, string>>({});
+  const [editServicioDialogOpen, setEditServicioDialogOpen] = useState(false);
+  const [savingServicio, setSavingServicio] = useState(false);
+
   const currentRegulatoryConfig = useMemo(
     () => REGULATORY_FIELDS_BY_COUNTRY[paisClinica] || REGULATORY_FIELDS_BY_COUNTRY.OTHER,
     [paisClinica]
+  );
+
+  const editRegulatoryConfig = useMemo(
+    () => REGULATORY_FIELDS_BY_COUNTRY[editPaisClinica] || REGULATORY_FIELDS_BY_COUNTRY.OTHER,
+    [editPaisClinica]
   );
 
   // Clone state
@@ -380,6 +398,78 @@ const PriceLists: React.FC = () => {
     } else {
       toast.success(newActivo ? "Servicio activado" : "Servicio inactivado");
       fetchServicios(selectedTarifario.id);
+    }
+  };
+
+  const openEditServicio = (servicio: TarifarioServicio) => {
+    setEditingServicio(servicio);
+    setEditServicioForm({
+      sistema_codificacion: servicio.sistema_codificacion,
+      codigo_servicio: servicio.codigo_servicio,
+      descripcion_servicio: servicio.descripcion_servicio,
+      valor: String(servicio.valor),
+    });
+    const meta = servicio.metadata_regulatoria || {};
+    const pais = (meta as any).pais || "OTHER";
+    setEditPaisClinica(pais);
+    const regForm: Record<string, string> = {};
+    const config = REGULATORY_FIELDS_BY_COUNTRY[pais];
+    if (config) {
+      for (const field of config.fields) {
+        regForm[field.key] = (meta as any)[field.key] || "";
+      }
+    }
+    setEditRegulatoryForm(regForm);
+    setEditServicioDialogOpen(true);
+  };
+
+  const handleSaveServicio = async () => {
+    if (!editingServicio || !selectedTarifario) return;
+    if (!editServicioForm.codigo_servicio.trim() || !editServicioForm.descripcion_servicio.trim()) {
+      toast.error("Código y descripción son obligatorios");
+      return;
+    }
+    const valorNum = parseFloat(editServicioForm.valor);
+    if (isNaN(valorNum) || valorNum < 0) {
+      toast.error("El valor debe ser un número válido");
+      return;
+    }
+    const regConfig = editRegulatoryConfig;
+    for (const field of regConfig.fields) {
+      if (field.required && !editRegulatoryForm[field.key]?.trim()) {
+        toast.error(`"${field.label}" es obligatorio para ${regConfig.label}`);
+        return;
+      }
+    }
+    const metadata: Record<string, any> = {};
+    if (regConfig.fields.length > 0) {
+      metadata.pais = editPaisClinica;
+      for (const field of regConfig.fields) {
+        if (editRegulatoryForm[field.key]?.trim()) {
+          metadata[field.key] = editRegulatoryForm[field.key].trim();
+        }
+      }
+    }
+    setSavingServicio(true);
+    try {
+      const { error } = await supabase
+        .from("tarifarios_servicios" as any)
+        .update({
+          sistema_codificacion: editServicioForm.sistema_codificacion,
+          codigo_servicio: editServicioForm.codigo_servicio,
+          descripcion_servicio: editServicioForm.descripcion_servicio,
+          valor: valorNum,
+          metadata_regulatoria: metadata,
+        } as any)
+        .eq("id", editingServicio.id);
+      if (error) throw error;
+      toast.success("Servicio actualizado");
+      setEditServicioDialogOpen(false);
+      fetchServicios(selectedTarifario.id);
+    } catch (err: any) {
+      toast.error("Error: " + (err.message || ""));
+    } finally {
+      setSavingServicio(false);
     }
   };
 
@@ -832,6 +922,7 @@ const PriceLists: React.FC = () => {
                       <TableHead className="text-xs">Descripción</TableHead>
                       <TableHead className="text-xs text-right">Valor</TableHead>
                       <TableHead className="text-xs text-center">Estado</TableHead>
+                      <TableHead className="text-xs w-10"></TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -861,6 +952,16 @@ const PriceLists: React.FC = () => {
                             )}
                           </Button>
                         </TableCell>
+                        <TableCell>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 w-7 p-0"
+                            onClick={() => openEditServicio(s)}
+                          >
+                            <Pencil className="w-3.5 h-3.5" />
+                          </Button>
+                        </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -870,6 +971,114 @@ const PriceLists: React.FC = () => {
           </div>
         </SheetContent>
       </Sheet>
+
+      {/* Edit servicio dialog */}
+      <Dialog open={editServicioDialogOpen} onOpenChange={(open) => { setEditServicioDialogOpen(open); if (!open) setEditingServicio(null); }}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Pencil className="w-5 h-5 text-primary" />
+              Editar Servicio
+            </DialogTitle>
+            <DialogDescription>Modifica los datos del servicio</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="grid grid-cols-3 gap-3">
+              <div>
+                <Label className="text-xs">País</Label>
+                <Select value={editPaisClinica} onValueChange={(v) => { setEditPaisClinica(v); setEditRegulatoryForm({}); }}>
+                  <SelectTrigger className="mt-1 rounded-xl h-9 text-sm"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {REGULATORY_COUNTRIES.map((c) => (
+                      <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label className="text-xs">Sistema</Label>
+                <Select value={editServicioForm.sistema_codificacion} onValueChange={(v) => setEditServicioForm({ ...editServicioForm, sistema_codificacion: v })}>
+                  <SelectTrigger className="mt-1 rounded-xl h-9 text-sm"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {SISTEMAS_CODIFICACION.map((s) => (
+                      <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label className="text-xs">Código *</Label>
+                <Input
+                  value={editServicioForm.codigo_servicio}
+                  onChange={(e) => setEditServicioForm({ ...editServicioForm, codigo_servicio: e.target.value })}
+                  className="mt-1 rounded-xl h-9 text-sm"
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              <div className="col-span-2">
+                <Label className="text-xs">Descripción *</Label>
+                <Input
+                  value={editServicioForm.descripcion_servicio}
+                  onChange={(e) => setEditServicioForm({ ...editServicioForm, descripcion_servicio: e.target.value })}
+                  className="mt-1 rounded-xl h-9 text-sm"
+                />
+              </div>
+              <div>
+                <Label className="text-xs">Valor *</Label>
+                <Input
+                  type="number"
+                  value={editServicioForm.valor}
+                  onChange={(e) => setEditServicioForm({ ...editServicioForm, valor: e.target.value })}
+                  className="mt-1 rounded-xl h-9 text-sm"
+                />
+              </div>
+            </div>
+            {editRegulatoryConfig.fields.length > 0 && (
+              <div className="p-3 rounded-xl border border-primary/20 bg-primary/5 space-y-3">
+                <p className="text-xs font-medium text-primary flex items-center gap-1.5">
+                  <FileText className="w-3.5 h-3.5" />
+                  {editRegulatoryConfig.label}
+                </p>
+                <div className="grid grid-cols-2 gap-3">
+                  {editRegulatoryConfig.fields.map((field) => (
+                    <div key={field.key}>
+                      <Label className="text-xs">{field.label} {field.required && "*"}</Label>
+                      {field.type === "select" && field.options ? (
+                        <Select
+                          value={editRegulatoryForm[field.key] || ""}
+                          onValueChange={(v) => setEditRegulatoryForm({ ...editRegulatoryForm, [field.key]: v })}
+                        >
+                          <SelectTrigger className="mt-1 rounded-xl h-9 text-sm"><SelectValue placeholder="Seleccionar..." /></SelectTrigger>
+                          <SelectContent>
+                            {field.options.map((opt) => (
+                              <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <Input
+                          placeholder={field.placeholder || ""}
+                          value={editRegulatoryForm[field.key] || ""}
+                          onChange={(e) => setEditRegulatoryForm({ ...editRegulatoryForm, [field.key]: e.target.value })}
+                          className="mt-1 rounded-xl h-9 text-sm"
+                        />
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditServicioDialogOpen(false)} className="rounded-xl">Cancelar</Button>
+            <Button onClick={handleSaveServicio} disabled={savingServicio || !editServicioForm.codigo_servicio.trim() || !editServicioForm.descripcion_servicio.trim()} className="rounded-xl">
+              {savingServicio && <Loader2 className="mr-2 w-4 h-4 animate-spin" />}
+              Guardar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Clone dialog */}
       <Dialog open={cloneDialogOpen} onOpenChange={(open) => { setCloneDialogOpen(open); if (!open) setCloneTarget(null); }}>
