@@ -276,10 +276,11 @@ const FormCreator = () => {
   return (
     <div className="h-screen flex flex-col" style={applyDesignToPreview()}>
       <Header showCreate={false} />
-      <main className="flex-1 min-h-0 overflow-y-auto">
-        <div className="container mx-auto py-6">
-          <div className="max-w-3xl mx-auto relative">
-            <div className="flex items-center justify-between mb-4">
+      <main className="flex-1 min-h-0 flex flex-col">
+        {/* Barra de acciones sticky */}
+        <div className="shrink-0 sticky top-0 z-30 bg-background/95 backdrop-blur-sm border-b border-border">
+          <div className="container mx-auto px-4 py-2">
+            <div className="max-w-3xl mx-auto flex items-center justify-between">
               <BackButton />
               <div className="flex items-center gap-2">
                 <Button
@@ -307,6 +308,12 @@ const FormCreator = () => {
                 </Button>
               </div>
             </div>
+          </div>
+        </div>
+        {/* Contenido scrollable */}
+        <div className="flex-1 min-h-0 overflow-y-auto">
+          <div className="container mx-auto py-6 px-4">
+            <div className="max-w-3xl mx-auto relative">
             <div className="form-card overflow-visible mb-6" style={{backgroundColor: designOptions.backgroundColor}}>
               <FormTitle
                 defaultTitle={title}
@@ -591,6 +598,7 @@ const FormCreator = () => {
                   </button>
                 </div>
               </div>
+            </div>
             </div>
           </div>
         </div>
