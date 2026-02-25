@@ -16,6 +16,7 @@ import {
   Save,
   Loader2,
   FileText,
+  ClipboardList,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,6 +34,7 @@ import {
 import { cn } from "@/lib/utils";
 import { ExtendedPatient } from "../PatientPanel";
 import { PatientStatusBadge } from "@/components/patients/PatientStatusBadge";
+import { AdmissionHistorySection } from "@/components/patients/AdmissionHistorySection";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -228,7 +230,7 @@ export const PatientDetailStep: React.FC<PatientDetailStepProps> = ({
                   )}
 
                   {/* Custom fields */}
-                  {customFields && Object.keys(customFields).length > 0 && (
+                   {customFields && Object.keys(customFields).length > 0 && (
                     <>
                       <Separator className="my-3" />
                       <p className="text-[11px] font-medium text-muted-foreground/70 uppercase tracking-widest mb-2">
@@ -241,6 +243,12 @@ export const PatientDetailStep: React.FC<PatientDetailStepProps> = ({
                       </div>
                     </>
                   )}
+
+                  <Separator className="my-3" />
+                  <p className="text-[11px] font-medium text-muted-foreground/70 uppercase tracking-widest mb-2">
+                    Historial de admisiones
+                  </p>
+                  <AdmissionHistorySection patientId={patient.id} />
                 </div>
               ) : (
                 /* Edit mode */
