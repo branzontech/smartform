@@ -115,6 +115,18 @@ const FormCreator = () => {
     setQuestions([...questions, newSection]);
   };
 
+  const handleDuplicateQuestion = (id: string) => {
+    const original = questions.find(q => q.id === id);
+    if (!original) return;
+    const newId = nanoid();
+    const duplicate = { ...original, id: newId, title: `${original.title} (copia)` };
+    const index = questions.findIndex(q => q.id === id);
+    const newQuestions = [...questions];
+    newQuestions.splice(index + 1, 0, duplicate);
+    setQuestions(newQuestions);
+    setExpandedQuestions([newId]);
+  };
+
   const handleUpdateQuestion = (id: string, data: Partial<QuestionData>) => {
     setQuestions(
       questions.map((q) => (q.id === id ? { ...q, ...data } : q))
@@ -568,6 +580,7 @@ const FormCreator = () => {
                     question={question}
                     onUpdate={handleUpdateQuestion}
                     onDelete={handleDeleteQuestion}
+                    onDuplicate={handleDuplicateQuestion}
                     isExpanded={expandedQuestions.includes(question.id)}
                     onToggleExpand={() => toggleQuestionExpansion(question.id)}
                     onMoveUp={handleMoveQuestionUp}

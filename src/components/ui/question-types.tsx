@@ -1,67 +1,114 @@
 
 import React, { useState, useRef, useEffect } from "react";
-import { CheckSquare, Circle, List, MessageSquare, Minus, Plus, Type, Calculator, Activity, Stethoscope, FileText, Search, Check, Edit3, FileUp, AlignHorizontalSpaceBetween, AlignVerticalSpaceBetween, Package } from "lucide-react";
+import { CheckSquare, Circle, List, MessageSquare, Minus, Plus, Type, Calculator, Activity, Stethoscope, FileText, Search, Check, Edit3, FileUp, AlignHorizontalSpaceBetween, AlignVerticalSpaceBetween, Package, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { QuestionTypeProps, OptionProps, AddOptionButtonProps, DiagnosisListProps, Diagnosis, MultifieldItemProps, MultifieldConfig, SignaturePadProps } from "@/components/forms/question/types";
 
-export const questionTypes = [
-  { id: "short", label: "Respuesta corta", icon: Type },
-  { id: "paragraph", label: "Párrafo", icon: MessageSquare },
-  { id: "multiple", label: "Selección múltiple", icon: Circle },
-  { id: "checkbox", label: "Casillas", icon: CheckSquare },
-  { id: "dropdown", label: "Desplegable", icon: List },
-  { id: "calculation", label: "Campo calculable", icon: Calculator },
-  { id: "vitals", label: "Signos vitales", icon: Activity },
-  { id: "diagnosis", label: "Diagnóstico", icon: Stethoscope },
-  { id: "clinical", label: "Datos clínicos", icon: FileText },
-  { id: "multifield", label: "Campos múltiples", icon: AlignVerticalSpaceBetween },
-  { id: "signature", label: "Firma", icon: Edit3 },
-  { id: "file", label: "Adjuntar archivo", icon: FileUp },
-  { id: "medication", label: "Medicamentos e Insumos", icon: Package },
+// Grouped question types with separators (like Google Forms)
+const questionTypeGroups = [
+  {
+    label: "Texto",
+    types: [
+      { id: "short", label: "Respuesta corta", icon: Type },
+      { id: "paragraph", label: "Párrafo", icon: MessageSquare },
+    ],
+  },
+  {
+    label: "Selección",
+    types: [
+      { id: "multiple", label: "Selección múltiple", icon: Circle },
+      { id: "checkbox", label: "Casillas", icon: CheckSquare },
+      { id: "dropdown", label: "Desplegable", icon: List },
+    ],
+  },
+  {
+    label: "Clínico",
+    types: [
+      { id: "vitals", label: "Signos vitales", icon: Activity },
+      { id: "diagnosis", label: "Diagnóstico", icon: Stethoscope },
+      { id: "clinical", label: "Datos clínicos", icon: FileText },
+      { id: "medication", label: "Medicamentos e Insumos", icon: Package },
+    ],
+  },
+  {
+    label: "Avanzado",
+    types: [
+      { id: "calculation", label: "Campo calculable", icon: Calculator },
+      { id: "multifield", label: "Campos múltiples", icon: AlignVerticalSpaceBetween },
+      { id: "signature", label: "Firma", icon: Edit3 },
+      { id: "file", label: "Adjuntar archivo", icon: FileUp },
+    ],
+  },
 ];
+
+// Flat list for lookups
+export const questionTypes = questionTypeGroups.flatMap((g) => g.types);
 
 export const QuestionType = ({ selected, onChange }: QuestionTypeProps) => {
   const [open, setOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
   const selectedType = questionTypes.find((t) => t.id === selected);
 
+  // Close on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
+    if (open) document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [open]);
+
   return (
-    <div className="relative mb-4">
+    <div className="relative" ref={dropdownRef}>
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="flex items-center justify-between w-full max-w-xs gap-2 px-3 py-2 rounded-md text-sm border border-gray-200 bg-white hover:bg-gray-50 transition-colors"
+        className={cn(
+          "flex items-center justify-between gap-2 px-3 py-2 rounded-md text-sm border transition-colors w-56",
+          "border-border bg-background hover:bg-muted"
+        )}
       >
         <span className="flex items-center gap-2">
           {selectedType && <selectedType.icon size={16} className="text-muted-foreground" />}
-          <span>{selectedType?.label || "Seleccionar tipo"}</span>
+          <span className="text-foreground">{selectedType?.label || "Seleccionar tipo"}</span>
         </span>
-        <List size={14} className={cn("text-muted-foreground transition-transform", open && "rotate-180")} />
+        <ChevronDown size={14} className={cn("text-muted-foreground transition-transform", open && "rotate-180")} />
       </button>
 
       {open && (
-        <div className="absolute z-50 mt-1 w-full max-w-xs bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-y-auto">
-          {questionTypes.map((type) => {
-            const isSelected = selected === type.id;
-            return (
-              <button
-                key={type.id}
-                onClick={() => {
-                  onChange(type.id);
-                  setOpen(false);
-                }}
-                className={cn(
-                  "flex items-center gap-2 w-full px-3 py-2 text-sm text-left transition-colors",
-                  isSelected
-                    ? "bg-accent text-accent-foreground font-medium"
-                    : "text-foreground hover:bg-muted"
-                )}
-              >
-                <type.icon size={16} className="text-muted-foreground" />
-                <span>{type.label}</span>
-                {isSelected && <Check size={14} className="ml-auto text-primary" />}
-              </button>
-            );
-          })}
+        <div className="absolute z-50 mt-1 w-64 bg-background border border-border rounded-lg shadow-xl max-h-80 overflow-y-auto right-0">
+          {questionTypeGroups.map((group, gi) => (
+            <div key={group.label}>
+              {gi > 0 && <div className="h-px bg-border mx-2" />}
+              <div className="px-3 py-1.5 text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
+                {group.label}
+              </div>
+              {group.types.map((type) => {
+                const isSelected = selected === type.id;
+                return (
+                  <button
+                    key={type.id}
+                    onClick={() => {
+                      onChange(type.id);
+                      setOpen(false);
+                    }}
+                    className={cn(
+                      "flex items-center gap-3 w-full px-3 py-2 text-sm text-left transition-colors",
+                      isSelected
+                        ? "bg-accent text-accent-foreground"
+                        : "text-foreground hover:bg-muted"
+                    )}
+                  >
+                    <type.icon size={18} className="text-muted-foreground shrink-0" />
+                    <span>{type.label}</span>
+                    {isSelected && <Check size={14} className="ml-auto text-primary shrink-0" />}
+                  </button>
+                );
+              })}
+            </div>
+          ))}
         </div>
       )}
     </div>

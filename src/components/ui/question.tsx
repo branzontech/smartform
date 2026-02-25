@@ -1,6 +1,7 @@
 
 import { useState } from "react";
-import { ChevronDown, ChevronUp, Trash, ArrowUp, ArrowDown } from "lucide-react";
+import { ChevronDown, ChevronUp, Trash, ArrowUp, ArrowDown, Copy, GripVertical } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { Button } from "./button";
 import { QuestionData } from "../forms/question/types";
 import { QuestionType } from "./question-types";
@@ -10,6 +11,7 @@ interface QuestionProps {
   question: QuestionData;
   onUpdate: (id: string, data: Partial<QuestionData>) => void;
   onDelete: (id: string) => void;
+  onDuplicate?: (id: string) => void;
   readOnly?: boolean;
   isExpanded?: boolean;
   onToggleExpand?: () => void;
@@ -17,13 +19,14 @@ interface QuestionProps {
   onMoveDown?: (id: string) => void;
   isFirst?: boolean;
   isLast?: boolean;
-  designOptions?: any; // Añadimos opciones de diseño
+  designOptions?: any;
 }
 
 export const Question = ({
   question,
   onUpdate,
   onDelete,
+  onDuplicate,
   readOnly = false,
   isExpanded = false,
   onToggleExpand,
@@ -145,146 +148,119 @@ export const Question = ({
 
   return (
     <div 
-      className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden transition-all duration-300"
+      className="bg-background rounded-lg shadow-sm border border-border overflow-visible transition-all duration-300"
       style={questionStyle}
     >
       {/* Header - siempre visible */}
       <div 
-        className="px-5 py-4 flex items-center justify-between cursor-pointer border-b border-gray-100"
+        className="px-5 py-3 flex items-center justify-between cursor-pointer"
         onClick={onToggleExpand}
-        style={designOptions ? { borderColor: `${designOptions.primaryColor}20` } : {}}
       >
-        <div className="flex-1 truncate">
-          <h3 className="font-medium text-gray-900" style={designOptions ? { color: designOptions.questionTextColor } : {}}>
+        <div className="flex items-center gap-2 flex-1 min-w-0">
+          {!readOnly && (
+            <GripVertical size={16} className="text-muted-foreground shrink-0 opacity-40" />
+          )}
+          <h3 className="font-medium text-foreground truncate">
             {question.title || "Sin título"}
           </h3>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1 shrink-0">
           {!readOnly && onMoveUp && onMoveDown && (
             <>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onMoveUp(question.id);
-                }}
-                disabled={isFirst}
-                className="text-gray-400 hover:text-blue-500 disabled:opacity-30"
-                style={designOptions ? { color: isFirst ? undefined : designOptions.primaryColor } : {}}
-              >
-                <ArrowUp size={16} />
+              <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-primary" disabled={isFirst}
+                onClick={(e) => { e.stopPropagation(); onMoveUp(question.id); }}>
+                <ArrowUp size={14} />
               </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onMoveDown(question.id);
-                }}
-                disabled={isLast}
-                className="text-gray-400 hover:text-blue-500 disabled:opacity-30"
-                style={designOptions ? { color: isLast ? undefined : designOptions.primaryColor } : {}}
-              >
-                <ArrowDown size={16} />
+              <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-primary" disabled={isLast}
+                onClick={(e) => { e.stopPropagation(); onMoveDown(question.id); }}>
+                <ArrowDown size={14} />
               </Button>
             </>
           )}
-          {!readOnly && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleDelete();
-              }}
-              className={`text-gray-400 hover:text-red-500 ${
-                showDeleteConfirm ? "text-red-500" : ""
-              }`}
-            >
-              <Trash size={16} />
-            </Button>
-          )}
           {onToggleExpand && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={(e) => {
-                e.stopPropagation();
-                onToggleExpand();
-              }}
-              className="text-gray-400"
-              style={designOptions ? { color: designOptions.primaryColor } : {}}
-            >
-              {isExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+            <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground"
+              onClick={(e) => { e.stopPropagation(); onToggleExpand(); }}>
+              {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
             </Button>
           )}
         </div>
       </div>
 
-      {/* Contenido - visible solo cuando está expandido */}
+      {/* Contenido expandido - estilo Google Forms */}
       {isExpanded && (
-        <div className="px-5 py-4 space-y-4 animate-fade-in">
+        <div className="animate-fade-in">
           {!readOnly && (
             <>
-              <div className="flex flex-col space-y-4">
-                <div>
-                  <input
-                    type="text"
-                    value={question.title}
-                    onChange={(e) => handleUpdate({ title: e.target.value })}
-                    placeholder="Título de la pregunta"
-                    className="w-full p-2 border-b border-gray-200 focus:border-form-primary focus:outline-none text-base font-medium"
-                    style={designOptions ? { 
-                      borderColor: `${designOptions.primaryColor}50`,
-                      color: designOptions.questionTextColor,
-                      fontFamily: designOptions.fontFamily
-                    } : {}}
-                  />
-                </div>
-
-                <div>
-                  <QuestionType
-                    selected={question.type}
-                    onChange={handleTypeChange}
-                  />
-                </div>
+              {/* Row: título + tipo de dato (Google Forms style) */}
+              <div className="px-5 pb-3 flex items-start gap-3">
+                <input
+                  type="text"
+                  value={question.title}
+                  onChange={(e) => handleUpdate({ title: e.target.value })}
+                  placeholder="Pregunta"
+                  className="flex-1 p-2 border-b-2 border-muted-foreground/30 focus:border-primary focus:outline-none text-base font-medium bg-muted/30 rounded-t-md"
+                />
+                <QuestionType
+                  selected={question.type}
+                  onChange={handleTypeChange}
+                />
               </div>
 
-              <QuestionContent
-                question={question}
-                onUpdate={handleUpdate}
-                readOnly={readOnly}
-              />
+              {/* Content area */}
+              <div className="px-5 pb-3">
+                <QuestionContent
+                  question={question}
+                  onUpdate={handleUpdate}
+                  readOnly={readOnly}
+                />
+              </div>
 
-              <div className="flex items-center justify-between pt-2">
-                <div className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    id={`required-${question.id}`}
-                    checked={question.required}
-                    onChange={(e) => handleRequiredChange(e.target.checked)}
-                    className="rounded text-form-primary focus:ring-form-primary"
-                    style={designOptions ? { color: designOptions.primaryColor } : {}}
-                  />
-                  <label
-                    htmlFor={`required-${question.id}`}
-                    className="text-sm text-gray-600"
-                    style={designOptions ? { color: designOptions.questionTextColor } : {}}
+              {/* Bottom bar: duplicar, eliminar, obligatorio (Google Forms style) */}
+              <div className="px-5 py-2 border-t border-border flex items-center justify-end gap-1">
+                {onDuplicate && (
+                  <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                    title="Duplicar"
+                    onClick={() => onDuplicate(question.id)}>
+                    <Copy size={16} />
+                  </Button>
+                )}
+                <Button variant="ghost" size="icon"
+                  className={`h-8 w-8 text-muted-foreground hover:text-destructive ${showDeleteConfirm ? "text-destructive" : ""}`}
+                  title="Eliminar"
+                  onClick={handleDelete}>
+                  <Trash size={16} />
+                </Button>
+                <div className="w-px h-5 bg-border mx-1" />
+                <label className="flex items-center gap-2 cursor-pointer select-none">
+                  <span className="text-sm text-muted-foreground">Obligatorio</span>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={question.required}
+                    onClick={() => handleRequiredChange(!question.required)}
+                    className={cn(
+                      "relative inline-flex h-5 w-9 shrink-0 rounded-full transition-colors",
+                      question.required ? "bg-primary" : "bg-muted-foreground/30"
+                    )}
                   >
-                    Obligatorio
-                  </label>
-                </div>
+                    <span className={cn(
+                      "pointer-events-none block h-4 w-4 rounded-full bg-background shadow-sm transition-transform mt-0.5",
+                      question.required ? "translate-x-4 ml-0.5" : "translate-x-0.5"
+                    )} />
+                  </button>
+                </label>
               </div>
             </>
           )}
 
           {readOnly && (
-            <QuestionContent
-              question={question}
-              onUpdate={handleUpdate}
-              readOnly={true}
-            />
+            <div className="px-5 pb-4">
+              <QuestionContent
+                question={question}
+                onUpdate={handleUpdate}
+                readOnly={true}
+              />
+            </div>
           )}
         </div>
       )}
