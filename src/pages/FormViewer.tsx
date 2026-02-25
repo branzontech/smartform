@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
 import {
   Form,
   FormControl,
@@ -135,13 +136,12 @@ const FormViewer = () => {
     }));
   };
 
-  const onSubmit = (values: z.infer<typeof dynamicSchema>) => {
+  const onSubmit = async (values: z.infer<typeof dynamicSchema>) => {
     console.log("Formulario enviado:", values);
     
     // Process any special field types that need additional handling
     const processedValues = { ...values };
     
-    // Para preguntas con tipos especiales, debemos procesarlas manualmente
     questions.forEach(question => {
       if (question.type === "vitals" && question.vitalType === "TA") {
         processedValues[question.id] = {
@@ -168,19 +168,46 @@ const FormViewer = () => {
       }
     });
     
-    console.log("Valores procesados antes de guardar:", processedValues);
-    
-    // Add patient and consultation reference if applicable
-    if (patientId) {
-      processedValues._patientId = patientId;
-    }
-    
-    if (consultationId) {
-      processedValues._consultationId = consultationId;
-    }
-    
-    // Guardar la respuesta en localStorage
-    if (formId) {
+    // Remove internal fields for clean DB storage
+    const { _patientId, _consultationId, ...cleanData } = processedValues;
+
+    // Save to respuestas_formularios (FHIR QuestionnaireResponse) in DB
+    if (formId && patientId) {
+      const { data: { user } } = await supabase.auth.getUser();
+      const medicoId = user?.id;
+
+      if (!medicoId) {
+        uiToast({
+          title: "Error de autenticación",
+          description: "Debes iniciar sesión para guardar respuestas.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const { error: insertError } = await supabase
+        .from("respuestas_formularios" as any)
+        .insert({
+          formulario_id: formId,
+          paciente_id: patientId,
+          admision_id: consultationId || null,
+          medico_id: medicoId,
+          datos_respuesta: cleanData,
+        });
+
+      if (insertError) {
+        console.error("Error saving response:", insertError);
+        uiToast({
+          title: "Error al guardar",
+          description: insertError.message,
+          variant: "destructive",
+        });
+        return;
+      }
+    } else if (formId) {
+      // Fallback for public/anonymous forms without patient context
+      processedValues._patientId = patientId || undefined;
+      processedValues._consultationId = consultationId || undefined;
       saveFormResponse(formId, processedValues);
     }
     
@@ -190,7 +217,6 @@ const FormViewer = () => {
       duration: 5000,
     });
 
-    // If embedded, notify parent window
     if (isEmbedded && formId) {
       window.parent.postMessage({
         type: 'formCompleted',
@@ -198,7 +224,6 @@ const FormViewer = () => {
       }, '*');
     }
     
-    // If this was part of a consultation, redirect back to patient detail
     if (patientId && consultationId && !isEmbedded) {
       uiToast({
         title: "Formulario guardado",

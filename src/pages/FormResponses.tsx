@@ -9,8 +9,8 @@ import { useToast } from "@/hooks/use-toast";
 import { FormatDocumentView } from "@/components/forms/responses/format-document-view";
 import { FormSummaryTabs } from "@/components/forms/responses/form-summary-tabs";
 import { printFormResponse } from "@/utils/print-utils";
-import { getFormResponses } from "@/utils/form-utils";
 import { FormResponse } from "@/types/form-types";
+import { supabase } from "@/integrations/supabase/client";
 
 const FormResponses = () => {
   const { id } = useParams();
@@ -22,45 +22,52 @@ const FormResponses = () => {
   const [activeTab, setActiveTab] = useState<"summary" | "individual">("summary");
 
   useEffect(() => {
-    if (id) {
+    if (!id) return;
+    const load = async () => {
       setLoading(true);
-      const savedForms = localStorage.getItem("forms");
-      
-      if (savedForms) {
-        try {
-          const forms = JSON.parse(savedForms);
-          const form = forms.find((f: Form) => f.id === id);
-          
-          if (form) {
-            setFormData({
-              ...form,
-              createdAt: new Date(form.createdAt),
-              updatedAt: new Date(form.updatedAt)
-            });
-            
-            const formResponses = getFormResponses(id);
-            console.log("Respuestas cargadas:", formResponses);
-            setResponses(formResponses);
-          } else {
-            toast({
-              title: "Error",
-              description: "El formulario no existe",
-              variant: "destructive",
-            });
-            navigate("/");
-          }
-        } catch (error) {
-          console.error("Error loading form:", error);
-          toast({
-            title: "Error",
-            description: "Error al cargar el formulario",
-            variant: "destructive",
-          });
-        }
+      // Load form metadata
+      const { data: formRow, error: formErr } = await supabase
+        .from("formularios")
+        .select("*")
+        .eq("id", id)
+        .single();
+
+      if (!formRow || formErr) {
+        toast({ title: "Error", description: "El formulario no existe", variant: "destructive" });
+        navigate("/");
+        return;
       }
-      
+
+      setFormData({
+        id: formRow.id,
+        title: formRow.titulo,
+        description: formRow.descripcion || "",
+        questions: (formRow.preguntas as any[]) || [],
+        createdAt: new Date(formRow.created_at),
+        updatedAt: new Date(formRow.updated_at),
+        responseCount: formRow.respuestas_count || 0,
+        formType: (formRow.tipo as "forms" | "formato") || "forms",
+      });
+
+      // Load responses from respuestas_formularios
+      const { data: respRows } = await supabase
+        .from("respuestas_formularios" as any)
+        .select("*")
+        .eq("formulario_id", id)
+        .order("fecha_registro", { ascending: false });
+
+      const mapped: FormResponse[] = (respRows || []).map((r: any) => ({
+        timestamp: r.fecha_registro,
+        data: {
+          ...r.datos_respuesta,
+          _patientId: r.paciente_id,
+          _consultationId: r.admision_id,
+        },
+      }));
+      setResponses(mapped);
       setLoading(false);
-    }
+    };
+    load();
   }, [id, navigate, toast]);
 
   const handlePrintFormat = (response: FormResponse, index: number) => {
