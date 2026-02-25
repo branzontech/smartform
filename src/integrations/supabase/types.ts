@@ -208,6 +208,7 @@ export type Database = {
           notas: string | null
           pagador_id: string
           reglas_facturacion: Json
+          tarifario_id: string | null
           tipo_contratacion: Database["public"]["Enums"]["tipo_contratacion"]
           updated_at: string
         }
@@ -221,6 +222,7 @@ export type Database = {
           notas?: string | null
           pagador_id: string
           reglas_facturacion?: Json
+          tarifario_id?: string | null
           tipo_contratacion?: Database["public"]["Enums"]["tipo_contratacion"]
           updated_at?: string
         }
@@ -234,6 +236,7 @@ export type Database = {
           notas?: string | null
           pagador_id?: string
           reglas_facturacion?: Json
+          tarifario_id?: string | null
           tipo_contratacion?: Database["public"]["Enums"]["tipo_contratacion"]
           updated_at?: string
         }
@@ -243,6 +246,13 @@ export type Database = {
             columns: ["pagador_id"]
             isOneToOne: false
             referencedRelation: "pagadores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contratos_tarifario_id_fkey"
+            columns: ["tarifario_id"]
+            isOneToOne: false
+            referencedRelation: "tarifarios_maestros"
             referencedColumns: ["id"]
           },
         ]
@@ -452,6 +462,80 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      tarifarios_maestros: {
+        Row: {
+          created_at: string
+          descripcion: string | null
+          estado: boolean
+          fhir_extensions: Json
+          id: string
+          moneda: string
+          nombre: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          descripcion?: string | null
+          estado?: boolean
+          fhir_extensions?: Json
+          id?: string
+          moneda?: string
+          nombre: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          descripcion?: string | null
+          estado?: boolean
+          fhir_extensions?: Json
+          id?: string
+          moneda?: string
+          nombre?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      tarifarios_servicios: {
+        Row: {
+          codigo_servicio: string
+          created_at: string
+          descripcion_servicio: string
+          id: string
+          sistema_codificacion: string
+          tarifario_id: string
+          updated_at: string
+          valor: number
+        }
+        Insert: {
+          codigo_servicio: string
+          created_at?: string
+          descripcion_servicio: string
+          id?: string
+          sistema_codificacion?: string
+          tarifario_id: string
+          updated_at?: string
+          valor?: number
+        }
+        Update: {
+          codigo_servicio?: string
+          created_at?: string
+          descripcion_servicio?: string
+          id?: string
+          sistema_codificacion?: string
+          tarifario_id?: string
+          updated_at?: string
+          valor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tarifarios_servicios_tarifario_id_fkey"
+            columns: ["tarifario_id"]
+            isOneToOne: false
+            referencedRelation: "tarifarios_maestros"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       tipos_admision: {
         Row: {

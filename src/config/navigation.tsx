@@ -199,6 +199,11 @@ export const mainNavItems: SubmenuItem[] = [
         icon: Briefcase,
       },
       {
+        title: "Tarifarios",
+        path: "/app/facturacion/tarifarios",
+        icon: DollarSign,
+      },
+      {
         title: "Nueva Factura",
         path: "/app/facturacion/nueva",
         icon: DollarSign,

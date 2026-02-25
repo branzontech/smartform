@@ -75,8 +75,16 @@ interface Contrato {
   estado: string;
   reglas_facturacion: Record<string, any>;
   notas: string | null;
+  tarifario_id: string | null;
   created_at: string;
   pagador?: Pagador;
+}
+
+interface TarifarioMaestro {
+  id: string;
+  nombre: string;
+  moneda: string;
+  estado: boolean;
 }
 
 const TIPO_CONTRATACION_LABELS: Record<string, { label: string; color: string }> = {
@@ -106,6 +114,7 @@ const PAISES = [
 const ContractsPage: React.FC = () => {
   const [contratos, setContratos] = useState<Contrato[]>([]);
   const [pagadores, setPagadores] = useState<Pagador[]>([]);
+  const [tarifarios, setTarifarios] = useState<TarifarioMaestro[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -129,16 +138,18 @@ const ContractsPage: React.FC = () => {
     fecha_fin: "",
     estado: "activo",
     notas: "",
+    tarifario_id: "" as string,
   });
 
   const fetchData = useCallback(async () => {
     setLoading(true);
-    const [contratosRes, pagadoresRes] = await Promise.all([
+    const [contratosRes, pagadoresRes, tarifariosRes] = await Promise.all([
       supabase
         .from("contratos")
         .select("*, pagador:pagadores(*)")
         .order("created_at", { ascending: false }),
       supabase.from("pagadores").select("*").eq("activo", true).order("nombre"),
+      supabase.from("tarifarios_maestros" as any).select("id, nombre, moneda, estado").eq("estado", true).order("nombre"),
     ]);
 
     if (contratosRes.data) {
@@ -150,6 +161,7 @@ const ContractsPage: React.FC = () => {
       );
     }
     if (pagadoresRes.data) setPagadores(pagadoresRes.data as Pagador[]);
+    if (tarifariosRes.data) setTarifarios(tarifariosRes.data as unknown as TarifarioMaestro[]);
     setLoading(false);
   }, []);
 
@@ -175,6 +187,7 @@ const ContractsPage: React.FC = () => {
       fecha_fin: "",
       estado: "activo",
       notas: "",
+      tarifario_id: "",
     });
     setSelectedPagadorId(null);
     setIsNewPagador(true);
@@ -210,6 +223,7 @@ const ContractsPage: React.FC = () => {
       fecha_fin: contrato.fecha_fin || "",
       estado: contrato.estado,
       notas: contrato.notas || "",
+      tarifario_id: contrato.tarifario_id || "",
     });
 
     setSheetStep("contrato");
@@ -279,7 +293,8 @@ const ContractsPage: React.FC = () => {
             fecha_fin: contratoForm.fecha_fin || null,
             estado: contratoForm.estado,
             notas: contratoForm.notas || null,
-          })
+            tarifario_id: contratoForm.tarifario_id || null,
+          } as any)
           .eq("id", editingContrato.id);
 
         if (contratoError) throw contratoError;
@@ -294,7 +309,8 @@ const ContractsPage: React.FC = () => {
           fecha_fin: contratoForm.fecha_fin || null,
           estado: contratoForm.estado,
           notas: contratoForm.notas || null,
-        });
+          tarifario_id: contratoForm.tarifario_id || null,
+        } as any);
 
         if (contratoError) throw contratoError;
         toast.success("Convenio creado exitosamente");
@@ -792,6 +808,29 @@ const ContractsPage: React.FC = () => {
                       className="mt-1.5 rounded-xl"
                     />
                   </div>
+                </div>
+
+                {/* Tarifario selector */}
+                <div>
+                  <Label>Tarifario asociado</Label>
+                  <Select
+                    value={contratoForm.tarifario_id || "none"}
+                    onValueChange={(v) =>
+                      setContratoForm({ ...contratoForm, tarifario_id: v === "none" ? "" : v })
+                    }
+                  >
+                    <SelectTrigger className="mt-1.5 rounded-xl">
+                      <SelectValue placeholder="Sin tarifario" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Sin tarifario</SelectItem>
+                      {tarifarios.map((t) => (
+                        <SelectItem key={t.id} value={t.id}>
+                          {t.nombre} ({t.moneda})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div>
