@@ -49,14 +49,12 @@ interface InfoRowProps {
 }
 
 const InfoRow: React.FC<InfoRowProps> = ({ icon: Icon, label, value }) => (
-  <div className="flex items-start gap-3 py-2">
-    <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
-      <Icon className="w-4 h-4 text-primary" />
-    </div>
+  <div className="flex items-center gap-2.5 py-1.5">
+    <Icon className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
     <div className="min-w-0 flex-1">
-      <p className="text-xs text-muted-foreground">{label}</p>
-      <p className={cn("text-sm font-medium", !value && "text-muted-foreground italic")}>
-        {value || "No registrado"}
+      <p className="text-[11px] text-muted-foreground leading-none mb-0.5">{label}</p>
+      <p className={cn("text-sm", !value && "text-muted-foreground/60 italic")}>
+        {value || "—"}
       </p>
     </div>
   </div>
@@ -147,39 +145,29 @@ export const PatientDetailStep: React.FC<PatientDetailStepProps> = ({
     >
       {/* Header */}
       <motion.div variants={itemVariants} className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center text-primary font-bold text-lg">
-            {patient.firstName?.charAt(0)}
-            {patient.lastName?.charAt(0)}
+        <div className="flex items-center gap-2.5">
+          <div className="w-9 h-9 rounded-full bg-muted flex items-center justify-center text-muted-foreground font-medium text-sm">
+            {patient.firstName?.charAt(0)}{patient.lastName?.charAt(0)}
           </div>
           <div>
-            <h2 className="text-lg font-semibold">
+            <h2 className="text-base font-medium leading-tight">
               {patient.firstName} {patient.lastName}
             </h2>
-            <div className="flex items-center gap-2">
-              <Badge variant="outline" className="text-xs">
-                {patient.documentId}
-              </Badge>
-              {patient.regime && (
-                <Badge variant="secondary" className="text-xs">
-                  {patient.regime}
-                </Badge>
-              )}
-            </div>
+            <p className="text-xs text-muted-foreground">{patient.documentId}{patient.regime ? ` · ${patient.regime}` : ''}</p>
           </div>
         </div>
         {!isEditing ? (
-          <Button variant="outline" size="sm" onClick={startEditing} className="rounded-xl gap-1.5">
-            <Edit2 className="w-4 h-4" />
+          <Button variant="ghost" size="sm" onClick={startEditing} className="rounded-xl gap-1.5 text-muted-foreground">
+            <Edit2 className="w-3.5 h-3.5" />
             Editar
           </Button>
         ) : (
-          <div className="flex gap-2">
-            <Button variant="ghost" size="sm" onClick={() => setIsEditing(false)} className="rounded-xl">
+          <div className="flex gap-1.5">
+            <Button variant="ghost" size="sm" onClick={() => setIsEditing(false)} className="rounded-xl text-muted-foreground">
               Cancelar
             </Button>
             <Button size="sm" onClick={handleSave} disabled={isSaving} className="rounded-xl gap-1.5">
-              {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+              {isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
               Guardar
             </Button>
           </div>
@@ -188,14 +176,14 @@ export const PatientDetailStep: React.FC<PatientDetailStepProps> = ({
 
       {/* Detail Card */}
       <motion.div variants={itemVariants}>
-        <Card className="bg-card/60 backdrop-blur-xl border-border/30 shadow-lg rounded-2xl overflow-hidden">
-          <CardContent className="p-5">
+        <Card className="bg-card/50 backdrop-blur-xl border-border/30 rounded-2xl shadow-none">
+          <CardContent className="p-4">
             {!isEditing ? (
               /* Read-only view */
               <div className="space-y-1">
-                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+                <p className="text-[11px] font-medium text-muted-foreground/70 uppercase tracking-widest mb-2">
                   Información personal
-                </h3>
+                </p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
                   <InfoRow icon={User} label="Nombres" value={patient.firstName} />
                   <InfoRow icon={User} label="Apellidos" value={patient.lastName} />
@@ -208,9 +196,9 @@ export const PatientDetailStep: React.FC<PatientDetailStepProps> = ({
                 </div>
 
                 <Separator className="my-3" />
-                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+                <p className="text-[11px] font-medium text-muted-foreground/70 uppercase tracking-widest mb-2">
                   Ubicación y régimen
-                </h3>
+                </p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
                   <InfoRow icon={Shield} label="Régimen" value={patient.regime} />
                   <InfoRow icon={Globe} label="Zona" value={patient.zone} />
@@ -223,9 +211,9 @@ export const PatientDetailStep: React.FC<PatientDetailStepProps> = ({
                 {companion && companion.name && (
                   <>
                     <Separator className="my-3" />
-                    <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+                    <p className="text-[11px] font-medium text-muted-foreground/70 uppercase tracking-widest mb-2">
                       Acompañante
-                    </h3>
+                    </p>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
                       <InfoRow icon={Users} label="Nombre" value={companion.name} />
                       <InfoRow icon={Users} label="Parentesco" value={companion.relationship} />
@@ -238,9 +226,9 @@ export const PatientDetailStep: React.FC<PatientDetailStepProps> = ({
                 {customFields && Object.keys(customFields).length > 0 && (
                   <>
                     <Separator className="my-3" />
-                    <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+                    <p className="text-[11px] font-medium text-muted-foreground/70 uppercase tracking-widest mb-2">
                       Campos adicionales
-                    </h3>
+                    </p>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
                       {Object.entries(customFields).map(([key, val]) => (
                         <InfoRow key={key} icon={FileText} label={key} value={String(val)} />
@@ -330,17 +318,17 @@ export const PatientDetailStep: React.FC<PatientDetailStepProps> = ({
         </Card>
       </motion.div>
 
-      {/* Action buttons */}
-      <motion.div variants={itemVariants} className="flex items-center justify-between pt-2">
+      {/* Sticky action buttons */}
+      <div className="sticky bottom-0 bg-background/80 backdrop-blur-sm border-t border-border/30 -mx-4 px-4 py-3 mt-4 flex items-center justify-between">
         <Button variant="ghost" onClick={onBack} className="rounded-xl gap-2">
           <ArrowLeft className="w-4 h-4" />
-          Buscar otro paciente
+          Buscar otro
         </Button>
-        <Button onClick={onContinue} className="rounded-xl h-12 px-6 gap-2 text-base font-semibold">
+        <Button onClick={onContinue} className="rounded-xl h-10 px-5 gap-2">
           Continuar
           <ArrowRight className="w-4 h-4" />
         </Button>
-      </motion.div>
+      </div>
     </motion.div>
   );
 };
