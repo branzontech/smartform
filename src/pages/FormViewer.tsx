@@ -28,6 +28,7 @@ import { FormSubmissionSuccess } from '@/components/forms/form-viewer/form-submi
 import { createDynamicSchema, fetchFormById, saveFormResponse } from '@/utils/form-utils';
 import { useToast } from '@/hooks/use-toast';
 import { PatientHistoryPanel } from '@/components/patients/PatientHistoryPanel';
+import { FormHeaderPreview } from '@/components/forms/FormHeaderPreview';
 
 interface FormData {
   [key: string]: any;
@@ -45,6 +46,7 @@ const FormViewer = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [submitted, setSubmitted] = useState(false);
+  const [headerConfig, setHeaderConfig] = useState<any>(null);
   const { toast: uiToast } = useToast();
 
   // Get query parameters
@@ -65,7 +67,15 @@ const FormViewer = () => {
         setError("");
         
         try {
-          const result = await fetchFormById(formId);
+          // Load header config in parallel with form
+          const [result, headerResult] = await Promise.all([
+            fetchFormById(formId),
+            supabase.from("configuracion_encabezado" as any).select("*").limit(1).single(),
+          ]);
+
+          if (headerResult.data) {
+            setHeaderConfig(headerResult.data);
+          }
           
           if (result.form) {
             setQuestions(result.form.questions as QuestionData[]);
@@ -273,6 +283,7 @@ const FormViewer = () => {
   if (isEmbedded) {
     return (
       <div className="p-4 bg-background">
+        <FormHeaderPreview config={headerConfig} formTitle={formTitle} />
         <div className="mb-4">
           <h2 className="text-lg font-semibold">{formTitle}</h2>
           {formDescription && (
@@ -374,6 +385,7 @@ const FormViewer = () => {
             
             <div className="flex-1 overflow-auto">
               <div className="p-6 bg-background">
+                <FormHeaderPreview config={headerConfig} formTitle={formTitle} />
                 <FormProvider {...form}>
                   <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
@@ -435,6 +447,7 @@ const FormViewer = () => {
           </div>
           
           <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100 print:shadow-none print:border-none">
+            <FormHeaderPreview config={headerConfig} formTitle={formTitle} />
             <FormProvider {...form}>
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
