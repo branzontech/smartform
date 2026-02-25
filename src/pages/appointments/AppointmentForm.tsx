@@ -4,6 +4,7 @@ import { format } from "date-fns";
 import { Header } from "@/components/layout/header";
 import { toast } from "sonner";
 import { isUserSignedIn, createGoogleCalendarEvent, updateGoogleCalendarEvent } from "@/utils/google-calendar";
+import { supabase } from "@/integrations/supabase/client";
 import { ExtendedPatient } from "@/components/appointments/PatientPanel";
 import { AppointmentWizard, WizardData } from "@/components/appointments/wizard";
 
@@ -242,6 +243,31 @@ const AppointmentForm = () => {
       localStorage.setItem("extendedPatients", JSON.stringify(updatedPatients));
     }
 
+    // Crear admisión en Supabase si el usuario completó el paso de admisión
+    if (admission) {
+      try {
+        const { error } = await supabase.from("admisiones").insert({
+          paciente_id: patient.id,
+          contrato_id: admission.contrato_id,
+          servicio_id: admission.servicio_id,
+          motivo: admission.motivo_consulta,
+          estado: "en_curso",
+          fhir_extensions: {
+            contrato_nombre: admission.contrato_nombre,
+            servicio_nombre: admission.servicio_nombre,
+            servicio_codigo: admission.servicio_codigo,
+            servicio_valor: admission.servicio_valor,
+          },
+        });
+        if (error) {
+          console.error("Error saving admission:", error);
+          toast.error("Error al guardar la admisión");
+        }
+      } catch (err) {
+        console.error("Error saving admission:", err);
+      }
+    }
+
     // Crear la cita
     const newAppointment: any = {
       id: Date.now().toString(),
@@ -250,11 +276,10 @@ const AppointmentForm = () => {
       date: scheduling.date,
       time: scheduling.time,
       duration: scheduling.duration,
-      reason: scheduling.reason,
+      reason: admission?.motivo_consulta || scheduling.reason,
       status: "Programada",
       notes: scheduling.notes,
       createdAt: new Date(),
-      admission: admission || undefined,
     };
 
     // Sincronizar con Google Calendar

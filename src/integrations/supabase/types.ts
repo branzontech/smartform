@@ -16,6 +16,7 @@ export type Database = {
     Tables: {
       admisiones: {
         Row: {
+          contrato_id: string | null
           created_at: string
           diagnostico_principal: string | null
           estado: string
@@ -30,10 +31,12 @@ export type Database = {
           numero_ingreso: string | null
           paciente_id: string
           profesional_nombre: string | null
+          servicio_id: string | null
           tipo_admision_id: string | null
           updated_at: string
         }
         Insert: {
+          contrato_id?: string | null
           created_at?: string
           diagnostico_principal?: string | null
           estado?: string
@@ -48,10 +51,12 @@ export type Database = {
           numero_ingreso?: string | null
           paciente_id: string
           profesional_nombre?: string | null
+          servicio_id?: string | null
           tipo_admision_id?: string | null
           updated_at?: string
         }
         Update: {
+          contrato_id?: string | null
           created_at?: string
           diagnostico_principal?: string | null
           estado?: string
@@ -66,15 +71,30 @@ export type Database = {
           numero_ingreso?: string | null
           paciente_id?: string
           profesional_nombre?: string | null
+          servicio_id?: string | null
           tipo_admision_id?: string | null
           updated_at?: string
         }
         Relationships: [
           {
+            foreignKeyName: "admisiones_contrato_id_fkey"
+            columns: ["contrato_id"]
+            isOneToOne: false
+            referencedRelation: "contratos"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "admisiones_paciente_id_fkey"
             columns: ["paciente_id"]
             isOneToOne: false
             referencedRelation: "pacientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "admisiones_servicio_id_fkey"
+            columns: ["servicio_id"]
+            isOneToOne: false
+            referencedRelation: "tarifarios_servicios"
             referencedColumns: ["id"]
           },
           {
