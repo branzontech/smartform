@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { Plus, FileText, PieChart, Palette } from "lucide-react";
+import { Plus, FileText, PieChart, Palette, SeparatorHorizontal } from "lucide-react";
 import { nanoid } from "nanoid";
 import { supabase } from "@/integrations/supabase/client";
 import { Header } from "@/components/layout/header";
@@ -102,6 +102,17 @@ const FormCreator = () => {
     setQuestions([...questions, newQuestion]);
     // Expandir automáticamente la nueva pregunta
     setExpandedQuestions(prev => [...prev, newQuestionId]);
+  };
+
+  const handleAddSection = () => {
+    const newSectionId = nanoid();
+    const newSection: QuestionData = {
+      id: newSectionId,
+      type: "section",
+      title: "",
+      required: false,
+    };
+    setQuestions([...questions, newSection]);
   };
 
   const handleUpdateQuestion = (id: string, data: Partial<QuestionData>) => {
@@ -532,10 +543,9 @@ const FormCreator = () => {
           </div>
           
           {/* Botón para añadir campos */}
-          <div className="flex justify-center mb-8">
+          <div className="flex justify-center gap-3 mb-8">
             <Button 
               onClick={handleAddQuestion}
-              className="bg-white hover:bg-gray-50 border border-gray-300 text-gray-700 shadow-sm"
               variant="outline"
               size="lg"
               style={{
@@ -546,6 +556,18 @@ const FormCreator = () => {
             >
               <Plus size={20} className="mr-2" />
               Añadir campo clínico
+            </Button>
+            <Button
+              onClick={handleAddSection}
+              variant="outline"
+              size="lg"
+              className="text-muted-foreground"
+              style={{
+                borderColor: `${designOptions.primaryColor}30`,
+              }}
+            >
+              <SeparatorHorizontal size={20} className="mr-2" />
+              Añadir sección
             </Button>
           </div>
           

@@ -20,6 +20,20 @@ interface QuestionRendererProps {
 }
 
 export const QuestionRenderer = ({ question, formData, onChange, errors }: QuestionRendererProps) => {
+  if (question.type === "section") {
+    return (
+      <div className="relative py-1">
+        <div className="flex items-center gap-3">
+          <div className="h-px flex-1 bg-border" />
+          <span className="text-sm font-semibold uppercase tracking-wider text-muted-foreground px-2">
+            {question.title || "Sección"}
+          </span>
+          <div className="h-px flex-1 bg-border" />
+        </div>
+      </div>
+    );
+  }
+
   switch (question.type) {
     case "short":
       return (

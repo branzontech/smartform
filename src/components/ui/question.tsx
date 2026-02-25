@@ -96,6 +96,53 @@ export const Question = ({
                  designOptions.questionSpacing === "spacious" ? "1.5rem" : "1rem",
   } : {};
 
+  // Section divider rendering
+  if (question.type === "section") {
+    return (
+      <div className="relative py-2">
+        <div className="flex items-center gap-3 group">
+          <div className="h-px flex-1 bg-border" style={designOptions ? { backgroundColor: `${designOptions.primaryColor}40` } : {}} />
+          {readOnly ? (
+            <span className="text-sm font-semibold uppercase tracking-wider text-muted-foreground px-2"
+              style={designOptions ? { color: designOptions.primaryColor } : {}}>
+              {question.title || "Sección sin título"}
+            </span>
+          ) : (
+            <input
+              type="text"
+              value={question.title}
+              onChange={(e) => handleUpdate({ title: e.target.value })}
+              placeholder="Nombre de la sección"
+              className="text-sm font-semibold uppercase tracking-wider text-center bg-transparent border-none outline-none focus:ring-0 px-2 min-w-[140px] text-muted-foreground placeholder:text-muted-foreground/50"
+              style={designOptions ? { color: designOptions.primaryColor } : {}}
+            />
+          )}
+          <div className="h-px flex-1 bg-border" style={designOptions ? { backgroundColor: `${designOptions.primaryColor}40` } : {}} />
+          {!readOnly && (
+            <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+              {onMoveUp && (
+                <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-muted-foreground" disabled={isFirst}
+                  onClick={() => onMoveUp(question.id)}>
+                  <ArrowUp size={14} />
+                </Button>
+              )}
+              {onMoveDown && (
+                <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-muted-foreground" disabled={isLast}
+                  onClick={() => onMoveDown(question.id)}>
+                  <ArrowDown size={14} />
+                </Button>
+              )}
+              <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive"
+                onClick={handleDelete}>
+                <Trash size={14} />
+              </Button>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div 
       className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden transition-all duration-300"
@@ -109,7 +156,7 @@ export const Question = ({
       >
         <div className="flex-1 truncate">
           <h3 className="font-medium text-gray-900" style={designOptions ? { color: designOptions.questionTextColor } : {}}>
-            {question.title || "Nueva pregunta"}
+            {question.title || "Sin título"}
           </h3>
         </div>
         <div className="flex items-center gap-2">
