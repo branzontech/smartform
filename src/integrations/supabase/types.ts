@@ -277,6 +277,51 @@ export type Database = {
           },
         ]
       }
+      formularios: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          descripcion: string | null
+          estado: string
+          fhir_extensions: Json
+          id: string
+          opciones_diseno: Json
+          preguntas: Json
+          respuestas_count: number
+          tipo: string
+          titulo: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          descripcion?: string | null
+          estado?: string
+          fhir_extensions?: Json
+          id?: string
+          opciones_diseno?: Json
+          preguntas?: Json
+          respuestas_count?: number
+          tipo?: string
+          titulo: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          descripcion?: string | null
+          estado?: string
+          fhir_extensions?: Json
+          id?: string
+          opciones_diseno?: Json
+          preguntas?: Json
+          respuestas_count?: number
+          tipo?: string
+          titulo?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       geocoded_locations: {
         Row: {
           address: string

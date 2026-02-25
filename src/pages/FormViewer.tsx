@@ -64,7 +64,7 @@ const FormViewer = () => {
         setError("");
         
         try {
-          const result = fetchFormById(formId);
+          const result = await fetchFormById(formId);
           
           if (result.form) {
             setQuestions(result.form.questions as QuestionData[]);

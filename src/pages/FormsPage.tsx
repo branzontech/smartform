@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FileText, PieChart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FormDesignOptions } from "@/components/forms/question/types";
+import { supabase } from "@/integrations/supabase/client";
 
 export interface Form {
   id: string;
@@ -24,39 +25,6 @@ export interface Form {
   designOptions?: FormDesignOptions;
 }
 
-const mockForms: Form[] = [
-  {
-    id: "1",
-    title: "Encuesta de satisfacción",
-    description: "Encuesta para medir la satisfacción del cliente",
-    questions: [],
-    createdAt: new Date("2023-01-15"),
-    updatedAt: new Date("2023-06-20"),
-    responseCount: 24,
-    formType: "forms"
-  },
-  {
-    id: "2",
-    title: "Formulario de contacto",
-    description: "Formulario para recopilar información de contacto",
-    questions: [],
-    createdAt: new Date("2023-03-10"),
-    updatedAt: new Date("2023-05-05"),
-    responseCount: 12,
-    formType: "forms"
-  },
-  {
-    id: "3",
-    title: "Historia clínica",
-    description: "Formato para registro de historia clínica",
-    questions: [],
-    createdAt: new Date("2023-02-28"),
-    updatedAt: new Date("2023-04-15"),
-    responseCount: 8,
-    formType: "formato"
-  }
-];
-
 const Home = () => {
   const [forms, setForms] = useState<Form[]>([]);
   const [loading, setLoading] = useState(true);
@@ -65,29 +33,33 @@ const Home = () => {
   const navigate = useNavigate();
   const { toast: uiToast } = useToast();
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      const savedForms = localStorage.getItem("forms");
-      if (savedForms) {
-        try {
-          const parsedForms = JSON.parse(savedForms).map((form: any) => ({
-            ...form,
-            createdAt: new Date(form.createdAt),
-            updatedAt: new Date(form.updatedAt)
-          }));
-          setForms(parsedForms);
-        } catch (error) {
-          console.error("Error parsing forms:", error);
-          setForms(mockForms);
-        }
-      } else {
-        setForms(mockForms);
-        localStorage.setItem("forms", JSON.stringify(mockForms));
-      }
-      setLoading(false);
-    }, 800);
+  const loadForms = async () => {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from("formularios")
+      .select("*")
+      .eq("estado", "activo")
+      .order("created_at", { ascending: false });
 
-    return () => clearTimeout(timer);
+    if (data && !error) {
+      const mapped: Form[] = data.map((f) => ({
+        id: f.id,
+        title: f.titulo,
+        description: f.descripcion || "",
+        questions: (f.preguntas as any[]) || [],
+        createdAt: new Date(f.created_at),
+        updatedAt: new Date(f.updated_at),
+        responseCount: f.respuestas_count || 0,
+        formType: (f.tipo as "forms" | "formato") || "forms",
+        designOptions: f.opciones_diseno as unknown as FormDesignOptions | undefined,
+      }));
+      setForms(mapped);
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    loadForms();
   }, []);
 
   const filteredForms = forms.filter(form => {
@@ -115,16 +87,19 @@ const Home = () => {
     setFormToDelete(id);
   };
 
-  const confirmDeleteForm = () => {
+  const confirmDeleteForm = async () => {
     if (formToDelete) {
-      const updatedForms = forms.filter(form => form.id !== formToDelete);
-      setForms(updatedForms);
-      localStorage.setItem("forms", JSON.stringify(updatedForms));
-      
-      toast("Formulario eliminado", {
-        description: "El formulario ha sido eliminado exitosamente",
-      });
-      
+      const { error } = await supabase
+        .from("formularios")
+        .delete()
+        .eq("id", formToDelete);
+
+      if (!error) {
+        setForms(forms.filter(form => form.id !== formToDelete));
+        toast("Formulario eliminado", {
+          description: "El formulario ha sido eliminado exitosamente",
+        });
+      }
       setFormToDelete(null);
     }
   };
