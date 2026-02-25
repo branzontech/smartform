@@ -10,7 +10,8 @@ import {
   Phone,
   CheckCircle2,
   FileText,
-  Loader2
+  Loader2,
+  XCircle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -108,6 +109,8 @@ export const AdmissionStep: React.FC<AdmissionStepProps> = ({
   );
   const [isSaving, setIsSaving] = useState(false);
   const [wasSaved, setWasSaved] = useState(alreadySaved);
+  const [saveResult, setSaveResult] = useState<"success" | "error" | null>(alreadySaved ? "success" : null);
+  const [saveErrorMsg, setSaveErrorMsg] = useState("");
   const [admissionTypes, setAdmissionTypes] = useState<AdmissionType[]>([]);
   const [customFields, setCustomFields] = useState<DynamicFieldConfig[]>([]);
   const [loadingConfig, setLoadingConfig] = useState(true);
@@ -225,12 +228,12 @@ export const AdmissionStep: React.FC<AdmissionStepProps> = ({
 
       if (error) throw error;
 
-      toast.success("Admisión registrada exitosamente");
       setWasSaved(true);
-      onComplete(admissionData);
+      setSaveResult("success");
     } catch (error: any) {
       console.error("Error saving admission:", error);
-      toast.error("Error al registrar la admisión: " + (error.message || ""));
+      setSaveResult("error");
+      setSaveErrorMsg(error.message || "Error desconocido");
     } finally {
       setIsSaving(false);
     }
@@ -571,25 +574,67 @@ export const AdmissionStep: React.FC<AdmissionStepProps> = ({
                     </div>
                   )}
 
-                  {wasSaved && (
-                    <div className="flex items-center gap-2 text-sm text-emerald-600 bg-emerald-500/10 rounded-xl px-4 py-2">
-                      <CheckCircle2 className="w-4 h-4" />
-                      Admisión ya registrada
-                    </div>
+                  {/* Post-save result feedback */}
+                  {saveResult === "success" && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="space-y-3"
+                    >
+                      <div className="flex items-center gap-2 text-sm text-emerald-600 bg-emerald-500/10 border border-emerald-500/20 rounded-xl px-4 py-3">
+                        <CheckCircle2 className="w-5 h-5 shrink-0" />
+                        <div>
+                          <p className="font-medium">Admisión registrada exitosamente</p>
+                          <p className="text-emerald-600/70 text-xs mt-0.5">Los datos han sido guardados correctamente</p>
+                        </div>
+                      </div>
+                      <Button
+                        onClick={() => onComplete(admissionData)}
+                        className="w-full h-14 rounded-2xl text-lg font-semibold"
+                      >
+                        <ArrowRight className="mr-2 w-5 h-5" />
+                        Continuar a agenda
+                      </Button>
+                    </motion.div>
                   )}
 
-                  <Button
-                    onClick={handleSubmit}
-                    disabled={!admissionData.reason || isSaving}
-                    className="w-full h-14 rounded-2xl text-lg font-semibold"
-                  >
-                    {isSaving ? (
-                      <Loader2 className="mr-2 w-5 h-5 animate-spin" />
-                    ) : (
-                      <ArrowRight className="mr-2 w-5 h-5" />
-                    )}
-                    {isSaving ? "Guardando..." : wasSaved ? "Continuar a agenda" : "Registrar admisión y continuar"}
-                  </Button>
+                  {saveResult === "error" && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="space-y-3"
+                    >
+                      <div className="flex items-center gap-2 text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-xl px-4 py-3">
+                        <XCircle className="w-5 h-5 shrink-0" />
+                        <div>
+                          <p className="font-medium">Error al registrar la admisión</p>
+                          <p className="text-destructive/70 text-xs mt-0.5">{saveErrorMsg}</p>
+                        </div>
+                      </div>
+                      <Button
+                        onClick={() => { setSaveResult(null); setSaveErrorMsg(""); }}
+                        variant="outline"
+                        className="w-full h-12 rounded-2xl"
+                      >
+                        Intentar de nuevo
+                      </Button>
+                    </motion.div>
+                  )}
+
+                  {!saveResult && (
+                    <Button
+                      onClick={handleSubmit}
+                      disabled={!admissionData.reason || isSaving}
+                      className="w-full h-14 rounded-2xl text-lg font-semibold"
+                    >
+                      {isSaving ? (
+                        <Loader2 className="mr-2 w-5 h-5 animate-spin" />
+                      ) : (
+                        <ArrowRight className="mr-2 w-5 h-5" />
+                      )}
+                      {isSaving ? "Guardando..." : "Registrar admisión y continuar"}
+                    </Button>
+                  )}
                 </>
               )}
             </CardContent>
