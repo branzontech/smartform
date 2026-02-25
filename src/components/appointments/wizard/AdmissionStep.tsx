@@ -1,24 +1,19 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { 
   ClipboardList, 
   ArrowRight, 
   ArrowLeft,
-  User,
   Phone,
-  Mail,
   CheckCircle2,
-  XCircle,
   FileText,
-  AlertTriangle,
-  Building2
+  Loader2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { 
   Select,
   SelectContent,
@@ -29,6 +24,8 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { ExtendedPatient } from "../PatientPanel";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 export interface AdmissionData {
   reason: string;
@@ -38,6 +35,28 @@ export interface AdmissionData {
   insuranceNumber?: string;
   assignedDoctor?: string;
   notes?: string;
+  // FHIR Encounter fields
+  fhirClass?: string;
+  serviceType?: string;
+  hospitalizationAdmitSource?: string;
+  hospitalizationDischargeDisposition?: string;
+  diagnosticoPrincipal?: string;
+  // Custom fields
+  customFields?: Record<string, string>;
+}
+
+interface AdmissionType {
+  id: string;
+  nombre: string;
+  descripcion: string | null;
+}
+
+interface DynamicField {
+  id: string;
+  label: string;
+  tipo_dato: string;
+  es_requerido: boolean;
+  orden: number;
 }
 
 interface AdmissionStepProps {
@@ -46,36 +65,154 @@ interface AdmissionStepProps {
   onBack: () => void;
 }
 
+// FHIR Encounter.class values
+const FHIR_CLASS_OPTIONS = [
+  { value: "AMB", label: "Ambulatorio" },
+  { value: "EMER", label: "Emergencia" },
+  { value: "IMP", label: "Hospitalización" },
+  { value: "SS", label: "Corta estancia" },
+  { value: "HH", label: "Domiciliario" },
+  { value: "VR", label: "Virtual" },
+];
+
+// FHIR Encounter.priority
+const FHIR_PRIORITY_OPTIONS = [
+  { value: "Normal", color: "bg-emerald-500", label: "Normal" },
+  { value: "Urgente", color: "bg-yellow-500", label: "Urgente" },
+  { value: "Emergencia", color: "bg-destructive", label: "Emergencia" },
+];
+
+// FHIR hospitalization.admitSource
+const ADMIT_SOURCE_OPTIONS = [
+  { value: "hosp-trans", label: "Transferencia hospitalaria" },
+  { value: "emd", label: "Servicio de urgencias" },
+  { value: "outp", label: "Consulta externa" },
+  { value: "born", label: "Nacimiento" },
+  { value: "gp", label: "Referido por médico general" },
+  { value: "mp", label: "Referido por especialista" },
+  { value: "nursing", label: "Desde enfermería" },
+  { value: "psych", label: "Desde psiquiatría" },
+  { value: "rehab", label: "Desde rehabilitación" },
+  { value: "other", label: "Otro" },
+];
+
 export const AdmissionStep: React.FC<AdmissionStepProps> = ({
   patient,
   onComplete,
   onBack
 }) => {
   const [wantsAdmission, setWantsAdmission] = useState<boolean | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [admissionTypes, setAdmissionTypes] = useState<AdmissionType[]>([]);
+  const [customFields, setCustomFields] = useState<DynamicField[]>([]);
+  const [loadingConfig, setLoadingConfig] = useState(true);
+  
   const [admissionData, setAdmissionData] = useState<AdmissionData>({
     reason: "",
-    appointmentType: "Consulta",
+    appointmentType: "",
     priorityLevel: "Normal",
     insuranceProvider: "",
     insuranceNumber: "",
     assignedDoctor: "",
-    notes: ""
+    notes: "",
+    fhirClass: "AMB",
+    serviceType: "",
+    hospitalizationAdmitSource: "",
+    hospitalizationDischargeDisposition: "",
+    diagnosticoPrincipal: "",
+    customFields: {},
   });
+
+  // Fetch tipos_admision and custom fields config
+  useEffect(() => {
+    const fetchConfig = async () => {
+      setLoadingConfig(true);
+      const [typesRes, fieldsRes] = await Promise.all([
+        supabase.from("tipos_admision").select("id, nombre, descripcion").eq("activo", true).order("orden"),
+        supabase.from("configuracion_campos_admision").select("*").order("orden"),
+      ]);
+      if (typesRes.data) setAdmissionTypes(typesRes.data);
+      if (fieldsRes.data) setCustomFields(fieldsRes.data as DynamicField[]);
+      // Set default type
+      if (typesRes.data?.length && !admissionData.appointmentType) {
+        setAdmissionData(prev => ({ ...prev, appointmentType: typesRes.data[0].id }));
+      }
+      setLoadingConfig(false);
+    };
+    fetchConfig();
+  }, []);
 
   const handleSkip = () => {
     onComplete(null);
   };
 
-  const handleSubmit = () => {
-    onComplete(admissionData);
+  const handleSubmit = async () => {
+    if (!admissionData.reason.trim()) {
+      toast.error("El motivo de la consulta es obligatorio");
+      return;
+    }
+
+    // Validate required custom fields
+    for (const field of customFields) {
+      if (field.es_requerido && !admissionData.customFields?.[field.id]?.trim()) {
+        toast.error(`El campo "${field.label}" es obligatorio`);
+        return;
+      }
+    }
+
+    setIsSaving(true);
+    try {
+      // Build fhir_extensions
+      const fhirExtensions: Record<string, any> = {
+        class: admissionData.fhirClass,
+        priority: admissionData.priorityLevel,
+        serviceType: admissionData.serviceType || undefined,
+        hospitalization: {
+          admitSource: admissionData.hospitalizationAdmitSource || undefined,
+          dischargeDisposition: admissionData.hospitalizationDischargeDisposition || undefined,
+        },
+        insurance: {
+          provider: admissionData.insuranceProvider || undefined,
+          policyNumber: admissionData.insuranceNumber || undefined,
+        },
+        // Custom fields stored as FHIR extensions
+        customFields: admissionData.customFields || {},
+      };
+
+      const { error } = await supabase.from("admisiones").insert({
+        paciente_id: patient.id,
+        tipo_admision_id: admissionData.appointmentType || null,
+        motivo: admissionData.reason,
+        profesional_nombre: admissionData.assignedDoctor && admissionData.assignedDoctor !== "none" 
+          ? admissionData.assignedDoctor : null,
+        diagnostico_principal: admissionData.diagnosticoPrincipal || null,
+        notas: admissionData.notes || null,
+        estado: "en_curso",
+        fhir_extensions: fhirExtensions,
+      });
+
+      if (error) throw error;
+
+      toast.success("Admisión registrada exitosamente");
+      onComplete(admissionData);
+    } catch (error: any) {
+      console.error("Error saving admission:", error);
+      toast.error("Error al registrar la admisión: " + (error.message || ""));
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const updateCustomField = (fieldId: string, value: string) => {
+    setAdmissionData(prev => ({
+      ...prev,
+      customFields: { ...prev.customFields, [fieldId]: value }
+    }));
   };
 
   const containerVariants = {
     hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: { staggerChildren: 0.1 }
-    }
+    visible: { opacity: 1, transition: { staggerChildren: 0.1 } }
   };
 
   const itemVariants = {
@@ -90,7 +227,7 @@ export const AdmissionStep: React.FC<AdmissionStepProps> = ({
       animate="visible"
       className="space-y-4 max-w-3xl mx-auto"
     >
-      {/* Header - Compact */}
+      {/* Header */}
       <motion.div variants={itemVariants} className="flex items-center gap-3">
         <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center flex-shrink-0">
           <ClipboardList className="w-5 h-5 text-primary" />
@@ -181,13 +318,14 @@ export const AdmissionStep: React.FC<AdmissionStepProps> = ({
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
+          className="overflow-y-auto max-h-[calc(100vh-22rem)] pr-1"
         >
           <Card className="bg-card/60 backdrop-blur-xl border-border/30 shadow-lg rounded-2xl overflow-hidden">
             <CardContent className="p-5 space-y-5">
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-semibold flex items-center gap-2">
                   <FileText className="w-5 h-5 text-primary" />
-                  Datos de Admisión
+                  Datos de Admisión (FHIR Encounter)
                 </h3>
                 <Button
                   variant="ghost"
@@ -199,133 +337,223 @@ export const AdmissionStep: React.FC<AdmissionStepProps> = ({
                 </Button>
               </div>
 
-              <div>
-                <Label>Motivo de la consulta *</Label>
-                <Textarea
-                  placeholder="Describe el motivo de la consulta..."
-                  value={admissionData.reason}
-                  onChange={(e) => setAdmissionData({...admissionData, reason: e.target.value})}
-                  rows={3}
-                  className="mt-2 rounded-xl resize-none"
-                />
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label>Tipo de consulta</Label>
-                  <Select 
-                    value={admissionData.appointmentType} 
-                    onValueChange={(value) => setAdmissionData({...admissionData, appointmentType: value})}
-                  >
-                    <SelectTrigger className="h-11 rounded-xl mt-2">
-                      <SelectValue placeholder="Seleccionar tipo" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Consulta">Consulta general</SelectItem>
-                      <SelectItem value="Especialista">Especialista</SelectItem>
-                      <SelectItem value="Urgencia">Urgencia</SelectItem>
-                      <SelectItem value="Control">Control de tratamiento</SelectItem>
-                      <SelectItem value="Procedimiento">Procedimiento</SelectItem>
-                    </SelectContent>
-                  </Select>
+              {loadingConfig ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
                 </div>
+              ) : (
+                <>
+                  {/* FHIR Encounter.class */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label>Clase de encuentro (FHIR) *</Label>
+                      <Select
+                        value={admissionData.fhirClass}
+                        onValueChange={(v) => setAdmissionData({...admissionData, fhirClass: v})}
+                      >
+                        <SelectTrigger className="h-11 rounded-xl mt-2">
+                          <SelectValue placeholder="Seleccionar clase" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {FHIR_CLASS_OPTIONS.map(o => (
+                            <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
 
-                <div>
-                  <Label>Médico asignado</Label>
-                  <Select 
-                    value={admissionData.assignedDoctor} 
-                    onValueChange={(value) => setAdmissionData({...admissionData, assignedDoctor: value})}
-                  >
-                    <SelectTrigger className="h-11 rounded-xl mt-2">
-                      <SelectValue placeholder="Sin asignar" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">Sin asignar</SelectItem>
-                      <SelectItem value="Dr. Juan Pérez">Dr. Juan Pérez</SelectItem>
-                      <SelectItem value="Dra. María González">Dra. María González</SelectItem>
-                      <SelectItem value="Dr. Carlos Rodríguez">Dr. Carlos Rodríguez</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
+                    {/* Tipo de admisión (from DB) */}
+                    <div>
+                      <Label>Tipo de admisión *</Label>
+                      <Select
+                        value={admissionData.appointmentType}
+                        onValueChange={(v) => setAdmissionData({...admissionData, appointmentType: v})}
+                      >
+                        <SelectTrigger className="h-11 rounded-xl mt-2">
+                          <SelectValue placeholder="Seleccionar tipo" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {admissionTypes.map(t => (
+                            <SelectItem key={t.id} value={t.id}>
+                              {t.nombre}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
 
-              <div>
-                <Label className="mb-3 block">Nivel de prioridad</Label>
-              <div className="flex gap-3">
-                  {[
-                    { value: "Normal", color: "bg-emerald-500", label: "Normal" },
-                    { value: "Urgente", color: "bg-yellow-500", label: "Urgente" },
-                    { value: "Emergencia", color: "bg-destructive", label: "Emergencia" }
-                  ].map((priority) => (
-                    <button
-                      key={priority.value}
-                      onClick={() => setAdmissionData({...admissionData, priorityLevel: priority.value as any})}
-                      className={cn(
-                        "flex-1 py-3 px-4 rounded-2xl border-2 transition-all duration-200",
-                        admissionData.priorityLevel === priority.value
-                          ? "border-primary bg-primary/10 shadow-md"
-                          : "border-border hover:border-primary/30"
-                      )}
-                    >
-                      <div className="flex items-center justify-center gap-2">
-                        <div className={cn("w-3 h-3 rounded-full", priority.color)} />
-                        <span className="font-medium">{priority.label}</span>
+                  {/* Motivo */}
+                  <div>
+                    <Label>Motivo de la consulta (reasonCode) *</Label>
+                    <Textarea
+                      placeholder="Describe el motivo de la consulta..."
+                      value={admissionData.reason}
+                      onChange={(e) => setAdmissionData({...admissionData, reason: e.target.value})}
+                      rows={3}
+                      className="mt-2 rounded-xl resize-none"
+                    />
+                  </div>
+
+                  {/* Diagnóstico principal */}
+                  <div>
+                    <Label>Diagnóstico principal (diagnosis)</Label>
+                    <Input
+                      placeholder="CIE-10 o descripción del diagnóstico"
+                      value={admissionData.diagnosticoPrincipal}
+                      onChange={(e) => setAdmissionData({...admissionData, diagnosticoPrincipal: e.target.value})}
+                      className="h-11 rounded-xl mt-2"
+                    />
+                  </div>
+
+                  {/* Priority */}
+                  <div>
+                    <Label className="mb-3 block">Nivel de prioridad (priority)</Label>
+                    <div className="flex gap-3">
+                      {FHIR_PRIORITY_OPTIONS.map((priority) => (
+                        <button
+                          key={priority.value}
+                          type="button"
+                          onClick={() => setAdmissionData({...admissionData, priorityLevel: priority.value as any})}
+                          className={cn(
+                            "flex-1 py-3 px-4 rounded-2xl border-2 transition-all duration-200",
+                            admissionData.priorityLevel === priority.value
+                              ? "border-primary bg-primary/10 shadow-md"
+                              : "border-border hover:border-primary/30"
+                          )}
+                        >
+                          <div className="flex items-center justify-center gap-2">
+                            <div className={cn("w-3 h-3 rounded-full", priority.color)} />
+                            <span className="font-medium">{priority.label}</span>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Doctor + admitSource */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label>Profesional (participant)</Label>
+                      <Select 
+                        value={admissionData.assignedDoctor} 
+                        onValueChange={(v) => setAdmissionData({...admissionData, assignedDoctor: v})}
+                      >
+                        <SelectTrigger className="h-11 rounded-xl mt-2">
+                          <SelectValue placeholder="Sin asignar" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">Sin asignar</SelectItem>
+                          <SelectItem value="Dr. Juan Pérez">Dr. Juan Pérez</SelectItem>
+                          <SelectItem value="Dra. María González">Dra. María González</SelectItem>
+                          <SelectItem value="Dr. Carlos Rodríguez">Dr. Carlos Rodríguez</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div>
+                      <Label>Origen de admisión (admitSource)</Label>
+                      <Select
+                        value={admissionData.hospitalizationAdmitSource}
+                        onValueChange={(v) => setAdmissionData({...admissionData, hospitalizationAdmitSource: v})}
+                      >
+                        <SelectTrigger className="h-11 rounded-xl mt-2">
+                          <SelectValue placeholder="Seleccionar origen" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {ADMIT_SOURCE_OPTIONS.map(o => (
+                            <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  {/* Insurance */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label>Proveedor de seguro (coverage)</Label>
+                      <Select 
+                        value={admissionData.insuranceProvider} 
+                        onValueChange={(v) => setAdmissionData({...admissionData, insuranceProvider: v})}
+                      >
+                        <SelectTrigger className="h-11 rounded-xl mt-2">
+                          <SelectValue placeholder="Seleccionar seguro" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Sin seguro">Sin seguro</SelectItem>
+                          <SelectItem value="Seguro Universal">Seguro Universal</SelectItem>
+                          <SelectItem value="MediSalud">MediSalud</SelectItem>
+                          <SelectItem value="SeguroTotal">SeguroTotal</SelectItem>
+                          <SelectItem value="Otro">Otro</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div>
+                      <Label>Número de póliza</Label>
+                      <Input
+                        placeholder="Número de póliza o afiliación"
+                        value={admissionData.insuranceNumber}
+                        onChange={(e) => setAdmissionData({...admissionData, insuranceNumber: e.target.value})}
+                        className="h-11 rounded-xl mt-2"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Notes */}
+                  <div>
+                    <Label>Notas adicionales</Label>
+                    <Textarea
+                      placeholder="Información adicional relevante..."
+                      value={admissionData.notes}
+                      onChange={(e) => setAdmissionData({...admissionData, notes: e.target.value})}
+                      rows={2}
+                      className="mt-2 rounded-xl resize-none"
+                    />
+                  </div>
+
+                  {/* Custom Fields (FHIR Extensions) */}
+                  {customFields.length > 0 && (
+                    <div className="border-t border-border/50 pt-4 space-y-4">
+                      <h4 className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
+                        <ClipboardList className="w-4 h-4" />
+                        Campos personalizados (Extensiones FHIR)
+                      </h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {customFields.map((field) => (
+                          <div key={field.id}>
+                            <Label>
+                              {field.label}
+                              {field.es_requerido && <span className="text-destructive ml-1">*</span>}
+                            </Label>
+                            <Input
+                              type={field.tipo_dato === "number" ? "number" : field.tipo_dato === "date" ? "date" : "text"}
+                              placeholder={field.label}
+                              value={admissionData.customFields?.[field.id] || ""}
+                              onChange={(e) => updateCustomField(field.id, e.target.value)}
+                              className="h-11 rounded-xl mt-2"
+                            />
+                          </div>
+                        ))}
                       </div>
-                    </button>
-                  ))}
-                </div>
-              </div>
+                    </div>
+                  )}
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label>Proveedor de seguro</Label>
-                  <Select 
-                    value={admissionData.insuranceProvider} 
-                    onValueChange={(value) => setAdmissionData({...admissionData, insuranceProvider: value})}
+                  <Button
+                    onClick={handleSubmit}
+                    disabled={!admissionData.reason || isSaving}
+                    className="w-full h-14 rounded-2xl text-lg font-semibold"
                   >
-                    <SelectTrigger className="h-11 rounded-xl mt-2">
-                      <SelectValue placeholder="Seleccionar seguro" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Sin seguro">Sin seguro</SelectItem>
-                      <SelectItem value="Seguro Universal">Seguro Universal</SelectItem>
-                      <SelectItem value="MediSalud">MediSalud</SelectItem>
-                      <SelectItem value="SeguroTotal">SeguroTotal</SelectItem>
-                      <SelectItem value="Otro">Otro</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <Label>Número de póliza</Label>
-                  <Input
-                    placeholder="Número de póliza o afiliación"
-                    value={admissionData.insuranceNumber}
-                    onChange={(e) => setAdmissionData({...admissionData, insuranceNumber: e.target.value})}
-                    className="h-11 rounded-xl mt-2"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <Label>Notas adicionales</Label>
-                <Textarea
-                  placeholder="Información adicional relevante..."
-                  value={admissionData.notes}
-                  onChange={(e) => setAdmissionData({...admissionData, notes: e.target.value})}
-                  rows={2}
-                  className="mt-2 rounded-xl resize-none"
-                />
-              </div>
-
-              <Button
-                onClick={handleSubmit}
-                disabled={!admissionData.reason}
-                className="w-full h-14 rounded-2xl text-lg font-semibold"
-              >
-                <ArrowRight className="mr-2 w-5 h-5" />
-                Continuar al agendamiento
-              </Button>
+                    {isSaving ? (
+                      <Loader2 className="mr-2 w-5 h-5 animate-spin" />
+                    ) : (
+                      <ArrowRight className="mr-2 w-5 h-5" />
+                    )}
+                    {isSaving ? "Guardando..." : "Registrar admisión y continuar"}
+                  </Button>
+                </>
+              )}
             </CardContent>
           </Card>
         </motion.div>
