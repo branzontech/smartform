@@ -17,6 +17,7 @@ import {
   XCircle,
   Clock,
   Handshake,
+  Pencil,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -112,6 +113,7 @@ const ContractsPage: React.FC = () => {
   const [sheetStep, setSheetStep] = useState<"pagador" | "contrato">("pagador");
   const [selectedPagadorId, setSelectedPagadorId] = useState<string | null>(null);
   const [isNewPagador, setIsNewPagador] = useState(true);
+  const [editingContrato, setEditingContrato] = useState<Contrato | null>(null);
 
   // Form state
   const [pagadorForm, setPagadorForm] = useState({
@@ -125,6 +127,7 @@ const ContractsPage: React.FC = () => {
     tipo_contratacion: "evento" as string,
     fecha_inicio: new Date().toISOString().split("T")[0],
     fecha_fin: "",
+    estado: "activo",
     notas: "",
   });
 
@@ -163,18 +166,53 @@ const ContractsPage: React.FC = () => {
     );
   });
 
-  const openNewSheet = () => {
+  const resetForm = () => {
     setPagadorForm({ nombre: "", tipo_identificacion: "NIT", numero_identificacion: "", pais: "CO" });
     setContratoForm({
       nombre_convenio: "",
       tipo_contratacion: "evento",
       fecha_inicio: new Date().toISOString().split("T")[0],
       fecha_fin: "",
+      estado: "activo",
       notas: "",
     });
     setSelectedPagadorId(null);
     setIsNewPagador(true);
+    setEditingContrato(null);
+  };
+
+  const openNewSheet = () => {
+    resetForm();
     setSheetStep("pagador");
+    setSheetOpen(true);
+  };
+
+  const openEditSheet = (contrato: Contrato) => {
+    setEditingContrato(contrato);
+    setSelectedPagadorId(contrato.pagador_id);
+    setIsNewPagador(false);
+
+    // Pre-fill pagador form from the contrato's pagador
+    if (contrato.pagador) {
+      setPagadorForm({
+        nombre: contrato.pagador.nombre,
+        tipo_identificacion: contrato.pagador.tipo_identificacion || "NIT",
+        numero_identificacion: contrato.pagador.numero_identificacion || "",
+        pais: contrato.pagador.pais,
+      });
+    }
+
+    // Pre-fill contrato form
+    setContratoForm({
+      nombre_convenio: contrato.nombre_convenio,
+      tipo_contratacion: contrato.tipo_contratacion,
+      fecha_inicio: contrato.fecha_inicio,
+      fecha_fin: contrato.fecha_fin || "",
+      estado: contrato.estado,
+      notas: contrato.notas || "",
+    });
+
+    setSheetStep("contrato");
     setSheetOpen(true);
   };
 
@@ -185,7 +223,7 @@ const ContractsPage: React.FC = () => {
     if (p) {
       setContratoForm((prev) => ({
         ...prev,
-        nombre_convenio: `Convenio - ${p.nombre}`,
+        nombre_convenio: prev.nombre_convenio || `Convenio - ${p.nombre}`,
       }));
     }
     setSheetStep("contrato");
@@ -199,7 +237,7 @@ const ContractsPage: React.FC = () => {
     setSheetStep("contrato");
     setContratoForm((prev) => ({
       ...prev,
-      nombre_convenio: `Convenio - ${pagadorForm.nombre}`,
+      nombre_convenio: prev.nombre_convenio || `Convenio - ${pagadorForm.nombre}`,
     }));
   };
 
@@ -229,18 +267,39 @@ const ContractsPage: React.FC = () => {
         pagadorId = data.id;
       }
 
-      const { error: contratoError } = await supabase.from("contratos").insert({
-        pagador_id: pagadorId!,
-        nombre_convenio: contratoForm.nombre_convenio,
-        tipo_contratacion: contratoForm.tipo_contratacion as any,
-        fecha_inicio: contratoForm.fecha_inicio,
-        fecha_fin: contratoForm.fecha_fin || null,
-        notas: contratoForm.notas || null,
-      });
+      if (editingContrato) {
+        // Update existing
+        const { error: contratoError } = await supabase
+          .from("contratos")
+          .update({
+            pagador_id: pagadorId!,
+            nombre_convenio: contratoForm.nombre_convenio,
+            tipo_contratacion: contratoForm.tipo_contratacion as any,
+            fecha_inicio: contratoForm.fecha_inicio,
+            fecha_fin: contratoForm.fecha_fin || null,
+            estado: contratoForm.estado,
+            notas: contratoForm.notas || null,
+          })
+          .eq("id", editingContrato.id);
 
-      if (contratoError) throw contratoError;
+        if (contratoError) throw contratoError;
+        toast.success("Convenio actualizado exitosamente");
+      } else {
+        // Create new
+        const { error: contratoError } = await supabase.from("contratos").insert({
+          pagador_id: pagadorId!,
+          nombre_convenio: contratoForm.nombre_convenio,
+          tipo_contratacion: contratoForm.tipo_contratacion as any,
+          fecha_inicio: contratoForm.fecha_inicio,
+          fecha_fin: contratoForm.fecha_fin || null,
+          estado: contratoForm.estado,
+          notas: contratoForm.notas || null,
+        });
 
-      toast.success("Convenio creado exitosamente");
+        if (contratoError) throw contratoError;
+        toast.success("Convenio creado exitosamente");
+      }
+
       setSheetOpen(false);
       fetchData();
     } catch (err: any) {
@@ -264,6 +323,8 @@ const ContractsPage: React.FC = () => {
       fetchData();
     }
   };
+
+  const isEditing = !!editingContrato;
 
   return (
     <Layout>
@@ -341,7 +402,11 @@ const ContractsPage: React.FC = () => {
                     const EstadoIcon = estado.icon;
 
                     return (
-                      <TableRow key={contrato.id} className="group">
+                      <TableRow
+                        key={contrato.id}
+                        className="group cursor-pointer hover:bg-muted/40"
+                        onClick={() => openEditSheet(contrato)}
+                      >
                         <TableCell>
                           <div className="flex items-center gap-3">
                             <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
@@ -416,12 +481,17 @@ const ContractsPage: React.FC = () => {
                                 variant="ghost"
                                 size="icon"
                                 className="opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8"
+                                onClick={(e) => e.stopPropagation()}
                               >
                                 <MoreHorizontal className="w-4 h-4" />
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={() => toggleEstado(contrato)}>
+                              <DropdownMenuItem onClick={(e) => { e.stopPropagation(); openEditSheet(contrato); }}>
+                                <Pencil className="w-3.5 h-3.5 mr-2" />
+                                Editar
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={(e) => { e.stopPropagation(); toggleEstado(contrato); }}>
                                 {contrato.estado === "activo" ? "Desactivar" : "Activar"}
                               </DropdownMenuItem>
                             </DropdownMenuContent>
@@ -437,55 +507,59 @@ const ContractsPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Sheet for creating pagador + contrato */}
-      <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
+      {/* Sheet for creating/editing pagador + contrato */}
+      <Sheet open={sheetOpen} onOpenChange={(open) => { setSheetOpen(open); if (!open) resetForm(); }}>
         <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
           <SheetHeader>
             <SheetTitle className="flex items-center gap-2">
               <Handshake className="w-5 h-5 text-primary" />
-              Nuevo Convenio
+              {isEditing ? "Editar Convenio" : "Nuevo Convenio"}
             </SheetTitle>
             <SheetDescription>
-              {sheetStep === "pagador"
+              {isEditing
+                ? "Modifica los datos del convenio y guarda los cambios"
+                : sheetStep === "pagador"
                 ? "Paso 1: Selecciona o crea un pagador"
                 : "Paso 2: Define los datos del convenio"}
             </SheetDescription>
           </SheetHeader>
 
           <div className="mt-6 space-y-6">
-            {/* Step indicator */}
-            <div className="flex items-center gap-2">
-              <div
-                className={cn(
-                  "w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-colors",
-                  sheetStep === "pagador"
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-primary/20 text-primary"
-                )}
-              >
-                1
-              </div>
-              <div className="flex-1 h-0.5 bg-border rounded-full">
+            {/* Step indicator (only for new) */}
+            {!isEditing && (
+              <div className="flex items-center gap-2">
                 <div
                   className={cn(
-                    "h-full bg-primary rounded-full transition-all",
-                    sheetStep === "contrato" ? "w-full" : "w-0"
+                    "w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-colors",
+                    sheetStep === "pagador"
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-primary/20 text-primary"
                   )}
-                />
+                >
+                  1
+                </div>
+                <div className="flex-1 h-0.5 bg-border rounded-full">
+                  <div
+                    className={cn(
+                      "h-full bg-primary rounded-full transition-all",
+                      sheetStep === "contrato" ? "w-full" : "w-0"
+                    )}
+                  />
+                </div>
+                <div
+                  className={cn(
+                    "w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-colors",
+                    sheetStep === "contrato"
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted text-muted-foreground"
+                  )}
+                >
+                  2
+                </div>
               </div>
-              <div
-                className={cn(
-                  "w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-colors",
-                  sheetStep === "contrato"
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-muted text-muted-foreground"
-                )}
-              >
-                2
-              </div>
-            </div>
+            )}
 
-            {sheetStep === "pagador" && (
+            {sheetStep === "pagador" && !isEditing && (
               <motion.div
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
@@ -618,12 +692,28 @@ const ContractsPage: React.FC = () => {
                 animate={{ opacity: 1, x: 0 }}
                 className="space-y-5"
               >
-                <button
-                  onClick={() => setSheetStep("pagador")}
-                  className="text-sm text-primary hover:underline"
-                >
-                  ← Volver al pagador
-                </button>
+                {!isEditing && (
+                  <button
+                    onClick={() => setSheetStep("pagador")}
+                    className="text-sm text-primary hover:underline"
+                  >
+                    ← Volver al pagador
+                  </button>
+                )}
+
+                {/* Show pagador info when editing */}
+                {isEditing && editingContrato?.pagador && (
+                  <div className="p-3 rounded-xl bg-muted/50 border border-border/40">
+                    <Label className="text-muted-foreground text-xs uppercase tracking-wider">Pagador</Label>
+                    <div className="flex items-center gap-2 mt-1">
+                      <Building2 className="w-4 h-4 text-muted-foreground" />
+                      <span className="text-sm font-medium">{editingContrato.pagador.nombre}</span>
+                      <span className="text-xs text-muted-foreground ml-auto">
+                        {PAISES.find((pa) => pa.value === editingContrato.pagador!.pais)?.label || editingContrato.pagador!.pais}
+                      </span>
+                    </div>
+                  </div>
+                )}
 
                 <div>
                   <Label>Nombre del convenio *</Label>
@@ -656,6 +746,28 @@ const ContractsPage: React.FC = () => {
                     </SelectContent>
                   </Select>
                 </div>
+
+                {/* Estado selector (only when editing) */}
+                {isEditing && (
+                  <div>
+                    <Label>Estado</Label>
+                    <Select
+                      value={contratoForm.estado}
+                      onValueChange={(v) =>
+                        setContratoForm({ ...contratoForm, estado: v })
+                      }
+                    >
+                      <SelectTrigger className="mt-1.5 rounded-xl">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="activo">Activo</SelectItem>
+                        <SelectItem value="inactivo">Inactivo</SelectItem>
+                        <SelectItem value="vencido">Vencido</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
@@ -702,10 +814,12 @@ const ContractsPage: React.FC = () => {
                 >
                   {saving ? (
                     <Loader2 className="mr-2 w-4 h-4 animate-spin" />
+                  ) : isEditing ? (
+                    <Pencil className="mr-2 w-4 h-4" />
                   ) : (
                     <CheckCircle2 className="mr-2 w-4 h-4" />
                   )}
-                  {saving ? "Guardando..." : "Crear Convenio"}
+                  {saving ? "Guardando..." : isEditing ? "Guardar Cambios" : "Crear Convenio"}
                 </Button>
               </motion.div>
             )}
