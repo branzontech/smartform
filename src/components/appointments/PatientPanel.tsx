@@ -48,6 +48,7 @@ export interface ExtendedPatient {
   province?: string;
   zone?: 'Rural' | 'Urbana';
   occupation?: string;
+  patientStatus?: 'registrado' | 'activo' | 'inactivo';
   companion?: {
     name: string;
     relationship: string;
