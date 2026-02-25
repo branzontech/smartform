@@ -19,12 +19,15 @@ export type Database = {
           created_at: string
           diagnostico_principal: string | null
           estado: string
+          factura: string | null
           fecha_fin: string | null
           fecha_inicio: string
           fhir_extensions: Json
           id: string
           motivo: string | null
           notas: string | null
+          numero_estudio: string | null
+          numero_ingreso: string | null
           paciente_id: string
           profesional_nombre: string | null
           tipo_admision_id: string | null
@@ -34,12 +37,15 @@ export type Database = {
           created_at?: string
           diagnostico_principal?: string | null
           estado?: string
+          factura?: string | null
           fecha_fin?: string | null
           fecha_inicio?: string
           fhir_extensions?: Json
           id?: string
           motivo?: string | null
           notas?: string | null
+          numero_estudio?: string | null
+          numero_ingreso?: string | null
           paciente_id: string
           profesional_nombre?: string | null
           tipo_admision_id?: string | null
@@ -49,12 +55,15 @@ export type Database = {
           created_at?: string
           diagnostico_principal?: string | null
           estado?: string
+          factura?: string | null
           fecha_fin?: string | null
           fecha_inicio?: string
           fhir_extensions?: Json
           id?: string
           motivo?: string | null
           notas?: string | null
+          numero_estudio?: string | null
+          numero_ingreso?: string | null
           paciente_id?: string
           profesional_nombre?: string | null
           tipo_admision_id?: string | null
@@ -196,6 +205,7 @@ export type Database = {
       pacientes: {
         Row: {
           apellidos: string
+          carnet: string | null
           ciudad: string | null
           created_at: string
           direccion: string | null
@@ -207,16 +217,20 @@ export type Database = {
           id: string
           nombres: string
           numero_documento: string
+          numero_historia: string | null
           ocupacion: string | null
           regimen: string | null
           telefono_principal: string
           telefono_secundario: string | null
+          tipo_afiliacion: string | null
+          tipo_documento: string | null
           updated_at: string
           user_id: string | null
           zona: string | null
         }
         Insert: {
           apellidos: string
+          carnet?: string | null
           ciudad?: string | null
           created_at?: string
           direccion?: string | null
@@ -228,16 +242,20 @@ export type Database = {
           id?: string
           nombres: string
           numero_documento: string
+          numero_historia?: string | null
           ocupacion?: string | null
           regimen?: string | null
           telefono_principal: string
           telefono_secundario?: string | null
+          tipo_afiliacion?: string | null
+          tipo_documento?: string | null
           updated_at?: string
           user_id?: string | null
           zona?: string | null
         }
         Update: {
           apellidos?: string
+          carnet?: string | null
           ciudad?: string | null
           created_at?: string
           direccion?: string | null
@@ -249,10 +267,13 @@ export type Database = {
           id?: string
           nombres?: string
           numero_documento?: string
+          numero_historia?: string | null
           ocupacion?: string | null
           regimen?: string | null
           telefono_principal?: string
           telefono_secundario?: string | null
+          tipo_afiliacion?: string | null
+          tipo_documento?: string | null
           updated_at?: string
           user_id?: string | null
           zona?: string | null

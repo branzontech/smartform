@@ -30,11 +30,34 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 
+// Tipos de documento de identidad colombianos
+export const DOCUMENT_TYPES = [
+  { value: "CC", label: "CC - Cédula de Ciudadanía" },
+  { value: "CE", label: "CE - Cédula de Extranjería" },
+  { value: "PA", label: "PA - Pasaporte" },
+  { value: "RC", label: "RC - Registro Civil" },
+  { value: "TI", label: "TI - Tarjeta de Identidad" },
+  { value: "AS", label: "AS - Adulto sin Identificación" },
+  { value: "MS", label: "MS - Menor sin Identificación" },
+  { value: "NU", label: "NU - Número Único de Identificación" },
+  { value: "NIT", label: "NIT - Número de Identificación Tributaria" },
+  { value: "CD", label: "CD - Carnet Diplomático" },
+  { value: "NV", label: "NV - Certificado de Nacido Vivo" },
+  { value: "SC", label: "SC - Salvoconducto" },
+  { value: "PR", label: "PR - Pasaporte de la ONU" },
+  { value: "CN", label: "CN - Certificado de Nacido Vivo" },
+  { value: "PE", label: "PE - Permiso Especial" },
+  { value: "PT", label: "PT - Permiso por Protección Temporal" },
+] as const;
+
+export type DocumentType = typeof DOCUMENT_TYPES[number]['value'];
+
 // Tipo extendido de paciente con nuevos campos
 export interface ExtendedPatient {
   id: string;
   firstName: string;
   lastName: string;
+  documentType?: DocumentType;
   documentId: string;
   dateOfBirth: string;
   gender: 'Masculino' | 'Femenino' | 'Otro';
@@ -49,6 +72,10 @@ export interface ExtendedPatient {
   zone?: 'Rural' | 'Urbana';
   occupation?: string;
   patientStatus?: 'registrado' | 'activo' | 'inactivo';
+  // New fields
+  medicalRecordNumber?: string; // Nº de Historia
+  carnet?: string;
+  affiliationType?: string; // Tipo de afiliación
   companion?: {
     name: string;
     relationship: string;

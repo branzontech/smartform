@@ -242,7 +242,7 @@ export const AdmissionStep: React.FC<AdmissionStepProps> = ({
       <motion.div variants={itemVariants}>
         <Card className="bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20 rounded-2xl">
           <CardContent className="p-4">
-            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary/30 to-primary/20 flex items-center justify-center text-primary text-lg font-bold">
                 {patient.firstName.charAt(0)}{patient.lastName.charAt(0)}
               </div>
@@ -250,8 +250,9 @@ export const AdmissionStep: React.FC<AdmissionStepProps> = ({
                 <p className="font-semibold text-base truncate">
                   {patient.firstName} {patient.lastName}
                 </p>
-                <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                  <span>{patient.documentId}</span>
+                <div className="flex items-center gap-3 text-sm text-muted-foreground flex-wrap">
+                  <span>{patient.documentType || 'CC'} {patient.documentId}</span>
+                  {patient.medicalRecordNumber && <span>Hª {patient.medicalRecordNumber}</span>}
                   {patient.contactNumber && (
                     <span className="flex items-center gap-1">
                       <Phone className="w-3 h-3" />
@@ -259,6 +260,12 @@ export const AdmissionStep: React.FC<AdmissionStepProps> = ({
                     </span>
                   )}
                 </div>
+                {(patient.carnet || patient.affiliationType) && (
+                  <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5">
+                    {patient.carnet && <span>Carnet: {patient.carnet}</span>}
+                    {patient.affiliationType && <span>Afiliación: {patient.affiliationType}</span>}
+                  </div>
+                )}
               </div>
               {patient.regime && (
                 <Badge variant="secondary" className="rounded-lg text-xs">
