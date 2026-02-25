@@ -21,26 +21,49 @@ export const questionTypes = [
 ];
 
 export const QuestionType = ({ selected, onChange }: QuestionTypeProps) => {
+  const [open, setOpen] = useState(false);
+  const selectedType = questionTypes.find((t) => t.id === selected);
+
   return (
-    <div className="flex flex-wrap gap-2 mb-4">
-      {questionTypes.map((type) => {
-        const isSelected = selected === type.id;
-        return (
-          <button
-            key={type.id}
-            onClick={() => onChange(type.id)}
-            className={cn(
-              "flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-all duration-200",
-              isSelected 
-                ? "bg-form-primary text-white shadow-md" 
-                : "bg-white text-gray-700 border border-gray-200 hover:bg-gray-50"
-            )}
-          >
-            <type.icon size={16} />
-            <span>{type.label}</span>
-          </button>
-        );
-      })}
+    <div className="relative mb-4">
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className="flex items-center justify-between w-full max-w-xs gap-2 px-3 py-2 rounded-md text-sm border border-gray-200 bg-white hover:bg-gray-50 transition-colors"
+      >
+        <span className="flex items-center gap-2">
+          {selectedType && <selectedType.icon size={16} className="text-muted-foreground" />}
+          <span>{selectedType?.label || "Seleccionar tipo"}</span>
+        </span>
+        <List size={14} className={cn("text-muted-foreground transition-transform", open && "rotate-180")} />
+      </button>
+
+      {open && (
+        <div className="absolute z-50 mt-1 w-full max-w-xs bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-y-auto">
+          {questionTypes.map((type) => {
+            const isSelected = selected === type.id;
+            return (
+              <button
+                key={type.id}
+                onClick={() => {
+                  onChange(type.id);
+                  setOpen(false);
+                }}
+                className={cn(
+                  "flex items-center gap-2 w-full px-3 py-2 text-sm text-left transition-colors",
+                  isSelected
+                    ? "bg-accent text-accent-foreground font-medium"
+                    : "text-foreground hover:bg-muted"
+                )}
+              >
+                <type.icon size={16} className="text-muted-foreground" />
+                <span>{type.label}</span>
+                {isSelected && <Check size={14} className="ml-auto text-primary" />}
+              </button>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 };
