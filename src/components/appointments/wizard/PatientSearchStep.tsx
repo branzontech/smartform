@@ -26,7 +26,7 @@ import {
   SelectValue 
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import { ExtendedPatient } from "../PatientPanel";
+import { ExtendedPatient, DOCUMENT_TYPES } from "../PatientPanel";
 import { PatientStatusBadge } from "@/components/patients/PatientStatusBadge";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -108,6 +108,7 @@ export const PatientSearchStep: React.FC<PatientSearchStepProps> = ({
       id: dbPatient.id,
       firstName: dbPatient.nombres,
       lastName: dbPatient.apellidos,
+      documentType: dbPatient.tipo_documento || "CC",
       documentId: dbPatient.numero_documento,
       dateOfBirth: dbPatient.fecha_nacimiento || "",
       gender: "Otro",
@@ -121,6 +122,9 @@ export const PatientSearchStep: React.FC<PatientSearchStepProps> = ({
       state: dbPatient.estado || undefined,
       occupation: dbPatient.ocupacion || undefined,
       patientStatus: dbPatient.estado_paciente || 'registrado',
+      medicalRecordNumber: dbPatient.numero_historia || undefined,
+      carnet: dbPatient.carnet || undefined,
+      affiliationType: dbPatient.tipo_afiliacion || undefined,
     };
     onPatientSelected(mapped);
   };
@@ -144,6 +148,7 @@ export const PatientSearchStep: React.FC<PatientSearchStepProps> = ({
       .insert({
         nombres: newPatient.firstName,
         apellidos: newPatient.lastName,
+        tipo_documento: newPatient.documentType || "CC",
         numero_documento: newPatient.documentId,
         fecha_nacimiento: newPatient.dateOfBirth || null,
         telefono_principal: newPatient.contactNumber,
@@ -155,6 +160,9 @@ export const PatientSearchStep: React.FC<PatientSearchStepProps> = ({
         ciudad: newPatient.city || null,
         estado: newPatient.state || null,
         ocupacion: newPatient.occupation || null,
+        numero_historia: newPatient.medicalRecordNumber || null,
+        carnet: newPatient.carnet || null,
+        tipo_afiliacion: newPatient.affiliationType || null,
         fhir_extensions: fhirExtensions,
       })
       .select()
@@ -177,6 +185,7 @@ export const PatientSearchStep: React.FC<PatientSearchStepProps> = ({
       id: data.id,
       firstName: data.nombres,
       lastName: data.apellidos,
+      documentType: (data as any).tipo_documento || "CC",
       documentId: data.numero_documento,
       dateOfBirth: data.fecha_nacimiento || "",
       contactNumber: data.telefono_principal,
@@ -188,6 +197,9 @@ export const PatientSearchStep: React.FC<PatientSearchStepProps> = ({
       city: data.ciudad || undefined,
       state: data.estado || undefined,
       occupation: data.ocupacion || undefined,
+      medicalRecordNumber: (data as any).numero_historia || undefined,
+      carnet: (data as any).carnet || undefined,
+      affiliationType: (data as any).tipo_afiliacion || undefined,
       companion: showCompanion && companionData.name ? companionData : undefined,
     };
 
@@ -435,9 +447,25 @@ export const PatientSearchStep: React.FC<PatientSearchStepProps> = ({
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
-                    <Label>Documento *</Label>
+                    <Label>Tipo de documento *</Label>
+                    <Select 
+                      value={newPatient.documentType || "CC"} 
+                      onValueChange={(value: any) => setNewPatient({...newPatient, documentType: value})}
+                    >
+                      <SelectTrigger className="h-11 rounded-xl">
+                        <SelectValue placeholder="Seleccionar" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {DOCUMENT_TYPES.map((dt) => (
+                          <SelectItem key={dt.value} value={dt.value}>{dt.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label>Identificación *</Label>
                     <Input
                       placeholder="Número de documento"
                       value={newPatient.documentId || ""}
@@ -451,6 +479,36 @@ export const PatientSearchStep: React.FC<PatientSearchStepProps> = ({
                       type="date"
                       value={newPatient.dateOfBirth || ""}
                       onChange={(e) => setNewPatient({...newPatient, dateOfBirth: e.target.value})}
+                      className="h-11 rounded-xl"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <Label>Nº de Historia</Label>
+                    <Input
+                      placeholder="Número de historia clínica"
+                      value={newPatient.medicalRecordNumber || ""}
+                      onChange={(e) => setNewPatient({...newPatient, medicalRecordNumber: e.target.value})}
+                      className="h-11 rounded-xl"
+                    />
+                  </div>
+                  <div>
+                    <Label>Carnet</Label>
+                    <Input
+                      placeholder="Número de carnet"
+                      value={newPatient.carnet || ""}
+                      onChange={(e) => setNewPatient({...newPatient, carnet: e.target.value})}
+                      className="h-11 rounded-xl"
+                    />
+                  </div>
+                  <div>
+                    <Label>Tipo de afiliación</Label>
+                    <Input
+                      placeholder="Tipo de afiliación"
+                      value={newPatient.affiliationType || ""}
+                      onChange={(e) => setNewPatient({...newPatient, affiliationType: e.target.value})}
                       className="h-11 rounded-xl"
                     />
                   </div>

@@ -32,7 +32,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import { ExtendedPatient } from "../PatientPanel";
+import { ExtendedPatient, DOCUMENT_TYPES } from "../PatientPanel";
 import { PatientStatusBadge } from "@/components/patients/PatientStatusBadge";
 import { AdmissionHistorySection } from "@/components/patients/AdmissionHistorySection";
 import { supabase } from "@/integrations/supabase/client";
@@ -101,6 +101,7 @@ export const PatientDetailStep: React.FC<PatientDetailStepProps> = ({
       .update({
         nombres: editData.firstName,
         apellidos: editData.lastName,
+        tipo_documento: editData.documentType || "CC",
         telefono_principal: editData.contactNumber,
         telefono_secundario: editData.secondaryPhone || null,
         email: editData.email || null,
@@ -111,6 +112,9 @@ export const PatientDetailStep: React.FC<PatientDetailStepProps> = ({
         estado: editData.state || null,
         ocupacion: editData.occupation || null,
         fecha_nacimiento: editData.dateOfBirth || null,
+        numero_historia: editData.medicalRecordNumber || null,
+        carnet: editData.carnet || null,
+        tipo_afiliacion: editData.affiliationType || null,
       })
       .eq("id", patient.id);
 
@@ -157,7 +161,11 @@ export const PatientDetailStep: React.FC<PatientDetailStepProps> = ({
               {patient.firstName} {patient.lastName}
             </h2>
             <div className="flex items-center gap-1.5">
-              <p className="text-xs text-muted-foreground">{patient.documentId}{patient.regime ? ` · ${patient.regime}` : ''}</p>
+              <p className="text-xs text-muted-foreground">
+                {patient.documentType || 'CC'} {patient.documentId}
+                {patient.regime ? ` · ${patient.regime}` : ''}
+                {patient.medicalRecordNumber ? ` · Hª ${patient.medicalRecordNumber}` : ''}
+              </p>
               <PatientStatusBadge status={patient.patientStatus} />
             </div>
           </div>
@@ -191,11 +199,13 @@ export const PatientDetailStep: React.FC<PatientDetailStepProps> = ({
                   <p className="text-[11px] font-medium text-muted-foreground/70 uppercase tracking-widest mb-2">
                     Información personal
                   </p>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
                     <InfoRow icon={User} label="Nombres" value={patient.firstName} />
                     <InfoRow icon={User} label="Apellidos" value={patient.lastName} />
-                    <InfoRow icon={FileText} label="Documento" value={patient.documentId} />
+                    <InfoRow icon={FileText} label="Tipo de documento" value={DOCUMENT_TYPES.find(d => d.value === patient.documentType)?.label || patient.documentType || 'CC'} />
+                    <InfoRow icon={FileText} label="Identificación" value={patient.documentId} />
                     <InfoRow icon={Calendar} label="Fecha de nacimiento" value={patient.dateOfBirth} />
+                    <InfoRow icon={ClipboardList} label="Nº de Historia" value={patient.medicalRecordNumber} />
                     <InfoRow icon={Phone} label="Teléfono principal" value={patient.contactNumber} />
                     <InfoRow icon={Phone} label="Teléfono secundario" value={patient.secondaryPhone} />
                     <InfoRow icon={Mail} label="Correo electrónico" value={patient.email} />
@@ -208,6 +218,8 @@ export const PatientDetailStep: React.FC<PatientDetailStepProps> = ({
                   </p>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
                     <InfoRow icon={Shield} label="Régimen" value={patient.regime} />
+                    <InfoRow icon={Shield} label="Tipo de afiliación" value={patient.affiliationType} />
+                    <InfoRow icon={Shield} label="Carnet" value={patient.carnet} />
                     <InfoRow icon={Globe} label="Zona" value={patient.zone} />
                     <InfoRow icon={MapPin} label="Dirección" value={patient.address} />
                     <InfoRow icon={MapPin} label="Ciudad" value={patient.city} />
@@ -263,11 +275,28 @@ export const PatientDetailStep: React.FC<PatientDetailStepProps> = ({
                       <Input value={editData.lastName || ""} onChange={(e) => setEditData({ ...editData, lastName: e.target.value })} className="h-11 rounded-xl" />
                     </div>
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <Label>Tipo de documento</Label>
+                      <Select value={editData.documentType || "CC"} onValueChange={(v) => setEditData({ ...editData, documentType: v as any })}>
+                        <SelectTrigger className="h-11 rounded-xl"><SelectValue placeholder="Seleccionar" /></SelectTrigger>
+                        <SelectContent>
+                          {DOCUMENT_TYPES.map((dt) => (
+                            <SelectItem key={dt.value} value={dt.value}>{dt.label}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                     <div>
                       <Label>Fecha de nacimiento</Label>
                       <Input type="date" value={editData.dateOfBirth || ""} onChange={(e) => setEditData({ ...editData, dateOfBirth: e.target.value })} className="h-11 rounded-xl" />
                     </div>
+                    <div>
+                      <Label>Nº de Historia</Label>
+                      <Input value={editData.medicalRecordNumber || ""} onChange={(e) => setEditData({ ...editData, medicalRecordNumber: e.target.value })} className="h-11 rounded-xl" />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <Label>Teléfono principal</Label>
                       <Input value={editData.contactNumber || ""} onChange={(e) => setEditData({ ...editData, contactNumber: e.target.value })} className="h-11 rounded-xl" />
@@ -283,7 +312,7 @@ export const PatientDetailStep: React.FC<PatientDetailStepProps> = ({
                       <Input type="email" value={editData.email || ""} onChange={(e) => setEditData({ ...editData, email: e.target.value })} className="h-11 rounded-xl" />
                     </div>
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
                       <Label>Régimen</Label>
                       <Select value={editData.regime || ""} onValueChange={(v) => setEditData({ ...editData, regime: v as any })}>
@@ -296,6 +325,16 @@ export const PatientDetailStep: React.FC<PatientDetailStepProps> = ({
                         </SelectContent>
                       </Select>
                     </div>
+                    <div>
+                      <Label>Carnet</Label>
+                      <Input value={editData.carnet || ""} onChange={(e) => setEditData({ ...editData, carnet: e.target.value })} className="h-11 rounded-xl" />
+                    </div>
+                    <div>
+                      <Label>Tipo de afiliación</Label>
+                      <Input value={editData.affiliationType || ""} onChange={(e) => setEditData({ ...editData, affiliationType: e.target.value })} className="h-11 rounded-xl" />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <Label>Zona</Label>
                       <Select value={editData.zone || ""} onValueChange={(v) => setEditData({ ...editData, zone: v as any })}>
