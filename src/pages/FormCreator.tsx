@@ -96,7 +96,7 @@ const FormCreator = () => {
     const newQuestion = {
       id: newQuestionId,
       ...defaultQuestion,
-      title: "Nueva pregunta",
+      title: "",
     };
     
     setQuestions([...questions, newQuestion]);
