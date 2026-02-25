@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { DynamicFieldRenderer } from "@/components/config/DynamicFieldRenderer";
-import { DiagnosisSearch } from "@/components/admissions/DiagnosisSearch";
+import { DiagnosisSearch, type SelectedDiagnosis } from "@/components/admissions/DiagnosisSearch";
 import type { DynamicFieldConfig } from "@/components/config/DynamicFieldConfigurator";
 import { motion } from "framer-motion";
 import { 
@@ -44,6 +44,7 @@ export interface AdmissionData {
   hospitalizationAdmitSource?: string;
   hospitalizationDischargeDisposition?: string;
   diagnosticoPrincipal?: string;
+  diagnosticos?: SelectedDiagnosis[];
   // Custom fields
   customFields?: Record<string, string>;
 }
@@ -117,6 +118,7 @@ export const AdmissionStep: React.FC<AdmissionStepProps> = ({
     hospitalizationAdmitSource: "",
     hospitalizationDischargeDisposition: "",
     diagnosticoPrincipal: "",
+    diagnosticos: [],
     customFields: {},
   });
 
@@ -172,18 +174,24 @@ export const AdmissionStep: React.FC<AdmissionStepProps> = ({
           provider: admissionData.insuranceProvider || undefined,
           policyNumber: admissionData.insuranceNumber || undefined,
         },
-        // FHIR Condition.code (diagnosis coding)
-        diagnosis: admissionData.diagnosticoPrincipal ? [{
+        // FHIR Encounter.diagnosis array
+        diagnosis: (admissionData.diagnosticos || []).map((d, i) => ({
           condition: {
             coding: [{
-              system: "http://hl7.org/fhir/sid/icd-10",
-              code: admissionData.diagnosticoPrincipal.split(" - ")[0]?.trim(),
-              display: admissionData.diagnosticoPrincipal.split(" - ").slice(1).join(" - ")?.trim(),
+              system: d.fhir_system_uri,
+              code: d.codigo,
+              display: d.descripcion,
             }]
           },
-          use: { coding: [{ system: "http://terminology.hl7.org/CodeSystem/diagnosis-role", code: "AD", display: "Admission diagnosis" }] },
-          rank: 1
-        }] : undefined,
+          use: {
+            coding: [{
+              system: "http://terminology.hl7.org/CodeSystem/diagnosis-role",
+              code: i === 0 ? "AD" : "DD",
+              display: i === 0 ? "Admission diagnosis" : "Discharge diagnosis",
+            }]
+          },
+          rank: i + 1,
+        })),
         // Custom fields stored as FHIR extensions
         customFields: admissionData.customFields || {},
       };
@@ -411,12 +419,16 @@ export const AdmissionStep: React.FC<AdmissionStepProps> = ({
                     />
                   </div>
 
-                  {/* Diagnóstico principal - FHIR Condition with CIE-10/CIE-11 */}
+                  {/* Diagnósticos - FHIR Condition with CIE-10/CIE-11 */}
                   <div className="relative">
                     <DiagnosisSearch
-                      value={admissionData.diagnosticoPrincipal || ""}
-                      onChange={(val, fhirCoding) => {
-                        setAdmissionData(prev => ({ ...prev, diagnosticoPrincipal: val }));
+                      diagnoses={admissionData.diagnosticos || []}
+                      onChange={(diags) => {
+                        setAdmissionData(prev => ({
+                          ...prev,
+                          diagnosticos: diags,
+                          diagnosticoPrincipal: diags.length > 0 ? `${diags[0].codigo} - ${diags[0].descripcion}` : "",
+                        }));
                       }}
                     />
                   </div>
