@@ -89,6 +89,8 @@ export interface QuestionData {
   maxFileSize?: number;
   multifields?: MultifieldConfig[];
   orientation?: "vertical" | "horizontal";
+  optionLayout?: "vertical" | "horizontal";
+  optionColumns?: number;
 }
 
 export interface QuestionProps {

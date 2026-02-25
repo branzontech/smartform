@@ -79,7 +79,16 @@ export const QuestionRenderer = ({ question, formData, onChange, errors }: Quest
             <FormItem className="space-y-3">
               <FormLabel>{question.title}</FormLabel>
               <FormControl>
-                <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex flex-col space-y-1">
+                <RadioGroup 
+                  onValueChange={field.onChange} 
+                  defaultValue={field.value} 
+                  className={cn(
+                    question.optionLayout === "horizontal" 
+                      ? `grid gap-2`
+                      : "flex flex-col space-y-1"
+                  )}
+                  style={question.optionLayout === "horizontal" ? { gridTemplateColumns: `repeat(${question.optionColumns || 3}, minmax(0, 1fr))` } : undefined}
+                >
                   {question.options?.map((option, i) => (
                     <FormItem key={i} className="flex items-center space-x-3 space-y-0">
                       <RadioGroupItem value={option} id={`${question.id}-${i}`} className="peer shrink-0" />
@@ -105,7 +114,13 @@ export const QuestionRenderer = ({ question, formData, onChange, errors }: Quest
             <FormItem className="flex flex-col space-y-3">
               <FormLabel>{question.title}</FormLabel>
               <FormControl>
-                <div className="space-y-2">
+                <div className={cn(
+                  question.optionLayout === "horizontal"
+                    ? "grid gap-2"
+                    : "space-y-2"
+                )}
+                style={question.optionLayout === "horizontal" ? { gridTemplateColumns: `repeat(${question.optionColumns || 3}, minmax(0, 1fr))` } : undefined}
+                >
                   {question.options?.map((option, i) => (
                     <FormItem key={i} className="flex items-center space-x-3 space-y-0">
                       <Checkbox

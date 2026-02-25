@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { ChevronDown, ChevronUp, Trash, ArrowUp, ArrowDown, Copy, GripVertical } from "lucide-react";
+import { ChevronDown, ChevronUp, Trash, ArrowUp, ArrowDown, Copy, GripVertical, Rows3, Columns3 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "./button";
 import { QuestionData } from "../forms/question/types";
@@ -215,40 +215,82 @@ export const Question = ({
                 />
               </div>
 
-              {/* Bottom bar: duplicar, eliminar, obligatorio (Google Forms style) */}
-              <div className="px-5 py-2 border-t border-border flex items-center justify-end gap-1">
-                {onDuplicate && (
-                  <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground"
-                    title="Duplicar"
-                    onClick={() => onDuplicate(question.id)}>
-                    <Copy size={16} />
+              {/* Bottom bar: layout, duplicar, eliminar, obligatorio */}
+              <div className="px-5 py-2 border-t border-border flex items-center justify-between gap-1">
+                {/* Layout controls - solo para tipos con opciones */}
+                <div className="flex items-center gap-1">
+                  {["multiple", "checkbox", "dropdown"].includes(question.type) && (
+                    <>
+                      <Button
+                        variant="ghost" size="sm"
+                        className={cn("h-8 px-2 text-xs gap-1", question.optionLayout !== "horizontal" ? "text-primary bg-accent" : "text-muted-foreground")}
+                        title="Vertical"
+                        onClick={() => handleUpdate({ optionLayout: "vertical", optionColumns: undefined })}
+                      >
+                        <Rows3 size={14} />
+                        <span className="hidden sm:inline">Vertical</span>
+                      </Button>
+                      <Button
+                        variant="ghost" size="sm"
+                        className={cn("h-8 px-2 text-xs gap-1", question.optionLayout === "horizontal" ? "text-primary bg-accent" : "text-muted-foreground")}
+                        title="Horizontal"
+                        onClick={() => handleUpdate({ optionLayout: "horizontal", optionColumns: question.optionColumns || 3 })}
+                      >
+                        <Columns3 size={14} />
+                        <span className="hidden sm:inline">Horizontal</span>
+                      </Button>
+                      {question.optionLayout === "horizontal" && (
+                        <select
+                          value={question.optionColumns || 3}
+                          onChange={(e) => handleUpdate({ optionColumns: Number(e.target.value) })}
+                          className="h-8 text-xs border border-border rounded-md bg-background text-foreground px-1.5 ml-1"
+                        >
+                          <option value={2}>2 col</option>
+                          <option value={3}>3 col</option>
+                          <option value={4}>4 col</option>
+                          <option value={5}>5 col</option>
+                          <option value={6}>6 col</option>
+                        </select>
+                      )}
+                      <div className="w-px h-5 bg-border mx-1" />
+                    </>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-1">
+                  {onDuplicate && (
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                      title="Duplicar"
+                      onClick={() => onDuplicate(question.id)}>
+                      <Copy size={16} />
+                    </Button>
+                  )}
+                  <Button variant="ghost" size="icon"
+                    className={`h-8 w-8 text-muted-foreground hover:text-destructive ${showDeleteConfirm ? "text-destructive" : ""}`}
+                    title="Eliminar"
+                    onClick={handleDelete}>
+                    <Trash size={16} />
                   </Button>
-                )}
-                <Button variant="ghost" size="icon"
-                  className={`h-8 w-8 text-muted-foreground hover:text-destructive ${showDeleteConfirm ? "text-destructive" : ""}`}
-                  title="Eliminar"
-                  onClick={handleDelete}>
-                  <Trash size={16} />
-                </Button>
-                <div className="w-px h-5 bg-border mx-1" />
-                <label className="flex items-center gap-2 cursor-pointer select-none">
-                  <span className="text-sm text-muted-foreground">Obligatorio</span>
-                  <button
-                    type="button"
-                    role="switch"
-                    aria-checked={question.required}
-                    onClick={() => handleRequiredChange(!question.required)}
-                    className={cn(
-                      "relative inline-flex h-5 w-9 shrink-0 rounded-full transition-colors",
-                      question.required ? "bg-primary" : "bg-muted-foreground/30"
-                    )}
-                  >
-                    <span className={cn(
-                      "pointer-events-none block h-4 w-4 rounded-full bg-background shadow-sm transition-transform mt-0.5",
-                      question.required ? "translate-x-4 ml-0.5" : "translate-x-0.5"
-                    )} />
-                  </button>
-                </label>
+                  <div className="w-px h-5 bg-border mx-1" />
+                  <label className="flex items-center gap-2 cursor-pointer select-none">
+                    <span className="text-sm text-muted-foreground">Obligatorio</span>
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={question.required}
+                      onClick={() => handleRequiredChange(!question.required)}
+                      className={cn(
+                        "relative inline-flex h-5 w-9 shrink-0 rounded-full transition-colors",
+                        question.required ? "bg-primary" : "bg-muted-foreground/30"
+                      )}
+                    >
+                      <span className={cn(
+                        "pointer-events-none block h-4 w-4 rounded-full bg-background shadow-sm transition-transform mt-0.5",
+                        question.required ? "translate-x-4 ml-0.5" : "translate-x-0.5"
+                      )} />
+                    </button>
+                  </label>
+                </div>
               </div>
             </>
           )}
