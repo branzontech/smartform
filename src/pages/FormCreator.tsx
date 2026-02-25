@@ -35,20 +35,59 @@ const colorSchemes = [
   { name: "Medical Green", primaryColor: "#22c55e", backgroundColor: "#f0fdf4", questionBackgroundColor: "#ffffff", questionTextColor: "#1f2937" }
 ];
 
+const DRAFT_KEY = "form-creator-draft";
+
+const saveDraft = (data: any) => {
+  try { sessionStorage.setItem(DRAFT_KEY, JSON.stringify(data)); } catch {}
+};
+
+const loadDraft = () => {
+  try {
+    const raw = sessionStorage.getItem(DRAFT_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch { return null; }
+};
+
+const clearDraft = () => {
+  try { sessionStorage.removeItem(DRAFT_KEY); } catch {}
+};
+
 const FormCreator = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [loading, setLoading] = useState(!!id);
   const [activeTab, setActiveTab] = useState("content");
-  const [title, setTitle] = useState("Nuevo formulario Ker Hub");
-  const [description, setDescription] = useState("Formulario para registro de datos clínicos");
-  const [formType, setFormType] = useState<string>("historia_clinica");
+  
+  // Intentar restaurar borrador
+  const draft = !id ? loadDraft() : null;
+  
+  const [title, setTitle] = useState(draft?.title || "Nuevo formulario Ker Hub");
+  const [description, setDescription] = useState(draft?.description || "Formulario para registro de datos clínicos");
+  const [formType, setFormType] = useState<string>(draft?.formType || "historia_clinica");
   const [customCategory, setCustomCategory] = useState("");
-  const [questions, setQuestions] = useState<QuestionData[]>([]);
+  const [questions, setQuestions] = useState<QuestionData[]>(draft?.questions || []);
   const [saving, setSaving] = useState(false);
   const [expandedQuestions, setExpandedQuestions] = useState<string[]>([]);
-  const [designOptions, setDesignOptions] = useState<FormDesignOptions>(defaultDesignOptions);
+  const [designOptions, setDesignOptions] = useState<FormDesignOptions>(draft?.designOptions || defaultDesignOptions);
+  const [draftRestored, setDraftRestored] = useState(!!draft);
+
+  // Mostrar notificación si se restauró un borrador
+  useEffect(() => {
+    if (draftRestored) {
+      toast({ title: "Borrador restaurado", description: "Se recuperó tu progreso anterior automáticamente." });
+      setDraftRestored(false);
+    }
+  }, [draftRestored, toast]);
+
+  // Auto-guardar borrador en sessionStorage (solo formularios nuevos)
+  useEffect(() => {
+    if (id) return; // No guardar drafts si estamos editando uno existente
+    const timeout = setTimeout(() => {
+      saveDraft({ title, description, formType, questions, designOptions });
+    }, 500);
+    return () => clearTimeout(timeout);
+  }, [id, title, description, formType, questions, designOptions]);
 
   useEffect(() => {
     if (id) {
@@ -78,7 +117,7 @@ const FormCreator = () => {
         }
       };
       loadForm();
-    } else {
+    } else if (!draft) {
       setQuestions([]);
     }
   }, [id, navigate, toast]);
@@ -243,6 +282,7 @@ const FormCreator = () => {
         });
       }
       
+      clearDraft();
       setTimeout(() => {
         navigate("/");
       }, 500);
