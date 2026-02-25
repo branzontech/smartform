@@ -195,11 +195,10 @@ export const AppointmentWizard: React.FC<AppointmentWizardProps> = ({
 
   return (
     <TooltipProvider>
-      <div className="h-full flex flex-col bg-gradient-to-br from-background via-background to-muted/20">
+      <div className="h-full flex flex-col overflow-hidden bg-gradient-to-br from-background via-background to-muted/20">
         {/* Fixed Stepper Area - positioned below header */}
         <div 
-          className="fixed left-0 right-0 z-30 bg-background"
-          style={{ top: '84px' }}
+          className="shrink-0 z-30 bg-background"
         >
           {/* Stepper Container */}
           <motion.div 
@@ -287,10 +286,6 @@ export const AppointmentWizard: React.FC<AppointmentWizardProps> = ({
         {/* Scrollable Content area - strictly below navigation */}
         <div 
           className="flex-1 min-h-0 overflow-hidden px-6 md:px-8 pb-24"
-          style={{ 
-            marginTop: `${NAV_HEIGHT}px`,
-            height: `calc(100vh - ${NAV_HEIGHT}px)`
-          }}
         >
           {/* Use full width for scheduling step (step 3), constrained width for others */}
           <div className={cn(
