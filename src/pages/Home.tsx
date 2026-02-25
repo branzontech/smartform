@@ -1,56 +1,57 @@
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { Users, Calendar, Stethoscope, ClipboardCheck, BarChart3, FileText } from "lucide-react";
+import { Users, Calendar, Stethoscope, ClipboardCheck, BarChart3, FileText, ArrowRight, Sparkles } from "lucide-react";
 
 const quickActions = [
+  {
+    icon: Stethoscope,
+    label: "Realizar atención",
+    description: "Inicia una nueva consulta o atención médica",
+    route: "/app/citas/nueva",
+    accent: "group-hover:text-primary",
+    bgAccent: "group-hover:bg-primary/10",
+    featured: true,
+  },
   {
     icon: Users,
     label: "Consultar pacientes",
     description: "Busca y gestiona la información de tus pacientes",
     route: "/app/pacientes",
-    gradient: "from-blue-500/10 to-cyan-500/10",
-    iconColor: "text-blue-600 dark:text-blue-400",
+    accent: "group-hover:text-primary",
+    bgAccent: "group-hover:bg-primary/10",
   },
   {
     icon: Calendar,
     label: "Consultar citas",
     description: "Revisa y administra las citas programadas",
     route: "/app/citas",
-    gradient: "from-violet-500/10 to-purple-500/10",
-    iconColor: "text-violet-600 dark:text-violet-400",
-  },
-  {
-    icon: Stethoscope,
-    label: "Realizar atención",
-    description: "Inicia una nueva consulta o atención médica",
-    route: "/app/citas/nueva",
-    gradient: "from-emerald-500/10 to-teal-500/10",
-    iconColor: "text-emerald-600 dark:text-emerald-400",
+    accent: "group-hover:text-primary",
+    bgAccent: "group-hover:bg-primary/10",
   },
   {
     icon: ClipboardCheck,
     label: "Realizar auditoría",
     description: "Revisa y audita los registros clínicos",
     route: "/app/informes",
-    gradient: "from-amber-500/10 to-orange-500/10",
-    iconColor: "text-amber-600 dark:text-amber-400",
+    accent: "group-hover:text-primary",
+    bgAccent: "group-hover:bg-primary/10",
   },
   {
     icon: BarChart3,
     label: "Consultar estadísticas",
     description: "Visualiza métricas y reportes del sistema",
     route: "/app/pacientes/dashboard",
-    gradient: "from-rose-500/10 to-pink-500/10",
-    iconColor: "text-rose-600 dark:text-rose-400",
+    accent: "group-hover:text-primary",
+    bgAccent: "group-hover:bg-primary/10",
   },
   {
     icon: FileText,
     label: "Formularios",
     description: "Crea y gestiona formularios clínicos",
     route: "/app/home/formularios",
-    gradient: "from-indigo-500/10 to-sky-500/10",
-    iconColor: "text-indigo-600 dark:text-indigo-400",
+    accent: "group-hover:text-primary",
+    bgAccent: "group-hover:bg-primary/10",
   },
 ];
 
@@ -58,13 +59,13 @@ const containerVariants = {
   hidden: { opacity: 0 },
   visible: {
     opacity: 1,
-    transition: { staggerChildren: 0.07, delayChildren: 0.1 },
+    transition: { staggerChildren: 0.06, delayChildren: 0.15 },
   },
 };
 
 const itemVariants = {
-  hidden: { opacity: 0, y: 16 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.4 } },
+  hidden: { opacity: 0, y: 20, scale: 0.97 },
+  visible: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.5, type: "spring" as const, bounce: 0.3 } },
 };
 
 const Home = () => {
@@ -78,19 +79,37 @@ const Home = () => {
   const greeting = hour < 12 ? "Buenos días" : hour < 18 ? "Buenas tardes" : "Buenas noches";
 
   return (
-    <div className="flex-1 flex flex-col items-center justify-center px-4 py-12 min-h-[70vh]">
+    <div className="flex-1 flex flex-col items-center justify-center px-4 py-8 md:py-16 min-h-[75vh] relative overflow-hidden">
+      {/* Subtle background glow */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full bg-primary/[0.04] blur-[100px]" />
+        <div className="absolute bottom-0 right-1/4 w-[400px] h-[400px] rounded-full bg-secondary/[0.03] blur-[80px]" />
+      </div>
+
       <motion.div
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        className="w-full max-w-3xl space-y-10"
+        className="w-full max-w-4xl space-y-12 relative z-10"
       >
         {/* Greeting */}
-        <motion.div variants={itemVariants} className="text-center space-y-2">
-          <h1 className="text-3xl md:text-4xl font-semibold tracking-tight text-foreground">
-            {greeting}, {firstName}
+        <motion.div variants={itemVariants} className="text-center space-y-3">
+          <motion.div
+            initial={{ scale: 0, rotate: -20 }}
+            animate={{ scale: 1, rotate: 0 }}
+            transition={{ delay: 0.3, type: "spring", bounce: 0.5 }}
+            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 text-primary text-xs font-medium mb-4"
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+            Ker Hub
+          </motion.div>
+          <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-foreground">
+            {greeting},{" "}
+            <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+              {firstName}
+            </span>
           </h1>
-          <p className="text-muted-foreground text-base md:text-lg">
+          <p className="text-muted-foreground text-lg md:text-xl font-light max-w-md mx-auto">
             ¿Qué deseas hacer hoy?
           </p>
         </motion.div>
@@ -104,27 +123,33 @@ const Home = () => {
             <motion.button
               key={action.label}
               variants={itemVariants}
-              whileHover={{ scale: 1.02, y: -2 }}
-              whileTap={{ scale: 0.98 }}
+              whileHover={{ y: -4 }}
+              whileTap={{ scale: 0.97 }}
               onClick={() => navigate(action.route)}
               className={`
-                group relative flex flex-col items-center gap-3 p-5 md:p-6
-                rounded-2xl border border-border/50
-                bg-gradient-to-br ${action.gradient}
-                backdrop-blur-sm
-                hover:border-border hover:shadow-lg hover:shadow-black/5
-                transition-all duration-200 cursor-pointer
-                text-center
+                group relative flex flex-col items-start gap-4 p-5 md:p-6
+                rounded-2xl border border-border/60
+                bg-card/50 backdrop-blur-sm
+                hover:bg-card hover:border-primary/30
+                hover:shadow-xl hover:shadow-primary/[0.06]
+                transition-all duration-300 cursor-pointer
+                text-left overflow-hidden
+                ${action.featured ? "md:col-span-1" : ""}
               `}
             >
-              <div className={`p-3 rounded-xl bg-background/60 ${action.iconColor} transition-colors`}>
-                <action.icon className="w-6 h-6" />
+              {/* Hover gradient overlay */}
+              <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.03] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-2xl" />
+
+              <div className={`relative p-2.5 rounded-xl bg-muted/50 text-muted-foreground ${action.bgAccent} ${action.accent} transition-all duration-300`}>
+                <action.icon className="w-5 h-5" strokeWidth={1.8} />
               </div>
-              <div className="space-y-1">
-                <span className="text-sm font-medium text-foreground block">
+
+              <div className="relative space-y-1.5 flex-1">
+                <span className="text-sm font-semibold text-foreground flex items-center gap-2">
                   {action.label}
+                  <ArrowRight className="w-3.5 h-3.5 opacity-0 -translate-x-2 group-hover:opacity-60 group-hover:translate-x-0 transition-all duration-300 text-muted-foreground" />
                 </span>
-                <span className="text-xs text-muted-foreground hidden md:block leading-relaxed">
+                <span className="text-xs text-muted-foreground/80 leading-relaxed hidden md:block">
                   {action.description}
                 </span>
               </div>
