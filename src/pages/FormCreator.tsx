@@ -9,7 +9,7 @@ import { Question } from "@/components/ui/question";
 import { QuestionData, FormDesignOptions, defaultDesignOptions } from "@/components/forms/question/types";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { Form } from "./Home";
+import { Form } from "./FormsPage";
 import { BackButton } from "../App";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";

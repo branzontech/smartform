@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Search, Plus, FileText } from 'lucide-react';
-import { Form as FormType } from '@/pages/Home';
+import { Form as FormType } from '@/pages/FormsPage';
 
 interface AdditionalFormsModalProps {
   onAddForm: (formId: string) => void;

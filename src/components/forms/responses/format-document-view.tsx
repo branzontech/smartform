@@ -1,7 +1,7 @@
 import React from 'react';
 import { FileText, Printer } from "lucide-react";
 import { IndividualResponse } from './individual-response';
-import { Form } from '@/pages/Home';
+import { Form } from '@/pages/FormsPage';
 import { FormResponse } from '@/types/form-types';
 
 interface FormatDocumentViewProps {

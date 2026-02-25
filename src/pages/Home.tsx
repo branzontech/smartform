@@ -1,242 +1,137 @@
-
-import { useState, useEffect } from "react";
+import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { Header } from "@/components/layout/header";
-import { FormCard } from "@/components/ui/form-card";
-import { EmptyState } from "@/components/ui/empty-state";
-import { useToast } from "@/hooks/use-toast";
-import { toast } from "sonner";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { FileText, PieChart } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { FormDesignOptions } from "@/components/forms/question/types";
+import { useAuth } from "@/contexts/AuthContext";
+import { Users, Calendar, Stethoscope, ClipboardCheck, BarChart3, FileText } from "lucide-react";
 
-export interface Form {
-  id: string;
-  title: string;
-  description: string;
-  questions: any[];
-  createdAt: Date;
-  updatedAt: Date;
-  responseCount: number;
-  formType: "forms" | "formato";
-  designOptions?: FormDesignOptions;
-}
-
-const mockForms: Form[] = [
+const quickActions = [
   {
-    id: "1",
-    title: "Encuesta de satisfacción",
-    description: "Encuesta para medir la satisfacción del cliente",
-    questions: [],
-    createdAt: new Date("2023-01-15"),
-    updatedAt: new Date("2023-06-20"),
-    responseCount: 24,
-    formType: "forms"
+    icon: Users,
+    label: "Consultar pacientes",
+    description: "Busca y gestiona la información de tus pacientes",
+    route: "/app/pacientes",
+    gradient: "from-blue-500/10 to-cyan-500/10",
+    iconColor: "text-blue-600 dark:text-blue-400",
   },
   {
-    id: "2",
-    title: "Formulario de contacto",
-    description: "Formulario para recopilar información de contacto",
-    questions: [],
-    createdAt: new Date("2023-03-10"),
-    updatedAt: new Date("2023-05-05"),
-    responseCount: 12,
-    formType: "forms"
+    icon: Calendar,
+    label: "Consultar citas",
+    description: "Revisa y administra las citas programadas",
+    route: "/app/citas",
+    gradient: "from-violet-500/10 to-purple-500/10",
+    iconColor: "text-violet-600 dark:text-violet-400",
   },
   {
-    id: "3",
-    title: "Historia clínica",
-    description: "Formato para registro de historia clínica",
-    questions: [],
-    createdAt: new Date("2023-02-28"),
-    updatedAt: new Date("2023-04-15"),
-    responseCount: 8,
-    formType: "formato"
-  }
+    icon: Stethoscope,
+    label: "Realizar atención",
+    description: "Inicia una nueva consulta o atención médica",
+    route: "/app/citas/nueva",
+    gradient: "from-emerald-500/10 to-teal-500/10",
+    iconColor: "text-emerald-600 dark:text-emerald-400",
+  },
+  {
+    icon: ClipboardCheck,
+    label: "Realizar auditoría",
+    description: "Revisa y audita los registros clínicos",
+    route: "/app/informes",
+    gradient: "from-amber-500/10 to-orange-500/10",
+    iconColor: "text-amber-600 dark:text-amber-400",
+  },
+  {
+    icon: BarChart3,
+    label: "Consultar estadísticas",
+    description: "Visualiza métricas y reportes del sistema",
+    route: "/app/pacientes/dashboard",
+    gradient: "from-rose-500/10 to-pink-500/10",
+    iconColor: "text-rose-600 dark:text-rose-400",
+  },
+  {
+    icon: FileText,
+    label: "Formularios",
+    description: "Crea y gestiona formularios clínicos",
+    route: "/app/home/formularios",
+    gradient: "from-indigo-500/10 to-sky-500/10",
+    iconColor: "text-indigo-600 dark:text-indigo-400",
+  },
 ];
 
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.07, delayChildren: 0.1 },
+  },
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 16 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.4 } },
+};
+
 const Home = () => {
-  const [forms, setForms] = useState<Form[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [formToDelete, setFormToDelete] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"all" | "forms" | "formato">("all");
   const navigate = useNavigate();
-  const { toast: uiToast } = useToast();
+  const { profile, user } = useAuth();
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      const savedForms = localStorage.getItem("forms");
-      if (savedForms) {
-        try {
-          const parsedForms = JSON.parse(savedForms).map((form: any) => ({
-            ...form,
-            createdAt: new Date(form.createdAt),
-            updatedAt: new Date(form.updatedAt)
-          }));
-          setForms(parsedForms);
-        } catch (error) {
-          console.error("Error parsing forms:", error);
-          setForms(mockForms);
-        }
-      } else {
-        setForms(mockForms);
-        localStorage.setItem("forms", JSON.stringify(mockForms));
-      }
-      setLoading(false);
-    }, 800);
+  const displayName = profile?.full_name || user?.email?.split("@")[0] || "Usuario";
+  const firstName = displayName.split(" ")[0];
 
-    return () => clearTimeout(timer);
-  }, []);
-
-  const filteredForms = forms.filter(form => {
-    if (activeTab === "all") return true;
-    return form.formType === activeTab;
-  });
-
-  const handleCreateForm = () => {
-    navigate("/crear");
-  };
-
-  const handleEditForm = (id: string) => {
-    navigate(`/editar/${id}`);
-  };
-
-  const handleViewForm = (id: string) => {
-    navigate(`/ver/${id}`);
-  };
-
-  const handleViewResponses = (id: string) => {
-    navigate(`/respuestas/${id}`);
-  };
-
-  const handleDeleteForm = (id: string) => {
-    setFormToDelete(id);
-  };
-
-  const confirmDeleteForm = () => {
-    if (formToDelete) {
-      const updatedForms = forms.filter(form => form.id !== formToDelete);
-      setForms(updatedForms);
-      localStorage.setItem("forms", JSON.stringify(updatedForms));
-      
-      toast("Formulario eliminado", {
-        description: "El formulario ha sido eliminado exitosamente",
-      });
-      
-      setFormToDelete(null);
-    }
-  };
-
-  const cancelDeleteForm = () => {
-    setFormToDelete(null);
-  };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex flex-col">
-        <Header />
-        <div className="flex-1 flex items-center justify-center">
-          <div className="animate-pulse text-center">
-            <div className="h-8 w-48 bg-gray-200 dark:bg-gray-800 rounded mb-6 mx-auto"></div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto px-4">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="h-44 bg-gray-200 dark:bg-gray-800 rounded-xl"></div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? "Buenos días" : hour < 18 ? "Buenas tardes" : "Buenas noches";
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <Header />
-      <main className="flex-1 container mx-auto py-8">
-        <h1 className="text-2xl font-bold mb-6">Tus formularios</h1>
-        
-        {forms.length === 0 ? (
-          <div className="mt-12">
-            <EmptyState
-              title="No tienes formularios"
-              description="Crea tu primer formulario para comenzar a recopilar respuestas."
-              buttonText="Crear formulario"
-              onClick={handleCreateForm}
-            />
-          </div>
-        ) : (
-          <div>
-            <Tabs 
-              defaultValue="all" 
-              value={activeTab}
-              onValueChange={(value) => setActiveTab(value as "all" | "forms" | "formato")}
-              className="mb-6"
-            >
-              <TabsList>
-                <TabsTrigger value="all">Todos</TabsTrigger>
-                <TabsTrigger value="forms" className="flex items-center gap-1">
-                  <PieChart size={14} />
-                  Forms
-                </TabsTrigger>
-                <TabsTrigger value="formato" className="flex items-center gap-1">
-                  <FileText size={14} />
-                  Formatos
-                </TabsTrigger>
-              </TabsList>
-            </Tabs>
-            
-            {filteredForms.length === 0 ? (
-              <div className="text-center py-12 text-gray-500">
-                No hay formularios de este tipo. 
-                <Button 
-                  variant="link" 
-                  onClick={handleCreateForm}
-                  className="ml-2"
-                >
-                  Crear nuevo
-                </Button>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredForms.map((form) => (
-                  <FormCard
-                    key={form.id}
-                    id={form.id}
-                    title={form.title}
-                    lastUpdated={form.updatedAt}
-                    responseCount={form.responseCount}
-                    formType={form.formType}
-                    onEdit={handleEditForm}
-                    onView={handleViewForm}
-                    onResponses={handleViewResponses}
-                    onDelete={handleDeleteForm}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-      </main>
+    <div className="flex-1 flex flex-col items-center justify-center px-4 py-12 min-h-[70vh]">
+      <motion.div
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+        className="w-full max-w-3xl space-y-10"
+      >
+        {/* Greeting */}
+        <motion.div variants={itemVariants} className="text-center space-y-2">
+          <h1 className="text-3xl md:text-4xl font-semibold tracking-tight text-foreground">
+            {greeting}, {firstName}
+          </h1>
+          <p className="text-muted-foreground text-base md:text-lg">
+            ¿Qué deseas hacer hoy?
+          </p>
+        </motion.div>
 
-      <AlertDialog open={!!formToDelete} onOpenChange={(open) => !open && setFormToDelete(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>¿Estás seguro de eliminar este formulario?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Esta acción no puede deshacerse. El formulario será eliminado permanentemente, 
-              incluso si tiene respuestas.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={cancelDeleteForm}>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDeleteForm} className="bg-red-600 hover:bg-red-700">
-              Eliminar
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+        {/* Quick Actions Grid */}
+        <motion.div
+          variants={containerVariants}
+          className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4"
+        >
+          {quickActions.map((action) => (
+            <motion.button
+              key={action.label}
+              variants={itemVariants}
+              whileHover={{ scale: 1.02, y: -2 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => navigate(action.route)}
+              className={`
+                group relative flex flex-col items-center gap-3 p-5 md:p-6
+                rounded-2xl border border-border/50
+                bg-gradient-to-br ${action.gradient}
+                backdrop-blur-sm
+                hover:border-border hover:shadow-lg hover:shadow-black/5
+                transition-all duration-200 cursor-pointer
+                text-center
+              `}
+            >
+              <div className={`p-3 rounded-xl bg-background/60 ${action.iconColor} transition-colors`}>
+                <action.icon className="w-6 h-6" />
+              </div>
+              <div className="space-y-1">
+                <span className="text-sm font-medium text-foreground block">
+                  {action.label}
+                </span>
+                <span className="text-xs text-muted-foreground hidden md:block leading-relaxed">
+                  {action.description}
+                </span>
+              </div>
+            </motion.button>
+          ))}
+        </motion.div>
+      </motion.div>
     </div>
   );
 };

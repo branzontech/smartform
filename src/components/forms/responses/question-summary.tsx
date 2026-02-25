@@ -1,6 +1,6 @@
 import React from 'react';
 import { Button } from "@/components/ui/button";
-import { Form } from '@/pages/Home';
+import { Form } from '@/pages/FormsPage';
 import { FormResponse } from '@/types/form-types';
 
 interface QuestionSummaryProps {
