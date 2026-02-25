@@ -283,9 +283,9 @@ export const AppointmentWizard: React.FC<AppointmentWizardProps> = ({
           </motion.div>
         </div>
 
-        {/* Scrollable Content area - strictly below navigation */}
+        {/* Content area - no scroll here, each step manages its own */}
         <div 
-          className="flex-1 min-h-0 overflow-hidden px-6 md:px-8 pb-24"
+          className="flex-1 min-h-0 overflow-hidden px-6 md:px-8"
         >
           {/* Use full width for scheduling step (step 3), constrained width for others */}
           <div className={cn(
