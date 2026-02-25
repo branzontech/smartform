@@ -14,6 +14,69 @@ export type Database = {
   }
   public: {
     Tables: {
+      admisiones: {
+        Row: {
+          created_at: string
+          diagnostico_principal: string | null
+          estado: string
+          fecha_fin: string | null
+          fecha_inicio: string
+          fhir_extensions: Json
+          id: string
+          motivo: string | null
+          notas: string | null
+          paciente_id: string
+          profesional_nombre: string | null
+          tipo_admision_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          diagnostico_principal?: string | null
+          estado?: string
+          fecha_fin?: string | null
+          fecha_inicio?: string
+          fhir_extensions?: Json
+          id?: string
+          motivo?: string | null
+          notas?: string | null
+          paciente_id: string
+          profesional_nombre?: string | null
+          tipo_admision_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          diagnostico_principal?: string | null
+          estado?: string
+          fecha_fin?: string | null
+          fecha_inicio?: string
+          fhir_extensions?: Json
+          id?: string
+          motivo?: string | null
+          notas?: string | null
+          paciente_id?: string
+          profesional_nombre?: string | null
+          tipo_admision_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admisiones_paciente_id_fkey"
+            columns: ["paciente_id"]
+            isOneToOne: false
+            referencedRelation: "pacientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "admisiones_tipo_admision_id_fkey"
+            columns: ["tipo_admision_id"]
+            isOneToOne: false
+            referencedRelation: "tipos_admision"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       configuracion_campos_paciente: {
         Row: {
           created_at: string
@@ -108,6 +171,7 @@ export type Database = {
           direccion: string | null
           email: string | null
           estado: string | null
+          estado_paciente: string
           fecha_nacimiento: string | null
           fhir_extensions: Json
           id: string
@@ -128,6 +192,7 @@ export type Database = {
           direccion?: string | null
           email?: string | null
           estado?: string | null
+          estado_paciente?: string
           fecha_nacimiento?: string | null
           fhir_extensions?: Json
           id?: string
@@ -148,6 +213,7 @@ export type Database = {
           direccion?: string | null
           email?: string | null
           estado?: string | null
+          estado_paciente?: string
           fecha_nacimiento?: string | null
           fhir_extensions?: Json
           id?: string
@@ -196,6 +262,36 @@ export type Database = {
           specialty?: string | null
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      tipos_admision: {
+        Row: {
+          activo: boolean
+          created_at: string
+          descripcion: string | null
+          id: string
+          nombre: string
+          orden: number
+          updated_at: string
+        }
+        Insert: {
+          activo?: boolean
+          created_at?: string
+          descripcion?: string | null
+          id?: string
+          nombre: string
+          orden?: number
+          updated_at?: string
+        }
+        Update: {
+          activo?: boolean
+          created_at?: string
+          descripcion?: string | null
+          id?: string
+          nombre?: string
+          orden?: number
+          updated_at?: string
         }
         Relationships: []
       }

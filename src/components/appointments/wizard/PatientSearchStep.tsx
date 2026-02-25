@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { ExtendedPatient } from "../PatientPanel";
+import { PatientStatusBadge } from "@/components/patients/PatientStatusBadge";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -119,6 +120,7 @@ export const PatientSearchStep: React.FC<PatientSearchStepProps> = ({
       city: dbPatient.ciudad || undefined,
       state: dbPatient.estado || undefined,
       occupation: dbPatient.ocupacion || undefined,
+      patientStatus: dbPatient.estado_paciente || 'registrado',
     };
     onPatientSelected(mapped);
   };
@@ -323,6 +325,7 @@ export const PatientSearchStep: React.FC<PatientSearchStepProps> = ({
                                         {!isLocal && (
                                           <Badge variant="outline" className="text-xs ml-1">BD</Badge>
                                         )}
+                                        <PatientStatusBadge status={isLocal ? (patient as ExtendedPatient).patientStatus : (patient as any).estado_paciente} />
                                       </div>
                                     </div>
                                     <ArrowRight className="w-4 h-4 text-muted-foreground" />

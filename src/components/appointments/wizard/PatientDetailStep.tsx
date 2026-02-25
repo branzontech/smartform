@@ -32,6 +32,7 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { ExtendedPatient } from "../PatientPanel";
+import { PatientStatusBadge } from "@/components/patients/PatientStatusBadge";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -153,7 +154,10 @@ export const PatientDetailStep: React.FC<PatientDetailStepProps> = ({
             <h2 className="text-base font-medium leading-tight">
               {patient.firstName} {patient.lastName}
             </h2>
-            <p className="text-xs text-muted-foreground">{patient.documentId}{patient.regime ? ` · ${patient.regime}` : ''}</p>
+            <div className="flex items-center gap-1.5">
+              <p className="text-xs text-muted-foreground">{patient.documentId}{patient.regime ? ` · ${patient.regime}` : ''}</p>
+              <PatientStatusBadge status={patient.patientStatus} />
+            </div>
           </div>
         </div>
         {!isEditing ? (
