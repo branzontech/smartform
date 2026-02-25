@@ -26,6 +26,7 @@ import {
   Copy,
   AlertTriangle,
   TrendingUp,
+  Printer,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -481,6 +482,87 @@ const PriceLists: React.FC = () => {
     }
   };
 
+  // Print tarifario
+  const handlePrintTarifario = () => {
+    if (!selectedTarifario) return;
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      toast.error('Permite las ventanas emergentes para imprimir.');
+      return;
+    }
+    const activeServicios = servicios.filter(s => s.activo);
+    const inactiveServicios = servicios.filter(s => !s.activo);
+    const moneda = selectedTarifario.moneda || 'COP';
+
+    const renderRows = (items: TarifarioServicio[]) => items.map(s => {
+      const meta = s.metadata_regulatoria || {};
+      const metaEntries = Object.entries(meta).filter(([k]) => k !== 'pais');
+      return `<tr>
+        <td>${s.sistema_codificacion}</td>
+        <td style="font-family:monospace">${s.codigo_servicio}</td>
+        <td>${s.descripcion_servicio}</td>
+        <td style="text-align:right">${formatCurrency(s.valor, moneda)}</td>
+        <td style="font-size:11px;color:#666">${metaEntries.map(([k,v]) => `${k}: ${v}`).join(', ') || '\u2014'}</td>
+      </tr>`;
+    }).join('');
+
+    const html = [
+      '<!DOCTYPE html><html><head>',
+      `<title>${selectedTarifario.nombre}</title><meta charset="utf-8">`,
+      '<style>',
+      'body{font-family:system-ui,-apple-system,sans-serif;margin:0;padding:24px;color:#333;font-size:13px}',
+      '.header{text-align:center;margin-bottom:16px;padding-bottom:12px;border-bottom:2px solid #333}',
+      '.header h1{margin:0 0 4px;font-size:20px}',
+      '.header p{margin:0;color:#666;font-size:13px}',
+      '.meta{display:flex;justify-content:space-between;margin-bottom:12px;font-size:12px;color:#666}',
+      'table{width:100%;border-collapse:collapse;margin-bottom:16px}',
+      'th{background:#f5f5f5;text-align:left;padding:6px 8px;font-size:11px;text-transform:uppercase;border-bottom:2px solid #ddd}',
+      'td{padding:5px 8px;border-bottom:1px solid #eee;font-size:12px}',
+      'tr:nth-child(even){background:#fafafa}',
+      '.section-title{font-size:14px;font-weight:600;margin:16px 0 8px;padding-bottom:4px;border-bottom:1px solid #ddd}',
+      '.inactive{opacity:0.5}',
+      '.footer{margin-top:20px;text-align:center;font-size:11px;color:#999;border-top:1px solid #eee;padding-top:8px}',
+      '.summary{display:flex;gap:24px;margin-bottom:12px;font-size:12px}',
+      '.summary span{font-weight:600}',
+      '@media print{.no-print{display:none}body{padding:12px}}',
+      '</style></head><body>',
+      '<div class="header">',
+      `<h1>${selectedTarifario.nombre}</h1>`,
+      `<p>${selectedTarifario.descripcion || 'Tarifario de servicios'}</p>`,
+      '</div>',
+      '<div class="meta">',
+      `<div>Moneda: <strong>${moneda}</strong></div>`,
+      `<div>Estado: <strong>${selectedTarifario.estado ? 'Activo' : 'Inactivo'}</strong></div>`,
+      `<div>Fecha: ${new Date().toLocaleDateString('es-ES',{day:'numeric',month:'long',year:'numeric'})}</div>`,
+      '</div>',
+      '<div class="summary">',
+      `<div>Total servicios: <span>${servicios.length}</span></div>`,
+      `<div>Activos: <span>${activeServicios.length}</span></div>`,
+      `<div>Inactivos: <span>${inactiveServicios.length}</span></div>`,
+      '</div>',
+      activeServicios.length > 0 ? [
+        '<div class="section-title">Servicios Activos</div>',
+        '<table><thead><tr><th>Sistema</th><th>Código</th><th>Descripción</th><th style="text-align:right">Valor</th><th>Metadata Regulatoria</th></tr></thead>',
+        '<tbody>' + renderRows(activeServicios) + '</tbody></table>',
+      ].join('') : '',
+      inactiveServicios.length > 0 ? [
+        '<div class="section-title inactive">Servicios Inactivos</div>',
+        '<table class="inactive"><thead><tr><th>Sistema</th><th>Código</th><th>Descripción</th><th style="text-align:right">Valor</th><th>Metadata Regulatoria</th></tr></thead>',
+        '<tbody>' + renderRows(inactiveServicios) + '</tbody></table>',
+      ].join('') : '',
+      `<div class="footer">Documento generado automáticamente \u00B7 ${selectedTarifario.nombre}</div>`,
+      '<div class="no-print" style="text-align:center;margin-top:16px">',
+      '<button onclick="window.print()" style="padding:8px 20px;background:#0099ff;color:white;border:none;border-radius:6px;cursor:pointer;font-size:13px">Imprimir</button>',
+      '</div>',
+      '<script>window.onload=function(){setTimeout(function(){window.print()},500)};<\/script>',
+      '</body></html>',
+    ].join('\n');
+
+    printWindow.document.open();
+    printWindow.document.write(html);
+    printWindow.document.close();
+  };
+
   // Clone tarifario
   const openCloneDialog = (t: TarifarioMaestro) => {
     setCloneTarget(t);
@@ -758,10 +840,16 @@ const PriceLists: React.FC = () => {
       <Sheet open={sheetOpen} onOpenChange={(open) => { setSheetOpen(open); if (!open) setSelectedTarifario(null); }}>
         <SheetContent className="w-full sm:max-w-2xl flex flex-col overflow-hidden">
           <SheetHeader className="shrink-0">
-            <SheetTitle className="flex items-center gap-2">
-              <DollarSign className="w-5 h-5 text-primary" />
-              {selectedTarifario?.nombre}
-            </SheetTitle>
+            <div className="flex items-center justify-between">
+              <SheetTitle className="flex items-center gap-2">
+                <DollarSign className="w-5 h-5 text-primary" />
+                {selectedTarifario?.nombre}
+              </SheetTitle>
+              <Button variant="outline" size="sm" className="rounded-xl h-8 gap-1.5 mr-6" onClick={handlePrintTarifario}>
+                <Printer className="w-3.5 h-3.5" />
+                Imprimir
+              </Button>
+            </div>
             <SheetDescription>
               {selectedTarifario?.descripcion || "Servicios del tarifario"} · {selectedTarifario?.moneda}
             </SheetDescription>
@@ -1013,7 +1101,6 @@ const PriceLists: React.FC = () => {
           </div>
         </SheetContent>
       </Sheet>
-
 
 
       {/* Clone dialog */}
