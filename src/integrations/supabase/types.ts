@@ -528,6 +528,67 @@ export type Database = {
         }
         Relationships: []
       }
+      respuestas_formularios: {
+        Row: {
+          admision_id: string | null
+          created_at: string
+          datos_respuesta: Json
+          fecha_registro: string
+          fhir_extensions: Json
+          formulario_id: string
+          id: string
+          medico_id: string
+          paciente_id: string
+          updated_at: string
+        }
+        Insert: {
+          admision_id?: string | null
+          created_at?: string
+          datos_respuesta?: Json
+          fecha_registro?: string
+          fhir_extensions?: Json
+          formulario_id: string
+          id?: string
+          medico_id: string
+          paciente_id: string
+          updated_at?: string
+        }
+        Update: {
+          admision_id?: string | null
+          created_at?: string
+          datos_respuesta?: Json
+          fecha_registro?: string
+          fhir_extensions?: Json
+          formulario_id?: string
+          id?: string
+          medico_id?: string
+          paciente_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "respuestas_formularios_admision_id_fkey"
+            columns: ["admision_id"]
+            isOneToOne: false
+            referencedRelation: "admisiones"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "respuestas_formularios_formulario_id_fkey"
+            columns: ["formulario_id"]
+            isOneToOne: false
+            referencedRelation: "formularios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "respuestas_formularios_paciente_id_fkey"
+            columns: ["paciente_id"]
+            isOneToOne: false
+            referencedRelation: "pacientes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tarifarios_maestros: {
         Row: {
           created_at: string
