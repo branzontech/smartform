@@ -10,7 +10,7 @@ import { Question } from "@/components/ui/question";
 import { QuestionData, FormDesignOptions, defaultDesignOptions } from "@/components/forms/question/types";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { Form } from "./FormsPage";
+import { Form, DEFAULT_FORM_CATEGORIES } from "./FormsPage";
 import { BackButton } from "../App";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -43,7 +43,8 @@ const FormCreator = () => {
   const [activeTab, setActiveTab] = useState("content");
   const [title, setTitle] = useState("Nuevo formulario Ker Hub");
   const [description, setDescription] = useState("Formulario para registro de datos clínicos");
-  const [formType, setFormType] = useState<"forms" | "formato">("forms");
+  const [formType, setFormType] = useState<string>("historia_clinica");
+  const [customCategory, setCustomCategory] = useState("");
   const [questions, setQuestions] = useState<QuestionData[]>([]);
   const [saving, setSaving] = useState(false);
   const [expandedQuestions, setExpandedQuestions] = useState<string[]>([]);
@@ -61,7 +62,7 @@ const FormCreator = () => {
         if (data && !error) {
           setTitle(data.titulo);
           setDescription(data.descripcion || "");
-          setFormType((data.tipo as "forms" | "formato") || "forms");
+          setFormType(data.tipo || "historia_clinica");
           setQuestions((data.preguntas as any[]) || []);
           if (data.opciones_diseno && Object.keys(data.opciones_diseno as object).length > 0) {
             setDesignOptions(data.opciones_diseno as unknown as FormDesignOptions);
@@ -215,7 +216,7 @@ const FormCreator = () => {
         
         toast({
           title: "Formulario creado",
-          description: `Tu nuevo ${formType === "forms" ? "formulario" : "formato"} clínico está listo`,
+          description: `Tu nuevo formulario clínico está listo`,
         });
       }
       
@@ -286,36 +287,69 @@ const FormCreator = () => {
               
               <TabsContent value="content">
                 <div className="mt-4">
-                  <label htmlFor="form-type" className="block text-sm font-medium text-gray-700 mb-2">
-                    Tipo de formulario
+                  <label htmlFor="form-type" className="block text-sm font-medium text-foreground mb-2">
+                    Categoría del formulario
                   </label>
                   <Select
                     value={formType}
-                    onValueChange={(value: "forms" | "formato") => setFormType(value)}
+                    onValueChange={(value: string) => {
+                      if (value === "__custom__") return;
+                      setFormType(value);
+                    }}
                   >
                     <SelectTrigger id="form-type" className="w-full max-w-xs">
-                      <SelectValue placeholder="Selecciona un tipo" />
+                      <SelectValue placeholder="Selecciona una categoría" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="forms" className="flex items-center">
-                        <div className="flex items-center">
-                          <PieChart size={16} className="mr-2 text-blue-600" />
-                          <span>Forms (Para estadísticas)</span>
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="formato" className="flex items-center">
-                        <div className="flex items-center">
-                          <FileText size={16} className="mr-2 text-emerald-600" />
-                          <span>Formato (Para documentos)</span>
-                        </div>
-                      </SelectItem>
+                      {DEFAULT_FORM_CATEGORIES.map((cat) => (
+                        <SelectItem key={cat.value} value={cat.value}>
+                          <div className="flex items-center">
+                            <FileText size={16} className="mr-2 text-primary" />
+                            <span>{cat.label}</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                      {/* Show current value if it's custom and not in defaults */}
+                      {!DEFAULT_FORM_CATEGORIES.find(c => c.value === formType) && formType && (
+                        <SelectItem value={formType}>
+                          <div className="flex items-center">
+                            <FileText size={16} className="mr-2 text-primary" />
+                            <span>{formType}</span>
+                          </div>
+                        </SelectItem>
+                      )}
                     </SelectContent>
                   </Select>
                   
-                  <p className="mt-2 text-sm text-gray-500">
-                    {formType === "forms" 
-                      ? "Ideal para recopilar datos y generar estadísticas de las respuestas."
-                      : "Diseñado para crear documentos que se pueden visualizar e imprimir con formato organizado."}
+                  <div className="mt-3 flex items-center gap-2">
+                    <Input
+                      placeholder="Nueva categoría personalizada..."
+                      value={customCategory}
+                      onChange={(e) => setCustomCategory(e.target.value)}
+                      className="max-w-xs"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={!customCategory.trim()}
+                      onClick={() => {
+                        const slug = customCategory.trim().toLowerCase().replace(/\s+/g, '_');
+                        setFormType(slug);
+                        setCustomCategory("");
+                        toast({
+                          title: "Categoría creada",
+                          description: `"${customCategory.trim()}" establecida como categoría`,
+                        });
+                      }}
+                    >
+                      <Plus size={14} className="mr-1" />
+                      Agregar
+                    </Button>
+                  </div>
+                  
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    Selecciona una categoría predefinida o crea una nueva.
                   </p>
                 </div>
               </TabsContent>
@@ -517,7 +551,7 @@ const FormCreator = () => {
                     borderColor: designOptions.primaryColor
                   }}
                 >
-                  {saving ? "Guardando..." : `Guardar ${formType === "forms" ? "formulario" : "formato"} médico`}
+                  {saving ? "Guardando..." : "Guardar formulario"}
                 </Button>
               </div>
             </div>

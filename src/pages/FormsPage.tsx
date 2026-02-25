@@ -13,6 +13,12 @@ import { Button } from "@/components/ui/button";
 import { FormDesignOptions } from "@/components/forms/question/types";
 import { supabase } from "@/integrations/supabase/client";
 
+export const DEFAULT_FORM_CATEGORIES = [
+  { value: "historia_clinica", label: "Historia clínica" },
+  { value: "escala", label: "Escala" },
+  { value: "encuesta", label: "Encuesta" },
+];
+
 export interface Form {
   id: string;
   title: string;
@@ -21,7 +27,7 @@ export interface Form {
   createdAt: Date;
   updatedAt: Date;
   responseCount: number;
-  formType: "forms" | "formato";
+  formType: string;
   designOptions?: FormDesignOptions;
 }
 
@@ -29,7 +35,7 @@ const Home = () => {
   const [forms, setForms] = useState<Form[]>([]);
   const [loading, setLoading] = useState(true);
   const [formToDelete, setFormToDelete] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"all" | "forms" | "formato">("all");
+  const [activeTab, setActiveTab] = useState<string>("all");
   const navigate = useNavigate();
   const { toast: uiToast } = useToast();
 
@@ -50,7 +56,7 @@ const Home = () => {
         createdAt: new Date(f.created_at),
         updatedAt: new Date(f.updated_at),
         responseCount: f.respuestas_count || 0,
-        formType: (f.tipo as "forms" | "formato") || "forms",
+        formType: f.tipo || "historia_clinica",
         designOptions: f.opciones_diseno as unknown as FormDesignOptions | undefined,
       }));
       setForms(mapped);
@@ -146,19 +152,17 @@ const Home = () => {
             <Tabs 
               defaultValue="all" 
               value={activeTab}
-              onValueChange={(value) => setActiveTab(value as "all" | "forms" | "formato")}
+              onValueChange={(value) => setActiveTab(value)}
               className="mb-6"
             >
               <TabsList>
                 <TabsTrigger value="all">Todos</TabsTrigger>
-                <TabsTrigger value="forms" className="flex items-center gap-1">
-                  <PieChart size={14} />
-                  Forms
-                </TabsTrigger>
-                <TabsTrigger value="formato" className="flex items-center gap-1">
-                  <FileText size={14} />
-                  Formatos
-                </TabsTrigger>
+                {DEFAULT_FORM_CATEGORIES.map((cat) => (
+                  <TabsTrigger key={cat.value} value={cat.value} className="flex items-center gap-1">
+                    <FileText size={14} />
+                    {cat.label}
+                  </TabsTrigger>
+                ))}
               </TabsList>
             </Tabs>
             

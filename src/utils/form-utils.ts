@@ -39,7 +39,7 @@ export const mockForm = {
       options: ["Consulta médica", "Laboratorio", "Exámenes especiales"],
     }
   ],
-  formType: "forms" as const
+  formType: "historia_clinica" as const
 };
 
 export const createDynamicSchema = (questions: QuestionData[]) => {
@@ -92,7 +92,7 @@ export const fetchFormById = async (formId: string) => {
       createdAt: new Date(data.created_at),
       updatedAt: new Date(data.updated_at),
       responseCount: data.respuestas_count || 0,
-      formType: (data.tipo as "forms" | "formato") || "forms",
+      formType: (data.tipo as string) || "historia_clinica",
     };
     return { form, error: null, source: 'database' };
   }
