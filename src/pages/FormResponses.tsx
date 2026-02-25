@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Header } from "@/components/layout/header";
 import { Button } from "@/components/ui/button";
-import { Form } from "./Home";
+import { Form } from "./FormsPage";
 import { EmptyState } from "@/components/ui/empty-state";
 import { BarChart } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";

@@ -8,7 +8,7 @@ import { BackButton } from "@/App";
 import { Check, FileText, ChevronLeft, ChevronRight, FolderOpen, Bell, Calendar, Stethoscope, User, Pill } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { fetchFormById, createDynamicSchema, saveFormResponse } from '@/utils/form-utils';
-import { Form as FormType } from '../Home';
+import { Form as FormType } from '../FormsPage';
 import { QuestionRenderer } from '@/components/forms/form-viewer/question-renderer';
 import { QuestionData } from '@/components/forms/question/types';
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";

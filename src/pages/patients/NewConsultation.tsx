@@ -14,7 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Patient, PatientAlert, FollowUp } from "@/types/patient-types";
 import { nanoid } from "nanoid";
 import { useToast } from "@/hooks/use-toast";
-import { Form as FormType } from '@/pages/Home';
+import { Form as FormType } from '@/pages/FormsPage';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { getRecentAndFrequentForms } from "@/utils/form-utils";

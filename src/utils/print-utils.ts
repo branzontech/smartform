@@ -1,5 +1,5 @@
 
-import { Form } from "@/pages/Home";
+import { Form } from "@/pages/FormsPage";
 import { FormResponse, FormComplexValue } from "@/types/form-types";
 
 export const printFormResponse = (formData: Form, response: FormResponse, index: number) => {

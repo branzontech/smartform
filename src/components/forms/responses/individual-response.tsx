@@ -4,7 +4,7 @@ import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { Printer, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Form } from '@/pages/Home';
+import { Form } from '@/pages/FormsPage';
 import { FormResponse, FormComplexValue } from '@/types/form-types';
 
 interface IndividualResponseProps {

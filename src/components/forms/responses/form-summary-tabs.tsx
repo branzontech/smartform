@@ -2,7 +2,7 @@ import React from 'react';
 import { BarChart, Users } from "lucide-react";
 import { QuestionSummary } from './question-summary';
 import { IndividualResponse } from './individual-response';
-import { Form } from '@/pages/Home';
+import { Form } from '@/pages/FormsPage';
 import { FormResponse } from '@/types/form-types';
 
 interface FormSummaryTabsProps {

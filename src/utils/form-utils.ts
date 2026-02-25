@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { QuestionData } from '@/components/forms/question/types';
-import { Form } from '@/pages/Home';
+import { Form } from '@/pages/FormsPage';
 import { FormResponse, FormWithUsage } from "@/types/form-types";
 
 // Ejemplo de formulario para desarrollo (solo se usa si no se encuentra el formulario en localStorage)

@@ -20,7 +20,7 @@ import { FormTitle } from '@/components/ui/form-title';
 import { BackButton } from '@/App';
 import { Check, Link as LinkIcon, FileText, Printer } from 'lucide-react';
 import { toast } from "sonner";
-import { Form as FormType } from './Home';
+import { Form as FormType } from './FormsPage';
 import { FormLoading } from '@/components/forms/form-viewer/form-loading';
 import { FormError } from '@/components/forms/form-viewer/form-error';
 import { FormSubmissionSuccess } from '@/components/forms/form-viewer/form-submission-success';
