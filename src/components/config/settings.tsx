@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { Header } from "@/components/layout/header";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, FileText, Palette, Bell, Save, User, Shield, Plus, Cog, HelpCircle, Trash2, UserCog } from "lucide-react";
+import { ArrowLeft, FileText, Palette, Bell, Save, User, Shield, Plus, Cog, HelpCircle, Trash2, UserCog, ClipboardList } from "lucide-react";
 import { PatientFieldsConfig } from "@/components/config/PatientFieldsConfig";
+import { AdmissionFieldsConfig } from "@/components/config/AdmissionFieldsConfig";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
@@ -35,6 +36,7 @@ const categories = [
   { id: "appearance", label: "Apariencia", icon: <Palette size={18} /> },
   { id: "forms", label: "Formularios", icon: <FileText size={18} /> },
   { id: "patient-fields", label: "Campos Paciente", icon: <UserCog size={18} /> },
+  { id: "admission-fields", label: "Campos Admisión", icon: <ClipboardList size={18} /> },
   { id: "notifications", label: "Notificaciones", icon: <Bell size={18} /> },
   { id: "account", label: "Cuenta", icon: <User size={18} /> },
   { id: "advanced", label: "Avanzado", icon: <Shield size={18} /> },
@@ -321,6 +323,11 @@ export const SettingsPage = () => {
             {/* Patient Fields Config */}
             {activeCategory === "patient-fields" && (
               <PatientFieldsConfig />
+            )}
+
+            {/* Admission Fields Config */}
+            {activeCategory === "admission-fields" && (
+              <AdmissionFieldsConfig />
             )}
               
             {/* Notifications Settings */}

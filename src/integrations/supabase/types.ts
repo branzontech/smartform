@@ -77,6 +77,36 @@ export type Database = {
           },
         ]
       }
+      configuracion_campos_admision: {
+        Row: {
+          created_at: string
+          es_requerido: boolean
+          id: string
+          label: string
+          orden: number
+          tipo_dato: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          es_requerido?: boolean
+          id?: string
+          label: string
+          orden?: number
+          tipo_dato?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          es_requerido?: boolean
+          id?: string
+          label?: string
+          orden?: number
+          tipo_dato?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       configuracion_campos_paciente: {
         Row: {
           created_at: string
