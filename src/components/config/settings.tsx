@@ -1,17 +1,14 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Header } from "@/components/layout/header";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, FileText, Palette, Bell, Save, User, Shield, Plus, Cog, HelpCircle, Trash2, SlidersHorizontal, ClipboardList } from "lucide-react";
+import { ArrowLeft, FileText, Palette, Bell, Save, User, Shield, Plus, Cog, HelpCircle, Trash2, SlidersHorizontal, ClipboardList, Loader2, Eye, Edit, BarChart } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import { PatientFieldsConfig } from "@/components/config/PatientFieldsConfig";
 import { AdmissionFieldsConfig } from "@/components/config/AdmissionFieldsConfig";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
@@ -19,13 +16,7 @@ import { useOnboarding } from "@/hooks/use-onboarding";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 
-// Schema for the form creation
-const formCreationSchema = z.object({
-  title: z.string().min(3, {
-    message: "El título debe tener al menos 3 caracteres.",
-  }),
-  description: z.string().optional(),
-});
+// No longer need form creation schema here - using FormCreator page
 
 
 // Settings categories
@@ -48,21 +39,23 @@ export const SettingsPage = () => {
   const [darkPrint, setDarkPrint] = useState(false);
   const [language, setLanguage] = useState("es");
   const [activeCategory, setActiveCategory] = useState("general");
+  const [forms, setForms] = useState<any[]>([]);
+  const [formsLoading, setFormsLoading] = useState(false);
 
-  // Form creation
-  const form = useForm<z.infer<typeof formCreationSchema>>({
-    resolver: zodResolver(formCreationSchema),
-    defaultValues: {
-      title: "",
-      description: "",
-    },
-  });
-
-  const onSubmitForm = (values: z.infer<typeof formCreationSchema>) => {
-    console.log(values);
-    toast.success("Formulario creado con éxito");
-    navigate("/crear");
-  };
+  // Load forms when "forms" category is active
+  useEffect(() => {
+    if (activeCategory !== "forms") return;
+    const loadForms = async () => {
+      setFormsLoading(true);
+      const { data } = await supabase
+        .from("formularios")
+        .select("*")
+        .order("created_at", { ascending: false });
+      setForms(data || []);
+      setFormsLoading(false);
+    };
+    loadForms();
+  }, [activeCategory]);
 
   const handleSave = () => {
     toast.success("Configuración guardada con éxito");
@@ -202,55 +195,64 @@ export const SettingsPage = () => {
             {/* Forms Settings */}
             {activeCategory === "forms" && (
               <div>
-                <h2 className="text-base font-semibold mb-4">Formularios</h2>
-                <div className="rounded-xl border border-border bg-card/50 backdrop-blur-sm p-4 space-y-4">
-                  <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmitForm)} className="space-y-4">
-                      <FormField
-                        control={form.control}
-                        name="title"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-sm">Título del formulario</FormLabel>
-                            <FormControl>
-                              <Input placeholder="Ingresa un título" {...field} />
-                            </FormControl>
-                            <FormDescription className="text-xs">
-                              Este será el título visible de tu formulario.
-                            </FormDescription>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name="description"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-sm">Descripción</FormLabel>
-                            <FormControl>
-                              <Textarea placeholder="Describe brevemente el propósito del formulario" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <Button type="submit" size="sm" className="w-full">
-                        <Plus className="mr-1.5 h-3.5 w-3.5" />
-                        Crear nuevo formulario
-                      </Button>
-                    </form>
-                  </Form>
-                  <div className="pt-3 border-t border-border">
-                    <div className="flex items-center justify-between">
-                      <Label htmlFor="default-type" className="text-sm">Tipo predeterminado</Label>
-                      <select id="default-type" className="rounded-lg border border-input bg-background px-3 py-1.5 text-sm">
-                        <option value="form">Formulario</option>
-                        <option value="formatted">Formato clínico</option>
-                      </select>
-                    </div>
-                  </div>
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-base font-semibold">Formularios</h2>
+                  <Button size="sm" className="gap-1.5" onClick={() => navigate("/app/crear")}>
+                    <Plus className="h-3.5 w-3.5" />
+                    Nuevo formulario
+                  </Button>
                 </div>
+                
+                {formsLoading ? (
+                  <div className="flex items-center justify-center py-12">
+                    <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                  </div>
+                ) : forms.length === 0 ? (
+                  <div className="rounded-xl border border-dashed border-border bg-card/50 p-8 text-center">
+                    <FileText className="h-10 w-10 text-muted-foreground/40 mx-auto mb-3" />
+                    <p className="text-sm text-muted-foreground mb-3">No hay formularios creados</p>
+                    <Button size="sm" variant="outline" onClick={() => navigate("/app/crear")}>
+                      <Plus className="h-3.5 w-3.5 mr-1.5" />
+                      Crear primer formulario
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {forms.map((f) => (
+                      <div key={f.id} className="rounded-xl border border-border bg-card/50 px-4 py-3 flex items-center justify-between group hover:bg-card transition-colors">
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2">
+                            <h3 className="text-sm font-medium truncate">{f.titulo}</h3>
+                            <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-muted text-muted-foreground shrink-0">
+                              {f.tipo === "formato" ? "Formato" : "Form"}
+                            </span>
+                            <span className={cn(
+                              "text-[10px] px-1.5 py-0.5 rounded-md shrink-0",
+                              f.estado === "activo" ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"
+                            )}>
+                              {f.estado}
+                            </span>
+                          </div>
+                          {f.descripcion && <p className="text-xs text-muted-foreground mt-0.5 truncate">{f.descripcion}</p>}
+                          <p className="text-[10px] text-muted-foreground mt-1">
+                            {f.respuestas_count || 0} respuestas · {new Date(f.created_at).toLocaleDateString("es")}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => navigate(`/app/crear/${f.id}`)}>
+                            <Edit className="h-3.5 w-3.5" />
+                          </Button>
+                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => navigate(`/app/ver/${f.id}`)}>
+                            <Eye className="h-3.5 w-3.5" />
+                          </Button>
+                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => navigate(`/app/formulario/${f.id}/respuestas`)}>
+                            <BarChart className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
 
