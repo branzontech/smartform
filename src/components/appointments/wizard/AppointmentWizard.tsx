@@ -332,6 +332,8 @@ export const AppointmentWizard: React.FC<AppointmentWizardProps> = ({
                     patient={wizardData.patient}
                     onComplete={handleAdmissionComplete}
                     onBack={handleBack}
+                    initialData={wizardData.admission}
+                    alreadySaved={wizardData.admission !== null}
                   />
                 )}
 

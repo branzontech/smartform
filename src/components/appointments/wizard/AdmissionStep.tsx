@@ -61,6 +61,8 @@ interface AdmissionStepProps {
   patient: ExtendedPatient;
   onComplete: (admission: AdmissionData | null) => void;
   onBack: () => void;
+  initialData?: AdmissionData | null;
+  alreadySaved?: boolean;
 }
 
 // FHIR Encounter.class values
@@ -97,30 +99,37 @@ const ADMIT_SOURCE_OPTIONS = [
 export const AdmissionStep: React.FC<AdmissionStepProps> = ({
   patient,
   onComplete,
-  onBack
+  onBack,
+  initialData,
+  alreadySaved = false,
 }) => {
-  const [wantsAdmission, setWantsAdmission] = useState<boolean | null>(null);
+  const [wantsAdmission, setWantsAdmission] = useState<boolean | null>(
+    initialData ? true : null
+  );
   const [isSaving, setIsSaving] = useState(false);
+  const [wasSaved, setWasSaved] = useState(alreadySaved);
   const [admissionTypes, setAdmissionTypes] = useState<AdmissionType[]>([]);
   const [customFields, setCustomFields] = useState<DynamicFieldConfig[]>([]);
   const [loadingConfig, setLoadingConfig] = useState(true);
   
-  const [admissionData, setAdmissionData] = useState<AdmissionData>({
-    reason: "",
-    appointmentType: "",
-    priorityLevel: "Normal",
-    insuranceProvider: "",
-    insuranceNumber: "",
-    assignedDoctor: "",
-    notes: "",
-    fhirClass: "AMB",
-    serviceType: "",
-    hospitalizationAdmitSource: "",
-    hospitalizationDischargeDisposition: "",
-    diagnosticoPrincipal: "",
-    diagnosticos: [],
-    customFields: {},
-  });
+  const [admissionData, setAdmissionData] = useState<AdmissionData>(
+    initialData || {
+      reason: "",
+      appointmentType: "",
+      priorityLevel: "Normal",
+      insuranceProvider: "",
+      insuranceNumber: "",
+      assignedDoctor: "",
+      notes: "",
+      fhirClass: "AMB",
+      serviceType: "",
+      hospitalizationAdmitSource: "",
+      hospitalizationDischargeDisposition: "",
+      diagnosticoPrincipal: "",
+      diagnosticos: [],
+      customFields: {},
+    }
+  );
 
   // Fetch tipos_admision and custom fields config
   useEffect(() => {
@@ -146,6 +155,12 @@ export const AdmissionStep: React.FC<AdmissionStepProps> = ({
   };
 
   const handleSubmit = async () => {
+    // If already saved, just pass through without re-inserting
+    if (wasSaved) {
+      onComplete(admissionData);
+      return;
+    }
+
     if (!admissionData.reason.trim()) {
       toast.error("El motivo de la consulta es obligatorio");
       return;
@@ -211,6 +226,7 @@ export const AdmissionStep: React.FC<AdmissionStepProps> = ({
       if (error) throw error;
 
       toast.success("Admisión registrada exitosamente");
+      setWasSaved(true);
       onComplete(admissionData);
     } catch (error: any) {
       console.error("Error saving admission:", error);
@@ -555,6 +571,13 @@ export const AdmissionStep: React.FC<AdmissionStepProps> = ({
                     </div>
                   )}
 
+                  {wasSaved && (
+                    <div className="flex items-center gap-2 text-sm text-emerald-600 bg-emerald-500/10 rounded-xl px-4 py-2">
+                      <CheckCircle2 className="w-4 h-4" />
+                      Admisión ya registrada
+                    </div>
+                  )}
+
                   <Button
                     onClick={handleSubmit}
                     disabled={!admissionData.reason || isSaving}
@@ -565,7 +588,7 @@ export const AdmissionStep: React.FC<AdmissionStepProps> = ({
                     ) : (
                       <ArrowRight className="mr-2 w-5 h-5" />
                     )}
-                    {isSaving ? "Guardando..." : "Registrar admisión y continuar"}
+                    {isSaving ? "Guardando..." : wasSaved ? "Continuar a agenda" : "Registrar admisión y continuar"}
                   </Button>
                 </>
               )}
