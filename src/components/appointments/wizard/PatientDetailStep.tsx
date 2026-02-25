@@ -141,10 +141,10 @@ export const PatientDetailStep: React.FC<PatientDetailStepProps> = ({
       variants={containerVariants}
       initial="hidden"
       animate="visible"
-      className="flex flex-col h-full max-w-3xl mx-auto overflow-hidden"
+      className="flex flex-col h-full w-full max-w-3xl mx-auto overflow-hidden"
     >
       {/* Header - fixed */}
-      <motion.div variants={itemVariants} className="flex items-center justify-between shrink-0 pb-3">
+      <motion.div variants={itemVariants} className="flex items-center justify-between shrink-0 pb-3 flex-none">
         <div className="flex items-center gap-2.5">
           <div className="w-9 h-9 rounded-full bg-muted flex items-center justify-center text-muted-foreground font-medium text-sm">
             {patient.firstName?.charAt(0)}{patient.lastName?.charAt(0)}
@@ -175,7 +175,7 @@ export const PatientDetailStep: React.FC<PatientDetailStepProps> = ({
       </motion.div>
 
       {/* Scrollable content area */}
-      <div className="flex-1 overflow-y-auto min-h-0 scrollbar-thin">
+      <div className="flex-1 min-h-0 overflow-y-auto">
         <motion.div variants={itemVariants}>
           <Card className="bg-card/50 backdrop-blur-xl border-border/30 rounded-2xl shadow-none">
             <CardContent className="p-4">
@@ -321,7 +321,7 @@ export const PatientDetailStep: React.FC<PatientDetailStepProps> = ({
       </div>
 
       {/* Footer - fixed */}
-      <div className="shrink-0 pt-3 flex items-center justify-between">
+      <div className="shrink-0 flex-none pt-3 flex items-center justify-between">
         <Button variant="ghost" onClick={onBack} className="rounded-xl gap-2">
           <ArrowLeft className="w-4 h-4" />
           Buscar otro
