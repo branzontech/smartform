@@ -38,6 +38,7 @@ export interface OptionProps {
   value: string;
   onChange: (value: string) => void;
   onRemove: () => void;
+  onAddNext?: () => void;
   canRemove: boolean;
   isMultiple?: boolean;
 }
