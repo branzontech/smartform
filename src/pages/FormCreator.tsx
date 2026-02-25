@@ -290,67 +290,85 @@ const FormCreator = () => {
                   <label htmlFor="form-type" className="block text-sm font-medium text-foreground mb-2">
                     Categoría del formulario
                   </label>
-                  <Select
-                    value={formType}
-                    onValueChange={(value: string) => {
-                      if (value === "__custom__") return;
-                      setFormType(value);
-                    }}
-                  >
-                    <SelectTrigger id="form-type" className="w-full max-w-xs">
-                      <SelectValue placeholder="Selecciona una categoría" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {DEFAULT_FORM_CATEGORIES.map((cat) => (
-                        <SelectItem key={cat.value} value={cat.value}>
-                          <div className="flex items-center">
-                            <FileText size={16} className="mr-2 text-primary" />
-                            <span>{cat.label}</span>
-                          </div>
-                        </SelectItem>
-                      ))}
-                      {/* Show current value if it's custom and not in defaults */}
-                      {!DEFAULT_FORM_CATEGORIES.find(c => c.value === formType) && formType && (
-                        <SelectItem value={formType}>
-                          <div className="flex items-center">
-                            <FileText size={16} className="mr-2 text-primary" />
-                            <span>{formType}</span>
-                          </div>
-                        </SelectItem>
-                      )}
-                    </SelectContent>
-                  </Select>
-                  
-                  <div className="mt-3 flex items-center gap-2">
-                    <Input
-                      placeholder="Nueva categoría personalizada..."
-                      value={customCategory}
-                      onChange={(e) => setCustomCategory(e.target.value)}
-                      className="max-w-xs"
-                    />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      disabled={!customCategory.trim()}
-                      onClick={() => {
-                        const slug = customCategory.trim().toLowerCase().replace(/\s+/g, '_');
-                        setFormType(slug);
-                        setCustomCategory("");
-                        toast({
-                          title: "Categoría creada",
-                          description: `"${customCategory.trim()}" establecida como categoría`,
-                        });
+                  <div className="flex items-center gap-2">
+                    <Select
+                      value={formType}
+                      onValueChange={(value: string) => {
+                        if (value === "__custom__") return;
+                        setFormType(value);
                       }}
                     >
-                      <Plus size={14} className="mr-1" />
-                      Agregar
-                    </Button>
+                      <SelectTrigger id="form-type" className="w-full max-w-xs">
+                        <SelectValue placeholder="Selecciona una categoría" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {DEFAULT_FORM_CATEGORIES.map((cat) => (
+                          <SelectItem key={cat.value} value={cat.value}>
+                            <div className="flex items-center">
+                              <FileText size={16} className="mr-2 text-primary" />
+                              <span>{cat.label}</span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                        {!DEFAULT_FORM_CATEGORIES.find(c => c.value === formType) && formType && (
+                          <SelectItem value={formType}>
+                            <div className="flex items-center">
+                              <FileText size={16} className="mr-2 text-primary" />
+                              <span>{formType}</span>
+                            </div>
+                          </SelectItem>
+                        )}
+                      </SelectContent>
+                    </Select>
+                    
+                    {customCategory !== null && typeof customCategory === "string" && customCategory.length > 0 ? (
+                      <div className="flex items-center gap-1.5">
+                        <Input
+                          placeholder="Nueva categoría..."
+                          value={customCategory}
+                          onChange={(e) => setCustomCategory(e.target.value)}
+                          className="h-9 w-44 text-sm"
+                          autoFocus
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" && customCategory.trim()) {
+                              const slug = customCategory.trim().toLowerCase().replace(/\s+/g, '_');
+                              setFormType(slug);
+                              setCustomCategory("");
+                              toast({ title: "Categoría creada", description: `"${customCategory.trim()}" establecida` });
+                            } else if (e.key === "Escape") {
+                              setCustomCategory("");
+                            }
+                          }}
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          disabled={!customCategory.trim()}
+                          onClick={() => {
+                            const slug = customCategory.trim().toLowerCase().replace(/\s+/g, '_');
+                            setFormType(slug);
+                            setCustomCategory("");
+                            toast({ title: "Categoría creada", description: `"${customCategory.trim()}" establecida` });
+                          }}
+                        >
+                          <Plus size={14} />
+                        </Button>
+                      </div>
+                    ) : (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-9 w-9 text-muted-foreground hover:text-foreground"
+                        title="Nueva categoría"
+                        onClick={() => setCustomCategory(" ")}
+                      >
+                        <Plus size={16} />
+                      </Button>
+                    )}
                   </div>
-                  
-                  <p className="mt-2 text-sm text-muted-foreground">
-                    Selecciona una categoría predefinida o crea una nueva.
-                  </p>
                 </div>
               </TabsContent>
               
