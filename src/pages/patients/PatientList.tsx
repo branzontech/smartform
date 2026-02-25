@@ -15,71 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-
-// Datos de ejemplo
-const mockPatients: Patient[] = [
-  {
-    id: "1",
-    name: "Juan Pérez",
-    documentId: "1234567890",
-    dateOfBirth: "1985-05-15",
-    gender: "Masculino",
-    contactNumber: "555-123-4567",
-    email: "juan.perez@example.com",
-    createdAt: new Date("2023-01-10"),
-    lastVisitAt: new Date("2023-06-20"),
-  },
-  {
-    id: "2",
-    name: "María García",
-    documentId: "0987654321",
-    dateOfBirth: "1990-08-20",
-    gender: "Femenino",
-    contactNumber: "555-987-6543",
-    email: "maria.garcia@example.com",
-    createdAt: new Date("2023-02-15"),
-    lastVisitAt: new Date("2023-05-10"),
-  },
-  {
-    id: "3",
-    name: "Carlos Rodríguez",
-    documentId: "5678901234",
-    dateOfBirth: "1978-12-03",
-    gender: "Masculino",
-    contactNumber: "555-456-7890",
-    address: "Calle Principal 123",
-    createdAt: new Date("2023-03-05"),
-  }
-];
-
-// Generar más pacientes de prueba para demostrar escalabilidad
-const generateMoreMockPatients = (startId: number, count: number): Patient[] => {
-  const result: Patient[] = [];
-  const names = ["Ana Martínez", "Luis Rodríguez", "Elena Santos", "Pedro Gómez", "Carmen López", "Miguel Torres", "Isabel Ramírez", "José García", "Laura Fernández", "Pablo Ruiz"];
-  
-  for (let i = 0; i < count; i++) {
-    const id = startId + i;
-    const randomIndex = Math.floor(Math.random() * names.length);
-    const hasLastVisit = Math.random() > 0.3;
-    
-    result.push({
-      id: id.toString(),
-      name: names[randomIndex],
-      documentId: Math.floor(10000000 + Math.random() * 90000000).toString(),
-      dateOfBirth: `198${Math.floor(Math.random() * 10)}-${Math.floor(Math.random() * 12) + 1}-${Math.floor(Math.random() * 28) + 1}`,
-      gender: Math.random() > 0.5 ? "Masculino" : "Femenino",
-      contactNumber: `555-${Math.floor(Math.random() * 900) + 100}-${Math.floor(Math.random() * 9000) + 1000}`,
-      email: `paciente${id}@example.com`,
-      createdAt: new Date(Date.now() - Math.random() * 10000000000),
-      lastVisitAt: hasLastVisit ? new Date(Date.now() - Math.random() * 5000000000) : undefined
-    });
-  }
-  
-  return result;
-};
-
-// Agregar pacientes adicionales al mock - Generar más para probar escalabilidad
-const extendedMockPatients = [...mockPatients, ...generateMoreMockPatients(mockPatients.length + 1, 500)];
+import { supabase } from "@/integrations/supabase/client";
 
 type SortField = 'name' | 'documentId' | 'dateOfBirth' | 'lastVisitAt' | 'createdAt';
 type SortDirection = 'asc' | 'desc';
@@ -87,9 +23,6 @@ type SortDirection = 'asc' | 'desc';
 const ITEMS_PER_PAGE_OPTIONS = [10, 25, 50, 100];
 
 const PatientList = () => {
-  // Fixed: Removed all infinite scroll code and loadingMore references
-  console.log('PatientList: Modern table implementation loaded');
-  
   const [patients, setPatients] = useState<Patient[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -106,36 +39,54 @@ const PatientList = () => {
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedSearchTerm(searchTerm);
-      setCurrentPage(1); // Reset to first page when searching
+      setCurrentPage(1);
     }, 300);
     return () => clearTimeout(timer);
   }, [searchTerm]);
 
-  // Load patients data
+  // Load patients from Supabase
   useEffect(() => {
-    const timer = setTimeout(() => {
-      const savedPatients = localStorage.getItem("patients");
-      if (savedPatients) {
-        try {
-          const parsedPatients = JSON.parse(savedPatients).map((patient: any) => ({
-            ...patient,
-            createdAt: new Date(patient.createdAt),
-            lastVisitAt: patient.lastVisitAt ? new Date(patient.lastVisitAt) : undefined,
-          }));
-          setPatients(parsedPatients);
-        } catch (error) {
-          console.error("Error parsing patients:", error);
-          setPatients(extendedMockPatients);
-          localStorage.setItem("patients", JSON.stringify(extendedMockPatients));
-        }
-      } else {
-        setPatients(extendedMockPatients);
-        localStorage.setItem("patients", JSON.stringify(extendedMockPatients));
-      }
-      setLoading(false);
-    }, 800);
+    const fetchPatients = async () => {
+      setLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from("pacientes")
+          .select("*")
+          .order("created_at", { ascending: false });
 
-    return () => clearTimeout(timer);
+        if (error) {
+          console.error("Error fetching patients:", error);
+          setPatients([]);
+        } else {
+          const mapped: Patient[] = (data || []).map((p) => {
+            // Derive gender from fhir_extensions if available
+            const ext = p.fhir_extensions as Record<string, any> | null;
+            const gender = ext?.gender || ext?.sexo || "Otro";
+
+            return {
+              id: p.id,
+              name: `${p.nombres} ${p.apellidos}`,
+              documentId: p.numero_documento,
+              dateOfBirth: p.fecha_nacimiento || "",
+              gender: gender as Patient["gender"],
+              contactNumber: p.telefono_principal,
+              email: p.email || undefined,
+              address: p.direccion || undefined,
+              createdAt: new Date(p.created_at),
+              lastVisitAt: undefined, // TODO: derive from admisiones
+            };
+          });
+          setPatients(mapped);
+        }
+      } catch (err) {
+        console.error("Error fetching patients:", err);
+        setPatients([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPatients();
   }, []);
 
   // Filter and sort patients
