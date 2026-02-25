@@ -498,6 +498,7 @@ export type Database = {
       }
       tarifarios_servicios: {
         Row: {
+          activo: boolean
           codigo_servicio: string
           created_at: string
           descripcion_servicio: string
@@ -508,6 +509,7 @@ export type Database = {
           valor: number
         }
         Insert: {
+          activo?: boolean
           codigo_servicio: string
           created_at?: string
           descripcion_servicio: string
@@ -518,6 +520,7 @@ export type Database = {
           valor?: number
         }
         Update: {
+          activo?: boolean
           codigo_servicio?: string
           created_at?: string
           descripcion_servicio?: string

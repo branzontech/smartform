@@ -1,0 +1,1 @@
+ALTER TABLE public.tarifarios_servicios ADD COLUMN activo boolean NOT NULL DEFAULT true;
