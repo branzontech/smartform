@@ -32,22 +32,36 @@ import { cn } from "@/lib/utils";
 
 // Tipos de documento de identidad colombianos
 export const DOCUMENT_TYPES = [
-  { value: "CC", label: "CC - Cédula de Ciudadanía" },
-  { value: "CE", label: "CE - Cédula de Extranjería" },
-  { value: "PA", label: "PA - Pasaporte" },
-  { value: "RC", label: "RC - Registro Civil" },
-  { value: "TI", label: "TI - Tarjeta de Identidad" },
-  { value: "AS", label: "AS - Adulto sin Identificación" },
-  { value: "MS", label: "MS - Menor sin Identificación" },
-  { value: "NU", label: "NU - Número Único de Identificación" },
-  { value: "NIT", label: "NIT - Número de Identificación Tributaria" },
-  { value: "CD", label: "CD - Carnet Diplomático" },
-  { value: "NV", label: "NV - Certificado de Nacido Vivo" },
-  { value: "SC", label: "SC - Salvoconducto" },
-  { value: "PR", label: "PR - Pasaporte de la ONU" },
-  { value: "CN", label: "CN - Certificado de Nacido Vivo" },
-  { value: "PE", label: "PE - Permiso Especial" },
-  { value: "PT", label: "PT - Permiso por Protección Temporal" },
+  // Colombia
+  { value: "CC", label: "CC - Cédula de Ciudadanía", country: "CO" },
+  { value: "CE", label: "CE - Cédula de Extranjería", country: "CO" },
+  { value: "TI", label: "TI - Tarjeta de Identidad", country: "CO" },
+  { value: "RC", label: "RC - Registro Civil", country: "CO" },
+  { value: "PA", label: "PA - Pasaporte", country: "INT" },
+  { value: "AS", label: "AS - Adulto sin Identificación", country: "CO" },
+  { value: "MS", label: "MS - Menor sin Identificación", country: "CO" },
+  { value: "NU", label: "NU - Número Único de Identificación", country: "CO" },
+  { value: "NIT", label: "NIT - Número de Identificación Tributaria", country: "CO" },
+  { value: "CD", label: "CD - Carnet Diplomático", country: "CO" },
+  { value: "NV", label: "NV - Certificado de Nacido Vivo", country: "CO" },
+  { value: "SC", label: "SC - Salvoconducto", country: "CO" },
+  { value: "PR", label: "PR - Pasaporte de la ONU", country: "INT" },
+  { value: "CN", label: "CN - Certificado de Nacido Vivo", country: "CO" },
+  { value: "PE", label: "PE - Permiso Especial", country: "CO" },
+  { value: "PT", label: "PT - Permiso por Protección Temporal", country: "CO" },
+  // México
+  { value: "CURP", label: "CURP - Clave Única de Registro de Población", country: "MX" },
+  { value: "INE", label: "INE - Credencial para Votar", country: "MX" },
+  { value: "RFC", label: "RFC - Registro Federal de Contribuyentes", country: "MX" },
+  { value: "NSS", label: "NSS - Número de Seguridad Social", country: "MX" },
+  // Ecuador
+  { value: "CI-EC", label: "CI - Cédula de Identidad (Ecuador)", country: "EC" },
+  { value: "RUC", label: "RUC - Registro Único de Contribuyentes", country: "EC" },
+  // Perú
+  { value: "DNI", label: "DNI - Documento Nacional de Identidad", country: "PE" },
+  { value: "CE-PE", label: "CE - Carnet de Extranjería (Perú)", country: "PE" },
+  { value: "RUC-PE", label: "RUC - Registro Único de Contribuyentes (Perú)", country: "PE" },
+  { value: "PTP", label: "PTP - Permiso Temporal de Permanencia", country: "PE" },
 ] as const;
 
 export type DocumentType = typeof DOCUMENT_TYPES[number]['value'];

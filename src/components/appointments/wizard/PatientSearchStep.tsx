@@ -484,16 +484,7 @@ export const PatientSearchStep: React.FC<PatientSearchStepProps> = ({
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <Label>Nº de Historia</Label>
-                    <Input
-                      placeholder="Número de historia clínica"
-                      value={newPatient.medicalRecordNumber || ""}
-                      onChange={(e) => setNewPatient({...newPatient, medicalRecordNumber: e.target.value})}
-                      className="h-11 rounded-xl"
-                    />
-                  </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <Label>Carnet</Label>
                     <Input
