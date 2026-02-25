@@ -92,7 +92,10 @@ export type Database = {
           es_requerido: boolean
           id: string
           label: string
+          maestro: string | null
+          opciones: Json | null
           orden: number
+          placeholder: string | null
           tipo_dato: string
           updated_at: string
         }
@@ -101,7 +104,10 @@ export type Database = {
           es_requerido?: boolean
           id?: string
           label: string
+          maestro?: string | null
+          opciones?: Json | null
           orden?: number
+          placeholder?: string | null
           tipo_dato?: string
           updated_at?: string
         }
@@ -110,7 +116,10 @@ export type Database = {
           es_requerido?: boolean
           id?: string
           label?: string
+          maestro?: string | null
+          opciones?: Json | null
           orden?: number
+          placeholder?: string | null
           tipo_dato?: string
           updated_at?: string
         }
@@ -122,7 +131,10 @@ export type Database = {
           es_requerido: boolean
           id: string
           label: string
+          maestro: string | null
+          opciones: Json | null
           orden: number
+          placeholder: string | null
           tipo_dato: string
           updated_at: string
         }
@@ -131,7 +143,10 @@ export type Database = {
           es_requerido?: boolean
           id?: string
           label: string
+          maestro?: string | null
+          opciones?: Json | null
           orden?: number
+          placeholder?: string | null
           tipo_dato?: string
           updated_at?: string
         }
@@ -140,7 +155,10 @@ export type Database = {
           es_requerido?: boolean
           id?: string
           label?: string
+          maestro?: string | null
+          opciones?: Json | null
           orden?: number
+          placeholder?: string | null
           tipo_dato?: string
           updated_at?: string
         }
