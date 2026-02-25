@@ -1,0 +1,1 @@
+ALTER TABLE public.tarifarios_servicios ADD COLUMN metadata_regulatoria jsonb NOT NULL DEFAULT '{}'::jsonb;

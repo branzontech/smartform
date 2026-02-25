@@ -1,7 +1,11 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { Layout } from "@/components/layout";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import {
+  REGULATORY_COUNTRIES,
+  REGULATORY_FIELDS_BY_COUNTRY,
+} from "@/constants/regulatoryFields";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { motion } from "framer-motion";
@@ -86,6 +90,7 @@ interface TarifarioServicio {
   descripcion_servicio: string;
   valor: number;
   activo: boolean;
+  metadata_regulatoria: Record<string, any>;
   created_at: string;
 }
 
@@ -136,6 +141,13 @@ const PriceLists: React.FC = () => {
   });
   const [addingServicio, setAddingServicio] = useState(false);
   const [searchServicios, setSearchServicios] = useState("");
+  const [paisClinica, setPaisClinica] = useState("CO");
+  const [regulatoryForm, setRegulatoryForm] = useState<Record<string, string>>({});
+
+  const currentRegulatoryConfig = useMemo(
+    () => REGULATORY_FIELDS_BY_COUNTRY[paisClinica] || REGULATORY_FIELDS_BY_COUNTRY.OTHER,
+    [paisClinica]
+  );
 
   // Clone state
   const [cloneDialogOpen, setCloneDialogOpen] = useState(false);
@@ -295,6 +307,7 @@ const PriceLists: React.FC = () => {
     setSheetOpen(true);
     setSearchServicios("");
     setServicioForm({ sistema_codificacion: "CUPS", codigo_servicio: "", descripcion_servicio: "", valor: "" });
+    setRegulatoryForm({});
     fetchServicios(t.id);
   };
 
@@ -311,6 +324,25 @@ const PriceLists: React.FC = () => {
       return;
     }
 
+    // Validate required regulatory fields
+    for (const field of currentRegulatoryConfig.fields) {
+      if (field.required && !regulatoryForm[field.key]?.trim()) {
+        toast.error(`"${field.label}" es obligatorio para ${currentRegulatoryConfig.label}`);
+        return;
+      }
+    }
+
+    // Build metadata
+    const metadata: Record<string, any> = {};
+    if (currentRegulatoryConfig.fields.length > 0) {
+      metadata.pais = paisClinica;
+      for (const field of currentRegulatoryConfig.fields) {
+        if (regulatoryForm[field.key]?.trim()) {
+          metadata[field.key] = regulatoryForm[field.key].trim();
+        }
+      }
+    }
+
     setAddingServicio(true);
     try {
       const { error } = await supabase
@@ -321,12 +353,14 @@ const PriceLists: React.FC = () => {
           codigo_servicio: servicioForm.codigo_servicio,
           descripcion_servicio: servicioForm.descripcion_servicio,
           valor: valorNum,
+          metadata_regulatoria: metadata,
         } as any);
       if (error) throw error;
       toast.success("Servicio agregado");
       setServicioForm({ sistema_codificacion: "CUPS", codigo_servicio: "", descripcion_servicio: "", valor: "" });
+      setRegulatoryForm({});
       fetchServicios(selectedTarifario.id);
-      fetchTarifarios(); // update count
+      fetchTarifarios();
     } catch (err: any) {
       toast.error("Error: " + (err.message || ""));
     } finally {
@@ -404,6 +438,7 @@ const PriceLists: React.FC = () => {
           descripcion_servicio: s.descripcion_servicio,
           valor: Math.round(s.valor * (1 + pct / 100) * 100) / 100,
           activo: true,
+          metadata_regulatoria: s.metadata_regulatoria || {},
         }));
         const { error: errInsert } = await supabase
           .from("tarifarios_servicios" as any)
@@ -649,7 +684,20 @@ const PriceLists: React.FC = () => {
                 <ListPlus className="w-4 h-4 text-primary" />
                 Agregar servicio
               </p>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <Label className="text-xs">País de la clínica</Label>
+                  <Select value={paisClinica} onValueChange={(v) => { setPaisClinica(v); setRegulatoryForm({}); }}>
+                    <SelectTrigger className="mt-1 rounded-xl h-9 text-sm">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {REGULATORY_COUNTRIES.map((c) => (
+                        <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
                 <div>
                   <Label className="text-xs">Sistema de codificación</Label>
                   <Select
@@ -697,6 +745,49 @@ const PriceLists: React.FC = () => {
                   />
                 </div>
               </div>
+
+              {/* Dynamic regulatory fields */}
+              {currentRegulatoryConfig.fields.length > 0 && (
+                <div className="p-3 rounded-xl border border-primary/20 bg-primary/5 space-y-3">
+                  <p className="text-xs font-medium text-primary flex items-center gap-1.5">
+                    <FileText className="w-3.5 h-3.5" />
+                    {currentRegulatoryConfig.label}
+                  </p>
+                  <div className="grid grid-cols-2 gap-3">
+                    {currentRegulatoryConfig.fields.map((field) => (
+                      <div key={field.key}>
+                        <Label className="text-xs">
+                          {field.label} {field.required && "*"}
+                        </Label>
+                        {field.type === "select" && field.options ? (
+                          <Select
+                            value={regulatoryForm[field.key] || ""}
+                            onValueChange={(v) => setRegulatoryForm({ ...regulatoryForm, [field.key]: v })}
+                          >
+                            <SelectTrigger className="mt-1 rounded-xl h-9 text-sm">
+                              <SelectValue placeholder="Seleccionar..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {field.options.map((opt) => (
+                                <SelectItem key={opt.value} value={opt.value}>
+                                  {opt.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        ) : (
+                          <Input
+                            placeholder={field.placeholder || ""}
+                            value={regulatoryForm[field.key] || ""}
+                            onChange={(e) => setRegulatoryForm({ ...regulatoryForm, [field.key]: e.target.value })}
+                            className="mt-1 rounded-xl h-9 text-sm"
+                          />
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
               <Button
                 size="sm"
                 onClick={handleAddServicio}
