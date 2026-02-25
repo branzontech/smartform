@@ -7,9 +7,17 @@ export const Option = ({
   value,
   onChange,
   onRemove,
+  onAddNext,
   canRemove,
   isMultiple = false,
 }: OptionProps) => {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      onAddNext?.();
+    }
+  };
+
   return (
     <div className="flex items-center gap-3 mb-2 animate-fade-in">
       {isMultiple ? (
@@ -21,6 +29,7 @@ export const Option = ({
         type="text"
         value={value}
         onChange={(e) => onChange(e.target.value)}
+        onKeyDown={handleKeyDown}
         placeholder="Opción"
         className="flex-1 border-b border-gray-300 focus:border-form-primary focus:outline-none py-1 px-0 bg-transparent"
       />

@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { ContentComponentProps } from "../types";
 import { Option } from "../controls/option";
 import { AddOptionButton } from "../controls/add-option-button";
@@ -10,6 +10,16 @@ export const Checkbox: React.FC<ContentComponentProps> = ({
   readOnly 
 }) => {
   const [options, setOptions] = useState(question.options || ["", ""]);
+  const [focusIndex, setFocusIndex] = useState<number | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (focusIndex !== null && containerRef.current) {
+      const inputs = containerRef.current.querySelectorAll<HTMLInputElement>("input[type='text']");
+      inputs[focusIndex]?.focus();
+      setFocusIndex(null);
+    }
+  }, [focusIndex, options.length]);
 
   const handleOptionChange = (index: number, value: string) => {
     const newOptions = [...options];
@@ -18,8 +28,19 @@ export const Checkbox: React.FC<ContentComponentProps> = ({
     onUpdate({ options: newOptions });
   };
 
+  const addOptionAfter = (index: number) => {
+    const newOptions = [...options];
+    newOptions.splice(index + 1, 0, "");
+    setOptions(newOptions);
+    onUpdate({ options: newOptions });
+    setFocusIndex(index + 1);
+  };
+
   const addOption = () => {
-    setOptions([...options, ""]);
+    const newOptions = [...options, ""];
+    setOptions(newOptions);
+    onUpdate({ options: newOptions });
+    setFocusIndex(newOptions.length - 1);
   };
 
   const removeOption = (index: number) => {
@@ -48,13 +69,14 @@ export const Checkbox: React.FC<ContentComponentProps> = ({
   }
 
   return (
-    <div className="mt-2">
+    <div className="mt-2" ref={containerRef}>
       {options.map((option, index) => (
         <Option
           key={index}
           value={option}
           onChange={(value) => handleOptionChange(index, value)}
           onRemove={() => removeOption(index)}
+          onAddNext={() => addOptionAfter(index)}
           canRemove={options.length > 2}
           isMultiple={true}
         />
