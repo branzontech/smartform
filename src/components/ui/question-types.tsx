@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useEffect } from "react";
-import { CheckSquare, Circle, List, MessageSquare, Minus, Plus, Type, Calculator, Activity, Stethoscope, FileText, Search, Check, Edit3, FileUp, AlignHorizontalSpaceBetween, AlignVerticalSpaceBetween, Package, ChevronDown } from "lucide-react";
+import { CheckSquare, Circle, List, MessageSquare, Minus, Plus, Type, Calculator, Activity, Stethoscope, FileText, Search, Check, Edit3, FileUp, AlignHorizontalSpaceBetween, AlignVerticalSpaceBetween, Package, ChevronDown, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { QuestionTypeProps, OptionProps, AddOptionButtonProps, DiagnosisListProps, Diagnosis, MultifieldItemProps, MultifieldConfig, SignaturePadProps } from "@/components/forms/question/types";
 
@@ -46,25 +46,23 @@ export const questionTypes = questionTypeGroups.flatMap((g) => g.types);
 
 export const QuestionType = ({ selected, onChange }: QuestionTypeProps) => {
   const [open, setOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
   const selectedType = questionTypes.find((t) => t.id === selected);
 
-  // Close on outside click
+  // Close on Escape
   useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
+    if (!open) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
     };
-    if (open) document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
+    document.addEventListener("keydown", handler);
+    return () => document.removeEventListener("keydown", handler);
   }, [open]);
 
   return (
-    <div className="relative" ref={dropdownRef}>
+    <>
       <button
         type="button"
-        onClick={() => setOpen(!open)}
+        onClick={() => setOpen(true)}
         className={cn(
           "flex items-center justify-between gap-2 px-3 py-2 rounded-md text-sm border transition-colors w-56",
           "border-border bg-background hover:bg-muted"
@@ -74,44 +72,65 @@ export const QuestionType = ({ selected, onChange }: QuestionTypeProps) => {
           {selectedType && <selectedType.icon size={16} className="text-muted-foreground" />}
           <span className="text-foreground">{selectedType?.label || "Seleccionar tipo"}</span>
         </span>
-        <ChevronDown size={14} className={cn("text-muted-foreground transition-transform", open && "rotate-180")} />
+        <ChevronDown size={14} className="text-muted-foreground" />
       </button>
 
       {open && (
-        <div className="absolute z-50 mt-1 w-64 bg-background border border-border rounded-lg shadow-xl max-h-80 overflow-y-auto right-0">
-          {questionTypeGroups.map((group, gi) => (
-            <div key={group.label}>
-              {gi > 0 && <div className="h-px bg-border mx-2" />}
-              <div className="px-3 py-1.5 text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
-                {group.label}
-              </div>
-              {group.types.map((type) => {
-                const isSelected = selected === type.id;
-                return (
-                  <button
-                    key={type.id}
-                    onClick={() => {
-                      onChange(type.id);
-                      setOpen(false);
-                    }}
-                    className={cn(
-                      "flex items-center gap-3 w-full px-3 py-2 text-sm text-left transition-colors",
-                      isSelected
-                        ? "bg-accent text-accent-foreground"
-                        : "text-foreground hover:bg-muted"
-                    )}
-                  >
-                    <type.icon size={18} className="text-muted-foreground shrink-0" />
-                    <span>{type.label}</span>
-                    {isSelected && <Check size={14} className="ml-auto text-primary shrink-0" />}
-                  </button>
-                );
-              })}
+        <div className="fixed inset-0 z-[100] flex items-center justify-center">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-black/40"
+            onClick={() => setOpen(false)}
+          />
+          {/* Modal */}
+          <div className="relative z-10 w-full max-w-md bg-background border border-border rounded-xl shadow-2xl max-h-[70vh] flex flex-col animate-in fade-in-0 zoom-in-95 duration-150">
+            {/* Header */}
+            <div className="flex items-center justify-between px-4 py-3 border-b border-border shrink-0">
+              <h3 className="text-sm font-semibold text-foreground">Tipo de pregunta</h3>
+              <button
+                onClick={() => setOpen(false)}
+                className="p-1 rounded-md text-muted-foreground hover:bg-muted transition-colors"
+              >
+                <X size={16} />
+              </button>
             </div>
-          ))}
+            {/* Body */}
+            <div className="overflow-y-auto flex-1 py-1">
+              {questionTypeGroups.map((group, gi) => (
+                <div key={group.label}>
+                  {gi > 0 && <div className="h-px bg-border mx-3 my-1" />}
+                  <div className="px-4 py-1.5 text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
+                    {group.label}
+                  </div>
+                  {group.types.map((type) => {
+                    const isSelected = selected === type.id;
+                    return (
+                      <button
+                        key={type.id}
+                        onClick={() => {
+                          onChange(type.id);
+                          setOpen(false);
+                        }}
+                        className={cn(
+                          "flex items-center gap-3 w-full px-4 py-2.5 text-sm text-left transition-colors",
+                          isSelected
+                            ? "bg-accent text-accent-foreground"
+                            : "text-foreground hover:bg-muted"
+                        )}
+                      >
+                        <type.icon size={18} className="text-muted-foreground shrink-0" />
+                        <span>{type.label}</span>
+                        {isSelected && <Check size={14} className="ml-auto text-primary shrink-0" />}
+                      </button>
+                    );
+                  })}
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       )}
-    </div>
+    </>
   );
 };
 
