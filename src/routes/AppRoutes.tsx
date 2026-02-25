@@ -35,6 +35,7 @@ import DoctorList from "@/pages/doctors/DoctorList";
 import DoctorProfile from "@/pages/doctors/DoctorProfile";
 import DoctorForm from "@/pages/doctors/DoctorForm";
 import BillingDashboard from "@/pages/billing/BillingDashboard";
+import ContractsPage from "@/pages/billing/ContractsPage";
 import InvoiceDetail from "@/pages/billing/InvoiceDetail";
 import InvoiceForm from "@/pages/billing/InvoiceForm";
 import CustomerList from "@/pages/customers/CustomerList";
@@ -96,6 +97,7 @@ const AppRoutes = () => {
         <Route path="locations/offices" element={<OfficeListPage />} />
         <Route path="locations/map" element={<SiteListPage />} />
         <Route path="facturacion" element={<BillingDashboard />} />
+        <Route path="facturacion/convenios" element={<ContractsPage />} />
         <Route path="facturacion/:id" element={<InvoiceDetail />} />
         <Route path="facturacion/nueva" element={<InvoiceForm />} />
         <Route path="facturacion/editar/:id" element={<InvoiceForm />} />
