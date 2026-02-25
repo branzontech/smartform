@@ -127,7 +127,7 @@ const FormResponses = () => {
               </div>
               
               {responses.length > 0 ? (
-                formData.formType === "formato" ? (
+                formData.formType === "formato" || formData.formType === "historia_clinica" ? (
                   <FormatDocumentView 
                     formData={formData}
                     responses={responses}

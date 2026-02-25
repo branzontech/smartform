@@ -10,7 +10,7 @@ interface FormCardProps {
   title: string;
   lastUpdated: Date;
   responseCount: number;
-  formType: "forms" | "formato";
+  formType: string;
   onEdit: (id: string) => void;
   onView: (id: string) => void;
   onResponses: (id: string) => void;
@@ -22,7 +22,7 @@ export const FormCard = ({
   title, 
   lastUpdated, 
   responseCount, 
-  formType = "forms",
+  formType = "historia_clinica",
   onEdit, 
   onView, 
   onResponses,
@@ -51,23 +51,14 @@ export const FormCard = ({
         <div className="p-5">
           <div className="flex items-center justify-between mb-1">
             <h3 className="font-medium text-xl truncate pr-2">{title}</h3>
-            <span className={cn(
-              "px-2 py-0.5 text-xs rounded-full",
-              formType === "forms" 
-                ? "bg-blue-100 text-blue-800" 
-                : "bg-emerald-100 text-emerald-800"
-            )}>
-              {formType === "forms" ? (
-                <span className="flex items-center">
-                  <PieChart size={12} className="mr-1" />
-                  Forms
-                </span>
-              ) : (
-                <span className="flex items-center">
-                  <FileText size={12} className="mr-1" />
-                  Formato
-                </span>
-              )}
+            <span className="px-2 py-0.5 text-xs rounded-full bg-primary/10 text-primary">
+              <span className="flex items-center">
+                <FileText size={12} className="mr-1" />
+                {formType === "historia_clinica" ? "Historia clínica" 
+                  : formType === "escala" ? "Escala" 
+                  : formType === "encuesta" ? "Encuesta" 
+                  : formType}
+              </span>
             </span>
           </div>
           <div className="flex items-center text-sm text-gray-500 mt-2">
@@ -104,19 +95,15 @@ export const FormCard = ({
         
         <div className="w-px bg-gray-100" />
         
-        {formType === "forms" ? (
-          <>
-            <button 
-              onClick={() => onResponses(id)}
-              className="flex-1 flex items-center justify-center py-3 text-gray-600 hover:bg-gray-50 transition-colors text-sm"
-            >
-              <BarChart size={16} className="mr-2" />
-              <span>Respuestas</span>
-            </button>
-            
-            <div className="w-px bg-gray-100" />
-          </>
-        ) : null}
+        <button 
+          onClick={() => onResponses(id)}
+          className="flex-1 flex items-center justify-center py-3 text-gray-600 hover:bg-gray-50 transition-colors text-sm"
+        >
+          <BarChart size={16} className="mr-2" />
+          <span>Respuestas</span>
+        </button>
+        
+        <div className="w-px bg-gray-100" />
         
         <button 
           onClick={() => onDelete(id)}

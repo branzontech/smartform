@@ -162,7 +162,7 @@ const NewConsultation = () => {
           createdAt: new Date(f.created_at),
           updatedAt: new Date(f.updated_at),
           responseCount: f.respuestas_count || 0,
-          formType: f.tipo || "forms",
+          formType: f.tipo || "historia_clinica",
           designOptions: f.opciones_diseno,
         }));
         setAvailableForms(mapped);
@@ -387,7 +387,10 @@ const NewConsultation = () => {
         </div>
         <div className="flex items-center mt-2.5 text-xs ml-8 gap-2">
           <span className="px-2 py-0.5 bg-muted rounded-lg text-muted-foreground">
-            {form.formType === 'forms' ? 'Form' : 'Formato'}
+            {form.formType === 'historia_clinica' ? 'Historia clínica' 
+              : form.formType === 'escala' ? 'Escala' 
+              : form.formType === 'encuesta' ? 'Encuesta' 
+              : form.formType}
           </span>
           <span className="text-muted-foreground">
             {format(new Date(form.updatedAt), 'dd/MM/yyyy')}

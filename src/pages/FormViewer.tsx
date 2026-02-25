@@ -41,7 +41,7 @@ const FormViewer = () => {
   const [questions, setQuestions] = useState<QuestionData[]>([]);
   const [formTitle, setFormTitle] = useState("Formulario");
   const [formDescription, setFormDescription] = useState("");
-  const [formType, setFormType] = useState<"forms" | "formato">("forms");
+  const [formType, setFormType] = useState<string>("historia_clinica");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [submitted, setSubmitted] = useState(false);
@@ -71,8 +71,7 @@ const FormViewer = () => {
             setQuestions(result.form.questions as QuestionData[]);
             setFormTitle(result.form.title);
             setFormDescription(result.form.description);
-            // Ensure we're handling the type correctly
-            if (result.form.formType === "forms" || result.form.formType === "formato") {
+            if (result.form.formType) {
               setFormType(result.form.formType);
             }
             
