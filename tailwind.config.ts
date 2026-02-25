@@ -25,10 +25,10 @@ export default {
 				ring: 'hsl(var(--ring))',
 				background: 'hsl(var(--background))',
 				foreground: 'hsl(var(--foreground))',
-				form: {
-					primary: '#673AB7',  // Púrpura principal
-					secondary: '#9C27B0', // Púrpura secundario
-					accent: '#FF9800',   // Naranja acentuado
+			form: {
+					primary: '#8b35e9',  // Púrpura principal marca
+					secondary: '#5644e5', // Púrpura secundario marca
+					accent: '#D1DE75',   // Verde lime de la marca
 				},
 				primary: {
 					DEFAULT: 'hsl(var(--primary))',
