@@ -503,6 +503,7 @@ export type Database = {
           created_at: string
           descripcion_servicio: string
           id: string
+          metadata_regulatoria: Json
           sistema_codificacion: string
           tarifario_id: string
           updated_at: string
@@ -514,6 +515,7 @@ export type Database = {
           created_at?: string
           descripcion_servicio: string
           id?: string
+          metadata_regulatoria?: Json
           sistema_codificacion?: string
           tarifario_id: string
           updated_at?: string
@@ -525,6 +527,7 @@ export type Database = {
           created_at?: string
           descripcion_servicio?: string
           id?: string
+          metadata_regulatoria?: Json
           sistema_codificacion?: string
           tarifario_id?: string
           updated_at?: string
