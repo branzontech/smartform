@@ -19,6 +19,9 @@ import {
   ArrowLeft,
   Hash,
   FileText,
+  Copy,
+  AlertTriangle,
+  TrendingUp,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -133,6 +136,12 @@ const PriceLists: React.FC = () => {
   });
   const [addingServicio, setAddingServicio] = useState(false);
   const [searchServicios, setSearchServicios] = useState("");
+
+  // Clone state
+  const [cloneDialogOpen, setCloneDialogOpen] = useState(false);
+  const [cloneTarget, setCloneTarget] = useState<TarifarioMaestro | null>(null);
+  const [cloneForm, setCloneForm] = useState({ nombre: "", porcentaje: "" });
+  const [cloning, setCloning] = useState(false);
 
   // Fetch tarifarios
   const fetchTarifarios = useCallback(async () => {
@@ -348,6 +357,77 @@ const PriceLists: React.FC = () => {
     }
   };
 
+  // Clone tarifario
+  const openCloneDialog = (t: TarifarioMaestro) => {
+    setCloneTarget(t);
+    setCloneForm({ nombre: `${t.nombre} - Actualizado`, porcentaje: "" });
+    setCloneDialogOpen(true);
+  };
+
+  const handleClone = async () => {
+    if (!cloneTarget || !cloneForm.nombre.trim()) return;
+    const pct = parseFloat(cloneForm.porcentaje);
+    if (isNaN(pct)) {
+      toast.error("Ingresa un porcentaje válido");
+      return;
+    }
+
+    setCloning(true);
+    try {
+      // 1. Create new tarifario maestro
+      const { data: newMaestro, error: errMaestro } = await supabase
+        .from("tarifarios_maestros" as any)
+        .insert({
+          nombre: cloneForm.nombre,
+          descripcion: cloneTarget.descripcion,
+          moneda: cloneTarget.moneda,
+          estado: true,
+        } as any)
+        .select("id")
+        .single();
+      if (errMaestro || !newMaestro) throw errMaestro || new Error("No se pudo crear");
+
+      // 2. Fetch old services (only activo)
+      const { data: oldServices, error: errFetch } = await supabase
+        .from("tarifarios_servicios" as any)
+        .select("*")
+        .eq("tarifario_id", cloneTarget.id)
+        .eq("activo", true);
+      if (errFetch) throw errFetch;
+
+      // 3. Bulk insert new services with adjusted prices
+      if (oldServices && (oldServices as any[]).length > 0) {
+        const newServices = (oldServices as any[]).map((s: any) => ({
+          tarifario_id: (newMaestro as any).id,
+          sistema_codificacion: s.sistema_codificacion,
+          codigo_servicio: s.codigo_servicio,
+          descripcion_servicio: s.descripcion_servicio,
+          valor: Math.round(s.valor * (1 + pct / 100) * 100) / 100,
+          activo: true,
+        }));
+        const { error: errInsert } = await supabase
+          .from("tarifarios_servicios" as any)
+          .insert(newServices as any);
+        if (errInsert) throw errInsert;
+      }
+
+      // 4. Deactivate old tarifario
+      await supabase
+        .from("tarifarios_maestros" as any)
+        .update({ estado: false } as any)
+        .eq("id", cloneTarget.id);
+
+      toast.success("Tarifario duplicado y actualizado con éxito");
+      setCloneDialogOpen(false);
+      setCloneTarget(null);
+      fetchTarifarios();
+    } catch (err: any) {
+      toast.error("Error: " + (err.message || "No se pudo clonar"));
+    } finally {
+      setCloning(false);
+    }
+  };
+
   return (
     <Layout>
       <div className="flex flex-col h-full w-full overflow-hidden">
@@ -472,6 +552,10 @@ const PriceLists: React.FC = () => {
                             </DropdownMenuItem>
                             <DropdownMenuItem onClick={(e) => { e.stopPropagation(); toggleEstado(t); }}>
                               {t.estado ? "Desactivar" : "Activar"}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); openCloneDialog(t); }}>
+                              <Copy className="w-3.5 h-3.5 mr-2" />
+                              Actualizar Tarifario (Clonar)
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
@@ -695,6 +779,66 @@ const PriceLists: React.FC = () => {
           </div>
         </SheetContent>
       </Sheet>
+
+      {/* Clone dialog */}
+      <Dialog open={cloneDialogOpen} onOpenChange={(open) => { setCloneDialogOpen(open); if (!open) setCloneTarget(null); }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <TrendingUp className="w-5 h-5 text-primary" />
+              Actualizar Tarifario (Clonar)
+            </DialogTitle>
+            <DialogDescription>
+              Duplica "{cloneTarget?.nombre}" con un ajuste porcentual en todos los precios
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div>
+              <Label>Nombre del nuevo tarifario *</Label>
+              <Input
+                placeholder="Ej: Tarifario CUPS 2027"
+                value={cloneForm.nombre}
+                onChange={(e) => setCloneForm({ ...cloneForm, nombre: e.target.value })}
+                className="mt-1.5 rounded-xl"
+              />
+            </div>
+            <div>
+              <Label>Porcentaje de incremento (%) *</Label>
+              <Input
+                type="number"
+                step="0.01"
+                placeholder="Ej: 12.5"
+                value={cloneForm.porcentaje}
+                onChange={(e) => setCloneForm({ ...cloneForm, porcentaje: e.target.value })}
+                className="mt-1.5 rounded-xl"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Usa valores negativos para descuentos. Ej: -5 para reducir un 5%.
+              </p>
+            </div>
+            <div className="flex items-start gap-2 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20">
+              <AlertTriangle className="w-4 h-4 text-amber-500 mt-0.5 shrink-0" />
+              <p className="text-xs text-muted-foreground">
+                El tarifario actual pasará a estado <strong>Inactivo</strong> para nuevas asignaciones, pero conservará su historial para facturas pasadas.
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCloneDialogOpen(false)} className="rounded-xl">
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleClone}
+              disabled={cloning || !cloneForm.nombre.trim() || !cloneForm.porcentaje}
+              className="rounded-xl gap-2"
+            >
+              {cloning && <Loader2 className="w-4 h-4 animate-spin" />}
+              <Copy className="w-4 h-4" />
+              Clonar y Actualizar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Layout>
   );
 };
