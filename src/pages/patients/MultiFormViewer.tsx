@@ -55,7 +55,7 @@ const MultiFormViewer = () => {
       const skippedForms: string[] = [];
       
       for (const formId of formIds) {
-        const result = fetchFormById(formId);
+        const result = await fetchFormById(formId);
         if (result.form) {
           // Only add forms that have questions
           const questions = result.form.questions as QuestionData[] || [];
@@ -65,7 +65,7 @@ const MultiFormViewer = () => {
               title: result.form.title,
               description: result.form.description,
               completed: false,
-              formData: result.form,
+              formData: result.form as FormType,
               questions: questions,
               responses: {}
             });
@@ -136,8 +136,8 @@ const MultiFormViewer = () => {
     }));
   };
 
-  const handleAddForm = (formId: string) => {
-    const result = fetchFormById(formId);
+  const handleAddForm = async (formId: string) => {
+    const result = await fetchFormById(formId);
     if (result.form) {
       const questions = result.form.questions as QuestionData[] || [];
       if (questions.length > 0) {
@@ -146,7 +146,7 @@ const MultiFormViewer = () => {
           title: result.form.title,
           description: result.form.description,
           completed: false,
-          formData: result.form,
+          formData: result.form as FormType,
           questions: questions,
           responses: {}
         };

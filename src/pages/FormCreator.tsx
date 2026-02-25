@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Plus, FileText, PieChart, Palette } from "lucide-react";
 import { nanoid } from "nanoid";
+import { supabase } from "@/integrations/supabase/client";
 import { Header } from "@/components/layout/header";
 import { FormTitle } from "@/components/ui/form-title";
 import { Question } from "@/components/ui/question";
@@ -50,45 +51,33 @@ const FormCreator = () => {
 
   useEffect(() => {
     if (id) {
-      // Cargar formulario existente
-      const savedForms = localStorage.getItem("forms");
-      if (savedForms) {
-        try {
-          const forms = JSON.parse(savedForms);
-          const form = forms.find((f: Form) => f.id === id);
-          
-          if (form) {
-            setTitle(form.title);
-            setDescription(form.description);
-            setFormType(form.formType || "forms");
-            setQuestions(form.questions || []);
-            // Cargar opciones de diseño si existen
-            if (form.designOptions) {
-              setDesignOptions(form.designOptions);
-            }
-            setLoading(false);
-          } else {
-            // Formulario no encontrado
-            toast({
-              title: "Error",
-              description: "El formulario no existe",
-              variant: "destructive",
-            });
-            navigate("/");
+      const loadForm = async () => {
+        const { data, error } = await supabase
+          .from("formularios")
+          .select("*")
+          .eq("id", id)
+          .single();
+
+        if (data && !error) {
+          setTitle(data.titulo);
+          setDescription(data.descripcion || "");
+          setFormType((data.tipo as "forms" | "formato") || "forms");
+          setQuestions((data.preguntas as any[]) || []);
+          if (data.opciones_diseno && Object.keys(data.opciones_diseno as object).length > 0) {
+            setDesignOptions(data.opciones_diseno as unknown as FormDesignOptions);
           }
-        } catch (error) {
-          console.error("Error parsing forms:", error);
+          setLoading(false);
+        } else {
           toast({
             title: "Error",
-            description: "No se pudo cargar el formulario",
+            description: "El formulario no existe",
             variant: "destructive",
           });
           navigate("/");
         }
-      }
+      };
+      loadForm();
     } else {
-      // En caso de nuevo formulario, no cargamos preguntas por defecto
-      // Mantenemos el arreglo de preguntas vacío
       setQuestions([]);
     }
   }, [id, navigate, toast]);
@@ -175,7 +164,6 @@ const FormCreator = () => {
     setSaving(true);
     
     try {
-      // Validar que el formulario tenga título
       if (!title.trim()) {
         toast({
           title: "Error",
@@ -186,7 +174,6 @@ const FormCreator = () => {
         return;
       }
       
-      // Validar que todas las preguntas tengan título
       const invalidQuestions = questions.filter(q => !q.title.trim());
       if (invalidQuestions.length > 0) {
         toast({
@@ -197,59 +184,41 @@ const FormCreator = () => {
         setSaving(false);
         return;
       }
-      
-      // Obtener formularios existentes
-      const savedForms = localStorage.getItem("forms");
-      let forms: Form[] = savedForms ? JSON.parse(savedForms) : [];
-      
-      const now = new Date();
-      const formId = id || nanoid();
+
+      const formPayload = {
+        titulo: title,
+        descripcion: description,
+        tipo: formType,
+        preguntas: questions as any,
+        opciones_diseno: designOptions as any,
+        fhir_extensions: {} as any,
+      };
       
       if (id) {
-        // Actualizar formulario existente
-        forms = forms.map((form: Form) => {
-          if (form.id === id) {
-            return {
-              ...form,
-              title,
-              description,
-              questions,
-              formType,
-              designOptions,
-              updatedAt: now
-            };
-          }
-          return form;
-        });
+        const { error } = await supabase
+          .from("formularios")
+          .update(formPayload)
+          .eq("id", id);
+
+        if (error) throw error;
         
         toast({
           title: "Formulario actualizado",
           description: "Los cambios han sido guardados",
         });
       } else {
-        // Crear nuevo formulario
-        const newForm: Form = {
-          id: formId,
-          title,
-          description,
-          questions,
-          formType,
-          designOptions,
-          createdAt: now,
-          updatedAt: now,
-          responseCount: 0
-        };
+        const { error } = await supabase
+          .from("formularios")
+          .insert(formPayload);
+
+        if (error) throw error;
         
-        forms.unshift(newForm);
         toast({
           title: "Formulario creado",
           description: `Tu nuevo ${formType === "forms" ? "formulario" : "formato"} clínico está listo`,
         });
       }
       
-      localStorage.setItem("forms", JSON.stringify(forms));
-      
-      // Redirigir a la página principal después de un breve retraso
       setTimeout(() => {
         navigate("/");
       }, 500);

@@ -144,26 +144,36 @@ const NewConsultation = () => {
     }
   }, [preselectedPatientId]);
 
-  // Load forms
+  // Load forms from database
   useEffect(() => {
-    const savedForms = localStorage.getItem("forms");
-    if (savedForms) {
-      try {
-        const parsedForms = JSON.parse(savedForms).map((form: any) => ({
-          ...form,
-          createdAt: new Date(form.createdAt),
-          updatedAt: new Date(form.updatedAt)
-        }));
-        setAvailableForms(parsedForms);
-      } catch (error) {
-        console.error("Error parsing forms:", error);
-      }
-    }
+    const loadForms = async () => {
+      const { data, error } = await supabase
+        .from("formularios")
+        .select("*")
+        .eq("estado", "activo")
+        .order("created_at", { ascending: false });
 
-    const { recentForms, frequentForms } = getRecentAndFrequentForms(selectedPatientId || undefined);
-    setRecentForms(recentForms);
-    setFrequentForms(frequentForms);
-    setLoading(false);
+      if (data && !error) {
+        const mapped = data.map((f: any) => ({
+          id: f.id,
+          title: f.titulo,
+          description: f.descripcion || "",
+          questions: f.preguntas || [],
+          createdAt: new Date(f.created_at),
+          updatedAt: new Date(f.updated_at),
+          responseCount: f.respuestas_count || 0,
+          formType: f.tipo || "forms",
+          designOptions: f.opciones_diseno,
+        }));
+        setAvailableForms(mapped);
+      }
+
+      const { recentForms, frequentForms } = getRecentAndFrequentForms(selectedPatientId || undefined);
+      setRecentForms(recentForms);
+      setFrequentForms(frequentForms);
+      setLoading(false);
+    };
+    loadForms();
   }, [selectedPatientId]);
 
   const handleSelectPatient = async (dbPatient: any) => {
