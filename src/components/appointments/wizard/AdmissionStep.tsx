@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { DynamicFieldRenderer } from "@/components/config/DynamicFieldRenderer";
+import { DiagnosisSearch } from "@/components/admissions/DiagnosisSearch";
 import type { DynamicFieldConfig } from "@/components/config/DynamicFieldConfigurator";
 import { motion } from "framer-motion";
 import { 
@@ -171,6 +172,18 @@ export const AdmissionStep: React.FC<AdmissionStepProps> = ({
           provider: admissionData.insuranceProvider || undefined,
           policyNumber: admissionData.insuranceNumber || undefined,
         },
+        // FHIR Condition.code (diagnosis coding)
+        diagnosis: admissionData.diagnosticoPrincipal ? [{
+          condition: {
+            coding: [{
+              system: "http://hl7.org/fhir/sid/icd-10",
+              code: admissionData.diagnosticoPrincipal.split(" - ")[0]?.trim(),
+              display: admissionData.diagnosticoPrincipal.split(" - ").slice(1).join(" - ")?.trim(),
+            }]
+          },
+          use: { coding: [{ system: "http://terminology.hl7.org/CodeSystem/diagnosis-role", code: "AD", display: "Admission diagnosis" }] },
+          rank: 1
+        }] : undefined,
         // Custom fields stored as FHIR extensions
         customFields: admissionData.customFields || {},
       };
@@ -398,14 +411,13 @@ export const AdmissionStep: React.FC<AdmissionStepProps> = ({
                     />
                   </div>
 
-                  {/* Diagnóstico principal */}
-                  <div>
-                    <Label>Diagnóstico principal (diagnosis)</Label>
-                    <Input
-                      placeholder="CIE-10 o descripción del diagnóstico"
-                      value={admissionData.diagnosticoPrincipal}
-                      onChange={(e) => setAdmissionData({...admissionData, diagnosticoPrincipal: e.target.value})}
-                      className="h-11 rounded-xl mt-2"
+                  {/* Diagnóstico principal - FHIR Condition with CIE-10/CIE-11 */}
+                  <div className="relative">
+                    <DiagnosisSearch
+                      value={admissionData.diagnosticoPrincipal || ""}
+                      onChange={(val, fhirCoding) => {
+                        setAdmissionData(prev => ({ ...prev, diagnosticoPrincipal: val }));
+                      }}
                     />
                   </div>
 
