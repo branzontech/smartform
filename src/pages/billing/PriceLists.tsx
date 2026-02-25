@@ -82,6 +82,7 @@ interface TarifarioServicio {
   codigo_servicio: string;
   descripcion_servicio: string;
   valor: number;
+  activo: boolean;
   created_at: string;
 }
 
@@ -324,18 +325,18 @@ const PriceLists: React.FC = () => {
     }
   };
 
-  const handleDeleteServicio = async (servicioId: string) => {
+  const handleToggleServicio = async (servicio: TarifarioServicio) => {
     if (!selectedTarifario) return;
+    const newActivo = !servicio.activo;
     const { error } = await supabase
       .from("tarifarios_servicios" as any)
-      .delete()
-      .eq("id", servicioId);
+      .update({ activo: newActivo } as any)
+      .eq("id", servicio.id);
     if (error) {
-      toast.error("Error al eliminar");
+      toast.error("Error al cambiar estado");
     } else {
-      toast.success("Servicio eliminado");
+      toast.success(newActivo ? "Servicio activado" : "Servicio inactivado");
       fetchServicios(selectedTarifario.id);
-      fetchTarifarios();
     }
   };
 
@@ -655,12 +656,12 @@ const PriceLists: React.FC = () => {
                       <TableHead className="text-xs">Código</TableHead>
                       <TableHead className="text-xs">Descripción</TableHead>
                       <TableHead className="text-xs text-right">Valor</TableHead>
-                      <TableHead className="w-8" />
+                      <TableHead className="text-xs text-center">Estado</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {filteredServicios.map((s) => (
-                      <TableRow key={s.id}>
+                      <TableRow key={s.id} className={cn(!s.activo && "opacity-50")}>
                         <TableCell>
                           <Badge variant="outline" className="text-[10px]">
                             {s.sistema_codificacion}
@@ -671,14 +672,18 @@ const PriceLists: React.FC = () => {
                         <TableCell className="text-sm text-right font-medium">
                           {formatCurrency(s.valor, selectedTarifario?.moneda || "COP")}
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="text-center">
                           <Button
                             variant="ghost"
-                            size="icon"
-                            className="h-7 w-7"
-                            onClick={() => handleDeleteServicio(s.id)}
+                            size="sm"
+                            className={cn("h-7 text-xs rounded-lg", s.activo ? "text-emerald-600" : "text-muted-foreground")}
+                            onClick={() => handleToggleServicio(s)}
                           >
-                            <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                            {s.activo ? (
+                              <><CheckCircle2 className="w-3.5 h-3.5 mr-1" /> Activo</>
+                            ) : (
+                              <><XCircle className="w-3.5 h-3.5 mr-1" /> Inactivo</>
+                            )}
                           </Button>
                         </TableCell>
                       </TableRow>
