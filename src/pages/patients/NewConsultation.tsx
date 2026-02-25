@@ -5,7 +5,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Calendar as CalendarIcon, Clock, Save, FileText, ArrowRight, ArrowLeft, Bell, AlertTriangle, User, ClipboardList, Check, Stethoscope } from "lucide-react";
+import { Calendar as CalendarIcon, Clock, Save, FileText, ArrowRight, ArrowLeft, Bell, AlertTriangle, User, ClipboardList, Check, Stethoscope, Search, Loader2, Phone, Mail, MapPin, Shield } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Calendar } from "@/components/ui/calendar";
 import { format, addDays, isBefore } from "date-fns";
 import { es } from "date-fns/locale";
@@ -22,6 +24,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
+import { Sparkles } from "lucide-react";
 
 type WorkflowStep = 1 | 2 | 3;
 
@@ -58,23 +61,16 @@ const NewConsultation = () => {
 
   const [currentStep, setCurrentStep] = useState<WorkflowStep>(1);
   const [direction, setDirection] = useState(0);
-  const [patients, setPatients] = useState<Patient[]>([]);
   const [loading, setLoading] = useState(true);
   const [availableForms, setAvailableForms] = useState<FormType[]>([]);
   const [recentForms, setRecentForms] = useState<any[]>([]);
   const [frequentForms, setFrequentForms] = useState<any[]>([]);
   
   const [selectedPatientId, setSelectedPatientId] = useState<string>(preselectedPatientId || "");
-  const [isNewPatient, setIsNewPatient] = useState(!preselectedPatientId);
-  const [newPatientData, setNewPatientData] = useState<Partial<Patient>>({
-    name: "",
-    documentId: "",
-    dateOfBirth: "",
-    gender: "Masculino",
-    contactNumber: "",
-    email: "",
-    address: ""
-  });
+  const [selectedPatientData, setSelectedPatientData] = useState<any>(null);
+  const [patientSearchTerm, setPatientSearchTerm] = useState("");
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
   
   const [selectedFormIds, setSelectedFormIds] = useState<string[]>([]);
   const [selectedForms, setSelectedForms] = useState<FormType[]>([]);
@@ -99,98 +95,84 @@ const NewConsultation = () => {
     setCurrentStep(step);
   };
 
+  // Search patients in DB with debounce
   useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      try {
-        // Fetch patients from Supabase
-        const { data: patientsData } = await supabase
+    if (!patientSearchTerm || patientSearchTerm.length < 2) {
+      setSearchResults([]);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      setIsSearching(true);
+      const { data, error } = await supabase
+        .from("pacientes")
+        .select("*")
+        .or(`numero_documento.ilike.%${patientSearchTerm}%,nombres.ilike.%${patientSearchTerm}%,apellidos.ilike.%${patientSearchTerm}%`)
+        .limit(20);
+
+      if (data && !error) {
+        setSearchResults(data);
+      }
+      setIsSearching(false);
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [patientSearchTerm]);
+
+  // Load preselected patient
+  useEffect(() => {
+    if (preselectedPatientId && !selectedPatientData) {
+      const loadPatient = async () => {
+        const { data } = await supabase
           .from("pacientes")
           .select("*")
-          .order("created_at", { ascending: false });
-
-        if (patientsData) {
-          const mapped: Patient[] = patientsData.map((p) => ({
-            id: p.id,
-            name: `${p.nombres} ${p.apellidos}`,
-            documentId: p.numero_documento,
-            dateOfBirth: p.fecha_nacimiento || "",
-            gender: "Otro" as Patient["gender"],
-            contactNumber: p.telefono_principal,
-            email: p.email || undefined,
-            address: p.direccion || undefined,
-            createdAt: new Date(p.created_at),
-            lastVisitAt: undefined,
-          }));
-          setPatients(mapped);
+          .eq("id", preselectedPatientId)
+          .single();
+        if (data) {
+          setSelectedPatientData(data);
         }
-      } catch (err) {
-        console.error("Error fetching patients:", err);
+      };
+      loadPatient();
+    }
+  }, [preselectedPatientId]);
+
+  // Load forms
+  useEffect(() => {
+    const savedForms = localStorage.getItem("forms");
+    if (savedForms) {
+      try {
+        const parsedForms = JSON.parse(savedForms).map((form: any) => ({
+          ...form,
+          createdAt: new Date(form.createdAt),
+          updatedAt: new Date(form.updatedAt)
+        }));
+        setAvailableForms(parsedForms);
+      } catch (error) {
+        console.error("Error parsing forms:", error);
       }
+    }
 
-      // Forms from localStorage (existing logic)
-      const savedForms = localStorage.getItem("forms");
-      if (savedForms) {
-        try {
-          const parsedForms = JSON.parse(savedForms).map((form: any) => ({
-            ...form,
-            createdAt: new Date(form.createdAt),
-            updatedAt: new Date(form.updatedAt)
-          }));
-          setAvailableForms(parsedForms);
-        } catch (error) {
-          console.error("Error parsing forms:", error);
-        }
-      }
-
-      if (selectedPatientId) {
-        const { recentForms, frequentForms } = getRecentAndFrequentForms(selectedPatientId);
-        setRecentForms(recentForms);
-        setFrequentForms(frequentForms);
-      } else {
-        const { recentForms, frequentForms } = getRecentAndFrequentForms();
-        setRecentForms(recentForms);
-        setFrequentForms(frequentForms);
-      }
-
-      setLoading(false);
-    };
-
-    fetchData();
+    const { recentForms, frequentForms } = getRecentAndFrequentForms(selectedPatientId || undefined);
+    setRecentForms(recentForms);
+    setFrequentForms(frequentForms);
+    setLoading(false);
   }, [selectedPatientId]);
 
+  const handleSelectPatient = (dbPatient: any) => {
+    setSelectedPatientId(dbPatient.id);
+    setSelectedPatientData(dbPatient);
+    setPatientSearchTerm("");
+    setSearchResults([]);
+  };
+
+  const handleClearPatient = () => {
+    setSelectedPatientId("");
+    setSelectedPatientData(null);
+    setPatientSearchTerm("");
+  };
+
   const handlePatientContinue = () => {
-    let patientId = selectedPatientId;
-    
-    if (isNewPatient) {
-      if (!newPatientData.name || !newPatientData.documentId || !newPatientData.contactNumber) {
-        toast({
-          title: "Datos incompletos",
-          description: "Por favor complete los datos básicos del paciente",
-          variant: "destructive"
-        });
-        return;
-      }
-      
-      const newPatient: Patient = {
-        id: nanoid(),
-        name: newPatientData.name || "",
-        documentId: newPatientData.documentId || "",
-        dateOfBirth: newPatientData.dateOfBirth || new Date().toISOString().split('T')[0],
-        gender: newPatientData.gender as "Masculino" | "Femenino" | "Otro" || "Masculino",
-        contactNumber: newPatientData.contactNumber || "",
-        email: newPatientData.email,
-        address: newPatientData.address,
-        createdAt: new Date(),
-        lastVisitAt: new Date()
-      };
-      
-      const updatedPatients = [...patients, newPatient];
-      localStorage.setItem("patients", JSON.stringify(updatedPatients));
-      
-      patientId = newPatient.id;
-      setSelectedPatientId(patientId);
-    } else if (!selectedPatientId) {
+    if (!selectedPatientId) {
       toast({
         title: "Paciente no seleccionado",
         description: "Por favor seleccione un paciente para continuar",
@@ -199,7 +181,7 @@ const NewConsultation = () => {
       return;
     }
     
-    const { recentForms, frequentForms } = getRecentAndFrequentForms(patientId);
+    const { recentForms, frequentForms } = getRecentAndFrequentForms(selectedPatientId);
     setRecentForms(recentForms);
     setFrequentForms(frequentForms);
     
@@ -257,14 +239,9 @@ const NewConsultation = () => {
     const updatedConsultations = [...existingConsultations, newConsultation];
     localStorage.setItem("consultations", JSON.stringify(updatedConsultations));
     
-    const updatedPatients = patients.map(patient => 
-      patient.id === selectedPatientId 
-        ? { ...patient, lastVisitAt: new Date() }
-        : patient
-    );
-    localStorage.setItem("patients", JSON.stringify(updatedPatients));
-    
     if (enableFollowUp && followUpDate) {
+      const patientName = selectedPatientData ? `${selectedPatientData.nombres} ${selectedPatientData.apellidos}` : "";
+
       const newFollowUp: FollowUp = {
         id: nanoid(),
         patientId: selectedPatientId,
@@ -284,7 +261,6 @@ const NewConsultation = () => {
       
       if (createReminder) {
         const reminderDate = calculateReminderDate(followUpDate, reminderDays);
-        const patientName = patients.find(p => p.id === selectedPatientId)?.name || "";
         
         const newAlert: PatientAlert = {
           id: nanoid(),
@@ -394,6 +370,19 @@ const NewConsultation = () => {
     );
   };
 
+  // Patient summary info row
+  const InfoRow = ({ icon: Icon, label, value }: { icon: React.ElementType; label: string; value?: string | null }) => (
+    <div className="flex items-center gap-2.5 py-1">
+      <Icon className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+      <div className="min-w-0 flex-1">
+        <p className="text-[11px] text-muted-foreground leading-none mb-0.5">{label}</p>
+        <p className={cn("text-sm", !value && "text-muted-foreground/60 italic")}>
+          {value || "—"}
+        </p>
+      </div>
+    </div>
+  );
+
   return (
     <div className="h-full flex flex-col overflow-hidden bg-gradient-to-br from-background via-background to-muted/20">
       {/* Stepper - matching AppointmentWizard style */}
@@ -483,7 +472,7 @@ const NewConsultation = () => {
             <div />
           )}
           {currentStep === 1 && (
-            <Button onClick={handlePatientContinue} className="rounded-xl h-9 px-5 gap-2">
+            <Button onClick={handlePatientContinue} disabled={!selectedPatientId} className="rounded-xl h-9 px-5 gap-2">
               Continuar
               <ArrowRight className="w-4 h-4" />
             </Button>
@@ -519,102 +508,187 @@ const NewConsultation = () => {
                   scale: { duration: 0.2 }
                 }}
               >
-                {/* Step 1: Patient Selection */}
+                {/* Step 1: Patient Selection - Search Input like AppointmentWizard */}
                 {currentStep === 1 && (
-                  <div className="max-w-3xl mx-auto">
-                    <div className="bg-card/50 backdrop-blur-sm rounded-2xl border border-border/50 p-6">
-                      <h2 className="text-lg font-semibold text-foreground mb-4">Información del paciente</h2>
-                      
-                      <div className="space-y-4">
-                        <div>
-                          <Label className="text-xs text-muted-foreground uppercase tracking-wider">Tipo de paciente</Label>
-                          <div className="flex gap-3 mt-2">
-                            <Button
-                              type="button"
-                              variant={!isNewPatient ? "default" : "outline"}
-                              onClick={() => setIsNewPatient(false)}
-                              className="rounded-xl"
-                            >
-                              Paciente existente
-                            </Button>
-                            <Button
-                              type="button"
-                              variant={isNewPatient ? "default" : "outline"}
-                              onClick={() => setIsNewPatient(true)}
-                              className="rounded-xl"
-                            >
-                              Nuevo paciente
-                            </Button>
-                          </div>
-                        </div>
-                        
-                        {isNewPatient ? (
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                              <Label htmlFor="name" className="text-xs text-muted-foreground">Nombre completo *</Label>
-                              <Input id="name" value={newPatientData.name} onChange={(e) => setNewPatientData({...newPatientData, name: e.target.value})} className="rounded-xl bg-muted/50 border-0" required />
-                            </div>
-                            <div className="space-y-2">
-                              <Label htmlFor="documentId" className="text-xs text-muted-foreground">Documento *</Label>
-                              <Input id="documentId" value={newPatientData.documentId} onChange={(e) => setNewPatientData({...newPatientData, documentId: e.target.value})} className="rounded-xl bg-muted/50 border-0" required />
-                            </div>
-                            <div className="space-y-2">
-                              <Label htmlFor="dateOfBirth" className="text-xs text-muted-foreground">Fecha de nacimiento</Label>
-                              <Input id="dateOfBirth" type="date" value={newPatientData.dateOfBirth} onChange={(e) => setNewPatientData({...newPatientData, dateOfBirth: e.target.value})} className="rounded-xl bg-muted/50 border-0" />
-                            </div>
-                            <div className="space-y-2">
-                              <Label htmlFor="gender" className="text-xs text-muted-foreground">Género</Label>
-                              <Select value={newPatientData.gender} onValueChange={(value) => setNewPatientData({...newPatientData, gender: value as any})}>
-                                <SelectTrigger className="rounded-xl bg-muted/50 border-0"><SelectValue /></SelectTrigger>
-                                <SelectContent className="rounded-xl">
-                                  <SelectItem value="Masculino">Masculino</SelectItem>
-                                  <SelectItem value="Femenino">Femenino</SelectItem>
-                                  <SelectItem value="Otro">Otro</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </div>
-                            <div className="space-y-2">
-                              <Label htmlFor="contactNumber" className="text-xs text-muted-foreground">Teléfono *</Label>
-                              <Input id="contactNumber" value={newPatientData.contactNumber} onChange={(e) => setNewPatientData({...newPatientData, contactNumber: e.target.value})} className="rounded-xl bg-muted/50 border-0" required />
-                            </div>
-                            <div className="space-y-2">
-                              <Label htmlFor="email" className="text-xs text-muted-foreground">Correo electrónico</Label>
-                              <Input id="email" type="email" value={newPatientData.email || ""} onChange={(e) => setNewPatientData({...newPatientData, email: e.target.value})} className="rounded-xl bg-muted/50 border-0" />
-                            </div>
-                            <div className="space-y-2 md:col-span-2">
-                              <Label htmlFor="address" className="text-xs text-muted-foreground">Dirección</Label>
-                              <Input id="address" value={newPatientData.address || ""} onChange={(e) => setNewPatientData({...newPatientData, address: e.target.value})} className="rounded-xl bg-muted/50 border-0" />
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="space-y-2">
-                            <Label className="text-xs text-muted-foreground">Seleccionar paciente *</Label>
-                            {loading ? (
-                              <div className="flex items-center justify-center p-4 rounded-xl bg-muted/30">
-                                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary"></div>
-                                <span className="ml-2 text-sm text-muted-foreground">Cargando...</span>
-                              </div>
-                            ) : patients.length > 0 ? (
-                              <Select value={selectedPatientId} onValueChange={setSelectedPatientId}>
-                                <SelectTrigger className="rounded-xl bg-muted/50 border-0"><SelectValue placeholder="Seleccionar paciente" /></SelectTrigger>
-                                <SelectContent className="rounded-xl">
-                                  {patients.map((patient) => (
-                                    <SelectItem key={patient.id} value={patient.id}>{patient.name} - {patient.documentId}</SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            ) : (
-                              <div className="text-center py-8 rounded-2xl border border-dashed border-border/50">
-                                <User className="mx-auto h-10 w-10 text-muted-foreground/40 mb-3" />
-                                <h3 className="text-sm font-medium text-foreground mb-1">No hay pacientes</h3>
-                                <p className="text-xs text-muted-foreground mb-3">Cree un nuevo paciente para continuar</p>
-                                <Button onClick={() => setIsNewPatient(true)} size="sm" className="rounded-xl">Crear paciente</Button>
-                              </div>
-                            )}
-                          </div>
-                        )}
+                  <div className="max-w-3xl mx-auto space-y-4">
+                    {/* Header */}
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="flex items-center gap-3"
+                    >
+                      <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-primary/20 to-primary/10">
+                        <User className="w-5 h-5 text-primary" />
                       </div>
-                    </div>
+                      <div>
+                        <h2 className="text-lg font-semibold">¿Quién es el paciente?</h2>
+                        <p className="text-sm text-muted-foreground">
+                          Busca un paciente existente por nombre o documento
+                        </p>
+                      </div>
+                    </motion.div>
+
+                    {/* Search Card */}
+                    {!selectedPatientData ? (
+                      <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.1 }}
+                      >
+                        <Card className="bg-card/60 backdrop-blur-xl border-border/30 shadow-lg rounded-2xl overflow-hidden">
+                          <CardContent className="p-5">
+                            {/* Search Input */}
+                            <div className="relative mb-5">
+                              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                              <Input
+                                placeholder="Buscar por nombre o número de documento..."
+                                value={patientSearchTerm}
+                                onChange={(e) => setPatientSearchTerm(e.target.value)}
+                                className="pl-12 h-12 text-base bg-background/50 border-border/50 rounded-xl focus:ring-2 focus:ring-primary/20"
+                              />
+                              {isSearching && (
+                                <Loader2 className="absolute right-4 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
+                              )}
+                            </div>
+
+                            {/* Results */}
+                            {patientSearchTerm.length >= 2 && (
+                              <motion.div
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                className="space-y-4"
+                              >
+                                {searchResults.length > 0 ? (
+                                  <>
+                                    <p className="text-sm text-muted-foreground mb-2">
+                                      {searchResults.length} resultado(s) encontrado(s)
+                                    </p>
+                                    <ScrollArea className="h-[260px]">
+                                      <div className="space-y-2 pr-4">
+                                        {searchResults.map((patient, index) => (
+                                          <motion.div
+                                            key={patient.id}
+                                            initial={{ opacity: 0, x: -20 }}
+                                            animate={{ opacity: 1, x: 0 }}
+                                            transition={{ delay: index * 0.05 }}
+                                          >
+                                            <Card
+                                              className={cn(
+                                                "cursor-pointer transition-all duration-200 border-border/30 rounded-xl",
+                                                "hover:bg-primary/5 hover:border-primary/30 hover:shadow-md",
+                                                "active:scale-[0.99]"
+                                              )}
+                                              onClick={() => handleSelectPatient(patient)}
+                                            >
+                                              <CardContent className="p-3">
+                                                <div className="flex items-center gap-3">
+                                                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center text-primary font-semibold">
+                                                    {patient.nombres?.charAt(0)}{patient.apellidos?.charAt(0)}
+                                                  </div>
+                                                  <div className="flex-1 min-w-0">
+                                                    <p className="font-semibold text-base truncate">
+                                                      {patient.nombres} {patient.apellidos}
+                                                    </p>
+                                                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                                      <span>{patient.numero_documento}</span>
+                                                      {patient.telefono_principal && (
+                                                        <>
+                                                          <span>•</span>
+                                                          <span className="flex items-center gap-1">
+                                                            <Phone className="w-3 h-3" />
+                                                            {patient.telefono_principal}
+                                                          </span>
+                                                        </>
+                                                      )}
+                                                    </div>
+                                                  </div>
+                                                  <ArrowRight className="w-4 h-4 text-muted-foreground" />
+                                                </div>
+                                              </CardContent>
+                                            </Card>
+                                          </motion.div>
+                                        ))}
+                                      </div>
+                                    </ScrollArea>
+                                  </>
+                                ) : !isSearching ? (
+                                  <motion.div
+                                    initial={{ opacity: 0, scale: 0.95 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    className="text-center py-6"
+                                  >
+                                    <div className="w-14 h-14 rounded-2xl bg-muted/50 flex items-center justify-center mx-auto mb-3">
+                                      <Search className="w-7 h-7 text-muted-foreground" />
+                                    </div>
+                                    <p className="text-muted-foreground">
+                                      No se encontraron pacientes con "{patientSearchTerm}"
+                                    </p>
+                                  </motion.div>
+                                ) : null}
+                              </motion.div>
+                            )}
+
+                            {/* Empty state */}
+                            {patientSearchTerm.length < 2 && (
+                              <motion.div
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                className="flex items-center justify-center gap-4 py-4"
+                              >
+                                <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center shrink-0">
+                                  <Sparkles className="w-5 h-5 text-primary" />
+                                </div>
+                                <p className="text-sm text-muted-foreground">
+                                  Escribe el nombre o documento del paciente
+                                </p>
+                              </motion.div>
+                            )}
+                          </CardContent>
+                        </Card>
+                      </motion.div>
+                    ) : (
+                      /* Patient Summary (read-only) */
+                      <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.1 }}
+                      >
+                        <Card className="bg-card/60 backdrop-blur-xl border-border/30 shadow-lg rounded-2xl overflow-hidden">
+                          <CardContent className="p-5">
+                            {/* Patient header */}
+                            <div className="flex items-center justify-between mb-4">
+                              <div className="flex items-center gap-3">
+                                <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center text-primary font-semibold text-lg">
+                                  {selectedPatientData.nombres?.charAt(0)}{selectedPatientData.apellidos?.charAt(0)}
+                                </div>
+                                <div>
+                                  <h3 className="text-base font-semibold leading-tight">
+                                    {selectedPatientData.nombres} {selectedPatientData.apellidos}
+                                  </h3>
+                                  <p className="text-xs text-muted-foreground">
+                                    {selectedPatientData.tipo_documento || 'CC'} {selectedPatientData.numero_documento}
+                                    {selectedPatientData.numero_historia ? ` · Hª ${selectedPatientData.numero_historia}` : ''}
+                                  </p>
+                                </div>
+                              </div>
+                              <Button variant="ghost" size="sm" onClick={handleClearPatient} className="rounded-xl text-muted-foreground">
+                                Cambiar
+                              </Button>
+                            </div>
+
+                            {/* Patient info summary */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
+                              <InfoRow icon={Phone} label="Teléfono" value={selectedPatientData.telefono_principal} />
+                              <InfoRow icon={Mail} label="Correo" value={selectedPatientData.email} />
+                              <InfoRow icon={User} label="Fecha de nacimiento" value={selectedPatientData.fecha_nacimiento} />
+                              <InfoRow icon={Shield} label="Régimen" value={selectedPatientData.regimen} />
+                              <InfoRow icon={MapPin} label="Dirección" value={selectedPatientData.direccion} />
+                              <InfoRow icon={MapPin} label="Ciudad" value={selectedPatientData.ciudad} />
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </motion.div>
+                    )}
                   </div>
                 )}
 
