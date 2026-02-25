@@ -286,7 +286,7 @@ export const AppointmentWizard: React.FC<AppointmentWizardProps> = ({
 
         {/* Scrollable Content area - strictly below navigation */}
         <div 
-          className="flex-1 overflow-y-auto px-6 md:px-8 pb-24"
+          className="flex-1 min-h-0 overflow-hidden px-6 md:px-8 pb-24"
           style={{ 
             marginTop: `${NAV_HEIGHT}px`,
             height: `calc(100vh - ${NAV_HEIGHT}px)`
@@ -294,10 +294,10 @@ export const AppointmentWizard: React.FC<AppointmentWizardProps> = ({
         >
           {/* Use full width for scheduling step (step 3), constrained width for others */}
           <div className={cn(
-            "mx-auto transition-all duration-300",
+            "mx-auto transition-all duration-300 h-full",
             currentStep === 4 ? "max-w-[1600px]" : "max-w-5xl"
           )}>
-            <div className="relative overflow-hidden">
+            <div className="relative overflow-hidden h-full">
             <AnimatePresence mode="wait" custom={direction}>
               <motion.div
                 key={currentStep}
@@ -306,6 +306,7 @@ export const AppointmentWizard: React.FC<AppointmentWizardProps> = ({
                 initial="enter"
                 animate="center"
                 exit="exit"
+                className="h-full"
                 transition={{
                   x: { type: "spring", stiffness: 300, damping: 30 },
                   opacity: { duration: 0.2 },
