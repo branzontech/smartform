@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { Plus, FileText, PieChart, Palette, SeparatorHorizontal } from "lucide-react";
+import { Plus, FileText, Palette, SeparatorHorizontal, Save, X } from "lucide-react";
 import { nanoid } from "nanoid";
 import { supabase } from "@/integrations/supabase/client";
 import { Header } from "@/components/layout/header";
@@ -100,8 +100,8 @@ const FormCreator = () => {
     };
     
     setQuestions([...questions, newQuestion]);
-    // Expandir automáticamente la nueva pregunta
-    setExpandedQuestions(prev => [...prev, newQuestionId]);
+    // Colapsar todas y expandir solo la nueva (estilo Google Forms)
+    setExpandedQuestions([newQuestionId]);
   };
 
   const handleAddSection = () => {
@@ -278,7 +278,34 @@ const FormCreator = () => {
       <Header showCreate={false} />
       <main className="flex-1 container mx-auto py-6">
         <div className="max-w-3xl mx-auto">
-          <BackButton />
+          <div className="flex items-center justify-between mb-4">
+            <BackButton />
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate("/")}
+                disabled={saving}
+                className="text-muted-foreground"
+              >
+                <X size={16} className="mr-1" />
+                Cancelar
+              </Button>
+              <Button
+                size="sm"
+                onClick={saveForm}
+                disabled={saving}
+                style={{
+                  backgroundColor: designOptions.primaryColor,
+                  borderColor: designOptions.primaryColor
+                }}
+                className="text-white"
+              >
+                <Save size={16} className="mr-1" />
+                {saving ? "Guardando..." : "Guardar"}
+              </Button>
+            </div>
+          </div>
           <div className="form-card overflow-visible mb-6" style={{backgroundColor: designOptions.backgroundColor}}>
             <FormTitle
               defaultTitle={title}
@@ -523,77 +550,42 @@ const FormCreator = () => {
             </Tabs>
           </div>
           
-          {/* Lista de preguntas */}
-          <div className="space-y-4 mb-8">
-            {questions.map((question, index) => (
-              <Question
-                key={question.id}
-                question={question}
-                onUpdate={handleUpdateQuestion}
-                onDelete={handleDeleteQuestion}
-                isExpanded={expandedQuestions.includes(question.id)}
-                onToggleExpand={() => toggleQuestionExpansion(question.id)}
-                onMoveUp={handleMoveQuestionUp}
-                onMoveDown={handleMoveQuestionDown}
-                isFirst={index === 0}
-                isLast={index === questions.length - 1}
-                designOptions={designOptions}
-              />
-            ))}
-          </div>
-          
-          {/* Botón para añadir campos */}
-          <div className="flex justify-center gap-3 mb-8">
-            <Button 
-              onClick={handleAddQuestion}
-              variant="outline"
-              size="lg"
-              style={{
-                backgroundColor: designOptions.questionBackgroundColor,
-                color: designOptions.questionTextColor,
-                borderColor: `${designOptions.primaryColor}30`,
-              }}
-            >
-              <Plus size={20} className="mr-2" />
-              Añadir campo clínico
-            </Button>
-            <Button
-              onClick={handleAddSection}
-              variant="outline"
-              size="lg"
-              className="text-muted-foreground"
-              style={{
-                borderColor: `${designOptions.primaryColor}30`,
-              }}
-            >
-              <SeparatorHorizontal size={20} className="mr-2" />
-              Añadir sección
-            </Button>
-          </div>
-          
-          <div className="sticky bottom-6 flex justify-end">
-            <div className="glassmorphism px-6 py-4 rounded-full shadow-lg animate-slide-up">
-              <div className="flex gap-4">
-                <Button
-                  variant="outline"
-                  onClick={() => navigate("/")}
-                  className="bg-white"
-                  disabled={saving}
-                >
-                  Cancelar
-                </Button>
-                <Button
-                  onClick={saveForm}
-                  className="bg-form-primary hover:bg-form-primary/90"
-                  disabled={saving}
-                  style={{
-                    backgroundColor: designOptions.primaryColor,
-                    borderColor: designOptions.primaryColor
-                  }}
-                >
-                  {saving ? "Guardando..." : "Guardar formulario"}
-                </Button>
-              </div>
+          {/* Lista de preguntas con toolbar flotante estilo Google Forms */}
+          <div className="relative">
+            <div className="space-y-4 mb-8">
+              {questions.map((question, index) => (
+                <Question
+                  key={question.id}
+                  question={question}
+                  onUpdate={handleUpdateQuestion}
+                  onDelete={handleDeleteQuestion}
+                  isExpanded={expandedQuestions.includes(question.id)}
+                  onToggleExpand={() => toggleQuestionExpansion(question.id)}
+                  onMoveUp={handleMoveQuestionUp}
+                  onMoveDown={handleMoveQuestionDown}
+                  isFirst={index === 0}
+                  isLast={index === questions.length - 1}
+                  designOptions={designOptions}
+                />
+              ))}
+            </div>
+
+            {/* Floating toolbar - Google Forms style */}
+            <div className="fixed right-8 top-1/2 -translate-y-1/2 z-40 flex flex-col gap-1 bg-background border border-border rounded-lg shadow-lg p-1.5">
+              <button
+                onClick={handleAddQuestion}
+                className="p-2.5 rounded-md hover:bg-muted transition-colors group relative"
+                title="Añadir pregunta"
+              >
+                <Plus size={20} className="text-muted-foreground group-hover:text-foreground" />
+              </button>
+              <button
+                onClick={handleAddSection}
+                className="p-2.5 rounded-md hover:bg-muted transition-colors group relative"
+                title="Añadir sección"
+              >
+                <SeparatorHorizontal size={20} className="text-muted-foreground group-hover:text-foreground" />
+              </button>
             </div>
           </div>
         </div>
