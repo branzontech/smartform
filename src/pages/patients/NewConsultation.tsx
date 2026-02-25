@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Calendar as CalendarIcon, Clock, Save, FileText, ArrowRight, ArrowLeft, Bell, AlertTriangle, User, ClipboardList, Check, Stethoscope, Search, Loader2, Phone, Mail, MapPin, Shield } from "lucide-react";
+import { Calendar as CalendarIcon, Clock, Save, FileText, ArrowRight, ArrowLeft, Bell, AlertTriangle, User, ClipboardList, Check, Stethoscope, Search, Loader2, Phone, Mail, MapPin, Shield, Briefcase, CreditCard, Hash, Heart } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Calendar } from "@/components/ui/calendar";
@@ -647,7 +647,7 @@ const NewConsultation = () => {
                         </Card>
                       </motion.div>
                     ) : (
-                      /* Patient Summary (read-only) */
+                      /* Patient Full Detail (read-only) */
                       <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -656,19 +656,37 @@ const NewConsultation = () => {
                         <Card className="bg-card/60 backdrop-blur-xl border-border/30 shadow-lg rounded-2xl overflow-hidden">
                           <CardContent className="p-5">
                             {/* Patient header */}
-                            <div className="flex items-center justify-between mb-4">
+                            <div className="flex items-center justify-between mb-5">
                               <div className="flex items-center gap-3">
-                                <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center text-primary font-semibold text-lg">
+                                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center text-primary font-semibold text-lg">
                                   {selectedPatientData.nombres?.charAt(0)}{selectedPatientData.apellidos?.charAt(0)}
                                 </div>
                                 <div>
-                                  <h3 className="text-base font-semibold leading-tight">
+                                  <h3 className="text-lg font-semibold leading-tight">
                                     {selectedPatientData.nombres} {selectedPatientData.apellidos}
                                   </h3>
-                                  <p className="text-xs text-muted-foreground">
-                                    {selectedPatientData.tipo_documento || 'CC'} {selectedPatientData.numero_documento}
-                                    {selectedPatientData.numero_historia ? ` · Hª ${selectedPatientData.numero_historia}` : ''}
-                                  </p>
+                                  <div className="flex items-center gap-2 mt-0.5">
+                                    <p className="text-xs text-muted-foreground">
+                                      {selectedPatientData.tipo_documento || 'CC'} {selectedPatientData.numero_documento}
+                                    </p>
+                                    {selectedPatientData.fecha_nacimiento && (
+                                      <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
+                                        {(() => {
+                                          const birth = new Date(selectedPatientData.fecha_nacimiento);
+                                          const today = new Date();
+                                          let age = today.getFullYear() - birth.getFullYear();
+                                          const m = today.getMonth() - birth.getMonth();
+                                          if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
+                                          return `${age} años`;
+                                        })()}
+                                      </Badge>
+                                    )}
+                                    {selectedPatientData.estado_paciente && (
+                                      <Badge variant={selectedPatientData.estado_paciente === 'activo' ? 'default' : 'outline'} className="text-[10px] px-1.5 py-0 capitalize">
+                                        {selectedPatientData.estado_paciente}
+                                      </Badge>
+                                    )}
+                                  </div>
                                 </div>
                               </div>
                               <Button variant="ghost" size="sm" onClick={handleClearPatient} className="rounded-xl text-muted-foreground">
@@ -676,14 +694,26 @@ const NewConsultation = () => {
                               </Button>
                             </div>
 
-                            {/* Patient info summary */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
-                              <InfoRow icon={Phone} label="Teléfono" value={selectedPatientData.telefono_principal} />
-                              <InfoRow icon={Mail} label="Correo" value={selectedPatientData.email} />
-                              <InfoRow icon={User} label="Fecha de nacimiento" value={selectedPatientData.fecha_nacimiento} />
+                            {/* Full patient info grid */}
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-x-6 gap-y-1">
+                              <InfoRow icon={Phone} label="Teléfono principal" value={selectedPatientData.telefono_principal} />
+                              <InfoRow icon={Phone} label="Teléfono secundario" value={selectedPatientData.telefono_secundario} />
+                              <InfoRow icon={Mail} label="Correo electrónico" value={selectedPatientData.email} />
+                              <InfoRow icon={CalendarIcon} label="Fecha de nacimiento" value={
+                                selectedPatientData.fecha_nacimiento 
+                                  ? format(new Date(selectedPatientData.fecha_nacimiento), "dd 'de' MMMM 'de' yyyy", { locale: es })
+                                  : null
+                              } />
+                              <InfoRow icon={CreditCard} label="Tipo documento" value={selectedPatientData.tipo_documento} />
+                              <InfoRow icon={Hash} label="Nº Historia" value={selectedPatientData.numero_historia} />
                               <InfoRow icon={Shield} label="Régimen" value={selectedPatientData.regimen} />
+                              <InfoRow icon={Heart} label="Tipo afiliación" value={selectedPatientData.tipo_afiliacion} />
+                              <InfoRow icon={CreditCard} label="Carnet" value={selectedPatientData.carnet} />
                               <InfoRow icon={MapPin} label="Dirección" value={selectedPatientData.direccion} />
                               <InfoRow icon={MapPin} label="Ciudad" value={selectedPatientData.ciudad} />
+                              <InfoRow icon={MapPin} label="Estado/Depto" value={selectedPatientData.estado} />
+                              <InfoRow icon={MapPin} label="Zona" value={selectedPatientData.zona} />
+                              <InfoRow icon={Briefcase} label="Ocupación" value={selectedPatientData.ocupacion} />
                             </div>
                           </CardContent>
                         </Card>
