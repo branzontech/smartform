@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from "react";
+import { DynamicFieldRenderer } from "@/components/config/DynamicFieldRenderer";
+import type { DynamicFieldConfig } from "@/components/config/DynamicFieldConfigurator";
 import { motion } from "framer-motion";
 import { 
   Search, 
@@ -31,13 +33,7 @@ import { PatientStatusBadge } from "@/components/patients/PatientStatusBadge";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
-interface DynamicField {
-  id: string;
-  label: string;
-  tipo_dato: string;
-  es_requerido: boolean;
-  orden: number;
-}
+// Using shared DynamicFieldConfig type from DynamicFieldConfigurator
 
 interface PatientSearchStepProps {
   patients: ExtendedPatient[];
@@ -59,7 +55,7 @@ export const PatientSearchStep: React.FC<PatientSearchStepProps> = ({
     relationship: "",
     phone: ""
   });
-  const [dynamicFields, setDynamicFields] = useState<DynamicField[]>([]);
+  const [dynamicFields, setDynamicFields] = useState<DynamicFieldConfig[]>([]);
   const [dynamicValues, setDynamicValues] = useState<Record<string, string>>({});
   const [dbPatients, setDbPatients] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -73,7 +69,7 @@ export const PatientSearchStep: React.FC<PatientSearchStepProps> = ({
         .select("*")
         .order("orden", { ascending: true });
       if (data && !error) {
-        setDynamicFields(data as DynamicField[]);
+        setDynamicFields(data.map((d: any) => ({ ...d, opciones: Array.isArray(d.opciones) ? d.opciones : [] })) as DynamicFieldConfig[]);
       }
     };
     fetchDynamicFields();
@@ -616,21 +612,11 @@ export const PatientSearchStep: React.FC<PatientSearchStepProps> = ({
                 {dynamicFields.length > 0 && (
                   <div className="space-y-4 p-4 bg-muted/20 rounded-2xl border border-border/30">
                     <Label className="text-base font-medium">Campos adicionales</Label>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {dynamicFields.map((field) => (
-                        <div key={field.id}>
-                          <Label>{field.label}{field.es_requerido ? " *" : ""}</Label>
-                          <Input
-                            type={field.tipo_dato === "number" ? "number" : field.tipo_dato === "date" ? "date" : "text"}
-                            placeholder={field.label}
-                            value={dynamicValues[field.id] || ""}
-                            onChange={(e) => setDynamicValues({ ...dynamicValues, [field.id]: e.target.value })}
-                            className="h-11 rounded-xl"
-                            required={field.es_requerido}
-                          />
-                        </div>
-                      ))}
-                    </div>
+                    <DynamicFieldRenderer
+                      fields={dynamicFields}
+                      values={dynamicValues}
+                      onChange={(fieldId, value) => setDynamicValues({ ...dynamicValues, [fieldId]: value })}
+                    />
                   </div>
                 )}
 

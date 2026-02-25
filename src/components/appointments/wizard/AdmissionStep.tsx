@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from "react";
+import { DynamicFieldRenderer } from "@/components/config/DynamicFieldRenderer";
+import type { DynamicFieldConfig } from "@/components/config/DynamicFieldConfigurator";
 import { motion } from "framer-motion";
 import { 
   ClipboardList, 
@@ -51,13 +53,7 @@ interface AdmissionType {
   descripcion: string | null;
 }
 
-interface DynamicField {
-  id: string;
-  label: string;
-  tipo_dato: string;
-  es_requerido: boolean;
-  orden: number;
-}
+// Using shared DynamicFieldConfig type
 
 interface AdmissionStepProps {
   patient: ExtendedPatient;
@@ -104,7 +100,7 @@ export const AdmissionStep: React.FC<AdmissionStepProps> = ({
   const [wantsAdmission, setWantsAdmission] = useState<boolean | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [admissionTypes, setAdmissionTypes] = useState<AdmissionType[]>([]);
-  const [customFields, setCustomFields] = useState<DynamicField[]>([]);
+  const [customFields, setCustomFields] = useState<DynamicFieldConfig[]>([]);
   const [loadingConfig, setLoadingConfig] = useState(true);
   
   const [admissionData, setAdmissionData] = useState<AdmissionData>({
@@ -132,7 +128,7 @@ export const AdmissionStep: React.FC<AdmissionStepProps> = ({
         supabase.from("configuracion_campos_admision").select("*").order("orden"),
       ]);
       if (typesRes.data) setAdmissionTypes(typesRes.data);
-      if (fieldsRes.data) setCustomFields(fieldsRes.data as DynamicField[]);
+      if (fieldsRes.data) setCustomFields(fieldsRes.data.map((d: any) => ({ ...d, opciones: Array.isArray(d.opciones) ? d.opciones : [] })) as DynamicFieldConfig[]);
       // Set default type
       if (typesRes.data?.length && !admissionData.appointmentType) {
         setAdmissionData(prev => ({ ...prev, appointmentType: typesRes.data[0].id }));
@@ -527,23 +523,11 @@ export const AdmissionStep: React.FC<AdmissionStepProps> = ({
                         <ClipboardList className="w-4 h-4" />
                         Campos personalizados (Extensiones FHIR)
                       </h4>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {customFields.map((field) => (
-                          <div key={field.id}>
-                            <Label>
-                              {field.label}
-                              {field.es_requerido && <span className="text-destructive ml-1">*</span>}
-                            </Label>
-                            <Input
-                              type={field.tipo_dato === "number" ? "number" : field.tipo_dato === "date" ? "date" : "text"}
-                              placeholder={field.label}
-                              value={admissionData.customFields?.[field.id] || ""}
-                              onChange={(e) => updateCustomField(field.id, e.target.value)}
-                              className="h-11 rounded-xl mt-2"
-                            />
-                          </div>
-                        ))}
-                      </div>
+                      <DynamicFieldRenderer
+                        fields={customFields}
+                        values={admissionData.customFields || {}}
+                        onChange={updateCustomField}
+                      />
                     </div>
                   )}
 
