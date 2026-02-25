@@ -86,6 +86,39 @@ export type Database = {
           },
         ]
       }
+      catalogo_diagnosticos: {
+        Row: {
+          activo: boolean
+          capitulo: string | null
+          codigo: string
+          created_at: string
+          descripcion: string
+          fhir_system_uri: string
+          id: string
+          sistema: string
+        }
+        Insert: {
+          activo?: boolean
+          capitulo?: string | null
+          codigo: string
+          created_at?: string
+          descripcion: string
+          fhir_system_uri: string
+          id?: string
+          sistema: string
+        }
+        Update: {
+          activo?: boolean
+          capitulo?: string | null
+          codigo?: string
+          created_at?: string
+          descripcion?: string
+          fhir_system_uri?: string
+          id?: string
+          sistema?: string
+        }
+        Relationships: []
+      }
       configuracion_campos_admision: {
         Row: {
           created_at: string
