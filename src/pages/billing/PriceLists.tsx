@@ -483,16 +483,26 @@ const PriceLists: React.FC = () => {
   };
 
   // Print tarifario
-  const handlePrintTarifario = () => {
-    if (!selectedTarifario) return;
+  const handlePrintTarifario = async (tarifario: TarifarioMaestro) => {
+    // Fetch services for this tarifario
+    const { data, error } = await supabase
+      .from("tarifarios_servicios" as any)
+      .select("*")
+      .eq("tarifario_id", tarifario.id)
+      .order("codigo_servicio");
+    if (error) {
+      toast.error("Error al cargar servicios para imprimir");
+      return;
+    }
+    const allServicios = (data || []) as unknown as TarifarioServicio[];
     const printWindow = window.open('', '_blank');
     if (!printWindow) {
       toast.error('Permite las ventanas emergentes para imprimir.');
       return;
     }
-    const activeServicios = servicios.filter(s => s.activo);
-    const inactiveServicios = servicios.filter(s => !s.activo);
-    const moneda = selectedTarifario.moneda || 'COP';
+    const activeServicios = allServicios.filter(s => s.activo);
+    const inactiveServicios = allServicios.filter(s => !s.activo);
+    const moneda = tarifario.moneda || 'COP';
 
     const renderRows = (items: TarifarioServicio[]) => items.map(s => {
       const meta = s.metadata_regulatoria || {};
@@ -508,7 +518,7 @@ const PriceLists: React.FC = () => {
 
     const html = [
       '<!DOCTYPE html><html><head>',
-      `<title>${selectedTarifario.nombre}</title><meta charset="utf-8">`,
+      `<title>${tarifario.nombre}</title><meta charset="utf-8">`,
       '<style>',
       'body{font-family:system-ui,-apple-system,sans-serif;margin:0;padding:24px;color:#333;font-size:13px}',
       '.header{text-align:center;margin-bottom:16px;padding-bottom:12px;border-bottom:2px solid #333}',
@@ -527,16 +537,16 @@ const PriceLists: React.FC = () => {
       '@media print{.no-print{display:none}body{padding:12px}}',
       '</style></head><body>',
       '<div class="header">',
-      `<h1>${selectedTarifario.nombre}</h1>`,
-      `<p>${selectedTarifario.descripcion || 'Tarifario de servicios'}</p>`,
+      `<h1>${tarifario.nombre}</h1>`,
+      `<p>${tarifario.descripcion || 'Tarifario de servicios'}</p>`,
       '</div>',
       '<div class="meta">',
       `<div>Moneda: <strong>${moneda}</strong></div>`,
-      `<div>Estado: <strong>${selectedTarifario.estado ? 'Activo' : 'Inactivo'}</strong></div>`,
+      `<div>Estado: <strong>${tarifario.estado ? 'Activo' : 'Inactivo'}</strong></div>`,
       `<div>Fecha: ${new Date().toLocaleDateString('es-ES',{day:'numeric',month:'long',year:'numeric'})}</div>`,
       '</div>',
       '<div class="summary">',
-      `<div>Total servicios: <span>${servicios.length}</span></div>`,
+      `<div>Total servicios: <span>${allServicios.length}</span></div>`,
       `<div>Activos: <span>${activeServicios.length}</span></div>`,
       `<div>Inactivos: <span>${inactiveServicios.length}</span></div>`,
       '</div>',
@@ -550,7 +560,7 @@ const PriceLists: React.FC = () => {
         '<table class="inactive"><thead><tr><th>Sistema</th><th>Código</th><th>Descripción</th><th style="text-align:right">Valor</th><th>Metadata Regulatoria</th></tr></thead>',
         '<tbody>' + renderRows(inactiveServicios) + '</tbody></table>',
       ].join('') : '',
-      `<div class="footer">Documento generado automáticamente \u00B7 ${selectedTarifario.nombre}</div>`,
+      `<div class="footer">Documento generado automáticamente \u00B7 ${tarifario.nombre}</div>`,
       '<div class="no-print" style="text-align:center;margin-top:16px">',
       '<button onclick="window.print()" style="padding:8px 20px;background:#0099ff;color:white;border:none;border-radius:6px;cursor:pointer;font-size:13px">Imprimir</button>',
       '</div>',
@@ -764,6 +774,10 @@ const PriceLists: React.FC = () => {
                               <Copy className="w-3.5 h-3.5 mr-2" />
                               Actualizar Tarifario (Clonar)
                             </DropdownMenuItem>
+                            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handlePrintTarifario(t); }}>
+                              <Printer className="w-3.5 h-3.5 mr-2" />
+                              Imprimir Tarifario
+                            </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </TableCell>
@@ -840,16 +854,10 @@ const PriceLists: React.FC = () => {
       <Sheet open={sheetOpen} onOpenChange={(open) => { setSheetOpen(open); if (!open) setSelectedTarifario(null); }}>
         <SheetContent className="w-full sm:max-w-2xl flex flex-col overflow-hidden">
           <SheetHeader className="shrink-0">
-            <div className="flex items-center justify-between">
-              <SheetTitle className="flex items-center gap-2">
-                <DollarSign className="w-5 h-5 text-primary" />
-                {selectedTarifario?.nombre}
-              </SheetTitle>
-              <Button variant="outline" size="sm" className="rounded-xl h-8 gap-1.5 mr-6" onClick={handlePrintTarifario}>
-                <Printer className="w-3.5 h-3.5" />
-                Imprimir
-              </Button>
-            </div>
+            <SheetTitle className="flex items-center gap-2">
+              <DollarSign className="w-5 h-5 text-primary" />
+              {selectedTarifario?.nombre}
+            </SheetTitle>
             <SheetDescription>
               {selectedTarifario?.descripcion || "Servicios del tarifario"} · {selectedTarifario?.moneda}
             </SheetDescription>
