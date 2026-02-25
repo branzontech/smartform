@@ -420,7 +420,7 @@ const PriceLists: React.FC = () => {
       }
     }
     setEditRegulatoryForm(regForm);
-    setEditServicioDialogOpen(true);
+    // Form is shown inline in the drawer
   };
 
   const handleSaveServicio = async () => {
@@ -768,19 +768,33 @@ const PriceLists: React.FC = () => {
           </SheetHeader>
 
           <div className="flex flex-col flex-1 min-h-0 mt-4 gap-4">
-            {/* Add service form */}
+            {/* Add/Edit service form */}
             <div className="shrink-0 p-4 rounded-xl border border-border/40 bg-muted/20 space-y-3">
-              <p className="text-sm font-medium flex items-center gap-2">
-                <ListPlus className="w-4 h-4 text-primary" />
-                Agregar servicio
-              </p>
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-medium flex items-center gap-2">
+                  {editingServicio ? (
+                    <><Pencil className="w-4 h-4 text-primary" /> Editar servicio</>
+                  ) : (
+                    <><ListPlus className="w-4 h-4 text-primary" /> Agregar servicio</>
+                  )}
+                </p>
+                {editingServicio && (
+                  <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => { setEditingServicio(null); setEditServicioDialogOpen(false); }}>
+                    <XCircle className="w-3.5 h-3.5 mr-1" /> Cancelar edición
+                  </Button>
+                )}
+              </div>
               <div className="grid grid-cols-3 gap-3">
                 <div>
                   <Label className="text-xs">País de la clínica</Label>
-                  <Select value={paisClinica} onValueChange={(v) => { setPaisClinica(v); setRegulatoryForm({}); }}>
-                    <SelectTrigger className="mt-1 rounded-xl h-9 text-sm">
-                      <SelectValue />
-                    </SelectTrigger>
+                  <Select
+                    value={editingServicio ? editPaisClinica : paisClinica}
+                    onValueChange={(v) => {
+                      if (editingServicio) { setEditPaisClinica(v); setEditRegulatoryForm({}); }
+                      else { setPaisClinica(v); setRegulatoryForm({}); }
+                    }}
+                  >
+                    <SelectTrigger className="mt-1 rounded-xl h-9 text-sm"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       {REGULATORY_COUNTRIES.map((c) => (
                         <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
@@ -791,12 +805,13 @@ const PriceLists: React.FC = () => {
                 <div>
                   <Label className="text-xs">Sistema de codificación</Label>
                   <Select
-                    value={servicioForm.sistema_codificacion}
-                    onValueChange={(v) => setServicioForm({ ...servicioForm, sistema_codificacion: v })}
+                    value={editingServicio ? editServicioForm.sistema_codificacion : servicioForm.sistema_codificacion}
+                    onValueChange={(v) => {
+                      if (editingServicio) setEditServicioForm({ ...editServicioForm, sistema_codificacion: v });
+                      else setServicioForm({ ...servicioForm, sistema_codificacion: v });
+                    }}
                   >
-                    <SelectTrigger className="mt-1 rounded-xl h-9 text-sm">
-                      <SelectValue />
-                    </SelectTrigger>
+                    <SelectTrigger className="mt-1 rounded-xl h-9 text-sm"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       {SISTEMAS_CODIFICACION.map((s) => (
                         <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
@@ -808,8 +823,11 @@ const PriceLists: React.FC = () => {
                   <Label className="text-xs">Código *</Label>
                   <Input
                     placeholder="Ej: 890201"
-                    value={servicioForm.codigo_servicio}
-                    onChange={(e) => setServicioForm({ ...servicioForm, codigo_servicio: e.target.value })}
+                    value={editingServicio ? editServicioForm.codigo_servicio : servicioForm.codigo_servicio}
+                    onChange={(e) => {
+                      if (editingServicio) setEditServicioForm({ ...editServicioForm, codigo_servicio: e.target.value });
+                      else setServicioForm({ ...servicioForm, codigo_servicio: e.target.value });
+                    }}
                     className="mt-1 rounded-xl h-9 text-sm"
                   />
                 </div>
@@ -819,8 +837,11 @@ const PriceLists: React.FC = () => {
                   <Label className="text-xs">Descripción *</Label>
                   <Input
                     placeholder="Ej: Consulta medicina general"
-                    value={servicioForm.descripcion_servicio}
-                    onChange={(e) => setServicioForm({ ...servicioForm, descripcion_servicio: e.target.value })}
+                    value={editingServicio ? editServicioForm.descripcion_servicio : servicioForm.descripcion_servicio}
+                    onChange={(e) => {
+                      if (editingServicio) setEditServicioForm({ ...editServicioForm, descripcion_servicio: e.target.value });
+                      else setServicioForm({ ...servicioForm, descripcion_servicio: e.target.value });
+                    }}
                     className="mt-1 rounded-xl h-9 text-sm"
                   />
                 </div>
@@ -829,30 +850,36 @@ const PriceLists: React.FC = () => {
                   <Input
                     type="number"
                     placeholder="0"
-                    value={servicioForm.valor}
-                    onChange={(e) => setServicioForm({ ...servicioForm, valor: e.target.value })}
+                    value={editingServicio ? editServicioForm.valor : servicioForm.valor}
+                    onChange={(e) => {
+                      if (editingServicio) setEditServicioForm({ ...editServicioForm, valor: e.target.value });
+                      else setServicioForm({ ...servicioForm, valor: e.target.value });
+                    }}
                     className="mt-1 rounded-xl h-9 text-sm"
                   />
                 </div>
               </div>
 
               {/* Dynamic regulatory fields */}
-              {currentRegulatoryConfig.fields.length > 0 && (
+              {(editingServicio ? editRegulatoryConfig : currentRegulatoryConfig).fields.length > 0 && (
                 <div className="p-3 rounded-xl border border-primary/20 bg-primary/5 space-y-3">
                   <p className="text-xs font-medium text-primary flex items-center gap-1.5">
                     <FileText className="w-3.5 h-3.5" />
-                    {currentRegulatoryConfig.label}
+                    {(editingServicio ? editRegulatoryConfig : currentRegulatoryConfig).label}
                   </p>
                   <div className="grid grid-cols-2 gap-3">
-                    {currentRegulatoryConfig.fields.map((field) => (
+                    {(editingServicio ? editRegulatoryConfig : currentRegulatoryConfig).fields.map((field) => (
                       <div key={field.key}>
                         <Label className="text-xs">
                           {field.label} {field.required && "*"}
                         </Label>
                         {field.type === "select" && field.options ? (
                           <Select
-                            value={regulatoryForm[field.key] || ""}
-                            onValueChange={(v) => setRegulatoryForm({ ...regulatoryForm, [field.key]: v })}
+                            value={(editingServicio ? editRegulatoryForm : regulatoryForm)[field.key] || ""}
+                            onValueChange={(v) => {
+                              if (editingServicio) setEditRegulatoryForm({ ...editRegulatoryForm, [field.key]: v });
+                              else setRegulatoryForm({ ...regulatoryForm, [field.key]: v });
+                            }}
                           >
                             <SelectTrigger className="mt-1 rounded-xl h-9 text-sm">
                               <SelectValue placeholder="Seleccionar..." />
@@ -868,8 +895,11 @@ const PriceLists: React.FC = () => {
                         ) : (
                           <Input
                             placeholder={field.placeholder || ""}
-                            value={regulatoryForm[field.key] || ""}
-                            onChange={(e) => setRegulatoryForm({ ...regulatoryForm, [field.key]: e.target.value })}
+                            value={(editingServicio ? editRegulatoryForm : regulatoryForm)[field.key] || ""}
+                            onChange={(e) => {
+                              if (editingServicio) setEditRegulatoryForm({ ...editRegulatoryForm, [field.key]: e.target.value });
+                              else setRegulatoryForm({ ...regulatoryForm, [field.key]: e.target.value });
+                            }}
                             className="mt-1 rounded-xl h-9 text-sm"
                           />
                         )}
@@ -878,15 +908,27 @@ const PriceLists: React.FC = () => {
                   </div>
                 </div>
               )}
-              <Button
-                size="sm"
-                onClick={handleAddServicio}
-                disabled={addingServicio || !servicioForm.codigo_servicio.trim() || !servicioForm.descripcion_servicio.trim()}
-                className="rounded-xl w-full"
-              >
-                {addingServicio ? <Loader2 className="mr-2 w-3 h-3 animate-spin" /> : <Plus className="mr-2 w-3 h-3" />}
-                Agregar
-              </Button>
+              {editingServicio ? (
+                <Button
+                  size="sm"
+                  onClick={handleSaveServicio}
+                  disabled={savingServicio || !editServicioForm.codigo_servicio.trim() || !editServicioForm.descripcion_servicio.trim()}
+                  className="rounded-xl w-full"
+                >
+                  {savingServicio ? <Loader2 className="mr-2 w-3 h-3 animate-spin" /> : <Pencil className="mr-2 w-3 h-3" />}
+                  Guardar cambios
+                </Button>
+              ) : (
+                <Button
+                  size="sm"
+                  onClick={handleAddServicio}
+                  disabled={addingServicio || !servicioForm.codigo_servicio.trim() || !servicioForm.descripcion_servicio.trim()}
+                  className="rounded-xl w-full"
+                >
+                  {addingServicio ? <Loader2 className="mr-2 w-3 h-3 animate-spin" /> : <Plus className="mr-2 w-3 h-3" />}
+                  Agregar
+                </Button>
+              )}
             </div>
 
             {/* Search servicios */}
@@ -972,113 +1014,7 @@ const PriceLists: React.FC = () => {
         </SheetContent>
       </Sheet>
 
-      {/* Edit servicio dialog */}
-      <Dialog open={editServicioDialogOpen} onOpenChange={(open) => { setEditServicioDialogOpen(open); if (!open) setEditingServicio(null); }}>
-        <DialogContent className="sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Pencil className="w-5 h-5 text-primary" />
-              Editar Servicio
-            </DialogTitle>
-            <DialogDescription>Modifica los datos del servicio</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-2">
-            <div className="grid grid-cols-3 gap-3">
-              <div>
-                <Label className="text-xs">País</Label>
-                <Select value={editPaisClinica} onValueChange={(v) => { setEditPaisClinica(v); setEditRegulatoryForm({}); }}>
-                  <SelectTrigger className="mt-1 rounded-xl h-9 text-sm"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {REGULATORY_COUNTRIES.map((c) => (
-                      <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label className="text-xs">Sistema</Label>
-                <Select value={editServicioForm.sistema_codificacion} onValueChange={(v) => setEditServicioForm({ ...editServicioForm, sistema_codificacion: v })}>
-                  <SelectTrigger className="mt-1 rounded-xl h-9 text-sm"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {SISTEMAS_CODIFICACION.map((s) => (
-                      <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label className="text-xs">Código *</Label>
-                <Input
-                  value={editServicioForm.codigo_servicio}
-                  onChange={(e) => setEditServicioForm({ ...editServicioForm, codigo_servicio: e.target.value })}
-                  className="mt-1 rounded-xl h-9 text-sm"
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-3 gap-3">
-              <div className="col-span-2">
-                <Label className="text-xs">Descripción *</Label>
-                <Input
-                  value={editServicioForm.descripcion_servicio}
-                  onChange={(e) => setEditServicioForm({ ...editServicioForm, descripcion_servicio: e.target.value })}
-                  className="mt-1 rounded-xl h-9 text-sm"
-                />
-              </div>
-              <div>
-                <Label className="text-xs">Valor *</Label>
-                <Input
-                  type="number"
-                  value={editServicioForm.valor}
-                  onChange={(e) => setEditServicioForm({ ...editServicioForm, valor: e.target.value })}
-                  className="mt-1 rounded-xl h-9 text-sm"
-                />
-              </div>
-            </div>
-            {editRegulatoryConfig.fields.length > 0 && (
-              <div className="p-3 rounded-xl border border-primary/20 bg-primary/5 space-y-3">
-                <p className="text-xs font-medium text-primary flex items-center gap-1.5">
-                  <FileText className="w-3.5 h-3.5" />
-                  {editRegulatoryConfig.label}
-                </p>
-                <div className="grid grid-cols-2 gap-3">
-                  {editRegulatoryConfig.fields.map((field) => (
-                    <div key={field.key}>
-                      <Label className="text-xs">{field.label} {field.required && "*"}</Label>
-                      {field.type === "select" && field.options ? (
-                        <Select
-                          value={editRegulatoryForm[field.key] || ""}
-                          onValueChange={(v) => setEditRegulatoryForm({ ...editRegulatoryForm, [field.key]: v })}
-                        >
-                          <SelectTrigger className="mt-1 rounded-xl h-9 text-sm"><SelectValue placeholder="Seleccionar..." /></SelectTrigger>
-                          <SelectContent>
-                            {field.options.map((opt) => (
-                              <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      ) : (
-                        <Input
-                          placeholder={field.placeholder || ""}
-                          value={editRegulatoryForm[field.key] || ""}
-                          onChange={(e) => setEditRegulatoryForm({ ...editRegulatoryForm, [field.key]: e.target.value })}
-                          className="mt-1 rounded-xl h-9 text-sm"
-                        />
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setEditServicioDialogOpen(false)} className="rounded-xl">Cancelar</Button>
-            <Button onClick={handleSaveServicio} disabled={savingServicio || !editServicioForm.codigo_servicio.trim() || !editServicioForm.descripcion_servicio.trim()} className="rounded-xl">
-              {savingServicio && <Loader2 className="mr-2 w-4 h-4 animate-spin" />}
-              Guardar
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+
 
       {/* Clone dialog */}
       <Dialog open={cloneDialogOpen} onOpenChange={(open) => { setCloneDialogOpen(open); if (!open) setCloneTarget(null); }}>
