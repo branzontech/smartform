@@ -2,6 +2,7 @@ export { AppointmentWizard } from "./AppointmentWizard";
 export type { WizardData } from "./AppointmentWizard";
 
 export { PatientSearchStep } from "./PatientSearchStep";
+export { PatientDetailStep } from "./PatientDetailStep";
 
 export { AdmissionStep } from "./AdmissionStep";
 export type { AdmissionData } from "./AdmissionStep";

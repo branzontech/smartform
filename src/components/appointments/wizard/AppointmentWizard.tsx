@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Check, User, ClipboardList, Calendar, MapPin, MessageSquare, Bell, FileText, CheckCircle, XCircle, RefreshCw, Ban } from "lucide-react";
+import { Check, User, ClipboardList, Calendar, MapPin, MessageSquare, Bell, FileText, CheckCircle, XCircle, RefreshCw, Ban, Eye } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ExtendedPatient } from "../PatientPanel";
 import { PatientSearchStep } from "./PatientSearchStep";
+import { PatientDetailStep } from "./PatientDetailStep";
 import { AdmissionStep, AdmissionData } from "./AdmissionStep";
 import { SchedulingStep, SchedulingData } from "./SchedulingStep";
 import { MapPanelDrawer } from "./MapPanelDrawer";
@@ -26,8 +27,9 @@ interface AppointmentWizardProps {
 
 const steps = [
   { id: 1, title: "Paciente", icon: User, description: "Buscar o crear" },
-  { id: 2, title: "Admisión", icon: ClipboardList, description: "Opcional" },
-  { id: 3, title: "Agenda", icon: Calendar, description: "Horario" },
+  { id: 2, title: "Detalle", icon: FileText, description: "Consultar datos" },
+  { id: 3, title: "Admisión", icon: ClipboardList, description: "Opcional" },
+  { id: 4, title: "Agenda", icon: Calendar, description: "Horario" },
 ];
 
 export const AppointmentWizard: React.FC<AppointmentWizardProps> = ({
@@ -79,9 +81,17 @@ export const AppointmentWizard: React.FC<AppointmentWizardProps> = ({
     goToStep(2);
   };
 
+  const handlePatientDetailContinue = () => {
+    goToStep(3);
+  };
+
+  const handlePatientUpdated = (patient: ExtendedPatient) => {
+    setWizardData(prev => ({ ...prev, patient }));
+  };
+
   const handleAdmissionComplete = (admission: AdmissionData | null) => {
     setWizardData(prev => ({ ...prev, admission }));
-    goToStep(3);
+    goToStep(4);
   };
 
   const handleSchedulingComplete = (scheduling: SchedulingData) => {
@@ -285,7 +295,7 @@ export const AppointmentWizard: React.FC<AppointmentWizardProps> = ({
           {/* Use full width for scheduling step (step 3), constrained width for others */}
           <div className={cn(
             "mx-auto transition-all duration-300",
-            currentStep === 3 ? "max-w-[1600px]" : "max-w-5xl"
+            currentStep === 4 ? "max-w-[1600px]" : "max-w-5xl"
           )}>
             <div className="relative overflow-hidden">
             <AnimatePresence mode="wait" custom={direction}>
@@ -313,6 +323,15 @@ export const AppointmentWizard: React.FC<AppointmentWizardProps> = ({
                 )}
 
                 {currentStep === 2 && wizardData.patient && (
+                  <PatientDetailStep
+                    patient={wizardData.patient}
+                    onContinue={handlePatientDetailContinue}
+                    onBack={() => goToStep(1)}
+                    onPatientUpdated={handlePatientUpdated}
+                  />
+                )}
+
+                {currentStep === 3 && wizardData.patient && (
                   <AdmissionStep
                     patient={wizardData.patient}
                     onComplete={handleAdmissionComplete}
@@ -320,7 +339,7 @@ export const AppointmentWizard: React.FC<AppointmentWizardProps> = ({
                   />
                 )}
 
-                {currentStep === 3 && wizardData.patient && (
+                {currentStep === 4 && wizardData.patient && (
                   <SchedulingStep
                     patient={wizardData.patient}
                     existingAppointments={existingAppointments}
@@ -338,7 +357,7 @@ export const AppointmentWizard: React.FC<AppointmentWizardProps> = ({
         <Dock 
           items={dockItems} 
           actionItems={schedulingActions}
-          showActions={currentStep === 3}
+          showActions={currentStep === 4}
           magnification={56} 
           baseSize={42} 
         />
