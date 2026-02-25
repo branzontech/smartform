@@ -220,7 +220,7 @@ const PatientList = () => {
           </div>
           <Button onClick={handleCreateConsultation} className="bg-primary hover:bg-primary/90">
             <Plus className="mr-2" size={16} />
-            Nueva consulta
+            Nueva atención
           </Button>
         </div>
 
@@ -314,7 +314,7 @@ const PatientList = () => {
             <p className="text-muted-foreground mb-6">Registra una nueva consulta para agregar pacientes.</p>
             <Button onClick={handleCreateConsultation} className="rounded-xl h-11 px-6">
               <Plus className="mr-2 h-4 w-4" />
-              Nueva consulta
+              Nueva atención
             </Button>
           </div>
         ) : (
