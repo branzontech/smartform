@@ -2,6 +2,7 @@
 import React from "react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "./app-sidebar";
+import { Header } from "./header";
 import { TenantStatusBar } from "../tenant/TenantStatusBar";
 import { FloatingChatButton } from "./floating-chat-button";
 import { Button } from "@/components/ui/button";
@@ -107,6 +108,7 @@ export const Layout = ({ children }: LayoutProps) => {
     <SidebarProvider defaultOpen={false}>
       <div className="h-screen flex w-full bg-background overflow-hidden">
         <AppSidebar />
+        <Header />
         
         <div className="flex-1 flex flex-col min-w-0 pt-20 px-6">
           {/* Main Content */}
