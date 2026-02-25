@@ -217,6 +217,48 @@ export type Database = {
         }
         Relationships: []
       }
+      configuracion_encabezado: {
+        Row: {
+          campos_personalizados: Json
+          created_at: string
+          direccion: string | null
+          email_institucion: string | null
+          id: string
+          logo_url: string | null
+          nit: string | null
+          nombre_institucion: string
+          resolucion_habilitacion: string | null
+          telefono: string | null
+          updated_at: string
+        }
+        Insert: {
+          campos_personalizados?: Json
+          created_at?: string
+          direccion?: string | null
+          email_institucion?: string | null
+          id?: string
+          logo_url?: string | null
+          nit?: string | null
+          nombre_institucion?: string
+          resolucion_habilitacion?: string | null
+          telefono?: string | null
+          updated_at?: string
+        }
+        Update: {
+          campos_personalizados?: Json
+          created_at?: string
+          direccion?: string | null
+          email_institucion?: string | null
+          id?: string
+          logo_url?: string | null
+          nit?: string | null
+          nombre_institucion?: string
+          resolucion_habilitacion?: string | null
+          telefono?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       contratos: {
         Row: {
           created_at: string
