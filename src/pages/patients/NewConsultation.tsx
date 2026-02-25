@@ -71,6 +71,7 @@ const NewConsultation = () => {
   const [patientSearchTerm, setPatientSearchTerm] = useState("");
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [patientAdmissions, setPatientAdmissions] = useState<any[]>([]);
   
   const [selectedFormIds, setSelectedFormIds] = useState<string[]>([]);
   const [selectedForms, setSelectedForms] = useState<FormType[]>([]);
@@ -130,6 +131,13 @@ const NewConsultation = () => {
           .single();
         if (data) {
           setSelectedPatientData(data);
+          const { data: admData } = await supabase
+            .from("admisiones")
+            .select("*")
+            .eq("paciente_id", preselectedPatientId)
+            .order("fecha_inicio", { ascending: false })
+            .limit(10);
+          setPatientAdmissions(admData || []);
         }
       };
       loadPatient();
@@ -158,16 +166,25 @@ const NewConsultation = () => {
     setLoading(false);
   }, [selectedPatientId]);
 
-  const handleSelectPatient = (dbPatient: any) => {
+  const handleSelectPatient = async (dbPatient: any) => {
     setSelectedPatientId(dbPatient.id);
     setSelectedPatientData(dbPatient);
     setPatientSearchTerm("");
     setSearchResults([]);
+    // Load admissions
+    const { data } = await supabase
+      .from("admisiones")
+      .select("*")
+      .eq("paciente_id", dbPatient.id)
+      .order("fecha_inicio", { ascending: false })
+      .limit(10);
+    setPatientAdmissions(data || []);
   };
 
   const handleClearPatient = () => {
     setSelectedPatientId("");
     setSelectedPatientData(null);
+    setPatientAdmissions([]);
     setPatientSearchTerm("");
   };
 
@@ -647,7 +664,8 @@ const NewConsultation = () => {
                         </Card>
                       </motion.div>
                     ) : (
-                      /* Patient Full Detail (read-only) */
+                      <>
+                      {/* Patient Full Detail (read-only) */}
                       <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -718,6 +736,53 @@ const NewConsultation = () => {
                           </CardContent>
                         </Card>
                       </motion.div>
+
+                      {/* Admissions History */}
+                      {patientAdmissions.length > 0 && (
+                        <motion.div
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: 0.2 }}
+                        >
+                          <Card className="bg-card/60 backdrop-blur-xl border-border/30 shadow-lg rounded-2xl overflow-hidden">
+                            <CardContent className="p-5">
+                              <div className="flex items-center gap-2 mb-4">
+                                <ClipboardList className="w-4 h-4 text-primary" />
+                                <h4 className="text-sm font-semibold">Historial de admisiones ({patientAdmissions.length})</h4>
+                              </div>
+                              <div className="space-y-2.5 max-h-[240px] overflow-y-auto pr-1">
+                                {patientAdmissions.map((adm) => (
+                                  <div key={adm.id} className="flex items-start gap-3 p-3 rounded-xl bg-muted/30 border border-border/20">
+                                    <div className={cn(
+                                      "w-2 h-2 rounded-full mt-1.5 shrink-0",
+                                      adm.estado === 'en_curso' ? "bg-green-500" :
+                                      adm.estado === 'planificada' ? "bg-blue-500" :
+                                      adm.estado === 'completada' ? "bg-muted-foreground" : "bg-yellow-500"
+                                    )} />
+                                    <div className="flex-1 min-w-0">
+                                      <div className="flex items-center gap-2 flex-wrap">
+                                        <span className="text-sm font-medium">
+                                          {adm.motivo || "Sin motivo"}
+                                        </span>
+                                        <Badge variant="outline" className="text-[10px] px-1.5 py-0 capitalize">
+                                          {adm.estado}
+                                        </Badge>
+                                      </div>
+                                      <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground flex-wrap">
+                                        <span>{format(new Date(adm.fecha_inicio), "dd/MM/yyyy", { locale: es })}</span>
+                                        {adm.diagnostico_principal && <span>Dx: {adm.diagnostico_principal}</span>}
+                                        {adm.profesional_nombre && <span>Dr. {adm.profesional_nombre}</span>}
+                                        {adm.numero_ingreso && <span>Ing. #{adm.numero_ingreso}</span>}
+                                      </div>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </CardContent>
+                          </Card>
+                        </motion.div>
+                      )}
+                      </>
                     )}
                   </div>
                 )}
