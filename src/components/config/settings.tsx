@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Header } from "@/components/layout/header";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { ArrowLeft, FileText, Palette, Bell, Save, User, Shield, Plus, Cog, HelpCircle, Trash2, SlidersHorizontal, ClipboardList } from "lucide-react";
 import { PatientFieldsConfig } from "@/components/config/PatientFieldsConfig";
 import { AdmissionFieldsConfig } from "@/components/config/AdmissionFieldsConfig";
@@ -8,8 +8,6 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { useIsMobile } from "@/hooks/use-mobile";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -42,7 +40,6 @@ const categories = [
 ];
 
 export const SettingsPage = () => {
-  const isMobile = useIsMobile();
   const navigate = useNavigate();
   const { resetOnboarding } = useOnboarding();
   
@@ -80,14 +77,13 @@ export const SettingsPage = () => {
     <div className="min-h-screen bg-background">
       <Header />
       
-      {/* Área de contenido principal */}
-      <div className="container mx-auto px-6 py-6">
-        {/* Header with back button */}
-        <div className="flex items-center mb-6">
+      <div className="container mx-auto px-6 py-6 max-w-5xl">
+        {/* Header compacto */}
+        <div className="flex items-center gap-3 mb-6">
           <Button 
             variant="ghost" 
             size="icon" 
-            className="mr-2"
+            className="h-8 w-8 rounded-lg"
             onClick={() => {
               if (activeCategory !== "general") {
                 setActiveCategory("general");
@@ -96,377 +92,280 @@ export const SettingsPage = () => {
               }
             }}
           >
-            <ArrowLeft size={20} />
+            <ArrowLeft size={16} />
           </Button>
-          <h1 className="text-2xl font-bold">
-            {categories.find(cat => cat.id === activeCategory)?.label || "Configuración"}
-          </h1>
+          <h1 className="text-lg font-semibold">Configuración</h1>
         </div>
 
-        {/* Layout con sidebar de categorías y contenido */}
-        <div className="flex gap-8">
-          {/* Sidebar de categorías */}
-          <div className="w-64 shrink-0">
-            <div className="bg-card rounded-xl border border-border p-4 sticky top-24">
-              <h3 className="text-sm font-semibold text-muted-foreground mb-4 uppercase tracking-wider">Categorías</h3>
-              <nav className="space-y-1">
-                {categories.map((category) => (
-                  <button
-                    key={category.id}
-                    onClick={() => setActiveCategory(category.id)}
-                    className={cn(
-                      "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-all duration-200",
-                      activeCategory === category.id
-                        ? "bg-primary text-primary-foreground shadow-md"
-                        : "hover:bg-muted text-muted-foreground hover:text-foreground"
-                    )}
-                  >
-                    {category.icon}
-                    <span className="font-medium">{category.label}</span>
-                  </button>
-                ))}
-              </nav>
-            </div>
+        <div className="flex gap-6">
+          {/* Sidebar minimalista */}
+          <div className="w-56 shrink-0">
+            <nav className="space-y-0.5 sticky top-24">
+              {categories.map((category) => (
+                <button
+                  key={category.id}
+                  onClick={() => setActiveCategory(category.id)}
+                  className={cn(
+                    "w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-left text-sm transition-all duration-150",
+                    activeCategory === category.id
+                      ? "bg-accent text-accent-foreground font-medium"
+                      : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                  )}
+                >
+                  {category.icon}
+                  <span>{category.label}</span>
+                </button>
+              ))}
+            </nav>
           </div>
 
-          {/* Contenido principal */}
-          <div className="flex-1">
-            <ScrollArea className="h-[calc(100vh-12rem)]">
-              <div className="pr-4">
+          {/* Contenido */}
+          <div className="flex-1 min-w-0">
+            <ScrollArea className="h-[calc(100vh-10rem)]">
+              <div className="pr-4 space-y-1">
             {/* General Settings */}
             {activeCategory === "general" && (
-              <div className="space-y-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Configuración General</CardTitle>
-                    <CardDescription>
-                      Configura las opciones básicas de la aplicación
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <Label htmlFor="auto-save" className="font-medium">Autoguardado</Label>
-                        <p className="text-sm text-muted-foreground">Guardar automáticamente los cambios</p>
-                      </div>
-                      <Switch 
-                        id="auto-save" 
-                        checked={autoSave}
-                        onCheckedChange={setAutoSave}
-                      />
+              <div className="space-y-1">
+                <h2 className="text-base font-semibold mb-4">General</h2>
+                <div className="rounded-xl border border-border bg-card/50 backdrop-blur-sm divide-y divide-border">
+                  <div className="flex items-center justify-between px-4 py-3">
+                    <div>
+                      <Label htmlFor="auto-save" className="text-sm font-medium">Autoguardado</Label>
+                      <p className="text-xs text-muted-foreground">Guardar automáticamente los cambios</p>
                     </div>
-                    
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <Label className="font-medium">Idioma</Label>
-                        <p className="text-sm text-muted-foreground">Selecciona el idioma de la aplicación</p>
-                      </div>
-                      <select 
-                        value={language}
-                        onChange={(e) => setLanguage(e.target.value)}
-                        className="rounded-md border border-input bg-background px-3 py-1"
-                      >
-                        <option value="es">Español</option>
-                        <option value="en">English</option>
-                        <option value="pt">Português</option>
-                        <option value="fr">Français</option>
-                      </select>
+                    <Switch id="auto-save" checked={autoSave} onCheckedChange={setAutoSave} />
+                  </div>
+                  <div className="flex items-center justify-between px-4 py-3">
+                    <div>
+                      <Label className="text-sm font-medium">Idioma</Label>
+                      <p className="text-xs text-muted-foreground">Selecciona el idioma de la aplicación</p>
                     </div>
-                    
-                    <div className="pt-4 border-t">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <Label className="font-medium">Guía de usuario</Label>
-                          <p className="text-sm text-muted-foreground">Volver a mostrar la guía de introducción</p>
-                        </div>
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={handleRestartGuide}
-                          className="flex items-center space-x-2"
-                        >
-                          <HelpCircle size={16} />
-                          <span>Mostrar guía</span>
-                        </Button>
-                      </div>
+                    <select 
+                      value={language}
+                      onChange={(e) => setLanguage(e.target.value)}
+                      className="rounded-lg border border-input bg-background px-3 py-1.5 text-sm"
+                    >
+                      <option value="es">Español</option>
+                      <option value="en">English</option>
+                      <option value="pt">Português</option>
+                      <option value="fr">Français</option>
+                    </select>
+                  </div>
+                  <div className="flex items-center justify-between px-4 py-3">
+                    <div>
+                      <Label className="text-sm font-medium">Guía de usuario</Label>
+                      <p className="text-xs text-muted-foreground">Volver a mostrar la guía de introducción</p>
                     </div>
-                  </CardContent>
-                </Card>
+                    <Button variant="ghost" size="sm" onClick={handleRestartGuide} className="gap-1.5 text-xs">
+                      <HelpCircle size={14} />
+                      Mostrar guía
+                    </Button>
+                  </div>
+                </div>
               </div>
             )}
               
             {/* Appearance Settings */}
             {activeCategory === "appearance" && (
-              <div className="space-y-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Apariencia</CardTitle>
-                    <CardDescription>
-                      Personaliza la apariencia de la aplicación
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <Label htmlFor="dark-print" className="font-medium">Impresión en modo oscuro</Label>
-                        <p className="text-sm text-muted-foreground">Utilizar estilos oscuros al imprimir</p>
-                      </div>
-                      <Switch 
-                        id="dark-print" 
-                        checked={darkPrint}
-                        onCheckedChange={setDarkPrint}
-                      />
-                    </div>
-                    
+              <div>
+                <h2 className="text-base font-semibold mb-4">Apariencia</h2>
+                <div className="rounded-xl border border-border bg-card/50 backdrop-blur-sm divide-y divide-border">
+                  <div className="flex items-center justify-between px-4 py-3">
                     <div>
-                      <Label className="font-medium">Tema de colores</Label>
-                      <p className="text-sm text-muted-foreground mb-2">Selecciona un tema para la aplicación</p>
-                      <div className="grid grid-cols-3 gap-2">
-                        <Button variant="outline" className="h-10 border-2 border-primary">
-                          <div className="w-4 h-4 rounded-full bg-blue-500 mr-2"></div>
-                          Azul
-                        </Button>
-                        <Button variant="outline" className="h-10">
-                          <div className="w-4 h-4 rounded-full bg-green-500 mr-2"></div>
-                          Verde
-                        </Button>
-                        <Button variant="outline" className="h-10">
-                          <div className="w-4 h-4 rounded-full bg-purple-500 mr-2"></div>
-                          Púrpura
-                        </Button>
-                      </div>
+                      <Label htmlFor="dark-print" className="text-sm font-medium">Impresión en modo oscuro</Label>
+                      <p className="text-xs text-muted-foreground">Utilizar estilos oscuros al imprimir</p>
                     </div>
-                  </CardContent>
-                </Card>
+                    <Switch id="dark-print" checked={darkPrint} onCheckedChange={setDarkPrint} />
+                  </div>
+                  <div className="px-4 py-3">
+                    <Label className="text-sm font-medium">Tema de colores</Label>
+                    <p className="text-xs text-muted-foreground mb-3">Selecciona un tema para la aplicación</p>
+                    <div className="grid grid-cols-3 gap-2">
+                      <Button variant="outline" size="sm" className="border-2 border-primary">
+                        <div className="w-3 h-3 rounded-full bg-primary mr-1.5"></div>
+                        Azul
+                      </Button>
+                      <Button variant="outline" size="sm">
+                        <div className="w-3 h-3 rounded-full bg-emerald-500 mr-1.5"></div>
+                        Verde
+                      </Button>
+                      <Button variant="outline" size="sm">
+                        <div className="w-3 h-3 rounded-full bg-violet-500 mr-1.5"></div>
+                        Púrpura
+                      </Button>
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
               
             {/* Forms Settings */}
             {activeCategory === "forms" && (
-              <div className="space-y-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Gestión de formularios</CardTitle>
-                    <CardDescription>
-                      Crea y gestiona tus formularios
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <Form {...form}>
-                      <form onSubmit={form.handleSubmit(onSubmitForm)} className="space-y-4">
-                        <FormField
-                          control={form.control}
-                          name="title"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Título del formulario</FormLabel>
-                              <FormControl>
-                                <Input placeholder="Ingresa un título" {...field} />
-                              </FormControl>
-                              <FormDescription>
-                                Este será el título visible de tu formulario.
-                              </FormDescription>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        
-                        <FormField
-                          control={form.control}
-                          name="description"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Descripción</FormLabel>
-                              <FormControl>
-                                <Textarea
-                                  placeholder="Describe brevemente el propósito del formulario"
-                                  {...field}
-                                />
-                              </FormControl>
-                              <FormDescription>
-                                Una descripción ayuda a los usuarios a entender el propósito del formulario.
-                              </FormDescription>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        
-                        <Button type="submit" className="w-full">
-                          <Plus className="mr-2 h-4 w-4" />
-                          Crear nuevo formulario
-                        </Button>
-                      </form>
-                    </Form>
-                    
-                    <div>
-                      <Label className="font-medium">Ajustes de creación</Label>
-                      <p className="text-sm text-muted-foreground mb-2">Configura cómo se crean los formularios</p>
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <Label htmlFor="default-type" className="text-sm">Tipo predeterminado</Label>
-                        </div>
-                        <select 
-                          id="default-type"
-                          className="rounded-md border border-input bg-background px-3 py-1"
-                        >
-                          <option value="form">Formulario</option>
-                          <option value="formatted">Formato clínico</option>
-                        </select>
-                      </div>
+              <div>
+                <h2 className="text-base font-semibold mb-4">Formularios</h2>
+                <div className="rounded-xl border border-border bg-card/50 backdrop-blur-sm p-4 space-y-4">
+                  <Form {...form}>
+                    <form onSubmit={form.handleSubmit(onSubmitForm)} className="space-y-4">
+                      <FormField
+                        control={form.control}
+                        name="title"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-sm">Título del formulario</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Ingresa un título" {...field} />
+                            </FormControl>
+                            <FormDescription className="text-xs">
+                              Este será el título visible de tu formulario.
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="description"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-sm">Descripción</FormLabel>
+                            <FormControl>
+                              <Textarea placeholder="Describe brevemente el propósito del formulario" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <Button type="submit" size="sm" className="w-full">
+                        <Plus className="mr-1.5 h-3.5 w-3.5" />
+                        Crear nuevo formulario
+                      </Button>
+                    </form>
+                  </Form>
+                  <div className="pt-3 border-t border-border">
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="default-type" className="text-sm">Tipo predeterminado</Label>
+                      <select id="default-type" className="rounded-lg border border-input bg-background px-3 py-1.5 text-sm">
+                        <option value="form">Formulario</option>
+                        <option value="formatted">Formato clínico</option>
+                      </select>
                     </div>
-                  </CardContent>
-                </Card>
+                  </div>
+                </div>
               </div>
             )}
 
             {/* Customization - Tabbed view */}
             {activeCategory === "customization" && (
-              <div className="space-y-6">
-                <Card>
-                  <CardHeader className="pb-3">
-                    <CardTitle className="flex items-center gap-2">
-                      <SlidersHorizontal className="w-5 h-5 text-primary" />
-                      Personalización de Campos
-                    </CardTitle>
-                    <CardDescription>
-                      Configura campos personalizados para tus formularios. Estos campos se almacenan como extensiones FHIR y aparecen automáticamente en los formularios correspondientes.
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <Tabs defaultValue="patient" className="w-full">
-                      <TabsList className="grid w-full grid-cols-2 mb-6">
-                        <TabsTrigger value="patient" className="gap-2">
-                          <User size={16} />
-                          Pacientes
-                        </TabsTrigger>
-                        <TabsTrigger value="admission" className="gap-2">
-                          <ClipboardList size={16} />
-                          Admisiones
-                        </TabsTrigger>
-                      </TabsList>
-                      <TabsContent value="patient">
-                        <PatientFieldsConfig />
-                      </TabsContent>
-                      <TabsContent value="admission">
-                        <AdmissionFieldsConfig />
-                      </TabsContent>
-                    </Tabs>
-                  </CardContent>
-                </Card>
+              <div>
+                <h2 className="text-base font-semibold mb-1">Personalización de Campos</h2>
+                <p className="text-xs text-muted-foreground mb-4">
+                  Campos personalizados almacenados como extensiones FHIR.
+                </p>
+                <Tabs defaultValue="patient" className="w-full">
+                  <TabsList className="grid w-full grid-cols-2 mb-4 h-9">
+                    <TabsTrigger value="patient" className="gap-1.5 text-xs">
+                      <User size={14} />
+                      Pacientes
+                    </TabsTrigger>
+                    <TabsTrigger value="admission" className="gap-1.5 text-xs">
+                      <ClipboardList size={14} />
+                      Admisiones
+                    </TabsTrigger>
+                  </TabsList>
+                  <TabsContent value="patient">
+                    <PatientFieldsConfig />
+                  </TabsContent>
+                  <TabsContent value="admission">
+                    <AdmissionFieldsConfig />
+                  </TabsContent>
+                </Tabs>
               </div>
             )}
               
             {/* Notifications Settings */}
             {activeCategory === "notifications" && (
-              <div className="space-y-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Notificaciones</CardTitle>
-                    <CardDescription>
-                      Configura cómo y cuándo recibir notificaciones
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <Label htmlFor="notifications" className="font-medium">Notificaciones</Label>
-                        <p className="text-sm text-muted-foreground">Recibir notificaciones de actividad</p>
-                      </div>
-                      <Switch 
-                        id="notifications" 
-                        checked={notifications}
-                        onCheckedChange={setNotifications}
-                      />
-                    </div>
-                    
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <Label htmlFor="email-notifications" className="font-medium">Notificaciones por email</Label>
-                        <p className="text-sm text-muted-foreground">Recibir notificaciones por email</p>
-                      </div>
-                      <Switch id="email-notifications" />
-                    </div>
-                    
+              <div>
+                <h2 className="text-base font-semibold mb-4">Notificaciones</h2>
+                <div className="rounded-xl border border-border bg-card/50 backdrop-blur-sm divide-y divide-border">
+                  <div className="flex items-center justify-between px-4 py-3">
                     <div>
-                      <Label className="font-medium">Frecuencia de resumen</Label>
-                      <p className="text-sm text-muted-foreground mb-2">¿Con qué frecuencia quieres recibir resúmenes?</p>
-                      <select className="w-full rounded-md border border-input bg-background px-3 py-2">
+                      <Label htmlFor="notifications" className="text-sm font-medium">Notificaciones</Label>
+                      <p className="text-xs text-muted-foreground">Recibir notificaciones de actividad</p>
+                    </div>
+                    <Switch id="notifications" checked={notifications} onCheckedChange={setNotifications} />
+                  </div>
+                  <div className="flex items-center justify-between px-4 py-3">
+                    <div>
+                      <Label htmlFor="email-notifications" className="text-sm font-medium">Notificaciones por email</Label>
+                      <p className="text-xs text-muted-foreground">Recibir notificaciones por email</p>
+                    </div>
+                    <Switch id="email-notifications" />
+                  </div>
+                  <div className="px-4 py-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <Label className="text-sm font-medium">Frecuencia de resumen</Label>
+                        <p className="text-xs text-muted-foreground">¿Con qué frecuencia quieres recibir resúmenes?</p>
+                      </div>
+                      <select className="rounded-lg border border-input bg-background px-3 py-1.5 text-sm">
                         <option value="daily">Diario</option>
                         <option value="weekly">Semanal</option>
                         <option value="monthly">Mensual</option>
                         <option value="never">Nunca</option>
                       </select>
                     </div>
-                  </CardContent>
-                </Card>
+                  </div>
+                </div>
               </div>
             )}
               
             {/* Account Settings */}
             {activeCategory === "account" && (
-              <div className="space-y-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Cuenta</CardTitle>
-                    <CardDescription>
-                      Gestiona tu cuenta y perfil
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="username">Nombre de usuario</Label>
-                      <Input id="username" placeholder="Tu nombre de usuario" />
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="email">Email</Label>
-                      <Input id="email" type="email" placeholder="tu@email.com" />
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="bio">Biografía</Label>
-                      <Textarea id="bio" placeholder="Cuéntanos sobre ti..." />
-                    </div>
-                  </CardContent>
-                </Card>
+              <div>
+                <h2 className="text-base font-semibold mb-4">Cuenta</h2>
+                <div className="rounded-xl border border-border bg-card/50 backdrop-blur-sm p-4 space-y-3">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="username" className="text-sm">Nombre de usuario</Label>
+                    <Input id="username" placeholder="Tu nombre de usuario" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="email" className="text-sm">Email</Label>
+                    <Input id="email" type="email" placeholder="tu@email.com" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="bio" className="text-sm">Biografía</Label>
+                    <Textarea id="bio" placeholder="Cuéntanos sobre ti..." />
+                  </div>
+                </div>
               </div>
             )}
               
             {/* Advanced Settings */}
             {activeCategory === "advanced" && (
-              <div className="space-y-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Configuración Avanzada</CardTitle>
-                    <CardDescription>
-                      Configuraciones para usuarios avanzados
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <Label className="font-medium">Modo desarrollador</Label>
-                        <p className="text-sm text-muted-foreground">Activar funciones de desarrollo</p>
-                      </div>
-                      <Switch />
+              <div>
+                <h2 className="text-base font-semibold mb-4">Avanzado</h2>
+                <div className="rounded-xl border border-border bg-card/50 backdrop-blur-sm divide-y divide-border">
+                  <div className="flex items-center justify-between px-4 py-3">
+                    <div>
+                      <Label className="text-sm font-medium">Modo desarrollador</Label>
+                      <p className="text-xs text-muted-foreground">Activar funciones de desarrollo</p>
                     </div>
-                    
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <Label className="font-medium">Registros detallados</Label>
-                        <p className="text-sm text-muted-foreground">Activar logs de depuración</p>
-                      </div>
-                      <Switch />
+                    <Switch />
+                  </div>
+                  <div className="flex items-center justify-between px-4 py-3">
+                    <div>
+                      <Label className="text-sm font-medium">Registros detallados</Label>
+                      <p className="text-xs text-muted-foreground">Activar logs de depuración</p>
                     </div>
-                    
-                    <div className="pt-4 border-t">
-                      <Button variant="destructive" className="w-full">
-                        <Trash2 className="mr-2 h-4 w-4" />
-                        Restablecer configuración
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
+                    <Switch />
+                  </div>
+                </div>
+                <div className="mt-4">
+                  <Button variant="destructive" size="sm" className="w-full">
+                    <Trash2 className="mr-1.5 h-3.5 w-3.5" />
+                    Restablecer configuración
+                  </Button>
+                </div>
               </div>
             )}
           </div>
@@ -474,11 +373,11 @@ export const SettingsPage = () => {
           </div>
         </div>
 
-        {/* Fixed Save Button */}
+        {/* Save Button */}
         <div className="fixed bottom-6 right-6">
-          <Button onClick={handleSave} size="lg" className="shadow-xl">
-            <Save className="mr-2 h-4 w-4" />
-            Guardar cambios
+          <Button onClick={handleSave} size="sm" className="shadow-lg rounded-lg gap-1.5">
+            <Save className="h-3.5 w-3.5" />
+            Guardar
           </Button>
         </div>
       </div>
