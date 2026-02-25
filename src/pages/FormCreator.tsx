@@ -274,318 +274,323 @@ const FormCreator = () => {
   }
 
   return (
-    <div className="min-h-screen flex flex-col" style={applyDesignToPreview()}>
+    <div className="h-screen flex flex-col" style={applyDesignToPreview()}>
       <Header showCreate={false} />
-      <main className="flex-1 container mx-auto py-6">
-        <div className="max-w-3xl mx-auto">
-          <div className="flex items-center justify-between mb-4">
-            <BackButton />
-            <div className="flex items-center gap-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => navigate("/")}
-                disabled={saving}
-                className="text-muted-foreground"
-              >
-                <X size={16} className="mr-1" />
-                Cancelar
-              </Button>
-              <Button
-                size="sm"
-                onClick={saveForm}
-                disabled={saving}
-                style={{
-                  backgroundColor: designOptions.primaryColor,
-                  borderColor: designOptions.primaryColor
-                }}
-                className="text-white"
-              >
-                <Save size={16} className="mr-1" />
-                {saving ? "Guardando..." : "Guardar"}
-              </Button>
+      <main className="flex-1 min-h-0 overflow-y-auto">
+        <div className="container mx-auto py-6">
+          <div className="max-w-3xl mx-auto relative">
+            <div className="flex items-center justify-between mb-4">
+              <BackButton />
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => navigate("/")}
+                  disabled={saving}
+                  className="text-muted-foreground"
+                >
+                  <X size={16} className="mr-1" />
+                  Cancelar
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={saveForm}
+                  disabled={saving}
+                  style={{
+                    backgroundColor: designOptions.primaryColor,
+                    borderColor: designOptions.primaryColor
+                  }}
+                  className="text-white"
+                >
+                  <Save size={16} className="mr-1" />
+                  {saving ? "Guardando..." : "Guardar"}
+                </Button>
+              </div>
             </div>
-          </div>
-          <div className="form-card overflow-visible mb-6" style={{backgroundColor: designOptions.backgroundColor}}>
-            <FormTitle
-              defaultTitle={title}
-              defaultDescription={description}
-              onTitleChange={setTitle}
-              onDescriptionChange={setDescription}
-            />
-            
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full px-5 pb-5">
-              <TabsList className="grid w-full grid-cols-2 mb-4">
-                <TabsTrigger value="content">Contenido</TabsTrigger>
-                <TabsTrigger value="design" className="flex items-center gap-1">
-                  <Palette size={16} />
-                  <span>Diseño</span>
-                </TabsTrigger>
-              </TabsList>
+            <div className="form-card overflow-visible mb-6" style={{backgroundColor: designOptions.backgroundColor}}>
+              <FormTitle
+                defaultTitle={title}
+                defaultDescription={description}
+                onTitleChange={setTitle}
+                onDescriptionChange={setDescription}
+              />
               
-              <TabsContent value="content">
-                <div className="mt-4">
-                  <label htmlFor="form-type" className="block text-sm font-medium text-foreground mb-2">
-                    Categoría del formulario
-                  </label>
-                  <div className="flex items-center gap-2">
-                    <Select
-                      value={formType}
-                      onValueChange={(value: string) => {
-                        if (value === "__custom__") return;
-                        setFormType(value);
-                      }}
-                    >
-                      <SelectTrigger id="form-type" className="w-full max-w-xs">
-                        <SelectValue placeholder="Selecciona una categoría" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {DEFAULT_FORM_CATEGORIES.map((cat) => (
-                          <SelectItem key={cat.value} value={cat.value}>
-                            <div className="flex items-center">
-                              <FileText size={16} className="mr-2 text-primary" />
-                              <span>{cat.label}</span>
-                            </div>
-                          </SelectItem>
-                        ))}
-                        {!DEFAULT_FORM_CATEGORIES.find(c => c.value === formType) && formType && (
-                          <SelectItem value={formType}>
-                            <div className="flex items-center">
-                              <FileText size={16} className="mr-2 text-primary" />
-                              <span>{formType}</span>
-                            </div>
-                          </SelectItem>
-                        )}
-                      </SelectContent>
-                    </Select>
-                    
-                    {customCategory !== null && typeof customCategory === "string" && customCategory.length > 0 ? (
-                      <div className="flex items-center gap-1.5">
-                        <Input
-                          placeholder="Nueva categoría..."
-                          value={customCategory}
-                          onChange={(e) => setCustomCategory(e.target.value)}
-                          className="h-9 w-44 text-sm"
-                          autoFocus
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter" && customCategory.trim()) {
+              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full px-5 pb-5">
+                <TabsList className="grid w-full grid-cols-2 mb-4">
+                  <TabsTrigger value="content">Contenido</TabsTrigger>
+                  <TabsTrigger value="design" className="flex items-center gap-1">
+                    <Palette size={16} />
+                    <span>Diseño</span>
+                  </TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="content">
+                  <div className="mt-4">
+                    <label htmlFor="form-type" className="block text-sm font-medium text-foreground mb-2">
+                      Categoría del formulario
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <Select
+                        value={formType}
+                        onValueChange={(value: string) => {
+                          if (value === "__custom__") return;
+                          setFormType(value);
+                        }}
+                      >
+                        <SelectTrigger id="form-type" className="w-full max-w-xs">
+                          <SelectValue placeholder="Selecciona una categoría" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {DEFAULT_FORM_CATEGORIES.map((cat) => (
+                            <SelectItem key={cat.value} value={cat.value}>
+                              <div className="flex items-center">
+                                <FileText size={16} className="mr-2 text-primary" />
+                                <span>{cat.label}</span>
+                              </div>
+                            </SelectItem>
+                          ))}
+                          {!DEFAULT_FORM_CATEGORIES.find(c => c.value === formType) && formType && (
+                            <SelectItem value={formType}>
+                              <div className="flex items-center">
+                                <FileText size={16} className="mr-2 text-primary" />
+                                <span>{formType}</span>
+                              </div>
+                            </SelectItem>
+                          )}
+                        </SelectContent>
+                      </Select>
+                      
+                      {customCategory !== null && typeof customCategory === "string" && customCategory.length > 0 ? (
+                        <div className="flex items-center gap-1.5">
+                          <Input
+                            placeholder="Nueva categoría..."
+                            value={customCategory}
+                            onChange={(e) => setCustomCategory(e.target.value)}
+                            className="h-9 w-44 text-sm"
+                            autoFocus
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter" && customCategory.trim()) {
+                                const slug = customCategory.trim().toLowerCase().replace(/\s+/g, '_');
+                                setFormType(slug);
+                                setCustomCategory("");
+                                toast({ title: "Categoría creada", description: `"${customCategory.trim()}" establecida` });
+                              } else if (e.key === "Escape") {
+                                setCustomCategory("");
+                              }
+                            }}
+                          />
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            disabled={!customCategory.trim()}
+                            onClick={() => {
                               const slug = customCategory.trim().toLowerCase().replace(/\s+/g, '_');
                               setFormType(slug);
                               setCustomCategory("");
                               toast({ title: "Categoría creada", description: `"${customCategory.trim()}" establecida` });
-                            } else if (e.key === "Escape") {
-                              setCustomCategory("");
-                            }
-                          }}
-                        />
+                            }}
+                          >
+                            <Plus size={14} />
+                          </Button>
+                        </div>
+                      ) : (
                         <Button
                           type="button"
                           variant="ghost"
                           size="icon"
-                          className="h-8 w-8"
-                          disabled={!customCategory.trim()}
-                          onClick={() => {
-                            const slug = customCategory.trim().toLowerCase().replace(/\s+/g, '_');
-                            setFormType(slug);
-                            setCustomCategory("");
-                            toast({ title: "Categoría creada", description: `"${customCategory.trim()}" establecida` });
-                          }}
+                          className="h-9 w-9 text-muted-foreground hover:text-foreground"
+                          title="Nueva categoría"
+                          onClick={() => setCustomCategory(" ")}
                         >
-                          <Plus size={14} />
+                          <Plus size={16} />
                         </Button>
-                      </div>
-                    ) : (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="h-9 w-9 text-muted-foreground hover:text-foreground"
-                        title="Nueva categoría"
-                        onClick={() => setCustomCategory(" ")}
-                      >
-                        <Plus size={16} />
-                      </Button>
-                    )}
+                      )}
+                    </div>
                   </div>
-                </div>
-              </TabsContent>
-              
-              <TabsContent value="design" className="space-y-6">
-                <div>
-                  <h3 className="text-lg font-medium mb-2">Esquema de colores predefinidos</h3>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                    {colorSchemes.map((scheme) => (
-                      <div 
-                        key={scheme.name}
-                        className="flex flex-col items-center p-3 border rounded-md cursor-pointer hover:shadow-md transition-shadow"
-                        style={{
-                          backgroundColor: scheme.backgroundColor,
-                          borderColor: designOptions.primaryColor === scheme.primaryColor ? scheme.primaryColor : 'transparent',
-                        }}
-                        onClick={() => handleColorSchemeChange(scheme.name)}
-                      >
+                </TabsContent>
+                
+                <TabsContent value="design" className="space-y-6">
+                  <div>
+                    <h3 className="text-lg font-medium mb-2">Esquema de colores predefinidos</h3>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                      {colorSchemes.map((scheme) => (
                         <div 
-                          className="w-8 h-8 mb-2 rounded-full" 
-                          style={{ backgroundColor: scheme.primaryColor }}
-                        ></div>
-                        <span className="text-sm font-medium">{scheme.name}</span>
-                      </div>
-                    ))}
+                          key={scheme.name}
+                          className="flex flex-col items-center p-3 border rounded-md cursor-pointer hover:shadow-md transition-shadow"
+                          style={{
+                            backgroundColor: scheme.backgroundColor,
+                            borderColor: designOptions.primaryColor === scheme.primaryColor ? scheme.primaryColor : 'transparent',
+                          }}
+                          onClick={() => handleColorSchemeChange(scheme.name)}
+                        >
+                          <div 
+                            className="w-8 h-8 mb-2 rounded-full" 
+                            style={{ backgroundColor: scheme.primaryColor }}
+                          ></div>
+                          <span className="text-sm font-medium">{scheme.name}</span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                </div>
-                
-                <Separator />
-                
-                <div>
-                  <h3 className="text-lg font-medium mb-4">Personalización</h3>
                   
-                  <div className="grid gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="primaryColor">Color principal</Label>
-                      <div className="flex items-center gap-2">
-                        <div 
-                          className="w-6 h-6 rounded-full border"
-                          style={{ backgroundColor: designOptions.primaryColor }}
-                        ></div>
-                        <Input 
-                          id="primaryColor"
-                          type="color"
-                          value={designOptions.primaryColor}
-                          onChange={(e) => handleDesignOptionChange('primaryColor', e.target.value)}
-                          className="w-12 h-8 p-0"
-                        />
-                        <Input 
-                          type="text"
-                          value={designOptions.primaryColor}
-                          onChange={(e) => handleDesignOptionChange('primaryColor', e.target.value)}
-                          className="w-28"
-                        />
+                  <Separator />
+                  
+                  <div>
+                    <h3 className="text-lg font-medium mb-4">Personalización</h3>
+                    
+                    <div className="grid gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="primaryColor">Color principal</Label>
+                        <div className="flex items-center gap-2">
+                          <div 
+                            className="w-6 h-6 rounded-full border"
+                            style={{ backgroundColor: designOptions.primaryColor }}
+                          ></div>
+                          <Input 
+                            id="primaryColor"
+                            type="color"
+                            value={designOptions.primaryColor}
+                            onChange={(e) => handleDesignOptionChange('primaryColor', e.target.value)}
+                            className="w-12 h-8 p-0"
+                          />
+                          <Input 
+                            type="text"
+                            value={designOptions.primaryColor}
+                            onChange={(e) => handleDesignOptionChange('primaryColor', e.target.value)}
+                            className="w-28"
+                          />
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label>Tipografía</Label>
+                        <Select
+                          value={designOptions.fontFamily}
+                          onValueChange={(value) => handleDesignOptionChange('fontFamily', value)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecciona una tipografía" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Inter, system-ui, sans-serif">Inter (Moderna)</SelectItem>
+                            <SelectItem value="'Playfair Display', serif">Playfair (Elegante)</SelectItem>
+                            <SelectItem value="'Roboto', sans-serif">Roboto (Profesional)</SelectItem>
+                            <SelectItem value="'Montserrat', sans-serif">Montserrat (Limpia)</SelectItem>
+                            <SelectItem value="'Poppins', sans-serif">Poppins (Amigable)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label>Bordes</Label>
+                        <Select
+                          value={designOptions.borderRadius}
+                          onValueChange={(value) => handleDesignOptionChange('borderRadius', value)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Estilo de bordes" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">Cuadrados</SelectItem>
+                            <SelectItem value="sm">Ligeramente redondeados</SelectItem>
+                            <SelectItem value="md">Redondeados</SelectItem>
+                            <SelectItem value="lg">Muy redondeados</SelectItem>
+                            <SelectItem value="xl">Completamente redondeados</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label>Espaciado entre preguntas</Label>
+                        <RadioGroup
+                          value={designOptions.questionSpacing}
+                          onValueChange={(value) => handleDesignOptionChange('questionSpacing', value)}
+                          className="flex space-x-4"
+                        >
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="compact" id="spacing-compact" />
+                            <Label htmlFor="spacing-compact">Compacto</Label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="normal" id="spacing-normal" />
+                            <Label htmlFor="spacing-normal">Normal</Label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="spacious" id="spacing-spacious" />
+                            <Label htmlFor="spacing-spacious">Espacioso</Label>
+                          </div>
+                        </RadioGroup>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label>Estilo de botones</Label>
+                        <Select
+                          value={designOptions.buttonStyle}
+                          onValueChange={(value) => handleDesignOptionChange('buttonStyle', value)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Estilo de botones" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="default">Estándar</SelectItem>
+                            <SelectItem value="outline">Con borde</SelectItem>
+                            <SelectItem value="rounded">Redondeados</SelectItem>
+                            <SelectItem value="pill">Forma de píldora</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </div>
                     </div>
-                    
-                    <div className="space-y-2">
-                      <Label>Tipografía</Label>
-                      <Select
-                        value={designOptions.fontFamily}
-                        onValueChange={(value) => handleDesignOptionChange('fontFamily', value)}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecciona una tipografía" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Inter, system-ui, sans-serif">Inter (Moderna)</SelectItem>
-                          <SelectItem value="'Playfair Display', serif">Playfair (Elegante)</SelectItem>
-                          <SelectItem value="'Roboto', sans-serif">Roboto (Profesional)</SelectItem>
-                          <SelectItem value="'Montserrat', sans-serif">Montserrat (Limpia)</SelectItem>
-                          <SelectItem value="'Poppins', sans-serif">Poppins (Amigable)</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label>Bordes</Label>
-                      <Select
-                        value={designOptions.borderRadius}
-                        onValueChange={(value) => handleDesignOptionChange('borderRadius', value)}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Estilo de bordes" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="none">Cuadrados</SelectItem>
-                          <SelectItem value="sm">Ligeramente redondeados</SelectItem>
-                          <SelectItem value="md">Redondeados</SelectItem>
-                          <SelectItem value="lg">Muy redondeados</SelectItem>
-                          <SelectItem value="xl">Completamente redondeados</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label>Espaciado entre preguntas</Label>
-                      <RadioGroup
-                        value={designOptions.questionSpacing}
-                        onValueChange={(value) => handleDesignOptionChange('questionSpacing', value)}
-                        className="flex space-x-4"
-                      >
-                        <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="compact" id="spacing-compact" />
-                          <Label htmlFor="spacing-compact">Compacto</Label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="normal" id="spacing-normal" />
-                          <Label htmlFor="spacing-normal">Normal</Label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="spacious" id="spacing-spacious" />
-                          <Label htmlFor="spacing-spacious">Espacioso</Label>
-                        </div>
-                      </RadioGroup>
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label>Estilo de botones</Label>
-                      <Select
-                        value={designOptions.buttonStyle}
-                        onValueChange={(value) => handleDesignOptionChange('buttonStyle', value)}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Estilo de botones" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="default">Estándar</SelectItem>
-                          <SelectItem value="outline">Con borde</SelectItem>
-                          <SelectItem value="rounded">Redondeados</SelectItem>
-                          <SelectItem value="pill">Forma de píldora</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
                   </div>
-                </div>
-                
-                <div className="pt-4">
-                  <p className="text-sm text-gray-500 italic">Los cambios se aplicarán automáticamente a la vista previa. Guarda el formulario para conservar estos cambios.</p>
-                </div>
-              </TabsContent>
-            </Tabs>
-          </div>
-          
-          {/* Lista de preguntas con toolbar flotante estilo Google Forms */}
-          <div className="relative">
-            <div className="space-y-4 mb-8">
-              {questions.map((question, index) => (
-                <Question
-                  key={question.id}
-                  question={question}
-                  onUpdate={handleUpdateQuestion}
-                  onDelete={handleDeleteQuestion}
-                  isExpanded={expandedQuestions.includes(question.id)}
-                  onToggleExpand={() => toggleQuestionExpansion(question.id)}
-                  onMoveUp={handleMoveQuestionUp}
-                  onMoveDown={handleMoveQuestionDown}
-                  isFirst={index === 0}
-                  isLast={index === questions.length - 1}
-                  designOptions={designOptions}
-                />
-              ))}
+                  
+                  <div className="pt-4">
+                    <p className="text-sm text-muted-foreground italic">Los cambios se aplicarán automáticamente a la vista previa. Guarda el formulario para conservar estos cambios.</p>
+                  </div>
+                </TabsContent>
+              </Tabs>
             </div>
+            
+            {/* Questions list + sticky side toolbar */}
+            <div className="flex gap-3 mb-8">
+              {/* Questions */}
+              <div className="flex-1 space-y-4">
+                {questions.map((question, index) => (
+                  <Question
+                    key={question.id}
+                    question={question}
+                    onUpdate={handleUpdateQuestion}
+                    onDelete={handleDeleteQuestion}
+                    isExpanded={expandedQuestions.includes(question.id)}
+                    onToggleExpand={() => toggleQuestionExpansion(question.id)}
+                    onMoveUp={handleMoveQuestionUp}
+                    onMoveDown={handleMoveQuestionDown}
+                    isFirst={index === 0}
+                    isLast={index === questions.length - 1}
+                    designOptions={designOptions}
+                  />
+                ))}
+              </div>
 
-            {/* Floating toolbar - Google Forms style */}
-            <div className="fixed right-8 top-1/2 -translate-y-1/2 z-40 flex flex-col gap-1 bg-background border border-border rounded-lg shadow-lg p-1.5">
-              <button
-                onClick={handleAddQuestion}
-                className="p-2.5 rounded-md hover:bg-muted transition-colors group relative"
-                title="Añadir pregunta"
-              >
-                <Plus size={20} className="text-muted-foreground group-hover:text-foreground" />
-              </button>
-              <button
-                onClick={handleAddSection}
-                className="p-2.5 rounded-md hover:bg-muted transition-colors group relative"
-                title="Añadir sección"
-              >
-                <SeparatorHorizontal size={20} className="text-muted-foreground group-hover:text-foreground" />
-              </button>
+              {/* Toolbar lateral sticky - pegada al formulario */}
+              <div className="shrink-0">
+                <div className="sticky top-20 flex flex-col gap-1 bg-background border border-border rounded-lg shadow-md p-1.5">
+                  <button
+                    onClick={handleAddQuestion}
+                    className="p-2 rounded-md hover:bg-muted transition-colors group"
+                    title="Añadir pregunta"
+                  >
+                    <Plus size={18} className="text-muted-foreground group-hover:text-foreground" />
+                  </button>
+                  <button
+                    onClick={handleAddSection}
+                    className="p-2 rounded-md hover:bg-muted transition-colors group"
+                    title="Añadir sección"
+                  >
+                    <SeparatorHorizontal size={18} className="text-muted-foreground group-hover:text-foreground" />
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
