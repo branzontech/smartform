@@ -410,7 +410,7 @@ const PriceLists: React.FC = () => {
       valor: String(servicio.valor),
     });
     const meta = servicio.metadata_regulatoria || {};
-    const pais = (meta as any).pais || "OTHER";
+    const pais = (meta as any).pais || paisClinica;
     setEditPaisClinica(pais);
     const regForm: Record<string, string> = {};
     const config = REGULATORY_FIELDS_BY_COUNTRY[pais];
