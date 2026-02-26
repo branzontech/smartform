@@ -94,6 +94,36 @@
 @layer base {
   * {
     @apply border-border;
+    scrollbar-width: thin;
+    scrollbar-color: transparent transparent;
+  }
+
+  *:hover,
+  *:active {
+    scrollbar-color: hsl(var(--border) / 0.4) transparent;
+  }
+
+  /* Webkit: ultra-thin auto-hide scrollbars */
+  *::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+
+  *::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  *::-webkit-scrollbar-thumb {
+    background: transparent;
+    border-radius: 9999px;
+  }
+
+  *:hover::-webkit-scrollbar-thumb {
+    background: hsl(var(--border) / 0.4);
+  }
+
+  *::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--border) / 0.7);
   }
 
   html {
