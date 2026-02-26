@@ -1,5 +1,6 @@
 
 import React, { useState, useRef, useEffect } from "react";
+import { cn } from "@/lib/utils";
 import { ContentComponentProps } from "../types";
 import { Option } from "../controls/option";
 import { AddOptionButton } from "../controls/add-option-button";
@@ -50,9 +51,17 @@ export const MultipleChoice: React.FC<ContentComponentProps> = ({
     onUpdate({ options: newOptions });
   };
 
+  const isHorizontal = question.optionLayout === "horizontal";
+  const columns = question.optionColumns || 2;
+
   if (readOnly) {
     return (
-      <div className="space-y-2">
+      <div
+        className={cn(
+          isHorizontal ? "grid gap-2" : "space-y-2"
+        )}
+        style={isHorizontal ? { gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` } : undefined}
+      >
         {options.map((option, index) => (
           <div key={index} className="flex items-center gap-2">
             <input 
@@ -71,17 +80,24 @@ export const MultipleChoice: React.FC<ContentComponentProps> = ({
 
   return (
     <div className="mt-2" ref={containerRef}>
-      {options.map((option, index) => (
-        <Option
-          key={index}
-          value={option}
-          onChange={(value) => handleOptionChange(index, value)}
-          onRemove={() => removeOption(index)}
-          onAddNext={() => addOptionAfter(index)}
-          canRemove={options.length > 2}
-          isMultiple={false}
-        />
-      ))}
+      <div
+        className={cn(
+          isHorizontal ? "grid gap-1" : ""
+        )}
+        style={isHorizontal ? { gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` } : undefined}
+      >
+        {options.map((option, index) => (
+          <Option
+            key={index}
+            value={option}
+            onChange={(value) => handleOptionChange(index, value)}
+            onRemove={() => removeOption(index)}
+            onAddNext={() => addOptionAfter(index)}
+            canRemove={options.length > 2}
+            isMultiple={false}
+          />
+        ))}
+      </div>
       <AddOptionButton onClick={addOption} />
     </div>
   );

@@ -1,5 +1,6 @@
 
 import React, { useState, useRef, useEffect } from "react";
+import { cn } from "@/lib/utils";
 import { ContentComponentProps } from "../types";
 import { Option } from "../controls/option";
 import { AddOptionButton } from "../controls/add-option-button";
@@ -50,6 +51,9 @@ export const Dropdown: React.FC<ContentComponentProps> = ({
     onUpdate({ options: newOptions });
   };
 
+  const isHorizontal = question.optionLayout === "horizontal";
+  const columns = question.optionColumns || 2;
+
   if (readOnly) {
     return (
       <select disabled className="w-full border border-gray-300 rounded-md p-2 bg-transparent">
@@ -63,17 +67,24 @@ export const Dropdown: React.FC<ContentComponentProps> = ({
 
   return (
     <div className="mt-2" ref={containerRef}>
-      {options.map((option, index) => (
-        <Option
-          key={index}
-          value={option}
-          onChange={(value) => handleOptionChange(index, value)}
-          onRemove={() => removeOption(index)}
-          onAddNext={() => addOptionAfter(index)}
-          canRemove={options.length > 2}
-          isMultiple={false}
-        />
-      ))}
+      <div
+        className={cn(
+          isHorizontal ? "grid gap-1" : ""
+        )}
+        style={isHorizontal ? { gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` } : undefined}
+      >
+        {options.map((option, index) => (
+          <Option
+            key={index}
+            value={option}
+            onChange={(value) => handleOptionChange(index, value)}
+            onRemove={() => removeOption(index)}
+            onAddNext={() => addOptionAfter(index)}
+            canRemove={options.length > 2}
+            isMultiple={false}
+          />
+        ))}
+      </div>
       <AddOptionButton onClick={addOption} />
     </div>
   );
