@@ -91,6 +91,9 @@ export interface QuestionData {
   orientation?: "vertical" | "horizontal";
   optionLayout?: "vertical" | "horizontal";
   optionColumns?: number;
+  isCalculated?: boolean;
+  calculationType?: "sum" | "subtract" | "multiply" | "divide";
+  numberType?: "integer" | "decimal";
 }
 
 export interface QuestionProps {

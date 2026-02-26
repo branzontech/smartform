@@ -370,6 +370,30 @@ export const QuestionRenderer = ({ question, formData, onChange, errors }: Quest
       );
       
     case "multifield":
+      const isCalc = question.isCalculated || false;
+      const calcType = question.calculationType || "sum";
+      const numType = question.numberType || "decimal";
+
+      const computeTotal = () => {
+        const values = (question.multifields || []).map(f => {
+          const raw = formData[`${question.id}_${f.id}`];
+          return parseFloat(raw) || 0;
+        });
+        if (values.length === 0) return 0;
+        let result = values[0];
+        for (let i = 1; i < values.length; i++) {
+          switch (calcType) {
+            case "sum": result += values[i]; break;
+            case "subtract": result -= values[i]; break;
+            case "multiply": result *= values[i]; break;
+            case "divide": result = values[i] !== 0 ? result / values[i] : 0; break;
+          }
+        }
+        return numType === "integer" ? Math.round(result) : parseFloat(result.toFixed(4));
+      };
+
+      const totalValue = isCalc ? computeTotal() : null;
+
       return (
         <div className="space-y-2">
           <FormLabel>{question.title}</FormLabel>
@@ -379,17 +403,31 @@ export const QuestionRenderer = ({ question, formData, onChange, errors }: Quest
           )}>
             {question.multifields?.map((field) => (
               <div key={field.id} className="mb-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">{field.label}</label>
+                <label className="block text-sm font-medium text-muted-foreground mb-1">{field.label}</label>
                 <input 
-                  type="text" 
+                  type={isCalc ? "number" : "text"}
+                  step={isCalc && numType === "decimal" ? "any" : undefined}
                   value={formData[`${question.id}_${field.id}`] || ""}
                   onChange={(e) => onChange(`${question.id}_${field.id}`, e.target.value)}
-                  className="w-full border border-gray-300 rounded-md p-2"
+                  className="w-full border border-border rounded-md p-2"
                   required={question.required} 
                 />
               </div>
             ))}
           </div>
+          {isCalc && (
+            <div className="pt-2 border-t border-border">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-sm font-semibold text-foreground">Total</span>
+              </div>
+              <input 
+                type="number"
+                value={totalValue ?? ""}
+                readOnly
+                className="w-full border border-primary/30 rounded-md p-2 bg-primary/5 font-semibold"
+              />
+            </div>
+          )}
         </div>
       );
     
