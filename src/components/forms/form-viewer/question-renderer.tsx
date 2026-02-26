@@ -87,7 +87,7 @@ export const QuestionRenderer = ({ question, formData, onChange, errors }: Quest
                       ? `grid gap-2`
                       : "flex flex-col space-y-1"
                   )}
-                  style={question.optionLayout === "horizontal" ? { gridTemplateColumns: `repeat(${question.optionColumns || 3}, minmax(0, 1fr))` } : undefined}
+                  style={question.optionLayout === "horizontal" ? { gridTemplateColumns: `repeat(${Math.min(question.optionColumns || 2, 3)}, minmax(0, 1fr))` } : undefined}
                 >
                   {question.options?.map((option, i) => (
                     <FormItem key={i} className="flex items-center space-x-3 space-y-0">
@@ -119,7 +119,7 @@ export const QuestionRenderer = ({ question, formData, onChange, errors }: Quest
                     ? "grid gap-2"
                     : "space-y-2"
                 )}
-                style={question.optionLayout === "horizontal" ? { gridTemplateColumns: `repeat(${question.optionColumns || 3}, minmax(0, 1fr))` } : undefined}
+                style={question.optionLayout === "horizontal" ? { gridTemplateColumns: `repeat(${Math.min(question.optionColumns || 2, 3)}, minmax(0, 1fr))` } : undefined}
                 >
                   {question.options?.map((option, i) => (
                     <FormItem key={i} className="flex items-center space-x-3 space-y-0">

@@ -1,6 +1,6 @@
 
 import { cn } from "@/lib/utils";
-import { CheckSquare, Circle, Minus } from "lucide-react";
+import { Minus } from "lucide-react";
 import { OptionProps } from "../types";
 
 export const Option = ({
@@ -9,7 +9,6 @@ export const Option = ({
   onRemove,
   onAddNext,
   canRemove,
-  isMultiple = false,
 }: OptionProps) => {
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
@@ -19,31 +18,26 @@ export const Option = ({
   };
 
   return (
-    <div className="flex items-center gap-3 mb-2 animate-fade-in">
-      {isMultiple ? (
-        <CheckSquare size={18} className="text-gray-400" />
-      ) : (
-        <Circle size={18} className="text-gray-400" />
-      )}
+    <div className="flex items-center gap-1.5 mb-1.5 animate-fade-in min-w-0">
       <input
         type="text"
         value={value}
         onChange={(e) => onChange(e.target.value)}
         onKeyDown={handleKeyDown}
         placeholder="Opción"
-        className="flex-1 border-b border-gray-300 focus:border-form-primary focus:outline-none py-1 px-0 bg-transparent"
+        className="flex-1 min-w-0 border-b border-border focus:border-primary focus:outline-none py-1 px-0 bg-transparent text-sm"
       />
       <button
         onClick={onRemove}
         disabled={!canRemove}
         className={cn(
-          "p-1 rounded-full transition-all",
+          "shrink-0 p-0.5 rounded-full transition-all",
           canRemove 
-            ? "text-gray-500 hover:bg-gray-100" 
-            : "text-gray-300 cursor-not-allowed"
+            ? "text-muted-foreground hover:bg-muted" 
+            : "text-muted-foreground/30 cursor-not-allowed"
         )}
       >
-        <Minus size={16} />
+        <Minus size={14} />
       </button>
     </div>
   );

@@ -234,22 +234,19 @@ export const Question = ({
                         variant="ghost" size="sm"
                         className={cn("h-8 px-2 text-xs gap-1", question.optionLayout === "horizontal" ? "text-primary bg-accent" : "text-muted-foreground")}
                         title="Horizontal"
-                        onClick={() => handleUpdate({ optionLayout: "horizontal", optionColumns: question.optionColumns || 3 })}
+                        onClick={() => handleUpdate({ optionLayout: "horizontal", optionColumns: question.optionColumns || 2 })}
                       >
                         <Columns3 size={14} />
                         <span className="hidden sm:inline">Horizontal</span>
                       </Button>
                       {question.optionLayout === "horizontal" && (
                         <select
-                          value={question.optionColumns || 3}
+                          value={question.optionColumns || 2}
                           onChange={(e) => handleUpdate({ optionColumns: Number(e.target.value) })}
                           className="h-8 text-xs border border-border rounded-md bg-background text-foreground px-1.5 ml-1"
                         >
                           <option value={2}>2 col</option>
                           <option value={3}>3 col</option>
-                          <option value={4}>4 col</option>
-                          <option value={5}>5 col</option>
-                          <option value={6}>6 col</option>
                         </select>
                       )}
                       <div className="w-px h-5 bg-border mx-1" />

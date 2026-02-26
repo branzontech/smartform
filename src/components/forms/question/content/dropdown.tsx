@@ -52,7 +52,7 @@ export const Dropdown: React.FC<ContentComponentProps> = ({
   };
 
   const isHorizontal = question.optionLayout === "horizontal";
-  const columns = question.optionColumns || 2;
+  const columns = Math.min(question.optionColumns || 2, 3);
 
   if (readOnly) {
     return (
