@@ -128,7 +128,7 @@ const FormViewer = () => {
     };
 
     loadForm();
-  }, [formId, patientId, questions]);
+  }, [formId, patientId]);
 
   const dynamicSchema = createDynamicSchema(questions);
   
