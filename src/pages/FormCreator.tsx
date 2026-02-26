@@ -113,7 +113,7 @@ const FormCreator = () => {
             description: "El formulario no existe",
             variant: "destructive",
           });
-          navigate("/");
+          navigate("/app/home/formularios");
         }
       };
       loadForm();
@@ -284,7 +284,7 @@ const FormCreator = () => {
       
       clearDraft();
       setTimeout(() => {
-        navigate("/");
+        navigate("/app/home/formularios");
       }, 500);
     } catch (error) {
       console.error("Error saving form:", error);
@@ -338,7 +338,7 @@ const FormCreator = () => {
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => navigate("/")}
+                  onClick={() => navigate("/app/home/formularios")}
                   disabled={saving}
                   className="text-muted-foreground"
                 >
