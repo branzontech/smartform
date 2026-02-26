@@ -60,6 +60,7 @@ const AppRoutes = () => {
         <Route path="home" element={<Home />} />
         <Route path="home/formularios" element={<FormsPage />} />
         <Route path="crear" element={<FormCreator />} />
+        <Route path="crear/:id" element={<FormCreator />} />
         <Route path="editar/:id" element={<FormCreator />} />
         <Route path="ver/:id" element={<FormViewer />} />
         <Route path="respuestas/:id" element={<FormResponses />} />
