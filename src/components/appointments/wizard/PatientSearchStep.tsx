@@ -147,6 +147,7 @@ export const PatientSearchStep: React.FC<PatientSearchStepProps> = ({
         tipo_documento: newPatient.documentType || "CC",
         numero_documento: newPatient.documentId,
         fecha_nacimiento: newPatient.dateOfBirth || null,
+        genero: newPatient.gender || null,
         telefono_principal: newPatient.contactNumber,
         telefono_secundario: newPatient.secondaryPhone || null,
         email: newPatient.email || null,
