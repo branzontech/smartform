@@ -706,7 +706,7 @@ const CotizacionForm = ({ editId, onCancel, onSaved }: Props) => {
               {/* Title */}
               <div className="text-center py-2">
                 <h2 className="text-base font-bold text-foreground uppercase tracking-wide">Cotización</h2>
-                <p className="text-xs text-muted-foreground mt-0.5">N° COT-{format(new Date(), "yyyy")}-XXXX</p>
+                <p className="text-xs text-muted-foreground mt-0.5">N° {isEditing && existingCot ? existingCot.numero_cotizacion : `COT-${format(new Date(), "yyyy")}-XXXX`}</p>
               </div>
 
               {/* Client info */}
