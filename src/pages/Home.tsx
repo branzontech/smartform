@@ -53,6 +53,14 @@ const quickActions = [
     accent: "group-hover:text-primary",
     bgAccent: "group-hover:bg-primary/10",
   },
+  {
+    icon: FileText,
+    label: "Cotizar Servicios",
+    description: "Crea y gestiona cotizaciones de servicios",
+    route: "/app/cotizaciones",
+    accent: "group-hover:text-primary",
+    bgAccent: "group-hover:bg-primary/10",
+  },
 ];
 
 const containerVariants = {

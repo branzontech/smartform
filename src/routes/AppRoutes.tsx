@@ -51,6 +51,7 @@ import ShiftAssignment from "@/pages/shifts/ShiftAssignment";
 import ShiftModification from "@/pages/shifts/ShiftModification";
 import WorkflowPage from "@/pages/workflow/WorkflowPage";
 import ZonesPage from "@/pages/zones/ZonesPage";
+import CotizacionesPage from "@/pages/cotizaciones/CotizacionesPage";
 
 const AppRoutes = () => {
   return (
@@ -111,6 +112,7 @@ const AppRoutes = () => {
         <Route path="clientes/notificaciones/nueva" element={<NotificationForm />} />
         <Route path="notificaciones/centro" element={<NotificationCenter />} />
         <Route path="zonas" element={<ZonesPage />} />
+        <Route path="cotizaciones" element={<CotizacionesPage />} />
         <Route path="precios" element={<PricingPage />} />
         <Route path="portal-usuario" element={<UserPortalPage />} />
       </Routes>
