@@ -7,7 +7,7 @@ import { es } from 'date-fns/locale';
 import { z } from 'zod';
 import {
   Printer, PenLine, ChevronDown, ChevronRight, AlertTriangle,
-  Filter, Calendar as CalendarIcon, Eye, ArrowLeft
+  Filter, Calendar as CalendarIcon,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
