@@ -29,6 +29,7 @@ import { createDynamicSchema, fetchFormById, saveFormResponse } from '@/utils/fo
 import { useToast } from '@/hooks/use-toast';
 import { PatientHistoryPanel } from '@/components/patients/PatientHistoryPanel';
 import { FormHeaderPreview } from '@/components/forms/FormHeaderPreview';
+import { PatientHeaderBanner } from '@/components/forms/PatientHeaderBanner';
 import {
   AlertDialog,
   AlertDialogAction,
