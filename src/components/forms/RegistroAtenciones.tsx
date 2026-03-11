@@ -708,6 +708,7 @@ const AdmisionSection: React.FC<AdmisionSectionProps> = ({
               <FolioRow
                 key={folio.id}
                 folio={folio}
+                admision={admision}
                 folioNumber={folioIdx + 1}
                 canCorrect={canCorrect}
                 hasCorrections={(correccionesByRespuesta[folio.id] || []).length > 0}
