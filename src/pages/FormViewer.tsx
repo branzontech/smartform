@@ -354,6 +354,7 @@ const FormViewer = () => {
       description: `${formTitle} — ${format(new Date(), "d 'de' MMMM 'de' yyyy, HH:mm", { locale: es })}`,
     });
 
+    clearDraft();
     setPendingValues(null);
   };
 
