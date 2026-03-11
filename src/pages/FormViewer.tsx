@@ -491,17 +491,9 @@ const FormViewer = () => {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            {showRegistro && isRegistroDetail ? (
-              <Button variant="outline" size="sm" className="gap-1.5 h-8 text-xs" onClick={() => {
-                clearRegistroDetailRef.current?.();
-              }}>
-                <ArrowLeft className="w-3.5 h-3.5" />
-                Volver al listado
-              </Button>
-            ) : showRegistro ? (
+            {showRegistro ? (
               <Button variant="outline" size="sm" className="gap-1.5 h-8 text-xs" onClick={() => {
                 setShowRegistro(false);
-                setIsRegistroDetail(false);
                 // Restore previous panel state
                 if (panelStateBeforeRegistroRef.current !== null) {
                   setIsCollapsed(panelStateBeforeRegistroRef.current);
