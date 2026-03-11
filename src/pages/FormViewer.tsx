@@ -77,8 +77,6 @@ const FormViewer = () => {
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [pendingValues, setPendingValues] = useState<any>(null);
   const [showRegistro, setShowRegistro] = useState(false);
-  const [isRegistroDetail, setIsRegistroDetail] = useState(false);
-  const clearRegistroDetailRef = useRef<(() => void) | null>(null);
   const { toast: uiToast } = useToast();
 
   // Panel resize state
