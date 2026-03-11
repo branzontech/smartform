@@ -265,6 +265,57 @@ export type Database = {
         }
         Relationships: []
       }
+      configuracion_encabezado_paciente: {
+        Row: {
+          campo: string
+          created_at: string | null
+          etiqueta: string
+          fhir_element_type: string | null
+          fhir_extensions: Json | null
+          fhir_path: string | null
+          formato: string | null
+          grupo: string | null
+          icono: string | null
+          id: string
+          orden: number
+          pais: string[] | null
+          updated_at: string | null
+          visible: boolean
+        }
+        Insert: {
+          campo: string
+          created_at?: string | null
+          etiqueta: string
+          fhir_element_type?: string | null
+          fhir_extensions?: Json | null
+          fhir_path?: string | null
+          formato?: string | null
+          grupo?: string | null
+          icono?: string | null
+          id?: string
+          orden?: number
+          pais?: string[] | null
+          updated_at?: string | null
+          visible?: boolean
+        }
+        Update: {
+          campo?: string
+          created_at?: string | null
+          etiqueta?: string
+          fhir_element_type?: string | null
+          fhir_extensions?: Json | null
+          fhir_path?: string | null
+          formato?: string | null
+          grupo?: string | null
+          icono?: string | null
+          id?: string
+          orden?: number
+          pais?: string[] | null
+          updated_at?: string | null
+          visible?: boolean
+        }
+        Relationships: []
+      }
       contratos: {
         Row: {
           created_at: string
