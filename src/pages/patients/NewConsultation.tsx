@@ -224,7 +224,30 @@ const NewConsultation = () => {
       return;
     }
     
-    goToStep(3);
+    // Create consultation and navigate directly to forms
+    const newConsultation = {
+      id: nanoid(),
+      patientId: selectedPatientId,
+      consultationDate: new Date(),
+      status: "En curso",
+      formIds: selectedFormIds,
+      forms: selectedForms
+    };
+    
+    const savedConsultations = localStorage.getItem("consultations");
+    const existingConsultations = savedConsultations ? JSON.parse(savedConsultations) : [];
+    localStorage.setItem("consultations", JSON.stringify([...existingConsultations, newConsultation]));
+    
+    toast({
+      title: "Atención iniciada",
+      description: "Redirigiendo al formulario seleccionado...",
+    });
+    
+    if (selectedFormIds.length > 1) {
+      navigate(`/app/consulta-multiple?patientId=${selectedPatientId}&consultationId=${newConsultation.id}&forms=${selectedFormIds.join(',')}`);
+    } else {
+      navigate(`/app/ver/${selectedFormIds[0]}?patientId=${selectedPatientId}&consultationId=${newConsultation.id}`);
+    }
   };
 
   const calculateReminderDate = (date: Date | undefined, days: number): Date | undefined => {
