@@ -51,6 +51,7 @@ const NewConsultation = () => {
   const { toast } = useToast();
   const queryParams = new URLSearchParams(location.search);
   const preselectedPatientId = queryParams.get("patientId");
+  const preselectedFormIds = queryParams.get("selectedForms")?.split(",").filter(Boolean) || [];
 
   const [currentStep, setCurrentStep] = useState<WorkflowStep>(preselectedPatientId ? 2 : 1);
   const [direction, setDirection] = useState(0);

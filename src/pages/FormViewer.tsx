@@ -486,7 +486,9 @@ const FormViewer = () => {
               variant="ghost"
               onClick={() => {
                 if (patientId) {
-                  navigate(`/app/pacientes/nueva-consulta?patientId=${patientId}`);
+                  const params = new URLSearchParams({ patientId });
+                  if (formId) params.set('selectedForms', formId);
+                  navigate(`/app/pacientes/nueva-consulta?${params.toString()}`);
                 } else {
                   navigate(-1);
                 }
