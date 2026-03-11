@@ -25,6 +25,7 @@ import { cn } from "@/lib/utils";
 const categories = [
   { id: "general", label: "General", icon: <Cog size={18} /> },
   { id: "header", label: "Encabezado", icon: <Building2 size={18} /> },
+  { id: "patient-header", label: "Encabezado paciente", icon: <UserCog size={18} /> },
   { id: "forms", label: "Formularios", icon: <FileText size={18} /> },
   { id: "customization", label: "Personalización", icon: <SlidersHorizontal size={18} /> },
   { id: "appearance", label: "Apariencia", icon: <Palette size={18} /> },
