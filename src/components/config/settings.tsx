@@ -6,6 +6,7 @@ import { InstitutionHeaderConfig } from "@/components/config/InstitutionHeaderCo
 import { supabase } from "@/integrations/supabase/client";
 import { PatientFieldsConfig } from "@/components/config/PatientFieldsConfig";
 import { AdmissionFieldsConfig } from "@/components/config/AdmissionFieldsConfig";
+import { PatientHeaderConfig } from "@/components/config/PatientHeaderConfig";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
