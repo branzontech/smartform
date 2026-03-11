@@ -115,8 +115,8 @@ export const Layout = ({ children }: LayoutProps) => {
           <div className="shrink-0 container mx-auto px-4 py-2">
             <TenantStatusBar />
           </div>
-          {/* Main Content — each page controls its own scroll */}
-          <main className="flex-1 min-h-0 overflow-hidden px-6">
+          {/* Main Content — overflow-y-auto for normal pages; FormViewer uses h-full overflow-hidden to opt out */}
+          <main className="flex-1 min-h-0 overflow-y-auto px-6">
             {children}
           </main>
 
