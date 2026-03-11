@@ -161,9 +161,7 @@ const FormViewer = () => {
   };
 
   const onSubmit = async (values: z.infer<typeof dynamicSchema>) => {
-    console.log("Formulario enviado:", values);
-    
-    // Process any special field types that need additional handling
+    // Process values before showing confirmation
     const processedValues = { ...values };
     
     questions.forEach(question => {
@@ -191,11 +189,17 @@ const FormViewer = () => {
         processedValues[question.id] = multifieldValues;
       }
     });
-    
-    // Remove internal fields for clean DB storage
-    const { _patientId, _consultationId, ...cleanData } = processedValues;
 
-    // Save to respuestas_formularios (FHIR QuestionnaireResponse) in DB
+    setPendingValues(processedValues);
+    setShowConfirmModal(true);
+  };
+
+  const handleConfirmSave = async () => {
+    if (!pendingValues) return;
+    setShowConfirmModal(false);
+
+    const { _patientId, _consultationId, ...cleanData } = pendingValues;
+
     if (formId && patientId) {
       const { data: { user } } = await supabase.auth.getUser();
       const medicoId = user?.id;
@@ -229,17 +233,10 @@ const FormViewer = () => {
         return;
       }
     } else if (formId) {
-      // Fallback for public/anonymous forms without patient context
-      processedValues._patientId = patientId || undefined;
-      processedValues._consultationId = consultationId || undefined;
-      saveFormResponse(formId, processedValues);
+      pendingValues._patientId = patientId || undefined;
+      pendingValues._consultationId = consultationId || undefined;
+      saveFormResponse(formId, pendingValues);
     }
-    
-    setSubmitted(true);
-    toast("Formulario enviado correctamente", {
-      description: "Gracias por completar el formulario",
-      duration: 5000,
-    });
 
     if (isEmbedded && formId) {
       window.parent.postMessage({
@@ -247,17 +244,43 @@ const FormViewer = () => {
         formId: formId
       }, '*');
     }
+
+    // Show success — stay on the same page
+    uiToast({
+      title: "✅ Formulario guardado exitosamente",
+      description: `${formTitle} — ${format(new Date(), "d 'de' MMMM 'de' yyyy, HH:mm", { locale: es })}`,
+    });
+
+    setPendingValues(null);
+  };
+
+  // Build summary of filled fields for confirmation modal
+  const getFilledFieldsSummary = () => {
+    if (!pendingValues) return [];
+    const summary: { label: string; value: string; isEmpty: boolean }[] = [];
     
-    if (patientId && consultationId && !isEmbedded) {
-      uiToast({
-        title: "Formulario guardado",
-        description: "El formulario ha sido guardado correctamente para esta consulta.",
-      });
+    questions.forEach(q => {
+      if (q.type === "section") return;
+      const val = pendingValues[q.id];
+      let displayValue = "";
+      let isEmpty = false;
       
-      setTimeout(() => {
-        navigate(`/pacientes/${patientId}`);
-      }, 2000);
-    }
+      if (val === undefined || val === null || val === "" || (Array.isArray(val) && val.length === 0)) {
+        displayValue = "Sin completar";
+        isEmpty = true;
+      } else if (typeof val === "object" && !Array.isArray(val)) {
+        displayValue = Object.values(val).filter(Boolean).join(", ") || "Sin completar";
+        isEmpty = !Object.values(val).some(Boolean);
+      } else if (Array.isArray(val)) {
+        displayValue = val.join(", ");
+      } else {
+        displayValue = String(val).length > 80 ? String(val).substring(0, 80) + "..." : String(val);
+      }
+      
+      summary.push({ label: q.title, value: displayValue, isEmpty });
+    });
+    
+    return summary;
   };
 
   const copyFormLinkToClipboard = () => {
