@@ -535,8 +535,8 @@ const NewConsultation = () => {
               disabled={selectedFormIds.length === 0}
               className="rounded-xl h-9 px-5 gap-2"
             >
-              Continuar
-              <ArrowRight className="w-4 h-4" />
+              <Stethoscope className="w-4 h-4" />
+              Iniciar atención
             </Button>
           )}
         </div>
