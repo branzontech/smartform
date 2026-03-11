@@ -574,10 +574,6 @@ const FormViewer = () => {
                 </Form>
               </FormProvider>
             </>
-          )}
-              </form>
-            </Form>
-          </FormProvider>
         </div>
 
         {/* RIGHT — Resizable panel or collapsed strip */}
