@@ -66,6 +66,7 @@ const FormViewer = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [formData, setFormData] = useState<FormData>({});
+  const draftRestoredRef = useRef(false);
   const [questions, setQuestions] = useState<QuestionData[]>([]);
   const [formTitle, setFormTitle] = useState("Formulario");
   const [formDescription, setFormDescription] = useState("");
@@ -97,6 +98,32 @@ const FormViewer = () => {
   const patientId = queryParams.get("patientId");
   const consultationId = queryParams.get("consultationId");
   const isEmbedded = queryParams.get("embedded") === "true";
+
+  // Draft cache key — unique per form + patient + consultation
+  const draftKey = `kerhub-draft-${formId || 'unknown'}${patientId ? `-${patientId}` : ''}${consultationId ? `-${consultationId}` : ''}`;
+
+  // Auto-save draft to localStorage (debounced 500ms)
+  useEffect(() => {
+    if (!draftRestoredRef.current) return; // Don't save until draft has been restored/checked
+    if (submitted) return;
+    const hasData = Object.keys(formData).some(k => {
+      const v = formData[k];
+      return v !== undefined && v !== null && v !== '';
+    });
+    if (!hasData) return;
+
+    const timer = setTimeout(() => {
+      try {
+        localStorage.setItem(draftKey, JSON.stringify(formData));
+      } catch { /* quota exceeded — ignore */ }
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [formData, draftKey, submitted]);
+
+  // Clear draft helper
+  const clearDraft = useCallback(() => {
+    localStorage.removeItem(draftKey);
+  }, [draftKey]);
 
   // Persist panel prefs
   useEffect(() => {
@@ -199,6 +226,20 @@ const FormViewer = () => {
             }
           }
           
+          // Restore draft from localStorage if available
+          try {
+            const savedDraft = localStorage.getItem(draftKey);
+            if (savedDraft) {
+              const draftData = JSON.parse(savedDraft);
+              setFormData(prev => ({ ...prev, ...draftData }));
+              toast("Borrador restaurado", {
+                description: "Se recuperaron los datos que no habías guardado",
+                icon: <Check size={16} className="text-primary" />,
+              });
+            }
+          } catch { /* corrupt draft — ignore */ }
+          draftRestoredRef.current = true;
+
         } catch (error) {
           console.error('Error loading form:', error);
           setError("Error al cargar el formulario");
@@ -313,6 +354,7 @@ const FormViewer = () => {
       description: `${formTitle} — ${format(new Date(), "d 'de' MMMM 'de' yyyy, HH:mm", { locale: es })}`,
     });
 
+    clearDraft();
     setPendingValues(null);
   };
 
