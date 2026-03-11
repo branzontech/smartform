@@ -671,8 +671,15 @@ const CotizacionForm = ({ editId, onCancel, onSaved }: Props) => {
           {/* Actions */}
           <div className="flex items-center justify-end gap-3 pb-6 pt-2">
             <Button variant="outline" onClick={onCancel}>Cancelar</Button>
-            <Button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending} className="shadow-sm">
+            <Button
+              variant="outline"
+              onClick={() => saveMutation.mutate(isEditing ? ((existingCot?.estado as EstadoCotizacion) || "borrador") : "borrador")}
+              disabled={saveMutation.isPending}
+            >
               {saveMutation.isPending ? "Guardando..." : isEditing ? "Guardar cambios" : "Guardar borrador"}
+            </Button>
+            <Button onClick={() => saveMutation.mutate("enviada")} disabled={saveMutation.isPending} className="shadow-sm">
+              {saveMutation.isPending ? "Guardando..." : "Guardar y oficializar"}
             </Button>
           </div>
         </div>
