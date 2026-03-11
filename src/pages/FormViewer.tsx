@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -19,7 +19,7 @@ import { QuestionRenderer } from '@/components/forms/form-viewer/question-render
 import { QuestionData } from '@/components/forms/question/types';
 import { FormTitle } from '@/components/ui/form-title';
 import { BackButton } from '@/App';
-import { Check, Link as LinkIcon, FileText, Printer, AlertTriangle, CalendarIcon, ClipboardList } from 'lucide-react';
+import { Check, Link as LinkIcon, Printer, AlertTriangle, CalendarIcon, ClipboardList, PanelRightClose, PanelRightOpen, GripVertical } from 'lucide-react';
 import { toast } from "sonner";
 import { Form as FormType } from './FormsPage';
 import { FormLoading } from '@/components/forms/form-viewer/form-loading';
@@ -48,6 +48,12 @@ interface FormData {
   [key: string]: any;
 }
 
+const PANEL_WIDTH_KEY = 'kerhub-antecedentes-panel-width';
+const PANEL_COLLAPSED_KEY = 'kerhub-antecedentes-panel-collapsed';
+const DEFAULT_PANEL_WIDTH = 380;
+const MIN_PANEL_WIDTH = 280;
+const MIN_FORM_WIDTH = 400;
+
 const FormViewer = () => {
   const { id: formId } = useParams();
   const navigate = useNavigate();
@@ -65,25 +71,78 @@ const FormViewer = () => {
   const [pendingValues, setPendingValues] = useState<any>(null);
   const { toast: uiToast } = useToast();
 
+  // Panel resize state
+  const [panelWidth, setPanelWidth] = useState(() => {
+    const saved = localStorage.getItem(PANEL_WIDTH_KEY);
+    return saved ? parseInt(saved, 10) : DEFAULT_PANEL_WIDTH;
+  });
+  const [isCollapsed, setIsCollapsed] = useState(() => {
+    return localStorage.getItem(PANEL_COLLAPSED_KEY) === 'true';
+  });
+  const previousWidthRef = useRef(panelWidth);
+  const isDraggingRef = useRef(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
   // Get query parameters
   const queryParams = new URLSearchParams(location.search);
   const patientId = queryParams.get("patientId");
   const consultationId = queryParams.get("consultationId");
   const isEmbedded = queryParams.get("embedded") === "true";
 
+  // Persist panel prefs
+  useEffect(() => {
+    localStorage.setItem(PANEL_WIDTH_KEY, String(panelWidth));
+  }, [panelWidth]);
+  useEffect(() => {
+    localStorage.setItem(PANEL_COLLAPSED_KEY, String(isCollapsed));
+  }, [isCollapsed]);
+
+  const toggleCollapse = useCallback(() => {
+    if (!isCollapsed) {
+      previousWidthRef.current = panelWidth;
+    }
+    setIsCollapsed(prev => !prev);
+  }, [isCollapsed, panelWidth]);
+
+  const handleResizeStart = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    isDraggingRef.current = true;
+    document.body.classList.add('select-none', 'cursor-col-resize');
+
+    const startX = e.clientX;
+    const startWidth = panelWidth;
+
+    const onMove = (moveEvent: MouseEvent) => {
+      if (!isDraggingRef.current) return;
+      const delta = startX - moveEvent.clientX; // dragging left = bigger panel
+      const containerWidth = containerRef.current?.offsetWidth || window.innerWidth;
+      const maxWidth = Math.floor(containerWidth * 0.5);
+      let newWidth = Math.max(MIN_PANEL_WIDTH, Math.min(maxWidth, startWidth + delta));
+      // Ensure form column has minimum width
+      if (containerWidth - newWidth < MIN_FORM_WIDTH) {
+        newWidth = containerWidth - MIN_FORM_WIDTH;
+      }
+      setPanelWidth(newWidth);
+    };
+
+    const onUp = () => {
+      isDraggingRef.current = false;
+      document.body.classList.remove('select-none', 'cursor-col-resize');
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+    };
+
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  }, [panelWidth]);
+
   useEffect(() => {
     const loadForm = async () => {
-  console.log("FormViewer - formId:", formId);
-  console.log("FormViewer - patientId:", patientId);
-  console.log("FormViewer - consultationId:", consultationId);
-  console.log("FormViewer - Current URL:", location.pathname + location.search);
-      
       if (formId) {
         setLoading(true);
         setError("");
         
         try {
-          // Load header config in parallel with form
           const [result, headerResult] = await Promise.all([
             fetchFormById(formId),
             supabase.from("configuracion_encabezado" as any).select("*").limit(1).single(),
@@ -106,7 +165,6 @@ const FormViewer = () => {
             }
           }
           
-          // If this is for a patient, load patient data
           if (patientId) {
             const savedPatients = localStorage.getItem("patients");
             if (savedPatients) {
@@ -114,7 +172,6 @@ const FormViewer = () => {
               const patient = patients.find((p: any) => p.id === patientId);
               
               if (patient) {
-                // Pre-fill patient information into the form
                 const patientData: FormData = {};
                 questions.forEach(question => {
                   if (question.type === "short" && question.title.includes("nombre")) {
@@ -126,7 +183,6 @@ const FormViewer = () => {
                   } else if (question.type === "short" && question.title.includes("email")) {
                     patientData[question.id] = patient.email;
                   }
-                  // Add more mappings as needed
                 });
                 
                 setFormData(prevData => ({...prevData, ...patientData}));
@@ -154,7 +210,6 @@ const FormViewer = () => {
   });
 
   const handleInputChange = (id: string, value: any) => {
-    console.log(`Updating field ${id} with value:`, value);
     setFormData(prevData => ({
       ...prevData,
       [id]: value,
@@ -162,7 +217,6 @@ const FormViewer = () => {
   };
 
   const onSubmit = async (values: z.infer<typeof dynamicSchema>) => {
-    // Process values before showing confirmation
     const processedValues = { ...values };
     
     questions.forEach(question => {
@@ -225,7 +279,6 @@ const FormViewer = () => {
         });
 
       if (insertError) {
-        console.error("Error saving response:", insertError);
         uiToast({
           title: "Error al guardar",
           description: insertError.message,
@@ -246,7 +299,6 @@ const FormViewer = () => {
       }, '*');
     }
 
-    // Show success — stay on the same page
     uiToast({
       title: "✅ Formulario guardado exitosamente",
       description: `${formTitle} — ${format(new Date(), "d 'de' MMMM 'de' yyyy, HH:mm", { locale: es })}`,
@@ -255,7 +307,6 @@ const FormViewer = () => {
     setPendingValues(null);
   };
 
-  // Build summary of filled fields for confirmation modal
   const getFilledFieldsSummary = () => {
     if (!pendingValues) return [];
     const summary: { label: string; value: string; isEmpty: boolean }[] = [];
@@ -309,16 +360,10 @@ const FormViewer = () => {
     return <FormSubmissionSuccess onResubmit={() => setSubmitted(false)} />;
   }
 
-  // Check if this is a consultation form to use two-column layout
   const isConsultationForm = patientId && consultationId;
-  // Show patient history panel if we have a patientId (even without consultationId)
   const showPatientPanel = !!patientId;
-  
-  console.log("FormViewer - isConsultationForm:", isConsultationForm);
-  console.log("FormViewer - showPatientPanel:", showPatientPanel);
-  console.log("FormViewer - patientId for panel:", patientId);
 
-  // If embedded, return minimal layout
+  // Embedded layout
   if (isEmbedded) {
     return (
       <div className="p-4 bg-background">
@@ -354,230 +399,286 @@ const FormViewer = () => {
     );
   }
 
+  // Standard single-column layout for regular forms (no patient)
+  if (!showPatientPanel) {
+    return (
+      <div className="h-full overflow-y-auto py-12 container print:py-6 print:mx-0 print:w-full print:max-w-none">
+        <div className="hidden print:block text-center mb-6">
+          <h1 className="text-2xl font-bold">{formTitle}</h1>
+          {formDescription && <p className="text-muted-foreground">{formDescription}</p>}
+        </div>
+        <div className="print:hidden">
+          <BackButton />
+        </div>
+        <div className="mb-6 flex justify-between items-center print:hidden">
+          <FormTitle 
+            defaultTitle={formTitle}
+            defaultDescription={formDescription}
+            readOnly={true}
+          />
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={printForm} className="flex items-center gap-2">
+              <Printer size={16} />
+              Imprimir
+            </Button>
+            <Button variant="outline" size="sm" onClick={copyFormLinkToClipboard} className="flex items-center gap-2">
+              <LinkIcon size={16} />
+              Compartir
+            </Button>
+          </div>
+        </div>
+        
+        <div className="bg-card p-6 rounded-lg shadow-sm border border-border/50 print:shadow-none print:border-none">
+          <FormHeaderPreview config={headerConfig} formTitle={formTitle} />
+          <FormProvider {...form}>
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+                {questions.map(question => (
+                  <QuestionRenderer
+                    key={question.id}
+                    question={question}
+                    formData={formData}
+                    onChange={handleInputChange}
+                    errors={form.formState.errors}
+                  />
+                ))}
+                <Button type="submit" className="w-full sm:w-auto print:hidden">Enviar respuestas</Button>
+              </form>
+            </Form>
+          </FormProvider>
+        </div>
+
+        {/* Confirmation Modal */}
+        <ConfirmationModal
+          open={showConfirmModal}
+          onOpenChange={setShowConfirmModal}
+          onConfirm={handleConfirmSave}
+          formTitle={formTitle}
+          getFilledFieldsSummary={getFilledFieldsSummary}
+        />
+      </div>
+    );
+  }
+
+  // Two-column clinical layout with resizable panel
   return (
-    <div className={`${showPatientPanel ? 'h-[calc(100vh-5rem)] overflow-hidden' : 'container py-12'} print:py-6 print:mx-0 print:w-full print:max-w-none`}>
+    <div ref={containerRef} className="h-full overflow-hidden flex flex-col print:overflow-visible">
+      {/* Print header */}
       <div className="hidden print:block text-center mb-6">
         <h1 className="text-2xl font-bold">{formTitle}</h1>
         {formDescription && <p className="text-muted-foreground">{formDescription}</p>}
       </div>
 
-      {!showPatientPanel && (
-        <div className="print:hidden">
-          <BackButton />
-        </div>
-      )}
-      
-      {showPatientPanel ? (
-        // Two-column layout for consultation forms
-        <div className="grid grid-cols-[1fr_380px] h-full gap-0">
-          {/* Left column — form with scroll */}
-          <div className="overflow-y-auto">
-            <div className="print:hidden bg-card border-b p-4 sticky top-0 z-10">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <BackButton />
-                  <div>
-                    <h1 className="text-xl font-semibold">{formTitle}</h1>
-                    {formDescription && (
-                      <p className="text-sm text-muted-foreground">{formDescription}</p>
-                    )}
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={printForm}
-                    className="flex items-center gap-2"
-                  >
-                    <Printer size={16} />
-                    Imprimir
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={copyFormLinkToClipboard}
-                    className="flex items-center gap-2"
-                  >
-                    <LinkIcon size={16} />
-                    Compartir
-                  </Button>
-                </div>
-              </div>
-              
-              {isConsultationForm && (
-                <div className="mt-3 p-3 bg-primary/5 rounded-lg border border-primary/20">
-                  <p className="text-primary text-sm font-medium">
-                    Consulta médica en curso - Complete el formulario de atención
-                  </p>
-                </div>
-              )}
-              
-              {showPatientPanel && !isConsultationForm && (
-                <div className="mt-3 p-3 bg-accent/50 rounded-lg border border-accent">
-                  <p className="text-accent-foreground text-sm font-medium">
-                    Formulario para paciente - Historial médico disponible en el panel lateral
-                  </p>
-                </div>
+      {/* Fixed header bar */}
+      <div className="shrink-0 print:hidden bg-card border-b px-6 py-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <BackButton />
+            <div>
+              <h1 className="text-lg font-semibold">{formTitle}</h1>
+              {formDescription && (
+                <p className="text-xs text-muted-foreground">{formDescription}</p>
               )}
             </div>
-            
-            <div className="p-6 bg-background">
-              {patientId && (
-                <PatientHeaderBanner
-                  pacienteId={patientId}
-                  admisionId={consultationId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(consultationId) ? consultationId : undefined}
-                />
-              )}
-              <FormHeaderPreview config={headerConfig} formTitle={formTitle} />
-              <FormProvider {...form}>
-                <Form {...form}>
-                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 max-w-none">
-                    {questions.map(question => (
-                      <QuestionRenderer
-                        key={question.id}
-                        question={question}
-                        formData={formData}
-                        onChange={handleInputChange}
-                        errors={form.formState.errors}
-                      />
-                    ))}
-                    <div className="sticky bottom-0 bg-background pt-4 pb-2 border-t">
-                      <Button type="submit" className="w-full print:hidden">
-                        Completar atención
-                      </Button>
-                    </div>
-                  </form>
-                </Form>
-              </FormProvider>
-            </div>
           </div>
-          
-          {/* Right column — patient history, independent scroll */}
-          <div className="border-l bg-muted/30 overflow-y-auto print:hidden">
-            <PatientHistoryPanel patientId={patientId} className="h-full" />
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={printForm} className="flex items-center gap-2">
+              <Printer size={16} />
+              Imprimir
+            </Button>
+            <Button variant="outline" size="sm" onClick={copyFormLinkToClipboard} className="flex items-center gap-2">
+              <LinkIcon size={16} />
+              Compartir
+            </Button>
           </div>
         </div>
-      ) : (
-        // Standard single-column layout for regular forms
-        <div>
-          <div className="mb-6 flex justify-between items-center print:hidden">
-            <FormTitle 
-              defaultTitle={formTitle}
-              defaultDescription={formDescription}
-              readOnly={true}
+
+        {isConsultationForm && (
+          <div className="mt-2 p-2.5 bg-primary/5 rounded-md border border-primary/20">
+            <p className="text-primary text-xs font-medium">
+              Consulta médica en curso — Complete el formulario de atención
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* Two-column area */}
+      <div className="flex-1 min-h-0 flex overflow-hidden">
+        {/* LEFT — Form with its own scroll */}
+        <div className="flex-1 min-w-0 overflow-y-auto p-6 bg-background">
+          {patientId && (
+            <PatientHeaderBanner
+              pacienteId={patientId}
+              admisionId={consultationId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(consultationId) ? consultationId : undefined}
             />
-            <div className="flex gap-2">
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={printForm}
-                className="flex items-center gap-2"
-              >
-                <Printer size={16} />
-                Imprimir
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={copyFormLinkToClipboard}
-                className="flex items-center gap-2"
-              >
-                <LinkIcon size={16} />
-                Compartir
-              </Button>
-            </div>
-          </div>
-          
-          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100 print:shadow-none print:border-none">
-            <FormHeaderPreview config={headerConfig} formTitle={formTitle} />
-            <FormProvider {...form}>
-              <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-                  {questions.map(question => (
-                    <QuestionRenderer
-                      key={question.id}
-                      question={question}
-                      formData={formData}
-                      onChange={handleInputChange}
-                      errors={form.formState.errors}
-                    />
-                  ))}
-                  <Button type="submit" className="w-full sm:w-auto print:hidden">Enviar respuestas</Button>
-                </form>
-              </Form>
-            </FormProvider>
-          </div>
+          )}
+          <FormHeaderPreview config={headerConfig} formTitle={formTitle} />
+          <FormProvider {...form}>
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 max-w-none">
+                {questions.map(question => (
+                  <QuestionRenderer
+                    key={question.id}
+                    question={question}
+                    formData={formData}
+                    onChange={handleInputChange}
+                    errors={form.formState.errors}
+                  />
+                ))}
+                <div className="sticky bottom-0 bg-background pt-4 pb-2 border-t">
+                  <Button type="submit" className="w-full print:hidden">
+                    Completar atención
+                  </Button>
+                </div>
+              </form>
+            </Form>
+          </FormProvider>
         </div>
-      )}
+
+        {/* RIGHT — Resizable panel or collapsed strip */}
+        {!isCollapsed ? (
+          <>
+            {/* Resize handle */}
+            <div
+              className="w-1.5 hover:w-2 cursor-col-resize flex items-center justify-center hover:bg-primary/10 transition-all group shrink-0 print:hidden"
+              onMouseDown={handleResizeStart}
+            >
+              <div className="flex flex-col items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="w-0.5 h-1 bg-muted-foreground/30 rounded-full" />
+                <div className="w-0.5 h-1 bg-muted-foreground/30 rounded-full" />
+                <div className="w-0.5 h-1 bg-muted-foreground/30 rounded-full" />
+              </div>
+            </div>
+
+            {/* Panel */}
+            <div
+              className="shrink-0 overflow-hidden flex flex-col bg-muted/20 border-l print:hidden"
+              style={{ width: `${panelWidth}px` }}
+            >
+              {/* Panel header */}
+              <div className="shrink-0 px-4 py-3 border-b flex items-center justify-between bg-card">
+                <h3 className="font-semibold text-sm">Antecedentes del Paciente</h3>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={toggleCollapse}
+                  className="h-7 w-7 text-muted-foreground"
+                >
+                  <PanelRightClose className="w-4 h-4" />
+                </Button>
+              </div>
+              {/* Panel content — independent scroll */}
+              <div className="flex-1 min-h-0 overflow-y-auto">
+                <PatientHistoryPanel patientId={patientId!} className="h-full" />
+              </div>
+            </div>
+          </>
+        ) : (
+          /* Collapsed strip */
+          <div className="shrink-0 border-l flex flex-col items-center print:hidden">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => {
+                setIsCollapsed(false);
+                setPanelWidth(previousWidthRef.current || DEFAULT_PANEL_WIDTH);
+              }}
+              className="h-10 w-8 rounded-none hover:bg-muted text-muted-foreground"
+              title="Abrir panel de antecedentes"
+            >
+              <PanelRightOpen className="w-4 h-4" />
+            </Button>
+          </div>
+        )}
+      </div>
 
       {/* Confirmation Modal */}
-      <AlertDialog open={showConfirmModal} onOpenChange={setShowConfirmModal}>
-        <AlertDialogContent className="max-w-lg max-h-[80vh] overflow-hidden flex flex-col rounded-2xl">
-          <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2 text-lg">
-              <ClipboardList className="w-5 h-5 text-primary" />
-              Confirmar envío del formulario
-            </AlertDialogTitle>
-            <AlertDialogDescription className="text-sm">
-              Revisa los datos antes de guardar. Una vez enviado, no podrás modificar esta respuesta.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          
-          <div className="overflow-y-auto flex-1 -mx-6 px-6 py-2">
-            {/* Date & form info */}
-            <div className="flex items-center gap-3 p-3 rounded-xl bg-muted/50 mb-3">
-              <CalendarIcon className="w-4 h-4 text-muted-foreground shrink-0" />
-              <div className="text-sm">
-                <span className="font-medium">{formTitle}</span>
-                <span className="text-muted-foreground ml-2">
-                  {format(new Date(), "d 'de' MMMM 'de' yyyy, HH:mm", { locale: es })}
-                </span>
-              </div>
-            </div>
-
-            {/* Fields summary */}
-            <div className="space-y-1.5">
-              {getFilledFieldsSummary().map((field, i) => (
-                <div key={i} className="flex items-start gap-2 p-2.5 rounded-lg border border-border/30 bg-card/50">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-medium text-muted-foreground">{field.label}</p>
-                    <p className={`text-sm mt-0.5 ${field.isEmpty ? "text-destructive italic" : "text-foreground"}`}>
-                      {field.value}
-                    </p>
-                  </div>
-                  {field.isEmpty && (
-                    <Badge variant="outline" className="shrink-0 text-[10px] border-destructive/30 text-destructive">
-                      <AlertTriangle className="w-3 h-3 mr-1" />
-                      Vacío
-                    </Badge>
-                  )}
-                </div>
-              ))}
-            </div>
-
-            {/* Warning if empty fields */}
-            {getFilledFieldsSummary().some(f => f.isEmpty) && (
-              <div className="flex items-center gap-2 p-3 mt-3 rounded-xl bg-destructive/5 border border-destructive/10">
-                <AlertTriangle className="w-4 h-4 text-destructive shrink-0" />
-                <p className="text-xs text-destructive">
-                  Hay campos sin completar. ¿Deseas continuar de todas formas?
-                </p>
-              </div>
-            )}
-          </div>
-
-          <AlertDialogFooter className="mt-2">
-            <AlertDialogCancel className="rounded-xl">Volver a revisar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleConfirmSave} className="rounded-xl gap-2">
-              <Check className="w-4 h-4" />
-              Confirmar y guardar
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ConfirmationModal
+        open={showConfirmModal}
+        onOpenChange={setShowConfirmModal}
+        onConfirm={handleConfirmSave}
+        formTitle={formTitle}
+        getFilledFieldsSummary={getFilledFieldsSummary}
+      />
     </div>
   );
 };
+
+// Extracted confirmation modal to reduce main component size
+const ConfirmationModal = ({
+  open,
+  onOpenChange,
+  onConfirm,
+  formTitle,
+  getFilledFieldsSummary,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onConfirm: () => void;
+  formTitle: string;
+  getFilledFieldsSummary: () => { label: string; value: string; isEmpty: boolean }[];
+}) => (
+  <AlertDialog open={open} onOpenChange={onOpenChange}>
+    <AlertDialogContent className="max-w-lg max-h-[80vh] overflow-hidden flex flex-col rounded-2xl">
+      <AlertDialogHeader>
+        <AlertDialogTitle className="flex items-center gap-2 text-lg">
+          <ClipboardList className="w-5 h-5 text-primary" />
+          Confirmar envío del formulario
+        </AlertDialogTitle>
+        <AlertDialogDescription className="text-sm">
+          Revisa los datos antes de guardar. Una vez enviado, no podrás modificar esta respuesta.
+        </AlertDialogDescription>
+      </AlertDialogHeader>
+      
+      <div className="overflow-y-auto flex-1 -mx-6 px-6 py-2">
+        <div className="flex items-center gap-3 p-3 rounded-xl bg-muted/50 mb-3">
+          <CalendarIcon className="w-4 h-4 text-muted-foreground shrink-0" />
+          <div className="text-sm">
+            <span className="font-medium">{formTitle}</span>
+            <span className="text-muted-foreground ml-2">
+              {format(new Date(), "d 'de' MMMM 'de' yyyy, HH:mm", { locale: es })}
+            </span>
+          </div>
+        </div>
+
+        <div className="space-y-1.5">
+          {getFilledFieldsSummary().map((field, i) => (
+            <div key={i} className="flex items-start gap-2 p-2.5 rounded-lg border border-border/30 bg-card/50">
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-medium text-muted-foreground">{field.label}</p>
+                <p className={`text-sm mt-0.5 ${field.isEmpty ? "text-destructive italic" : "text-foreground"}`}>
+                  {field.value}
+                </p>
+              </div>
+              {field.isEmpty && (
+                <Badge variant="outline" className="shrink-0 text-[10px] border-destructive/30 text-destructive">
+                  <AlertTriangle className="w-3 h-3 mr-1" />
+                  Vacío
+                </Badge>
+              )}
+            </div>
+          ))}
+        </div>
+
+        {getFilledFieldsSummary().some(f => f.isEmpty) && (
+          <div className="flex items-center gap-2 p-3 mt-3 rounded-xl bg-destructive/5 border border-destructive/10">
+            <AlertTriangle className="w-4 h-4 text-destructive shrink-0" />
+            <p className="text-xs text-destructive">
+              Hay campos sin completar. ¿Deseas continuar de todas formas?
+            </p>
+          </div>
+        )}
+      </div>
+
+      <AlertDialogFooter className="mt-2">
+        <AlertDialogCancel className="rounded-xl">Volver a revisar</AlertDialogCancel>
+        <AlertDialogAction onClick={onConfirm} className="rounded-xl gap-2">
+          <Check className="w-4 h-4" />
+          Confirmar y guardar
+        </AlertDialogAction>
+      </AlertDialogFooter>
+    </AlertDialogContent>
+  </AlertDialog>
+);
 
 export default FormViewer;
