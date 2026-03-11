@@ -325,15 +325,12 @@ const AppointmentForm = () => {
   }
 
   return (
-    <div className="h-screen flex flex-col bg-background overflow-hidden">
-      <Header />
-      <main className="flex-1 min-h-0 overflow-hidden">
-        <AppointmentWizard
-          onComplete={handleWizardComplete}
-          initialPatients={patients}
-          existingAppointments={existingAppointments}
-        />
-      </main>
+    <div className="h-full flex flex-col overflow-hidden -mx-6 -mt-4">
+      <AppointmentWizard
+        onComplete={handleWizardComplete}
+        initialPatients={patients}
+        existingAppointments={existingAppointments}
+      />
     </div>
   );
 };
