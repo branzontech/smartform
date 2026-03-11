@@ -422,10 +422,9 @@ export const RegistroAtenciones: React.FC<RegistroAtencionesProps> = ({
                     key={folio.id}
                     folio={folio}
                     admision={null}
-                    folioNumber={folioIdx + 1}
                     canCorrect={canCorrect}
-                    hasCorrections={(correccionesByRespuesta[folio.id] || []).length > 0}
-                    onView={() => setSelectedFolio({ respuesta: folio, admision: null, folioNumber: folioIdx + 1 })}
+                    correcciones={correccionesByRespuesta[folio.id] || []}
+                    headerConfig={headerConfig}
                     onPrint={() => printFolio(folio, null as any)}
                     onCorrect={() => {
                       setCorrectionTarget({ respuesta: folio, admisionId: '' });
