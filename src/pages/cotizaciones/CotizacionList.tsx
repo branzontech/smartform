@@ -1,10 +1,10 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { toast } from "sonner";
-import { Plus, Search, FileText, Eye, Pencil, Copy, Trash2 } from "lucide-react";
+import { Plus, Search, FileText, Eye, Pencil, Copy, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -22,6 +22,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import type { EstadoCotizacion } from "@/types/cotizacion-types";
+
+const PAGE_SIZE = 10;
 
 const estadoBadge: Record<EstadoCotizacion, { label: string; className: string }> = {
   borrador: { label: "Borrador", className: "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300 border-0" },
@@ -44,6 +46,7 @@ const CotizacionList = ({ onNewClick, onView, onEdit }: Props) => {
   const [fechaHasta, setFechaHasta] = useState<Date | undefined>();
   const [searchCliente, setSearchCliente] = useState("");
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
 
   const { data: cotizaciones, isLoading } = useQuery({
     queryKey: ["cotizaciones", estadoFilter, fechaDesde, fechaHasta, searchCliente],
@@ -77,10 +80,47 @@ const CotizacionList = ({ onNewClick, onView, onEdit }: Props) => {
     },
   });
 
+  // Fetch profiles for creator names
+  const creatorIds = useMemo(() => {
+    if (!cotizaciones) return [];
+    return [...new Set(cotizaciones.map((c: any) => c.creado_por).filter(Boolean))];
+  }, [cotizaciones]);
+
+  const { data: profilesMap } = useQuery({
+    queryKey: ["profiles-map", creatorIds],
+    queryFn: async () => {
+      if (creatorIds.length === 0) return {};
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("user_id, full_name")
+        .in("user_id", creatorIds);
+      if (error) return {};
+      const map: Record<string, string> = {};
+      (data || []).forEach((p) => {
+        map[p.user_id] = p.full_name || "Sin nombre";
+      });
+      return map;
+    },
+    enabled: creatorIds.length > 0,
+  });
+
+  // Pagination
+  const totalItems = cotizaciones?.length || 0;
+  const totalPages = Math.max(1, Math.ceil(totalItems / PAGE_SIZE));
+  const paginatedData = useMemo(() => {
+    if (!cotizaciones) return [];
+    const start = (currentPage - 1) * PAGE_SIZE;
+    return cotizaciones.slice(start, start + PAGE_SIZE);
+  }, [cotizaciones, currentPage]);
+
+  // Reset page when filters change
+  useMemo(() => {
+    setCurrentPage(1);
+  }, [estadoFilter, fechaDesde, fechaHasta, searchCliente]);
+
   // Delete mutation
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      // Delete items first (cascade should handle, but explicit)
       await supabase.from("cotizacion_items" as any).delete().eq("cotizacion_id", id);
       const { error } = await supabase.from("cotizaciones" as any).delete().eq("id", id);
       if (error) throw error;
@@ -98,7 +138,6 @@ const CotizacionList = ({ onNewClick, onView, onEdit }: Props) => {
   // Duplicate mutation
   const duplicateMutation = useMutation({
     mutationFn: async (cotId: string) => {
-      // Fetch original
       const { data: original, error: fetchErr } = await supabase
         .from("cotizaciones" as any)
         .select("*")
@@ -107,7 +146,6 @@ const CotizacionList = ({ onNewClick, onView, onEdit }: Props) => {
       if (fetchErr) throw fetchErr;
       const orig = original as any;
 
-      // Fetch items
       const { data: origItems, error: itemsErr } = await supabase
         .from("cotizacion_items" as any)
         .select("*")
@@ -115,7 +153,6 @@ const CotizacionList = ({ onNewClick, onView, onEdit }: Props) => {
         .order("orden", { ascending: true });
       if (itemsErr) throw itemsErr;
 
-      // Create new cotizacion
       const { data: newCot, error: insertErr } = await supabase
         .from("cotizaciones" as any)
         .insert({
@@ -237,6 +274,7 @@ const CotizacionList = ({ onNewClick, onView, onEdit }: Props) => {
               <TableRow className="bg-muted/40 hover:bg-muted/40 border-b border-border/50">
                 <TableHead className="text-xs font-medium uppercase tracking-wider text-muted-foreground">N° Cotización</TableHead>
                 <TableHead className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Cliente</TableHead>
+                <TableHead className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Realizada por</TableHead>
                 <TableHead className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Fecha Emisión</TableHead>
                 <TableHead className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Validez</TableHead>
                 <TableHead className="text-xs font-medium uppercase tracking-wider text-muted-foreground text-right">Total</TableHead>
@@ -247,18 +285,20 @@ const CotizacionList = ({ onNewClick, onView, onEdit }: Props) => {
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-12 text-muted-foreground">
+                  <TableCell colSpan={8} className="text-center py-12 text-muted-foreground">
                     Cargando cotizaciones...
                   </TableCell>
                 </TableRow>
               ) : (
-                cotizaciones!.map((cot: any) => {
+                paginatedData.map((cot: any) => {
                   const estado = cot.estado as EstadoCotizacion;
                   const badge = estadoBadge[estado] || estadoBadge.borrador;
+                  const creatorName = profilesMap?.[cot.creado_por] || "—";
                   return (
                     <TableRow key={cot.id} className="hover:bg-muted/30 transition-colors duration-150 border-b border-border/30 cursor-pointer" onClick={() => onView(cot.id)}>
                       <TableCell className="font-medium text-sm text-foreground">{cot.numero_cotizacion}</TableCell>
                       <TableCell className="text-sm text-foreground">{cot.clientes_cotizacion?.nombre_razon_social || "—"}</TableCell>
+                      <TableCell className="text-sm text-muted-foreground">{creatorName}</TableCell>
                       <TableCell className="text-sm text-muted-foreground">{format(new Date(cot.fecha_emision), "dd MMM yyyy", { locale: es })}</TableCell>
                       <TableCell className="text-sm text-muted-foreground">{format(new Date(cot.fecha_validez), "dd MMM yyyy", { locale: es })}</TableCell>
                       <TableCell className="text-right text-sm font-semibold text-foreground">{formatCurrency(cot.total, cot.moneda)}</TableCell>
@@ -289,6 +329,46 @@ const CotizacionList = ({ onNewClick, onView, onEdit }: Props) => {
               )}
             </TableBody>
           </Table>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between px-4 py-3 border-t border-border/50 bg-muted/20">
+              <span className="text-xs text-muted-foreground">
+                Mostrando {((currentPage - 1) * PAGE_SIZE) + 1}–{Math.min(currentPage * PAGE_SIZE, totalItems)} de {totalItems}
+              </span>
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8"
+                  disabled={currentPage === 1}
+                  onClick={() => setCurrentPage((p) => p - 1)}
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </Button>
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                  <Button
+                    key={page}
+                    variant={page === currentPage ? "default" : "ghost"}
+                    size="icon"
+                    className="h-8 w-8 text-xs"
+                    onClick={() => setCurrentPage(page)}
+                  >
+                    {page}
+                  </Button>
+                ))}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8"
+                  disabled={currentPage === totalPages}
+                  onClick={() => setCurrentPage((p) => p + 1)}
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
