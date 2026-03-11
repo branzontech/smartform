@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import { toast } from "sonner";
 import { Plus, Search, FileText, Eye, Pencil, Copy, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +11,16 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DatePicker } from "@/components/ui/date-picker";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import type { EstadoCotizacion } from "@/types/cotizacion-types";
 
 const estadoBadge: Record<EstadoCotizacion, { label: string; className: string }> = {
@@ -22,13 +33,17 @@ const estadoBadge: Record<EstadoCotizacion, { label: string; className: string }
 
 interface Props {
   onNewClick: () => void;
+  onView: (id: string) => void;
+  onEdit: (id: string) => void;
 }
 
-const CotizacionList = ({ onNewClick }: Props) => {
+const CotizacionList = ({ onNewClick, onView, onEdit }: Props) => {
+  const queryClient = useQueryClient();
   const [estadoFilter, setEstadoFilter] = useState<string>("todos");
   const [fechaDesde, setFechaDesde] = useState<Date | undefined>();
   const [fechaHasta, setFechaHasta] = useState<Date | undefined>();
   const [searchCliente, setSearchCliente] = useState("");
+  const [deleteId, setDeleteId] = useState<string | null>(null);
 
   const { data: cotizaciones, isLoading } = useQuery({
     queryKey: ["cotizaciones", estadoFilter, fechaDesde, fechaHasta, searchCliente],
@@ -62,6 +77,93 @@ const CotizacionList = ({ onNewClick }: Props) => {
     },
   });
 
+  // Delete mutation
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      // Delete items first (cascade should handle, but explicit)
+      await supabase.from("cotizacion_items" as any).delete().eq("cotizacion_id", id);
+      const { error } = await supabase.from("cotizaciones" as any).delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["cotizaciones"] });
+      toast.success("Cotización eliminada");
+      setDeleteId(null);
+    },
+    onError: (err: any) => {
+      toast.error(err.message || "Error al eliminar");
+    },
+  });
+
+  // Duplicate mutation
+  const duplicateMutation = useMutation({
+    mutationFn: async (cotId: string) => {
+      // Fetch original
+      const { data: original, error: fetchErr } = await supabase
+        .from("cotizaciones" as any)
+        .select("*")
+        .eq("id", cotId)
+        .single();
+      if (fetchErr) throw fetchErr;
+      const orig = original as any;
+
+      // Fetch items
+      const { data: origItems, error: itemsErr } = await supabase
+        .from("cotizacion_items" as any)
+        .select("*")
+        .eq("cotizacion_id", cotId)
+        .order("orden", { ascending: true });
+      if (itemsErr) throw itemsErr;
+
+      // Create new cotizacion
+      const { data: newCot, error: insertErr } = await supabase
+        .from("cotizaciones" as any)
+        .insert({
+          numero_cotizacion: "",
+          cliente_cotizacion_id: orig.cliente_cotizacion_id,
+          fecha_emision: format(new Date(), "yyyy-MM-dd"),
+          fecha_validez: orig.fecha_validez,
+          estado: "borrador",
+          subtotal: orig.subtotal,
+          descuento_porcentaje: orig.descuento_porcentaje,
+          descuento_valor: orig.descuento_valor,
+          impuesto_porcentaje: orig.impuesto_porcentaje,
+          impuesto_valor: orig.impuesto_valor,
+          total: orig.total,
+          moneda: orig.moneda,
+          observaciones: orig.observaciones,
+          leyenda_validez: orig.leyenda_validez,
+          creado_por: orig.creado_por,
+        } as any)
+        .select()
+        .single();
+      if (insertErr) throw insertErr;
+
+      const newId = (newCot as any).id;
+      if (origItems && (origItems as any[]).length > 0) {
+        const newItems = (origItems as any[]).map((item: any) => ({
+          cotizacion_id: newId,
+          tarifario_servicio_id: item.tarifario_servicio_id,
+          codigo_servicio: item.codigo_servicio,
+          descripcion_servicio: item.descripcion_servicio,
+          cantidad: item.cantidad,
+          valor_unitario: item.valor_unitario,
+          descuento_porcentaje: item.descuento_porcentaje,
+          valor_total: item.valor_total,
+          orden: item.orden,
+        }));
+        await supabase.from("cotizacion_items" as any).insert(newItems as any);
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["cotizaciones"] });
+      toast.success("Cotización duplicada como borrador");
+    },
+    onError: (err: any) => {
+      toast.error(err.message || "Error al duplicar");
+    },
+  });
+
   const formatCurrency = (val: number, moneda: string = "COP") => {
     return new Intl.NumberFormat("es-CO", { style: "currency", currency: moneda, minimumFractionDigits: 0 }).format(val);
   };
@@ -82,7 +184,7 @@ const CotizacionList = ({ onNewClick }: Props) => {
         </Button>
       </div>
 
-      {/* Filters — single row */}
+      {/* Filters */}
       <div className="flex flex-wrap items-center gap-3 p-3 rounded-xl bg-card/50 backdrop-blur-sm border border-border/50">
         <Select value={estadoFilter} onValueChange={setEstadoFilter}>
           <SelectTrigger className="w-[170px] h-9 text-sm bg-background/80">
@@ -154,7 +256,7 @@ const CotizacionList = ({ onNewClick }: Props) => {
                   const estado = cot.estado as EstadoCotizacion;
                   const badge = estadoBadge[estado] || estadoBadge.borrador;
                   return (
-                    <TableRow key={cot.id} className="hover:bg-muted/30 transition-colors duration-150 border-b border-border/30">
+                    <TableRow key={cot.id} className="hover:bg-muted/30 transition-colors duration-150 border-b border-border/30 cursor-pointer" onClick={() => onView(cot.id)}>
                       <TableCell className="font-medium text-sm text-foreground">{cot.numero_cotizacion}</TableCell>
                       <TableCell className="text-sm text-foreground">{cot.clientes_cotizacion?.nombre_razon_social || "—"}</TableCell>
                       <TableCell className="text-sm text-muted-foreground">{format(new Date(cot.fecha_emision), "dd MMM yyyy", { locale: es })}</TableCell>
@@ -165,18 +267,18 @@ const CotizacionList = ({ onNewClick }: Props) => {
                           {badge.label}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-right">
+                      <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center justify-end gap-0.5">
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground">
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={() => onView(cot.id)} title="Ver">
                             <Eye className="w-4 h-4" />
                           </Button>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground">
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={() => onEdit(cot.id)} title="Editar">
                             <Pencil className="w-4 h-4" />
                           </Button>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground">
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={() => duplicateMutation.mutate(cot.id)} title="Duplicar" disabled={duplicateMutation.isPending}>
                             <Copy className="w-4 h-4" />
                           </Button>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive">
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={() => setDeleteId(cot.id)} title="Eliminar">
                             <Trash2 className="w-4 h-4" />
                           </Button>
                         </div>
@@ -189,6 +291,27 @@ const CotizacionList = ({ onNewClick }: Props) => {
           </Table>
         </div>
       )}
+
+      {/* Delete confirmation */}
+      <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Eliminar cotización?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción no se puede deshacer. Se eliminará la cotización y todos sus ítems permanentemente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deleteId && deleteMutation.mutate(deleteId)}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
