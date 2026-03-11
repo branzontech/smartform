@@ -505,6 +505,72 @@ const FormViewer = () => {
           </div>
         </div>
       )}
+
+      {/* Confirmation Modal */}
+      <AlertDialog open={showConfirmModal} onOpenChange={setShowConfirmModal}>
+        <AlertDialogContent className="max-w-lg max-h-[80vh] overflow-hidden flex flex-col rounded-2xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-lg">
+              <ClipboardList className="w-5 h-5 text-primary" />
+              Confirmar envío del formulario
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-sm">
+              Revisa los datos antes de guardar. Una vez enviado, no podrás modificar esta respuesta.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          
+          <div className="overflow-y-auto flex-1 -mx-6 px-6 py-2">
+            {/* Date & form info */}
+            <div className="flex items-center gap-3 p-3 rounded-xl bg-muted/50 mb-3">
+              <CalendarIcon className="w-4 h-4 text-muted-foreground shrink-0" />
+              <div className="text-sm">
+                <span className="font-medium">{formTitle}</span>
+                <span className="text-muted-foreground ml-2">
+                  {format(new Date(), "d 'de' MMMM 'de' yyyy, HH:mm", { locale: es })}
+                </span>
+              </div>
+            </div>
+
+            {/* Fields summary */}
+            <div className="space-y-1.5">
+              {getFilledFieldsSummary().map((field, i) => (
+                <div key={i} className="flex items-start gap-2 p-2.5 rounded-lg border border-border/30 bg-card/50">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-medium text-muted-foreground">{field.label}</p>
+                    <p className={`text-sm mt-0.5 ${field.isEmpty ? "text-destructive italic" : "text-foreground"}`}>
+                      {field.value}
+                    </p>
+                  </div>
+                  {field.isEmpty && (
+                    <Badge variant="outline" className="shrink-0 text-[10px] border-destructive/30 text-destructive">
+                      <AlertTriangle className="w-3 h-3 mr-1" />
+                      Vacío
+                    </Badge>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {/* Warning if empty fields */}
+            {getFilledFieldsSummary().some(f => f.isEmpty) && (
+              <div className="flex items-center gap-2 p-3 mt-3 rounded-xl bg-destructive/5 border border-destructive/10">
+                <AlertTriangle className="w-4 h-4 text-destructive shrink-0" />
+                <p className="text-xs text-destructive">
+                  Hay campos sin completar. ¿Deseas continuar de todas formas?
+                </p>
+              </div>
+            )}
+          </div>
+
+          <AlertDialogFooter className="mt-2">
+            <AlertDialogCancel className="rounded-xl">Volver a revisar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmSave} className="rounded-xl gap-2">
+              <Check className="w-4 h-4" />
+              Confirmar y guardar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
