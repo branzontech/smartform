@@ -99,6 +99,32 @@ const FormViewer = () => {
   const consultationId = queryParams.get("consultationId");
   const isEmbedded = queryParams.get("embedded") === "true";
 
+  // Draft cache key — unique per form + patient + consultation
+  const draftKey = `kerhub-draft-${formId || 'unknown'}${patientId ? `-${patientId}` : ''}${consultationId ? `-${consultationId}` : ''}`;
+
+  // Auto-save draft to localStorage (debounced 500ms)
+  useEffect(() => {
+    if (!draftRestoredRef.current) return; // Don't save until draft has been restored/checked
+    if (submitted) return;
+    const hasData = Object.keys(formData).some(k => {
+      const v = formData[k];
+      return v !== undefined && v !== null && v !== '';
+    });
+    if (!hasData) return;
+
+    const timer = setTimeout(() => {
+      try {
+        localStorage.setItem(draftKey, JSON.stringify(formData));
+      } catch { /* quota exceeded — ignore */ }
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [formData, draftKey, submitted]);
+
+  // Clear draft helper
+  const clearDraft = useCallback(() => {
+    localStorage.removeItem(draftKey);
+  }, [draftKey]);
+
   // Persist panel prefs
   useEffect(() => {
     localStorage.setItem(PANEL_WIDTH_KEY, String(panelWidth));
