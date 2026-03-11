@@ -147,6 +147,7 @@ export const PatientSearchStep: React.FC<PatientSearchStepProps> = ({
         tipo_documento: newPatient.documentType || "CC",
         numero_documento: newPatient.documentId,
         fecha_nacimiento: newPatient.dateOfBirth || null,
+        genero: newPatient.gender || null,
         telefono_principal: newPatient.contactNumber,
         telefono_secundario: newPatient.secondaryPhone || null,
         email: newPatient.email || null,
@@ -477,6 +478,23 @@ export const PatientSearchStep: React.FC<PatientSearchStepProps> = ({
                       onChange={(e) => setNewPatient({...newPatient, dateOfBirth: e.target.value})}
                       className="h-11 rounded-xl"
                     />
+                  </div>
+                  <div>
+                    <Label>Género</Label>
+                    <Select 
+                      value={newPatient.gender || ""} 
+                      onValueChange={(value: any) => setNewPatient({...newPatient, gender: value})}
+                    >
+                      <SelectTrigger className="h-11 rounded-xl">
+                        <SelectValue placeholder="Seleccionar género" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="male">Masculino</SelectItem>
+                        <SelectItem value="female">Femenino</SelectItem>
+                        <SelectItem value="other">Otro</SelectItem>
+                        <SelectItem value="unknown">No especificado</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
 

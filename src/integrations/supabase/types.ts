@@ -489,6 +489,7 @@ export type Database = {
           estado_paciente: string
           fecha_nacimiento: string | null
           fhir_extensions: Json
+          genero: string | null
           id: string
           nombres: string
           numero_documento: string
@@ -514,6 +515,7 @@ export type Database = {
           estado_paciente?: string
           fecha_nacimiento?: string | null
           fhir_extensions?: Json
+          genero?: string | null
           id?: string
           nombres: string
           numero_documento: string
@@ -539,6 +541,7 @@ export type Database = {
           estado_paciente?: string
           fecha_nacimiento?: string | null
           fhir_extensions?: Json
+          genero?: string | null
           id?: string
           nombres?: string
           numero_documento?: string

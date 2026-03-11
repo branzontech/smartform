@@ -424,7 +424,10 @@ const FormViewer = () => {
             
             <div className="p-6 bg-background">
               {patientId && (
-                <PatientHeaderBanner pacienteId={patientId} />
+                <PatientHeaderBanner
+                  pacienteId={patientId}
+                  admisionId={consultationId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(consultationId) ? consultationId : undefined}
+                />
               )}
               <FormHeaderPreview config={headerConfig} formTitle={formTitle} />
               <FormProvider {...form}>
