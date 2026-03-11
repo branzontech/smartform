@@ -489,23 +489,41 @@ const FormViewer = () => {
               )}
             </div>
           </div>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
-                <MoreHorizontal className="w-4 h-4" />
+          <div className="flex items-center gap-2">
+            {showRegistro ? (
+              <Button variant="outline" size="sm" className="gap-1.5 h-8 text-xs" onClick={() => setShowRegistro(false)}>
+                <ArrowLeft className="w-3.5 h-3.5" />
+                Volver al formulario
               </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-44">
-              <DropdownMenuItem onClick={printForm} className="gap-2 text-sm">
-                <Printer className="w-4 h-4" />
-                Imprimir
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={copyFormLinkToClipboard} className="gap-2 text-sm">
-                <LinkIcon className="w-4 h-4" />
-                Compartir enlace
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+            ) : (
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-1.5 h-8 text-xs"
+                onClick={() => setShowRegistro(true)}
+              >
+                <ClipboardList className="w-3.5 h-3.5" />
+                Registro de Atenciones
+              </Button>
+            )}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
+                  <MoreHorizontal className="w-4 h-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-44">
+                <DropdownMenuItem onClick={printForm} className="gap-2 text-sm">
+                  <Printer className="w-4 h-4" />
+                  Imprimir
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={copyFormLinkToClipboard} className="gap-2 text-sm">
+                  <LinkIcon className="w-4 h-4" />
+                  Compartir enlace
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
 
         {isConsultationForm && (
