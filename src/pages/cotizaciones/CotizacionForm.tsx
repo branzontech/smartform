@@ -606,7 +606,7 @@ const CotizacionForm = ({ onCancel, onSaved }: Props) => {
               </div>
               <div>
                 <Label className="text-xs">Fecha de validez</Label>
-                <DatePicker date={fechaValidez} setDate={setFechaValidez} />
+                <DatePicker value={fechaValidez as Date} onChange={(d) => setFechaValidez(d)} />
               </div>
             </div>
 

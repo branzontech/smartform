@@ -89,8 +89,8 @@ const CotizacionList = ({ onNewClick }: Props) => {
                 <SelectItem value="vencida">Vencida</SelectItem>
               </SelectContent>
             </Select>
-            <DatePicker date={fechaDesde} setDate={setFechaDesde} placeholder="Desde" />
-            <DatePicker date={fechaHasta} setDate={setFechaHasta} placeholder="Hasta" />
+            <DatePicker value={fechaDesde as Date} onChange={(d) => setFechaDesde(d)} placeholder="Desde" />
+            <DatePicker value={fechaHasta as Date} onChange={(d) => setFechaHasta(d)} placeholder="Hasta" />
           </div>
         </CardContent>
       </Card>

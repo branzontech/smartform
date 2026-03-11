@@ -112,6 +112,7 @@ const AppRoutes = () => {
         <Route path="clientes/notificaciones/nueva" element={<NotificationForm />} />
         <Route path="notificaciones/centro" element={<NotificationCenter />} />
         <Route path="zonas" element={<ZonesPage />} />
+        <Route path="cotizaciones" element={<CotizacionesPage />} />
         <Route path="precios" element={<PricingPage />} />
         <Route path="portal-usuario" element={<UserPortalPage />} />
       </Routes>
