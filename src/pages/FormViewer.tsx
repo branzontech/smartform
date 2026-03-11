@@ -537,32 +537,44 @@ const FormViewer = () => {
 
       {/* Two-column area */}
       <div className="flex-1 min-h-0 flex overflow-hidden">
-        {/* LEFT — Form with its own scroll */}
+        {/* LEFT — Form or Registro with its own scroll */}
         <div className="flex-1 min-w-0 overflow-y-auto p-6 bg-background" style={{ overscrollBehavior: 'contain' }}>
-          {patientId && (
-            <PatientHeaderBanner
-              pacienteId={patientId}
-              admisionId={consultationId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(consultationId) ? consultationId : undefined}
+          {showRegistro && patientId ? (
+            <RegistroAtenciones
+              patientId={patientId}
+              headerConfig={headerConfig}
             />
+          ) : (
+            <>
+              {patientId && (
+                <PatientHeaderBanner
+                  pacienteId={patientId}
+                  admisionId={consultationId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(consultationId) ? consultationId : undefined}
+                />
+              )}
+              <FormHeaderPreview config={headerConfig} formTitle={formTitle} />
+              <FormProvider {...form}>
+                <Form {...form}>
+                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 max-w-none">
+                    {questions.map(question => (
+                      <QuestionRenderer
+                        key={question.id}
+                        question={question}
+                        formData={formData}
+                        onChange={handleInputChange}
+                        errors={form.formState.errors}
+                      />
+                    ))}
+                    <div className="sticky bottom-0 bg-background pt-4 pb-2 border-t">
+                      <Button type="submit" className="w-full print:hidden">
+                        Completar atención
+                      </Button>
+                    </div>
+                  </form>
+                </Form>
+              </FormProvider>
+            </>
           )}
-          <FormHeaderPreview config={headerConfig} formTitle={formTitle} />
-          <FormProvider {...form}>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 max-w-none">
-                {questions.map(question => (
-                  <QuestionRenderer
-                    key={question.id}
-                    question={question}
-                    formData={formData}
-                    onChange={handleInputChange}
-                    errors={form.formState.errors}
-                  />
-                ))}
-                <div className="sticky bottom-0 bg-background pt-4 pb-2 border-t">
-                  <Button type="submit" className="w-full print:hidden">
-                    Completar atención
-                  </Button>
-                </div>
               </form>
             </Form>
           </FormProvider>
