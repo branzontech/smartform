@@ -20,6 +20,7 @@ import type {
   ClienteCotizacion,
   ConfiguracionCotizaciones,
   CotizacionItemDraft,
+  EstadoCotizacion,
 } from "@/types/cotizacion-types";
 
 const clienteSchema = z.object({
