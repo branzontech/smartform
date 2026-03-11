@@ -376,6 +376,69 @@ export type Database = {
           },
         ]
       }
+      correcciones_registro: {
+        Row: {
+          admision_id: string
+          campo_corregido: string
+          created_at: string | null
+          fhir_extensions: Json | null
+          fhir_provenance_target: string | null
+          id: string
+          medico_id: string
+          medico_nombre: string
+          motivo: string
+          respuesta_formulario_id: string
+          tipo_correccion: string
+          valor_anterior: Json | null
+          valor_nuevo: Json | null
+        }
+        Insert: {
+          admision_id: string
+          campo_corregido: string
+          created_at?: string | null
+          fhir_extensions?: Json | null
+          fhir_provenance_target?: string | null
+          id?: string
+          medico_id: string
+          medico_nombre: string
+          motivo: string
+          respuesta_formulario_id: string
+          tipo_correccion?: string
+          valor_anterior?: Json | null
+          valor_nuevo?: Json | null
+        }
+        Update: {
+          admision_id?: string
+          campo_corregido?: string
+          created_at?: string | null
+          fhir_extensions?: Json | null
+          fhir_provenance_target?: string | null
+          id?: string
+          medico_id?: string
+          medico_nombre?: string
+          motivo?: string
+          respuesta_formulario_id?: string
+          tipo_correccion?: string
+          valor_anterior?: Json | null
+          valor_nuevo?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "correcciones_registro_admision_id_fkey"
+            columns: ["admision_id"]
+            isOneToOne: false
+            referencedRelation: "admisiones"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "correcciones_registro_respuesta_formulario_id_fkey"
+            columns: ["respuesta_formulario_id"]
+            isOneToOne: false
+            referencedRelation: "respuestas_formularios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       formularios: {
         Row: {
           created_at: string

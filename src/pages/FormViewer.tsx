@@ -19,7 +19,7 @@ import { QuestionRenderer } from '@/components/forms/form-viewer/question-render
 import { QuestionData } from '@/components/forms/question/types';
 import { FormTitle } from '@/components/ui/form-title';
 import { BackButton } from '@/App';
-import { Check, Link as LinkIcon, Printer, AlertTriangle, CalendarIcon, ClipboardList, PanelRightClose, PanelRightOpen, GripVertical, MoreHorizontal } from 'lucide-react';
+import { Check, Link as LinkIcon, Printer, AlertTriangle, CalendarIcon, ClipboardList, PanelRightClose, PanelRightOpen, GripVertical, MoreHorizontal, ArrowLeft } from 'lucide-react';
 import { toast } from "sonner";
 import { Form as FormType } from './FormsPage';
 import { FormLoading } from '@/components/forms/form-viewer/form-loading';
@@ -30,6 +30,7 @@ import { useToast } from '@/hooks/use-toast';
 import { PatientHistoryPanel } from '@/components/patients/PatientHistoryPanel';
 import { FormHeaderPreview } from '@/components/forms/FormHeaderPreview';
 import { PatientHeaderBanner } from '@/components/forms/PatientHeaderBanner';
+import { RegistroAtenciones } from '@/components/forms/RegistroAtenciones';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -75,6 +76,7 @@ const FormViewer = () => {
   const [headerConfig, setHeaderConfig] = useState<any>(null);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [pendingValues, setPendingValues] = useState<any>(null);
+  const [showRegistro, setShowRegistro] = useState(false);
   const { toast: uiToast } = useToast();
 
   // Panel resize state
@@ -487,23 +489,41 @@ const FormViewer = () => {
               )}
             </div>
           </div>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
-                <MoreHorizontal className="w-4 h-4" />
+          <div className="flex items-center gap-2">
+            {showRegistro ? (
+              <Button variant="outline" size="sm" className="gap-1.5 h-8 text-xs" onClick={() => setShowRegistro(false)}>
+                <ArrowLeft className="w-3.5 h-3.5" />
+                Volver al formulario
               </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-44">
-              <DropdownMenuItem onClick={printForm} className="gap-2 text-sm">
-                <Printer className="w-4 h-4" />
-                Imprimir
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={copyFormLinkToClipboard} className="gap-2 text-sm">
-                <LinkIcon className="w-4 h-4" />
-                Compartir enlace
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+            ) : (
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-1.5 h-8 text-xs"
+                onClick={() => setShowRegistro(true)}
+              >
+                <ClipboardList className="w-3.5 h-3.5" />
+                Registro de Atenciones
+              </Button>
+            )}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
+                  <MoreHorizontal className="w-4 h-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-44">
+                <DropdownMenuItem onClick={printForm} className="gap-2 text-sm">
+                  <Printer className="w-4 h-4" />
+                  Imprimir
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={copyFormLinkToClipboard} className="gap-2 text-sm">
+                  <LinkIcon className="w-4 h-4" />
+                  Compartir enlace
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
 
         {isConsultationForm && (
@@ -517,35 +537,44 @@ const FormViewer = () => {
 
       {/* Two-column area */}
       <div className="flex-1 min-h-0 flex overflow-hidden">
-        {/* LEFT — Form with its own scroll */}
+        {/* LEFT — Form or Registro with its own scroll */}
         <div className="flex-1 min-w-0 overflow-y-auto p-6 bg-background" style={{ overscrollBehavior: 'contain' }}>
-          {patientId && (
-            <PatientHeaderBanner
-              pacienteId={patientId}
-              admisionId={consultationId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(consultationId) ? consultationId : undefined}
+          {showRegistro && patientId ? (
+            <RegistroAtenciones
+              patientId={patientId}
+              headerConfig={headerConfig}
             />
+          ) : (
+            <>
+              {patientId && (
+                <PatientHeaderBanner
+                  pacienteId={patientId}
+                  admisionId={consultationId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(consultationId) ? consultationId : undefined}
+                />
+              )}
+              <FormHeaderPreview config={headerConfig} formTitle={formTitle} />
+              <FormProvider {...form}>
+                <Form {...form}>
+                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 max-w-none">
+                    {questions.map(question => (
+                      <QuestionRenderer
+                        key={question.id}
+                        question={question}
+                        formData={formData}
+                        onChange={handleInputChange}
+                        errors={form.formState.errors}
+                      />
+                    ))}
+                    <div className="sticky bottom-0 bg-background pt-4 pb-2 border-t">
+                      <Button type="submit" className="w-full print:hidden">
+                        Completar atención
+                      </Button>
+                    </div>
+                  </form>
+                </Form>
+              </FormProvider>
+            </>
           )}
-          <FormHeaderPreview config={headerConfig} formTitle={formTitle} />
-          <FormProvider {...form}>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 max-w-none">
-                {questions.map(question => (
-                  <QuestionRenderer
-                    key={question.id}
-                    question={question}
-                    formData={formData}
-                    onChange={handleInputChange}
-                    errors={form.formState.errors}
-                  />
-                ))}
-                <div className="sticky bottom-0 bg-background pt-4 pb-2 border-t">
-                  <Button type="submit" className="w-full print:hidden">
-                    Completar atención
-                  </Button>
-                </div>
-              </form>
-            </Form>
-          </FormProvider>
         </div>
 
         {/* RIGHT — Resizable panel or collapsed strip */}
