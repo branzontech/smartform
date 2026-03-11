@@ -68,8 +68,6 @@ const NewConsultation = () => {
   
   const [selectedFormIds, setSelectedFormIds] = useState<string[]>([]);
   const [selectedForms, setSelectedForms] = useState<FormType[]>([]);
-  
-  const [consultationDate] = useState<Date>(new Date());
 
   const goToStep = (step: WorkflowStep) => {
     setDirection(step > currentStep ? 1 : -1);
