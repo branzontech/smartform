@@ -555,8 +555,6 @@ const FormViewer = () => {
             <RegistroAtenciones
               patientId={patientId}
               headerConfig={headerConfig}
-              onDetailChange={setIsRegistroDetail}
-              clearDetailRef={clearRegistroDetailRef}
             />
           ) : (
             <>
