@@ -423,6 +423,9 @@ const FormViewer = () => {
             </div>
             
             <div className="p-6 bg-background">
+              {patientId && (
+                <PatientHeaderBanner pacienteId={patientId} />
+              )}
               <FormHeaderPreview config={headerConfig} formTitle={formTitle} />
               <FormProvider {...form}>
                 <Form {...form}>

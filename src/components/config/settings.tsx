@@ -265,6 +265,17 @@ export const SettingsPage = () => {
               </div>
             )}
 
+            {/* Patient Header Banner Config */}
+            {activeCategory === "patient-header" && (
+              <div>
+                <h2 className="text-base font-semibold mb-1">Encabezado de paciente</h2>
+                <p className="text-xs text-muted-foreground mb-4">
+                  Configure qué datos del paciente se muestran en el banner del formulario clínico.
+                </p>
+                <PatientHeaderConfig />
+              </div>
+            )}
+
             {/* Customization - Tabbed view */}
             {activeCategory === "customization" && (
               <div>
