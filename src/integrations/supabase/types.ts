@@ -139,6 +139,65 @@ export type Database = {
         }
         Relationships: []
       }
+      clientes_cotizacion: {
+        Row: {
+          ciudad: string | null
+          correo: string | null
+          created_at: string | null
+          direccion: string | null
+          fhir_extensions: Json | null
+          id: string
+          nombre_razon_social: string
+          numero_documento: string
+          pagador_id: string | null
+          pais: string | null
+          telefono_contacto: string | null
+          tipo_documento: string
+          tipo_persona: string
+          updated_at: string | null
+        }
+        Insert: {
+          ciudad?: string | null
+          correo?: string | null
+          created_at?: string | null
+          direccion?: string | null
+          fhir_extensions?: Json | null
+          id?: string
+          nombre_razon_social: string
+          numero_documento: string
+          pagador_id?: string | null
+          pais?: string | null
+          telefono_contacto?: string | null
+          tipo_documento: string
+          tipo_persona?: string
+          updated_at?: string | null
+        }
+        Update: {
+          ciudad?: string | null
+          correo?: string | null
+          created_at?: string | null
+          direccion?: string | null
+          fhir_extensions?: Json | null
+          id?: string
+          nombre_razon_social?: string
+          numero_documento?: string
+          pagador_id?: string | null
+          pais?: string | null
+          telefono_contacto?: string | null
+          tipo_documento?: string
+          tipo_persona?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clientes_cotizacion_pagador_id_fkey"
+            columns: ["pagador_id"]
+            isOneToOne: false
+            referencedRelation: "pagadores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       configuracion_campos_admision: {
         Row: {
           created_at: string
@@ -214,6 +273,42 @@ export type Database = {
           placeholder?: string | null
           tipo_dato?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      configuracion_cotizaciones: {
+        Row: {
+          dias_validez: number
+          fhir_extensions: Json | null
+          id: string
+          impuesto_defecto: number | null
+          leyenda_validez_defecto: string | null
+          moneda_defecto: string | null
+          nombre_impuesto: string | null
+          notas_legales: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          dias_validez?: number
+          fhir_extensions?: Json | null
+          id?: string
+          impuesto_defecto?: number | null
+          leyenda_validez_defecto?: string | null
+          moneda_defecto?: string | null
+          nombre_impuesto?: string | null
+          notas_legales?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          dias_validez?: number
+          fhir_extensions?: Json | null
+          id?: string
+          impuesto_defecto?: number | null
+          leyenda_validez_defecto?: string | null
+          moneda_defecto?: string | null
+          nombre_impuesto?: string | null
+          notas_legales?: string | null
+          updated_at?: string | null
         }
         Relationships: []
       }
@@ -435,6 +530,140 @@ export type Database = {
             columns: ["respuesta_formulario_id"]
             isOneToOne: false
             referencedRelation: "respuestas_formularios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cotizacion_items: {
+        Row: {
+          cantidad: number
+          codigo_servicio: string | null
+          cotizacion_id: string
+          created_at: string | null
+          descripcion_servicio: string
+          descuento_porcentaje: number | null
+          fhir_extensions: Json | null
+          id: string
+          orden: number
+          tarifario_servicio_id: string | null
+          valor_total: number
+          valor_unitario: number
+        }
+        Insert: {
+          cantidad?: number
+          codigo_servicio?: string | null
+          cotizacion_id: string
+          created_at?: string | null
+          descripcion_servicio: string
+          descuento_porcentaje?: number | null
+          fhir_extensions?: Json | null
+          id?: string
+          orden?: number
+          tarifario_servicio_id?: string | null
+          valor_total: number
+          valor_unitario: number
+        }
+        Update: {
+          cantidad?: number
+          codigo_servicio?: string | null
+          cotizacion_id?: string
+          created_at?: string | null
+          descripcion_servicio?: string
+          descuento_porcentaje?: number | null
+          fhir_extensions?: Json | null
+          id?: string
+          orden?: number
+          tarifario_servicio_id?: string | null
+          valor_total?: number
+          valor_unitario?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cotizacion_items_cotizacion_id_fkey"
+            columns: ["cotizacion_id"]
+            isOneToOne: false
+            referencedRelation: "cotizaciones"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cotizacion_items_tarifario_servicio_id_fkey"
+            columns: ["tarifario_servicio_id"]
+            isOneToOne: false
+            referencedRelation: "tarifarios_servicios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cotizaciones: {
+        Row: {
+          cliente_cotizacion_id: string
+          creado_por: string
+          created_at: string | null
+          descuento_porcentaje: number | null
+          descuento_valor: number | null
+          estado: string
+          fecha_emision: string
+          fecha_validez: string
+          fhir_extensions: Json | null
+          id: string
+          impuesto_porcentaje: number | null
+          impuesto_valor: number | null
+          leyenda_validez: string | null
+          moneda: string | null
+          numero_cotizacion: string
+          observaciones: string | null
+          subtotal: number
+          total: number
+          updated_at: string | null
+        }
+        Insert: {
+          cliente_cotizacion_id: string
+          creado_por: string
+          created_at?: string | null
+          descuento_porcentaje?: number | null
+          descuento_valor?: number | null
+          estado?: string
+          fecha_emision?: string
+          fecha_validez: string
+          fhir_extensions?: Json | null
+          id?: string
+          impuesto_porcentaje?: number | null
+          impuesto_valor?: number | null
+          leyenda_validez?: string | null
+          moneda?: string | null
+          numero_cotizacion: string
+          observaciones?: string | null
+          subtotal?: number
+          total?: number
+          updated_at?: string | null
+        }
+        Update: {
+          cliente_cotizacion_id?: string
+          creado_por?: string
+          created_at?: string | null
+          descuento_porcentaje?: number | null
+          descuento_valor?: number | null
+          estado?: string
+          fecha_emision?: string
+          fecha_validez?: string
+          fhir_extensions?: Json | null
+          id?: string
+          impuesto_porcentaje?: number | null
+          impuesto_valor?: number | null
+          leyenda_validez?: string | null
+          moneda?: string | null
+          numero_cotizacion?: string
+          observaciones?: string | null
+          subtotal?: number
+          total?: number
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cotizaciones_cliente_cotizacion_id_fkey"
+            columns: ["cliente_cotizacion_id"]
+            isOneToOne: false
+            referencedRelation: "clientes_cotizacion"
             referencedColumns: ["id"]
           },
         ]
