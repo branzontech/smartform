@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
 import { Header } from "@/components/layout/header";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, FileText, Palette, Bell, Save, User, Shield, Plus, Cog, HelpCircle, Trash2, SlidersHorizontal, ClipboardList, Loader2, Eye, Edit, BarChart, Building2 } from "lucide-react";
+import { ArrowLeft, FileText, Palette, Bell, Save, User, Shield, Plus, Cog, HelpCircle, Trash2, SlidersHorizontal, ClipboardList, Loader2, Eye, Edit, BarChart, Building2, UserCog } from "lucide-react";
 import { InstitutionHeaderConfig } from "@/components/config/InstitutionHeaderConfig";
 import { supabase } from "@/integrations/supabase/client";
 import { PatientFieldsConfig } from "@/components/config/PatientFieldsConfig";
 import { AdmissionFieldsConfig } from "@/components/config/AdmissionFieldsConfig";
+import { PatientHeaderConfig } from "@/components/config/PatientHeaderConfig";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
@@ -24,6 +25,7 @@ import { cn } from "@/lib/utils";
 const categories = [
   { id: "general", label: "General", icon: <Cog size={18} /> },
   { id: "header", label: "Encabezado", icon: <Building2 size={18} /> },
+  { id: "patient-header", label: "Encabezado paciente", icon: <UserCog size={18} /> },
   { id: "forms", label: "Formularios", icon: <FileText size={18} /> },
   { id: "customization", label: "Personalización", icon: <SlidersHorizontal size={18} /> },
   { id: "appearance", label: "Apariencia", icon: <Palette size={18} /> },
@@ -260,6 +262,17 @@ export const SettingsPage = () => {
                     ))}
                   </div>
                 )}
+              </div>
+            )}
+
+            {/* Patient Header Banner Config */}
+            {activeCategory === "patient-header" && (
+              <div>
+                <h2 className="text-base font-semibold mb-1">Encabezado de paciente</h2>
+                <p className="text-xs text-muted-foreground mb-4">
+                  Configure qué datos del paciente se muestran en el banner del formulario clínico.
+                </p>
+                <PatientHeaderConfig />
               </div>
             )}
 
