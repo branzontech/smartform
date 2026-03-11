@@ -505,7 +505,7 @@ const FormViewer = () => {
       {/* Two-column area */}
       <div className="flex-1 min-h-0 flex overflow-hidden">
         {/* LEFT — Form with its own scroll */}
-        <div className="flex-1 min-w-0 overflow-y-auto p-6 bg-background">
+        <div className="flex-1 min-w-0 overflow-y-auto p-6 bg-background" style={{ overscrollBehavior: 'contain' }}>
           {patientId && (
             <PatientHeaderBanner
               pacienteId={patientId}
