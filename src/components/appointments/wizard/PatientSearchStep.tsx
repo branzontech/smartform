@@ -231,7 +231,7 @@ export const PatientSearchStep: React.FC<PatientSearchStepProps> = ({
       variants={containerVariants}
       initial="hidden"
       animate="visible"
-      className="space-y-4 max-w-3xl mx-auto"
+      className="space-y-4 max-w-3xl mx-auto h-full overflow-y-auto pb-24 scrollbar-thin"
     >
       {/* Header */}
       <motion.div variants={itemVariants} className="flex items-center gap-3">
