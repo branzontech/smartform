@@ -558,6 +558,7 @@ export const RegistroAtenciones: React.FC<RegistroAtencionesProps> = ({
                   <FolioRow
                     key={folio.id}
                     folio={folio}
+                    admision={null}
                     folioNumber={folioIdx + 1}
                     canCorrect={canCorrect}
                     hasCorrections={(correccionesByRespuesta[folio.id] || []).length > 0}
