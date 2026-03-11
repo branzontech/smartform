@@ -82,12 +82,16 @@ const TIPO_LABELS: Record<string, string> = {
 interface RegistroAtencionesProps {
   patientId: string;
   headerConfig?: any;
+  onDetailChange?: (isDetail: boolean) => void;
+  clearDetailRef?: React.MutableRefObject<(() => void) | null>;
 }
 
 // ── Component ────────────────────────────────────────────
 export const RegistroAtenciones: React.FC<RegistroAtencionesProps> = ({
   patientId,
   headerConfig,
+  onDetailChange,
+  clearDetailRef,
 }) => {
   const { user, profile, hasRole } = useAuth();
   const queryClient = useQueryClient();
