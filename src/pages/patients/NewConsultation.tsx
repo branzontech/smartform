@@ -26,12 +26,11 @@ import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { Sparkles } from "lucide-react";
 
-type WorkflowStep = 1 | 2 | 3;
+type WorkflowStep = 1 | 2;
 
 const steps = [
   { id: 1 as const, title: "Paciente", icon: User, description: "Seleccionar" },
   { id: 2 as const, title: "Formulario", icon: FileText, description: "Elegir formato" },
-  { id: 3 as const, title: "Detalles", icon: Stethoscope, description: "Atención" },
 ];
 
 const slideVariants = {
