@@ -67,7 +67,7 @@ const NewConsultation = () => {
   const [isSearching, setIsSearching] = useState(false);
   const [patientAdmissions, setPatientAdmissions] = useState<any[]>([]);
   
-  const [selectedFormIds, setSelectedFormIds] = useState<string[]>([]);
+  const [selectedFormIds, setSelectedFormIds] = useState<string[]>(preselectedFormIds);
   const [selectedForms, setSelectedForms] = useState<FormType[]>([]);
 
   const goToStep = (step: WorkflowStep) => {
