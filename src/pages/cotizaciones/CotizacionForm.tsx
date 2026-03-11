@@ -297,7 +297,7 @@ const CotizacionForm = ({ editId, onCancel, onSaved }: Props) => {
 
   // --- Save ---
   const saveMutation = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (targetEstado: EstadoCotizacion) => {
       if (!selectedCliente) throw new Error("Selecciona un cliente");
       if (items.length === 0) throw new Error("Agrega al menos un servicio");
       if (!user?.id) throw new Error("No autenticado");
@@ -314,6 +314,7 @@ const CotizacionForm = ({ editId, onCancel, onSaved }: Props) => {
         moneda,
         observaciones: observaciones || null,
         leyenda_validez: leyendaValidez || null,
+        estado: targetEstado,
       } as any;
 
       let cotId: string;
@@ -333,7 +334,6 @@ const CotizacionForm = ({ editId, onCancel, onSaved }: Props) => {
         // INSERT new
         cotData.numero_cotizacion = "";
         cotData.fecha_emision = format(new Date(), "yyyy-MM-dd");
-        cotData.estado = "borrador";
         cotData.creado_por = user.id;
 
         const { data: cotizacion, error: cotError } = await supabase
@@ -363,11 +363,17 @@ const CotizacionForm = ({ editId, onCancel, onSaved }: Props) => {
 
       if (itemsError) throw itemsError;
     },
-    onSuccess: () => {
+    onSuccess: (_, targetEstado) => {
       queryClient.invalidateQueries({ queryKey: ["cotizaciones"] });
       queryClient.invalidateQueries({ queryKey: ["cotizacion", editId] });
       queryClient.invalidateQueries({ queryKey: ["cotizacion-items", editId] });
-      toast.success(isEditing ? "Cotización actualizada" : "Cotización guardada como borrador");
+
+      if (targetEstado === "enviada") {
+        toast.success(isEditing ? "Cotización oficializada y actualizada" : "Cotización guardada y oficializada");
+      } else {
+        toast.success(isEditing ? "Cotización actualizada" : "Cotización guardada como borrador");
+      }
+
       onSaved();
     },
     onError: (err: any) => {
