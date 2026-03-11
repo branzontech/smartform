@@ -66,6 +66,7 @@ const FormViewer = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [formData, setFormData] = useState<FormData>({});
+  const draftRestoredRef = useRef(false);
   const [questions, setQuestions] = useState<QuestionData[]>([]);
   const [formTitle, setFormTitle] = useState("Formulario");
   const [formDescription, setFormDescription] = useState("");
