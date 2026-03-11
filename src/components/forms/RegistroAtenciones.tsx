@@ -169,6 +169,8 @@ export const RegistroAtenciones: React.FC<RegistroAtencionesProps> = ({
     return map;
   }, [registros]);
 
+  const unlinkedRegistros = useMemo(() => registrosByAdmision['__unlinked'] || [], [registrosByAdmision]);
+
   const correccionesByRespuesta = useMemo(() => {
     const map: Record<string, Correccion[]> = {};
     correcciones.forEach(c => {
