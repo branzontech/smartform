@@ -598,7 +598,7 @@ const FolioRow: React.FC<FolioRowProps> = ({
         {format(new Date(folio.created_at), "dd/MM/yyyy HH:mm")}
       </span>
       {hasCorrections && (
-        <AlertTriangle className="w-3 h-3 text-amber-500 shrink-0" title="Tiene correcciones" />
+        <span title="Tiene correcciones"><AlertTriangle className="w-3 h-3 text-amber-500 shrink-0" /></span>
       )}
     </div>
     <div className="flex items-center gap-0.5 shrink-0 print:hidden">
