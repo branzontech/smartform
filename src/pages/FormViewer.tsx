@@ -30,6 +30,7 @@ import { useToast } from '@/hooks/use-toast';
 import { PatientHistoryPanel } from '@/components/patients/PatientHistoryPanel';
 import { FormHeaderPreview } from '@/components/forms/FormHeaderPreview';
 import { PatientHeaderBanner } from '@/components/forms/PatientHeaderBanner';
+import { RegistroAtenciones } from '@/components/forms/RegistroAtenciones';
 import {
   AlertDialog,
   AlertDialogAction,
