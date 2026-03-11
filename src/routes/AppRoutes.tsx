@@ -51,6 +51,7 @@ import ShiftAssignment from "@/pages/shifts/ShiftAssignment";
 import ShiftModification from "@/pages/shifts/ShiftModification";
 import WorkflowPage from "@/pages/workflow/WorkflowPage";
 import ZonesPage from "@/pages/zones/ZonesPage";
+import CotizacionesPage from "@/pages/cotizaciones/CotizacionesPage";
 
 const AppRoutes = () => {
   return (
