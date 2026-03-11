@@ -32,15 +32,48 @@ const clienteSchema = z.object({
 });
 
 interface Props {
+  editId?: string;
   onCancel: () => void;
   onSaved: () => void;
 }
 
 const TIPOS_DOCUMENTO = ["CC", "CE", "NIT", "RUC", "RFC", "DNI", "CUIT", "PA"];
 
-const CotizacionForm = ({ onCancel, onSaved }: Props) => {
+const CotizacionForm = ({ editId, onCancel, onSaved }: Props) => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const isEditing = !!editId;
+
+  // --- Load existing cotizacion for editing ---
+  const { data: existingCot } = useQuery({
+    queryKey: ["cotizacion", editId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("cotizaciones" as any)
+        .select("*, clientes_cotizacion:cliente_cotizacion_id(*)")
+        .eq("id", editId!)
+        .single();
+      if (error) throw error;
+      return data as any;
+    },
+    enabled: !!editId,
+  });
+
+  const { data: existingItems } = useQuery({
+    queryKey: ["cotizacion-items", editId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("cotizacion_items" as any)
+        .select("*")
+        .eq("cotizacion_id", editId!)
+        .order("orden", { ascending: true });
+      if (error) throw error;
+      return data as any[];
+    },
+    enabled: !!editId,
+  });
+
+  const [editLoaded, setEditLoaded] = useState(false);
 
   // --- Config ---
   const { data: config } = useQuery({
