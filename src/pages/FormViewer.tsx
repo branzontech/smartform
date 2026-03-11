@@ -487,16 +487,23 @@ const FormViewer = () => {
               )}
             </div>
           </div>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={printForm} className="flex items-center gap-2">
-              <Printer size={16} />
-              Imprimir
-            </Button>
-            <Button variant="outline" size="sm" onClick={copyFormLinkToClipboard} className="flex items-center gap-2">
-              <LinkIcon size={16} />
-              Compartir
-            </Button>
-          </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
+                <MoreHorizontal className="w-4 h-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-44">
+              <DropdownMenuItem onClick={printForm} className="gap-2 text-sm">
+                <Printer className="w-4 h-4" />
+                Imprimir
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={copyFormLinkToClipboard} className="gap-2 text-sm">
+                <LinkIcon className="w-4 h-4" />
+                Compartir enlace
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
 
         {isConsultationForm && (
