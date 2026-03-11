@@ -88,8 +88,6 @@ interface RegistroAtencionesProps {
 export const RegistroAtenciones: React.FC<RegistroAtencionesProps> = ({
   patientId,
   headerConfig,
-  onDetailChange,
-  clearDetailRef,
 }) => {
   const { user, profile, hasRole } = useAuth();
   const queryClient = useQueryClient();
@@ -98,29 +96,6 @@ export const RegistroAtenciones: React.FC<RegistroAtencionesProps> = ({
   const [filterMedico, setFilterMedico] = useState<string>('all');
   const [filterDateFrom, setFilterDateFrom] = useState('');
   const [filterDateTo, setFilterDateTo] = useState('');
-
-  // Detail view state
-  const [selectedFolio, setSelectedFolioState] = useState<{
-    respuesta: RespuestaFormulario;
-    admision: Admision | null;
-    folioNumber: number;
-  } | null>(null);
-
-  // Sync detail state with parent
-  const setSelectedFolio = (val: typeof selectedFolio) => {
-    setSelectedFolioState(val);
-    onDetailChange?.(val !== null);
-  };
-
-  // Expose clearDetail to parent via ref
-  useEffect(() => {
-    if (clearDetailRef) {
-      clearDetailRef.current = () => setSelectedFolio(null);
-    }
-    return () => {
-      if (clearDetailRef) clearDetailRef.current = null;
-    };
-  }, [clearDetailRef]);
 
   // Correction dialog
   const [correctionTarget, setCorrectionTarget] = useState<{
