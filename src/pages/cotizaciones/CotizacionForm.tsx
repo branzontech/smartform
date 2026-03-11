@@ -665,7 +665,7 @@ const CotizacionForm = ({ editId, onCancel, onSaved }: Props) => {
           <div className="flex items-center justify-end gap-3 pb-6 pt-2">
             <Button variant="outline" onClick={onCancel}>Cancelar</Button>
             <Button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending} className="shadow-sm">
-              {saveMutation.isPending ? "Guardando..." : "Guardar borrador"}
+              {saveMutation.isPending ? "Guardando..." : isEditing ? "Guardar cambios" : "Guardar borrador"}
             </Button>
           </div>
         </div>
