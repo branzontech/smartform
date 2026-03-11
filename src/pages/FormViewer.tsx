@@ -72,8 +72,6 @@ const FormViewer = () => {
 
   useEffect(() => {
     const loadForm = async () => {
-  useEffect(() => {
-    const loadForm = async () => {
   console.log("FormViewer - formId:", formId);
   console.log("FormViewer - patientId:", patientId);
   console.log("FormViewer - consultationId:", consultationId);
