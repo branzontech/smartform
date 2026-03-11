@@ -478,6 +478,23 @@ export const PatientSearchStep: React.FC<PatientSearchStepProps> = ({
                       className="h-11 rounded-xl"
                     />
                   </div>
+                  <div>
+                    <Label>Género</Label>
+                    <Select 
+                      value={newPatient.gender || ""} 
+                      onValueChange={(value: any) => setNewPatient({...newPatient, gender: value})}
+                    >
+                      <SelectTrigger className="h-11 rounded-xl">
+                        <SelectValue placeholder="Seleccionar género" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="male">Masculino</SelectItem>
+                        <SelectItem value="female">Femenino</SelectItem>
+                        <SelectItem value="other">Otro</SelectItem>
+                        <SelectItem value="unknown">No especificado</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
