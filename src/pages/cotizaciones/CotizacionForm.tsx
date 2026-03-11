@@ -250,13 +250,39 @@ const CotizacionForm = ({ editId, onCancel, onSaved }: Props) => {
   const [leyendaValidez, setLeyendaValidez] = useState("");
   const [fechaValidez, setFechaValidez] = useState<Date | undefined>();
 
+  // Load config defaults (only for new cotizaciones)
   useEffect(() => {
-    if (config) {
+    if (config && !isEditing) {
       setImpuestoPorcentaje(Number(config.impuesto_defecto) || 0);
       setLeyendaValidez((config.leyenda_validez_defecto || "").replace("{dias}", String(config.dias_validez)));
       setFechaValidez(addDays(new Date(), config.dias_validez));
     }
-  }, [config]);
+  }, [config, isEditing]);
+
+  // Load existing cotizacion data for editing
+  useEffect(() => {
+    if (isEditing && existingCot && existingItems && !editLoaded) {
+      setEditLoaded(true);
+      setSelectedCliente(existingCot.clientes_cotizacion as ClienteCotizacion);
+      setDescuentoGeneral(Number(existingCot.descuento_porcentaje) || 0);
+      setImpuestoPorcentaje(Number(existingCot.impuesto_porcentaje) || 0);
+      setObservaciones(existingCot.observaciones || "");
+      setLeyendaValidez(existingCot.leyenda_validez || "");
+      setFechaValidez(new Date(existingCot.fecha_validez));
+      setItems(
+        existingItems.map((item: any) => ({
+          tempId: nanoid(),
+          tarifario_servicio_id: item.tarifario_servicio_id,
+          codigo_servicio: item.codigo_servicio || "",
+          descripcion_servicio: item.descripcion_servicio,
+          cantidad: item.cantidad,
+          valor_unitario: Number(item.valor_unitario),
+          descuento_porcentaje: Number(item.descuento_porcentaje) || 0,
+          valor_total: Number(item.valor_total),
+        }))
+      );
+    }
+  }, [isEditing, existingCot, existingItems, editLoaded]);
 
   const subtotal = useMemo(() => items.reduce((acc, i) => acc + i.valor_total, 0), [items]);
   const descuentoValor = useMemo(() => subtotal * (descuentoGeneral / 100), [subtotal, descuentoGeneral]);
