@@ -145,7 +145,12 @@ const NewConsultation = () => {
           designOptions: f.opciones_diseno,
         }));
         setAvailableForms(mapped);
-      }
+
+        // Sync preselected forms with full objects
+        if (preselectedFormIds.length > 0) {
+          const preselected = mapped.filter((f: FormType) => preselectedFormIds.includes(f.id));
+          if (preselected.length > 0) setSelectedForms(preselected);
+        }
 
       const { recentForms, frequentForms } = getRecentAndFrequentForms(selectedPatientId || undefined);
       setRecentForms(recentForms);
