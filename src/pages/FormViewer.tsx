@@ -568,7 +568,7 @@ const FormViewer = () => {
                 </Button>
               </div>
               {/* Panel content — independent scroll */}
-              <div className="flex-1 min-h-0 overflow-y-auto">
+              <div className="flex-1 min-h-0 overflow-y-auto" style={{ overscrollBehavior: 'contain' }}>
                 <PatientHistoryPanel patientId={patientId!} className="h-full" />
               </div>
             </div>
