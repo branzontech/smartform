@@ -51,6 +51,7 @@ const NewConsultation = () => {
   const { toast } = useToast();
   const queryParams = new URLSearchParams(location.search);
   const preselectedPatientId = queryParams.get("patientId");
+  const preselectedFormIds = queryParams.get("selectedForms")?.split(",").filter(Boolean) || [];
 
   const [currentStep, setCurrentStep] = useState<WorkflowStep>(preselectedPatientId ? 2 : 1);
   const [direction, setDirection] = useState(0);
@@ -66,7 +67,7 @@ const NewConsultation = () => {
   const [isSearching, setIsSearching] = useState(false);
   const [patientAdmissions, setPatientAdmissions] = useState<any[]>([]);
   
-  const [selectedFormIds, setSelectedFormIds] = useState<string[]>([]);
+  const [selectedFormIds, setSelectedFormIds] = useState<string[]>(preselectedFormIds);
   const [selectedForms, setSelectedForms] = useState<FormType[]>([]);
 
   const goToStep = (step: WorkflowStep) => {
@@ -144,6 +145,12 @@ const NewConsultation = () => {
           designOptions: f.opciones_diseno,
         }));
         setAvailableForms(mapped);
+
+        // Sync preselected forms with full objects
+        if (preselectedFormIds.length > 0) {
+          const preselected = mapped.filter((f: FormType) => preselectedFormIds.includes(f.id));
+          if (preselected.length > 0) setSelectedForms(preselected);
+        }
       }
 
       const { recentForms, frequentForms } = getRecentAndFrequentForms(selectedPatientId || undefined);
