@@ -456,57 +456,103 @@ export const RegistroAtenciones: React.FC<RegistroAtencionesProps> = ({
   );
 };
 
-// ── Compact Folio Row ────────────────────────────────────
+// ── Collapsible Folio Row ─────────────────────────────────
 interface FolioRowProps {
   folio: RespuestaFormulario;
   admision: Admision | null;
-  folioNumber: number;
   canCorrect: boolean;
-  hasCorrections: boolean;
-  onView: () => void;
+  correcciones: Correccion[];
+  headerConfig?: any;
   onPrint: () => void;
   onCorrect: () => void;
   isLast: boolean;
 }
 
 const FolioRow: React.FC<FolioRowProps> = ({
-  folio, admision, folioNumber, canCorrect, hasCorrections, onView, onPrint, onCorrect, isLast,
-}) => (
-  <div className={`flex items-center justify-between py-2.5 pl-4 ml-2 border-l-2 border-muted ${!isLast ? 'border-b border-dashed' : ''}`}>
-    <div className="flex flex-col gap-0.5 min-w-0 flex-1">
-      <span className="text-sm font-medium truncate">{folio.formularios?.titulo || 'Registro'}</span>
-      <div className="flex items-center gap-2 flex-wrap">
-        <span className="text-sm text-muted-foreground">
-          {admision ? format(new Date(admision.fecha_inicio), "dd/MM/yyyy HH:mm") : '—'}
-        </span>
-        <span className="text-muted-foreground text-xs">·</span>
-        <span className="text-sm text-muted-foreground">
-          {admision?.profesional_nombre || '—'}
-        </span>
-        <span className="text-muted-foreground text-xs">·</span>
-        <span className="text-xs text-muted-foreground">
-          Registrado: {format(new Date(folio.created_at), "dd/MM/yyyy HH:mm:ss")}
-        </span>
-        {hasCorrections && (
-          <span title="Tiene correcciones"><AlertTriangle className="w-3 h-3 text-amber-500 shrink-0" /></span>
-        )}
+  folio, admision, canCorrect, correcciones, headerConfig, onPrint, onCorrect, isLast,
+}) => {
+  const [open, setOpen] = useState(false);
+  const hasCorrections = correcciones.length > 0;
+
+  return (
+    <div className={`pl-4 ml-2 border-l-2 border-muted ${!isLast ? 'border-b border-dashed' : ''}`}>
+      <div className="flex items-center justify-between py-2.5">
+        <button
+          type="button"
+          className="flex items-center gap-2 min-w-0 flex-1 text-left"
+          onClick={() => setOpen(!open)}
+        >
+          <ChevronRight className={`w-3.5 h-3.5 text-muted-foreground shrink-0 transition-transform duration-200 ${open ? 'rotate-90' : ''}`} />
+          <div className="flex flex-col gap-0.5 min-w-0 flex-1">
+            <span className="text-sm font-medium truncate">{folio.formularios?.titulo || 'Registro'}</span>
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-sm text-muted-foreground">
+                {admision ? format(new Date(admision.fecha_inicio), "dd/MM/yyyy HH:mm") : '—'}
+              </span>
+              <span className="text-muted-foreground text-xs">·</span>
+              <span className="text-sm text-muted-foreground">
+                {admision?.profesional_nombre || '—'}
+              </span>
+              <span className="text-muted-foreground text-xs">·</span>
+              <span className="text-xs text-muted-foreground">
+                Registrado: {format(new Date(folio.created_at), "dd/MM/yyyy HH:mm:ss")}
+              </span>
+              {hasCorrections && (
+                <span title="Tiene correcciones"><AlertTriangle className="w-3 h-3 text-amber-500 shrink-0" /></span>
+              )}
+            </div>
+          </div>
+        </button>
+        <div className="flex items-center gap-0.5 shrink-0 print:hidden">
+          <Button variant="ghost" size="sm" className="h-7 w-7 p-0" title="Imprimir folio" onClick={onPrint}>
+            <Printer className="w-3.5 h-3.5 text-muted-foreground" />
+          </Button>
+          {canCorrect && (
+            <Button variant="ghost" size="sm" className="h-7 w-7 p-0" title="Corregir" onClick={onCorrect}>
+              <PenLine className="w-3.5 h-3.5 text-muted-foreground" />
+            </Button>
+          )}
+        </div>
+      </div>
+
+      <div className={`overflow-hidden transition-all duration-200 ${open ? 'max-h-[5000px] opacity-100' : 'max-h-0 opacity-0'}`}>
+        <div className="pb-4 pt-1 pl-5">
+          <ReadOnlyFormView
+            questions={folio.formularios?.preguntas || []}
+            data={folio.datos_respuesta}
+            headerConfig={headerConfig}
+            formTitle={folio.formularios?.titulo || 'Registro'}
+          />
+          {hasCorrections && (
+            <div className="mt-3 space-y-2">
+              {correcciones.map(c => (
+                <div key={c.id} className="bg-amber-50/50 dark:bg-amber-950/20 border-l-2 border-amber-400 p-3 rounded-r text-xs">
+                  <div className="flex items-center gap-1.5 font-medium mb-1">
+                    <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />
+                    <span>{TIPO_LABELS[c.tipo_correccion] || 'Corrección'}</span>
+                    <span className="text-muted-foreground font-normal">
+                      — {format(new Date(c.created_at), "dd/MM/yyyy HH:mm")} por {c.medico_nombre}
+                    </span>
+                  </div>
+                  <p><span className="font-medium">Campo:</span> {c.campo_corregido}</p>
+                  <p><span className="font-medium">Motivo:</span> "{c.motivo}"</p>
+                  {c.valor_anterior != null && (
+                    <p>
+                      <span className="font-medium">Antes:</span> {typeof c.valor_anterior === 'object' ? JSON.stringify(c.valor_anterior) : String(c.valor_anterior)}
+                      {c.valor_nuevo != null && (
+                        <> → <span className="font-medium">Después:</span> {typeof c.valor_nuevo === 'object' ? JSON.stringify(c.valor_nuevo) : String(c.valor_nuevo)}</>
+                      )}
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </div>
-    <div className="flex items-center gap-0.5 shrink-0 print:hidden">
-      <Button variant="ghost" size="sm" className="h-7 w-7 p-0" title="Ver registro" onClick={onView}>
-        <Eye className="w-3.5 h-3.5 text-muted-foreground" />
-      </Button>
-      <Button variant="ghost" size="sm" className="h-7 w-7 p-0" title="Imprimir folio" onClick={onPrint}>
-        <Printer className="w-3.5 h-3.5 text-muted-foreground" />
-      </Button>
-      {canCorrect && (
-        <Button variant="ghost" size="sm" className="h-7 w-7 p-0" title="Corregir" onClick={onCorrect}>
-          <PenLine className="w-3.5 h-3.5 text-muted-foreground" />
-        </Button>
-      )}
-    </div>
-  </div>
-);
+  );
+};
 
 // ── Admision Section (Collapsible) ───────────────────────
 interface AdmisionSectionProps {
@@ -515,14 +561,14 @@ interface AdmisionSectionProps {
   defaultOpen: boolean;
   correccionesByRespuesta: Record<string, Correccion[]>;
   canCorrect: boolean;
+  headerConfig?: any;
   onCorrect: (resp: RespuestaFormulario) => void;
   onPrintFolio: (resp: RespuestaFormulario) => void;
-  onViewFolio: (resp: RespuestaFormulario, folioIdx: number) => void;
 }
 
 const AdmisionSection: React.FC<AdmisionSectionProps> = ({
   admision, folios, defaultOpen, correccionesByRespuesta, canCorrect,
-  onCorrect, onPrintFolio, onViewFolio,
+  headerConfig, onCorrect, onPrintFolio,
 }) => {
   const [open, setOpen] = useState(defaultOpen);
 
@@ -571,10 +617,9 @@ const AdmisionSection: React.FC<AdmisionSectionProps> = ({
                 key={folio.id}
                 folio={folio}
                 admision={admision}
-                folioNumber={folioIdx + 1}
                 canCorrect={canCorrect}
-                hasCorrections={(correccionesByRespuesta[folio.id] || []).length > 0}
-                onView={() => onViewFolio(folio, folioIdx)}
+                correcciones={correccionesByRespuesta[folio.id] || []}
+                headerConfig={headerConfig}
                 onPrint={() => onPrintFolio(folio)}
                 onCorrect={() => onCorrect(folio)}
                 isLast={folioIdx === folios.length - 1}
