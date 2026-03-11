@@ -151,6 +151,7 @@ const NewConsultation = () => {
           const preselected = mapped.filter((f: FormType) => preselectedFormIds.includes(f.id));
           if (preselected.length > 0) setSelectedForms(preselected);
         }
+      }
 
       const { recentForms, frequentForms } = getRecentAndFrequentForms(selectedPatientId || undefined);
       setRecentForms(recentForms);
