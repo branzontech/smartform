@@ -301,31 +301,49 @@ const CotizacionForm = ({ editId, onCancel, onSaved }: Props) => {
       if (items.length === 0) throw new Error("Agrega al menos un servicio");
       if (!user?.id) throw new Error("No autenticado");
 
-      const { data: cotizacion, error: cotError } = await supabase
-        .from("cotizaciones" as any)
-        .insert({
-          numero_cotizacion: "",
-          cliente_cotizacion_id: selectedCliente.id,
-          fecha_emision: format(new Date(), "yyyy-MM-dd"),
-          fecha_validez: fechaValidez ? format(fechaValidez, "yyyy-MM-dd") : format(addDays(new Date(), 30), "yyyy-MM-dd"),
-          estado: "borrador",
-          subtotal,
-          descuento_porcentaje: descuentoGeneral,
-          descuento_valor: descuentoValor,
-          impuesto_porcentaje: impuestoPorcentaje,
-          impuesto_valor: impuestoValor,
-          total,
-          moneda,
-          observaciones: observaciones || null,
-          leyenda_validez: leyendaValidez || null,
-          creado_por: user.id,
-        } as any)
-        .select()
-        .single();
+      const cotData = {
+        cliente_cotizacion_id: selectedCliente.id,
+        fecha_validez: fechaValidez ? format(fechaValidez, "yyyy-MM-dd") : format(addDays(new Date(), 30), "yyyy-MM-dd"),
+        subtotal,
+        descuento_porcentaje: descuentoGeneral,
+        descuento_valor: descuentoValor,
+        impuesto_porcentaje: impuestoPorcentaje,
+        impuesto_valor: impuestoValor,
+        total,
+        moneda,
+        observaciones: observaciones || null,
+        leyenda_validez: leyendaValidez || null,
+      } as any;
 
-      if (cotError) throw cotError;
+      let cotId: string;
 
-      const cotId = (cotizacion as any).id;
+      if (isEditing && editId) {
+        // UPDATE existing
+        const { error: cotError } = await supabase
+          .from("cotizaciones" as any)
+          .update(cotData)
+          .eq("id", editId);
+        if (cotError) throw cotError;
+        cotId = editId;
+
+        // Delete old items and re-insert
+        await supabase.from("cotizacion_items" as any).delete().eq("cotizacion_id", editId);
+      } else {
+        // INSERT new
+        cotData.numero_cotizacion = "";
+        cotData.fecha_emision = format(new Date(), "yyyy-MM-dd");
+        cotData.estado = "borrador";
+        cotData.creado_por = user.id;
+
+        const { data: cotizacion, error: cotError } = await supabase
+          .from("cotizaciones" as any)
+          .insert(cotData)
+          .select()
+          .single();
+        if (cotError) throw cotError;
+        cotId = (cotizacion as any).id;
+      }
+
       const itemsToInsert = items.map((item, idx) => ({
         cotizacion_id: cotId,
         tarifario_servicio_id: item.tarifario_servicio_id,
@@ -343,11 +361,12 @@ const CotizacionForm = ({ editId, onCancel, onSaved }: Props) => {
         .insert(itemsToInsert as any);
 
       if (itemsError) throw itemsError;
-      return cotizacion;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["cotizaciones"] });
-      toast.success("Cotización guardada como borrador");
+      queryClient.invalidateQueries({ queryKey: ["cotizacion", editId] });
+      queryClient.invalidateQueries({ queryKey: ["cotizacion-items", editId] });
+      toast.success(isEditing ? "Cotización actualizada" : "Cotización guardada como borrador");
       onSaved();
     },
     onError: (err: any) => {
