@@ -60,9 +60,11 @@ const FormViewer = () => {
   const [error, setError] = useState("");
   const [submitted, setSubmitted] = useState(false);
   const [headerConfig, setHeaderConfig] = useState<any>(null);
-  const { toast: uiToast } = useToast();
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [pendingValues, setPendingValues] = useState<any>(null);
 
-  // Get query parameters
+  useEffect(() => {
+    const loadForm = async () => {
   const queryParams = new URLSearchParams(location.search);
   const patientId = queryParams.get("patientId");
   const consultationId = queryParams.get("consultationId");
