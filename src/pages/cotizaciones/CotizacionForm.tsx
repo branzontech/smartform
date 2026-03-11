@@ -385,8 +385,8 @@ const CotizacionForm = ({ editId, onCancel, onSaved }: Props) => {
         <div className="p-6 space-y-6 max-w-3xl">
           {/* Header */}
           <div>
-            <h1 className="text-xl font-semibold text-foreground tracking-tight">Nueva Cotización</h1>
-            <p className="text-sm text-muted-foreground mt-0.5">Completa los datos para generar la cotización</p>
+            <h1 className="text-xl font-semibold text-foreground tracking-tight">{isEditing ? "Editar Cotización" : "Nueva Cotización"}</h1>
+            <p className="text-sm text-muted-foreground mt-0.5">{isEditing ? `Editando ${existingCot?.numero_cotizacion || ""}` : "Completa los datos para generar la cotización"}</p>
           </div>
 
           {/* SECTION: Cliente */}
