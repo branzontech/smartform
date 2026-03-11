@@ -32,15 +32,48 @@ const clienteSchema = z.object({
 });
 
 interface Props {
+  editId?: string;
   onCancel: () => void;
   onSaved: () => void;
 }
 
 const TIPOS_DOCUMENTO = ["CC", "CE", "NIT", "RUC", "RFC", "DNI", "CUIT", "PA"];
 
-const CotizacionForm = ({ onCancel, onSaved }: Props) => {
+const CotizacionForm = ({ editId, onCancel, onSaved }: Props) => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const isEditing = !!editId;
+
+  // --- Load existing cotizacion for editing ---
+  const { data: existingCot } = useQuery({
+    queryKey: ["cotizacion", editId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("cotizaciones" as any)
+        .select("*, clientes_cotizacion:cliente_cotizacion_id(*)")
+        .eq("id", editId!)
+        .single();
+      if (error) throw error;
+      return data as any;
+    },
+    enabled: !!editId,
+  });
+
+  const { data: existingItems } = useQuery({
+    queryKey: ["cotizacion-items", editId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("cotizacion_items" as any)
+        .select("*")
+        .eq("cotizacion_id", editId!)
+        .order("orden", { ascending: true });
+      if (error) throw error;
+      return data as any[];
+    },
+    enabled: !!editId,
+  });
+
+  const [editLoaded, setEditLoaded] = useState(false);
 
   // --- Config ---
   const { data: config } = useQuery({
@@ -217,13 +250,39 @@ const CotizacionForm = ({ onCancel, onSaved }: Props) => {
   const [leyendaValidez, setLeyendaValidez] = useState("");
   const [fechaValidez, setFechaValidez] = useState<Date | undefined>();
 
+  // Load config defaults (only for new cotizaciones)
   useEffect(() => {
-    if (config) {
+    if (config && !isEditing) {
       setImpuestoPorcentaje(Number(config.impuesto_defecto) || 0);
       setLeyendaValidez((config.leyenda_validez_defecto || "").replace("{dias}", String(config.dias_validez)));
       setFechaValidez(addDays(new Date(), config.dias_validez));
     }
-  }, [config]);
+  }, [config, isEditing]);
+
+  // Load existing cotizacion data for editing
+  useEffect(() => {
+    if (isEditing && existingCot && existingItems && !editLoaded) {
+      setEditLoaded(true);
+      setSelectedCliente(existingCot.clientes_cotizacion as ClienteCotizacion);
+      setDescuentoGeneral(Number(existingCot.descuento_porcentaje) || 0);
+      setImpuestoPorcentaje(Number(existingCot.impuesto_porcentaje) || 0);
+      setObservaciones(existingCot.observaciones || "");
+      setLeyendaValidez(existingCot.leyenda_validez || "");
+      setFechaValidez(new Date(existingCot.fecha_validez));
+      setItems(
+        existingItems.map((item: any) => ({
+          tempId: nanoid(),
+          tarifario_servicio_id: item.tarifario_servicio_id,
+          codigo_servicio: item.codigo_servicio || "",
+          descripcion_servicio: item.descripcion_servicio,
+          cantidad: item.cantidad,
+          valor_unitario: Number(item.valor_unitario),
+          descuento_porcentaje: Number(item.descuento_porcentaje) || 0,
+          valor_total: Number(item.valor_total),
+        }))
+      );
+    }
+  }, [isEditing, existingCot, existingItems, editLoaded]);
 
   const subtotal = useMemo(() => items.reduce((acc, i) => acc + i.valor_total, 0), [items]);
   const descuentoValor = useMemo(() => subtotal * (descuentoGeneral / 100), [subtotal, descuentoGeneral]);
@@ -242,31 +301,49 @@ const CotizacionForm = ({ onCancel, onSaved }: Props) => {
       if (items.length === 0) throw new Error("Agrega al menos un servicio");
       if (!user?.id) throw new Error("No autenticado");
 
-      const { data: cotizacion, error: cotError } = await supabase
-        .from("cotizaciones" as any)
-        .insert({
-          numero_cotizacion: "",
-          cliente_cotizacion_id: selectedCliente.id,
-          fecha_emision: format(new Date(), "yyyy-MM-dd"),
-          fecha_validez: fechaValidez ? format(fechaValidez, "yyyy-MM-dd") : format(addDays(new Date(), 30), "yyyy-MM-dd"),
-          estado: "borrador",
-          subtotal,
-          descuento_porcentaje: descuentoGeneral,
-          descuento_valor: descuentoValor,
-          impuesto_porcentaje: impuestoPorcentaje,
-          impuesto_valor: impuestoValor,
-          total,
-          moneda,
-          observaciones: observaciones || null,
-          leyenda_validez: leyendaValidez || null,
-          creado_por: user.id,
-        } as any)
-        .select()
-        .single();
+      const cotData = {
+        cliente_cotizacion_id: selectedCliente.id,
+        fecha_validez: fechaValidez ? format(fechaValidez, "yyyy-MM-dd") : format(addDays(new Date(), 30), "yyyy-MM-dd"),
+        subtotal,
+        descuento_porcentaje: descuentoGeneral,
+        descuento_valor: descuentoValor,
+        impuesto_porcentaje: impuestoPorcentaje,
+        impuesto_valor: impuestoValor,
+        total,
+        moneda,
+        observaciones: observaciones || null,
+        leyenda_validez: leyendaValidez || null,
+      } as any;
 
-      if (cotError) throw cotError;
+      let cotId: string;
 
-      const cotId = (cotizacion as any).id;
+      if (isEditing && editId) {
+        // UPDATE existing
+        const { error: cotError } = await supabase
+          .from("cotizaciones" as any)
+          .update(cotData)
+          .eq("id", editId);
+        if (cotError) throw cotError;
+        cotId = editId;
+
+        // Delete old items and re-insert
+        await supabase.from("cotizacion_items" as any).delete().eq("cotizacion_id", editId);
+      } else {
+        // INSERT new
+        cotData.numero_cotizacion = "";
+        cotData.fecha_emision = format(new Date(), "yyyy-MM-dd");
+        cotData.estado = "borrador";
+        cotData.creado_por = user.id;
+
+        const { data: cotizacion, error: cotError } = await supabase
+          .from("cotizaciones" as any)
+          .insert(cotData)
+          .select()
+          .single();
+        if (cotError) throw cotError;
+        cotId = (cotizacion as any).id;
+      }
+
       const itemsToInsert = items.map((item, idx) => ({
         cotizacion_id: cotId,
         tarifario_servicio_id: item.tarifario_servicio_id,
@@ -284,11 +361,12 @@ const CotizacionForm = ({ onCancel, onSaved }: Props) => {
         .insert(itemsToInsert as any);
 
       if (itemsError) throw itemsError;
-      return cotizacion;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["cotizaciones"] });
-      toast.success("Cotización guardada como borrador");
+      queryClient.invalidateQueries({ queryKey: ["cotizacion", editId] });
+      queryClient.invalidateQueries({ queryKey: ["cotizacion-items", editId] });
+      toast.success(isEditing ? "Cotización actualizada" : "Cotización guardada como borrador");
       onSaved();
     },
     onError: (err: any) => {
@@ -307,8 +385,8 @@ const CotizacionForm = ({ onCancel, onSaved }: Props) => {
         <div className="p-6 space-y-6 max-w-3xl">
           {/* Header */}
           <div>
-            <h1 className="text-xl font-semibold text-foreground tracking-tight">Nueva Cotización</h1>
-            <p className="text-sm text-muted-foreground mt-0.5">Completa los datos para generar la cotización</p>
+            <h1 className="text-xl font-semibold text-foreground tracking-tight">{isEditing ? "Editar Cotización" : "Nueva Cotización"}</h1>
+            <p className="text-sm text-muted-foreground mt-0.5">{isEditing ? `Editando ${existingCot?.numero_cotizacion || ""}` : "Completa los datos para generar la cotización"}</p>
           </div>
 
           {/* SECTION: Cliente */}
@@ -587,7 +665,7 @@ const CotizacionForm = ({ onCancel, onSaved }: Props) => {
           <div className="flex items-center justify-end gap-3 pb-6 pt-2">
             <Button variant="outline" onClick={onCancel}>Cancelar</Button>
             <Button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending} className="shadow-sm">
-              {saveMutation.isPending ? "Guardando..." : "Guardar borrador"}
+              {saveMutation.isPending ? "Guardando..." : isEditing ? "Guardar cambios" : "Guardar borrador"}
             </Button>
           </div>
         </div>
@@ -628,7 +706,7 @@ const CotizacionForm = ({ onCancel, onSaved }: Props) => {
               {/* Title */}
               <div className="text-center py-2">
                 <h2 className="text-base font-bold text-foreground uppercase tracking-wide">Cotización</h2>
-                <p className="text-xs text-muted-foreground mt-0.5">N° COT-{format(new Date(), "yyyy")}-XXXX</p>
+                <p className="text-xs text-muted-foreground mt-0.5">N° {isEditing && existingCot ? existingCot.numero_cotizacion : `COT-${format(new Date(), "yyyy")}-XXXX`}</p>
               </div>
 
               {/* Client info */}
