@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { format } from "date-fns";
-import { Header } from "@/components/layout/header";
+
 import { toast } from "sonner";
 import { isUserSignedIn, createGoogleCalendarEvent, updateGoogleCalendarEvent } from "@/utils/google-calendar";
 import { supabase } from "@/integrations/supabase/client";
@@ -314,29 +314,23 @@ const AppointmentForm = () => {
 
   if (loading) {
     return (
-      <div className="h-screen flex flex-col bg-background overflow-hidden">
-        <Header />
-        <div className="flex-1 flex items-center justify-center">
-          <div className="animate-pulse text-center">
-            <div className="h-16 w-16 bg-primary/20 rounded-3xl mb-6 mx-auto"></div>
-            <div className="h-6 w-48 bg-muted rounded-xl mb-4 mx-auto"></div>
-            <div className="h-4 w-64 bg-muted/50 rounded-lg mx-auto"></div>
-          </div>
+      <div className="h-full flex items-center justify-center">
+        <div className="animate-pulse text-center">
+          <div className="h-16 w-16 bg-primary/20 rounded-3xl mb-6 mx-auto"></div>
+          <div className="h-6 w-48 bg-muted rounded-xl mb-4 mx-auto"></div>
+          <div className="h-4 w-64 bg-muted/50 rounded-lg mx-auto"></div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="h-screen flex flex-col bg-background overflow-hidden">
-      <Header />
-      <main className="flex-1 min-h-0 overflow-hidden">
-        <AppointmentWizard
-          onComplete={handleWizardComplete}
-          initialPatients={patients}
-          existingAppointments={existingAppointments}
-        />
-      </main>
+    <div className="h-full flex flex-col overflow-hidden -mx-6 -mt-4">
+      <AppointmentWizard
+        onComplete={handleWizardComplete}
+        initialPatients={patients}
+        existingAppointments={existingAppointments}
+      />
     </div>
   );
 };
