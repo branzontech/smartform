@@ -52,7 +52,7 @@ const NewConsultation = () => {
   const queryParams = new URLSearchParams(location.search);
   const preselectedPatientId = queryParams.get("patientId");
 
-  const [currentStep, setCurrentStep] = useState<WorkflowStep>(1);
+  const [currentStep, setCurrentStep] = useState<WorkflowStep>(preselectedPatientId ? 2 : 1);
   const [direction, setDirection] = useState(0);
   const [loading, setLoading] = useState(true);
   const [availableForms, setAvailableForms] = useState<FormType[]>([]);
