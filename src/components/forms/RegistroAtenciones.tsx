@@ -7,7 +7,7 @@ import { es } from 'date-fns/locale';
 import { z } from 'zod';
 import {
   Printer, PenLine, ChevronDown, ChevronRight, AlertTriangle,
-  Filter, Calendar as CalendarIcon
+  Filter, Calendar as CalendarIcon, Eye, ArrowLeft
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -23,6 +23,7 @@ import {
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
+import { ReadOnlyFormView } from './registro/ReadOnlyFormView';
 
 // ── Types ────────────────────────────────────────────────
 interface Admision {
@@ -46,6 +47,7 @@ interface RespuestaFormulario {
   formularios: {
     titulo: string;
     preguntas: any[];
+    opciones_diseno?: any;
   } | null;
 }
 
@@ -95,6 +97,13 @@ export const RegistroAtenciones: React.FC<RegistroAtencionesProps> = ({
   const [filterDateFrom, setFilterDateFrom] = useState('');
   const [filterDateTo, setFilterDateTo] = useState('');
 
+  // Detail view state
+  const [selectedFolio, setSelectedFolio] = useState<{
+    respuesta: RespuestaFormulario;
+    admision: Admision | null;
+    folioNumber: number;
+  } | null>(null);
+
   // Correction dialog
   const [correctionTarget, setCorrectionTarget] = useState<{
     respuesta: RespuestaFormulario;
@@ -127,7 +136,7 @@ export const RegistroAtenciones: React.FC<RegistroAtencionesProps> = ({
     queryFn: async () => {
       const { data, error } = await supabase
         .from('respuestas_formularios')
-        .select('id, formulario_id, admision_id, medico_id, datos_respuesta, created_at, formularios(titulo, preguntas)')
+        .select('id, formulario_id, admision_id, medico_id, datos_respuesta, created_at, formularios(titulo, preguntas, opciones_diseno)')
         .eq('paciente_id', patientId)
         .order('created_at', { ascending: true });
       if (error) throw error;
@@ -267,7 +276,7 @@ export const RegistroAtenciones: React.FC<RegistroAtencionesProps> = ({
     return String(val);
   };
 
-  const printFolio = (respuesta: RespuestaFormulario, admision: Admision) => {
+  const printFolio = (respuesta: RespuestaFormulario, admision: Admision | null) => {
     const printWindow = window.open('', '_blank');
     if (!printWindow) return;
 
@@ -275,7 +284,7 @@ export const RegistroAtenciones: React.FC<RegistroAtencionesProps> = ({
     const respData = respuesta.datos_respuesta as Record<string, any>;
     const folioCorrecciones = correccionesByRespuesta[respuesta.id] || [];
 
-    const rows = preguntas.map((q: any) => 
+    const rows = preguntas.map((q: any) =>
       `<tr><td style="font-weight:600;padding:4px 8px;vertical-align:top;border-bottom:1px solid #eee;width:30%">${q.title}</td><td style="padding:4px 8px;border-bottom:1px solid #eee">${formatValue(respData[q.id])}</td></tr>`
     ).join('');
 
@@ -288,11 +297,15 @@ export const RegistroAtenciones: React.FC<RegistroAtencionesProps> = ({
       </div>`
     ).join('');
 
+    const headerHtml = admision
+      ? `<h2>Ingreso #${admision.numero_ingreso || '—'} — ${format(new Date(admision.fecha_inicio), "dd/MM/yyyy HH:mm")}</h2>
+         <p>${admision.profesional_nombre || ''} · ${admision.diagnostico_principal || ''}</p>`
+      : `<h2>Registro sin ingreso vinculado</h2>`;
+
     printWindow.document.write(`<!DOCTYPE html><html><head><title>Folio - ${respuesta.formularios?.titulo}</title>
       <style>body{font-family:system-ui,sans-serif;font-size:13px;padding:24px;color:#1a1a1a}table{width:100%;border-collapse:collapse}h2{margin:0 0 4px}h3{margin:16px 0 8px;border-bottom:1px solid #ccc;padding-bottom:4px}</style>
     </head><body>
-      <h2>Ingreso #${admision.numero_ingreso || '—'} — ${format(new Date(admision.fecha_inicio), "dd/MM/yyyy HH:mm")}</h2>
-      <p>${admision.profesional_nombre || ''} · ${admision.diagnostico_principal || ''}</p>
+      ${headerHtml}
       <h3>${respuesta.formularios?.titulo || 'Registro'} — ${format(new Date(respuesta.created_at), "dd/MM/yyyy HH:mm")}</h3>
       <table>${rows}</table>
       ${corrHtml}
@@ -316,6 +329,119 @@ export const RegistroAtenciones: React.FC<RegistroAtencionesProps> = ({
     );
   }
 
+  // ── Detail sub-view ────────────────────────────────────
+  if (selectedFolio) {
+    const folioCorrecciones = correccionesByRespuesta[selectedFolio.respuesta.id] || [];
+    return (
+      <div className="registro-atenciones">
+        <div className="flex items-center gap-3 mb-4 pb-3 border-b border-dashed print:hidden">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="gap-1.5 text-xs"
+            onClick={() => setSelectedFolio(null)}
+          >
+            <ArrowLeft className="w-3.5 h-3.5" />
+            Volver al listado
+          </Button>
+          <div className="ml-auto flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 w-7 p-0"
+              title="Imprimir folio"
+              onClick={() => printFolio(selectedFolio.respuesta, selectedFolio.admision)}
+            >
+              <Printer className="w-3.5 h-3.5 text-muted-foreground" />
+            </Button>
+            {canCorrect && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 gap-1 px-2 text-xs"
+                onClick={() => {
+                  setCorrectionTarget({
+                    respuesta: selectedFolio.respuesta,
+                    admisionId: selectedFolio.admision?.id || '',
+                  });
+                  setCorrForm({ campo_corregido: '', valor_nuevo: '', motivo: '', tipo_correccion: 'amendment' });
+                  setCorrErrors({});
+                }}
+              >
+                <PenLine className="w-3.5 h-3.5" />
+                Corregir
+              </Button>
+            )}
+          </div>
+        </div>
+
+        {/* Folio header info */}
+        <div className="mb-4">
+          <p className="text-sm font-medium">
+            Folio {selectedFolio.folioNumber} · {selectedFolio.respuesta.formularios?.titulo || 'Registro'}
+          </p>
+          <p className="text-xs text-muted-foreground">
+            {format(new Date(selectedFolio.respuesta.created_at), "d 'de' MMMM 'de' yyyy, HH:mm", { locale: es })}
+            {selectedFolio.admision?.profesional_nombre && ` · ${selectedFolio.admision.profesional_nombre}`}
+          </p>
+        </div>
+
+        {/* Read-only form rendering */}
+        <ReadOnlyFormView
+          questions={selectedFolio.respuesta.formularios?.preguntas || []}
+          data={selectedFolio.respuesta.datos_respuesta}
+          headerConfig={headerConfig}
+          formTitle={selectedFolio.respuesta.formularios?.titulo || 'Registro'}
+        />
+
+        {/* Inline corrections */}
+        {folioCorrecciones.length > 0 && (
+          <div className="mt-4 space-y-2">
+            {folioCorrecciones.map(c => (
+              <div key={c.id} className="bg-amber-50/50 dark:bg-amber-950/20 border-l-2 border-amber-400 p-3 rounded-r text-xs">
+                <div className="flex items-center gap-1.5 font-medium mb-1">
+                  <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />
+                  <span>{TIPO_LABELS[c.tipo_correccion] || 'Corrección'}</span>
+                  <span className="text-muted-foreground font-normal">
+                    — {format(new Date(c.created_at), "dd/MM/yyyy HH:mm")} por {c.medico_nombre}
+                  </span>
+                </div>
+                <p>
+                  <span className="font-medium">Campo:</span> {getQuestionLabel(selectedFolio.respuesta, c.campo_corregido)}
+                </p>
+                <p>
+                  <span className="font-medium">Motivo:</span> "{c.motivo}"
+                </p>
+                {c.valor_anterior != null && (
+                  <p>
+                    <span className="font-medium">Antes:</span> {formatValue(c.valor_anterior)}
+                    {c.valor_nuevo != null && (
+                      <> → <span className="font-medium">Después:</span> {formatValue(c.valor_nuevo)}</>
+                    )}
+                  </p>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Correction dialog is shared */}
+        <CorrectionDialog
+          correctionTarget={correctionTarget}
+          setCorrectionTarget={setCorrectionTarget}
+          corrForm={corrForm}
+          setCorrForm={setCorrForm}
+          corrErrors={corrErrors}
+          handleSubmitCorrection={handleSubmitCorrection}
+          createCorrection={createCorrection}
+          getQuestionsForRespuesta={getQuestionsForRespuesta}
+          formatValue={formatValue}
+        />
+      </div>
+    );
+  }
+
+  // ── List view ──────────────────────────────────────────
   return (
     <div className="registro-atenciones">
       {/* Filter bar */}
@@ -384,14 +510,12 @@ export const RegistroAtenciones: React.FC<RegistroAtencionesProps> = ({
                 setCorrErrors({});
               }}
               onPrintFolio={(resp) => printFolio(resp, admision)}
-              getQuestionLabel={getQuestionLabel}
-              getQuestionsForRespuesta={getQuestionsForRespuesta}
-              formatValue={formatValue}
+              onViewFolio={(resp, folioIdx) => setSelectedFolio({ respuesta: resp, admision, folioNumber: folioIdx + 1 })}
             />
           );
         })}
 
-        {/* Unlinked records (no admission linked) */}
+        {/* Unlinked records */}
         {unlinkedRegistros.length > 0 && filterMedico === 'all' && (
           <Collapsible defaultOpen={filteredAdmisiones.length === 0}>
             <CollapsibleTrigger className="w-full text-left group">
@@ -410,156 +534,88 @@ export const RegistroAtenciones: React.FC<RegistroAtencionesProps> = ({
             </CollapsibleTrigger>
             <CollapsibleContent>
               <div className="pl-2 mb-6">
-                {unlinkedRegistros.map((folio, folioIdx) => {
-                  const preguntas = getQuestionsForRespuesta(folio);
-                  const respData = folio.datos_respuesta as Record<string, any>;
-                  const folioCorrecciones = correccionesByRespuesta[folio.id] || [];
-
-                  return (
-                    <div key={folio.id} className="border-l-2 border-muted pl-4 ml-2 relative">
-                      <div className="flex items-center justify-between pt-3 pb-1">
-                        <p className="text-sm">
-                          <span className="font-medium">Folio {folioIdx + 1}</span>
-                          <span className="text-muted-foreground"> · </span>
-                          <span>{folio.formularios?.titulo || 'Registro'}</span>
-                          <span className="text-muted-foreground"> · </span>
-                          <span className="text-xs text-muted-foreground">
-                            {format(new Date(folio.created_at), "dd/MM/yyyy HH:mm")}
-                          </span>
-                        </p>
-                        <div className="flex items-center gap-1 print:hidden">
-                          <Button variant="ghost" size="sm" className="h-7 w-7 p-0" title="Imprimir folio">
-                            <Printer className="w-3.5 h-3.5 text-muted-foreground" />
-                          </Button>
-                        </div>
-                      </div>
-                      <div className="space-y-1 pb-3">
-                        {preguntas.map((q: any) => {
-                          const val = respData[q.id];
-                          if (val === undefined || val === null || val === '') return null;
-                          return (
-                            <div key={q.id} className="text-sm">
-                              <span className="font-medium text-muted-foreground">{q.title}:</span>{' '}
-                              <span className="text-foreground">{formatValue(val)}</span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                      {folioCorrecciones.map(c => (
-                        <div key={c.id} className="bg-amber-50/50 dark:bg-amber-950/20 border-l-2 border-amber-400 p-3 mb-2 rounded-r text-xs">
-                          <div className="flex items-center gap-1.5 font-medium mb-1">
-                            <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />
-                            <span>{TIPO_LABELS[c.tipo_correccion] || 'Corrección'}</span>
-                            <span className="text-muted-foreground font-normal">
-                              — {format(new Date(c.created_at), "dd/MM/yyyy HH:mm")} por {c.medico_nombre}
-                            </span>
-                          </div>
-                        </div>
-                      ))}
-                      {folioIdx < unlinkedRegistros.length - 1 && (
-                        <div className="border-b border-dashed my-1" />
-                      )}
-                    </div>
-                  );
-                })}
+                {unlinkedRegistros.map((folio, folioIdx) => (
+                  <FolioRow
+                    key={folio.id}
+                    folio={folio}
+                    folioNumber={folioIdx + 1}
+                    canCorrect={canCorrect}
+                    hasCorrections={(correccionesByRespuesta[folio.id] || []).length > 0}
+                    onView={() => setSelectedFolio({ respuesta: folio, admision: null, folioNumber: folioIdx + 1 })}
+                    onPrint={() => printFolio(folio, null as any)}
+                    onCorrect={() => {
+                      setCorrectionTarget({ respuesta: folio, admisionId: '' });
+                      setCorrForm({ campo_corregido: '', valor_nuevo: '', motivo: '', tipo_correccion: 'amendment' });
+                      setCorrErrors({});
+                    }}
+                    isLast={folioIdx === unlinkedRegistros.length - 1}
+                  />
+                ))}
               </div>
             </CollapsibleContent>
           </Collapsible>
         )}
       </div>
 
-      {/* ── Correction Dialog ─────────────────────────── */}
-      <Dialog open={!!correctionTarget} onOpenChange={(open) => { if (!open) setCorrectionTarget(null); }}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <PenLine className="w-4 h-4" />
-              Registrar corrección
-            </DialogTitle>
-            <DialogDescription>
-              Las correcciones son inmutables y quedan registradas como parte del expediente clínico.
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-4">
-            {/* Field to correct */}
-            <div className="space-y-1.5">
-              <Label className="text-xs">Campo a corregir *</Label>
-              <Select value={corrForm.campo_corregido} onValueChange={v => setCorrForm(p => ({ ...p, campo_corregido: v }))}>
-                <SelectTrigger className="text-sm">
-                  <SelectValue placeholder="Seleccionar campo" />
-                </SelectTrigger>
-                <SelectContent>
-                  {correctionTarget && getQuestionsForRespuesta(correctionTarget.respuesta).map((q: any) => (
-                    <SelectItem key={q.id} value={q.id}>{q.title}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {corrErrors.campo_corregido && <p className="text-xs text-destructive">{corrErrors.campo_corregido}</p>}
-            </div>
-
-            {/* Previous value (readonly) */}
-            {corrForm.campo_corregido && correctionTarget && (
-              <div className="space-y-1.5">
-                <Label className="text-xs">Valor anterior</Label>
-                <div className="p-2 rounded-md bg-muted text-sm min-h-[36px]">
-                  {formatValue((correctionTarget.respuesta.datos_respuesta as Record<string, any>)[corrForm.campo_corregido])}
-                </div>
-              </div>
-            )}
-
-            {/* New value */}
-            <div className="space-y-1.5">
-              <Label className="text-xs">Valor nuevo (opcional)</Label>
-              <Textarea
-                value={corrForm.valor_nuevo}
-                onChange={e => setCorrForm(p => ({ ...p, valor_nuevo: e.target.value }))}
-                placeholder="Dejar vacío para notas aclaratorias"
-                className="text-sm min-h-[60px]"
-              />
-            </div>
-
-            {/* Type */}
-            <div className="space-y-1.5">
-              <Label className="text-xs">Tipo de corrección *</Label>
-              <Select value={corrForm.tipo_correccion} onValueChange={v => setCorrForm(p => ({ ...p, tipo_correccion: v }))}>
-                <SelectTrigger className="text-sm">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="amendment">Corrección — Se corrige un error</SelectItem>
-                  <SelectItem value="addendum">Adición — Se agrega información</SelectItem>
-                  <SelectItem value="clarification">Aclaración — Se aclara sin cambiar valor</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Reason */}
-            <div className="space-y-1.5">
-              <Label className="text-xs">Motivo * (mínimo 10 caracteres)</Label>
-              <Textarea
-                value={corrForm.motivo}
-                onChange={e => setCorrForm(p => ({ ...p, motivo: e.target.value }))}
-                placeholder="Explique el motivo de la corrección..."
-                className="text-sm min-h-[80px]"
-              />
-              {corrErrors.motivo && <p className="text-xs text-destructive">{corrErrors.motivo}</p>}
-            </div>
-          </div>
-
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button variant="outline" size="sm">Cancelar</Button>
-            </DialogClose>
-            <Button size="sm" onClick={handleSubmitCorrection} disabled={createCorrection.isPending}>
-              {createCorrection.isPending ? 'Guardando...' : 'Guardar corrección'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Correction Dialog */}
+      <CorrectionDialog
+        correctionTarget={correctionTarget}
+        setCorrectionTarget={setCorrectionTarget}
+        corrForm={corrForm}
+        setCorrForm={setCorrForm}
+        corrErrors={corrErrors}
+        handleSubmitCorrection={handleSubmitCorrection}
+        createCorrection={createCorrection}
+        getQuestionsForRespuesta={getQuestionsForRespuesta}
+        formatValue={formatValue}
+      />
     </div>
   );
 };
+
+// ── Compact Folio Row ────────────────────────────────────
+interface FolioRowProps {
+  folio: RespuestaFormulario;
+  folioNumber: number;
+  canCorrect: boolean;
+  hasCorrections: boolean;
+  onView: () => void;
+  onPrint: () => void;
+  onCorrect: () => void;
+  isLast: boolean;
+}
+
+const FolioRow: React.FC<FolioRowProps> = ({
+  folio, folioNumber, canCorrect, hasCorrections, onView, onPrint, onCorrect, isLast,
+}) => (
+  <div className={`flex items-center justify-between py-2 pl-4 ml-2 border-l-2 border-muted ${!isLast ? 'border-b border-dashed' : ''}`}>
+    <div className="flex items-center gap-2 min-w-0 flex-1">
+      <span className="text-sm font-medium shrink-0">Folio {folioNumber}</span>
+      <span className="text-muted-foreground text-xs">·</span>
+      <span className="text-sm truncate">{folio.formularios?.titulo || 'Registro'}</span>
+      <span className="text-muted-foreground text-xs">·</span>
+      <span className="text-xs text-muted-foreground shrink-0">
+        {format(new Date(folio.created_at), "dd/MM/yyyy HH:mm")}
+      </span>
+      {hasCorrections && (
+        <span title="Tiene correcciones"><AlertTriangle className="w-3 h-3 text-amber-500 shrink-0" /></span>
+      )}
+    </div>
+    <div className="flex items-center gap-0.5 shrink-0 print:hidden">
+      <Button variant="ghost" size="sm" className="h-7 w-7 p-0" title="Ver registro" onClick={onView}>
+        <Eye className="w-3.5 h-3.5 text-muted-foreground" />
+      </Button>
+      <Button variant="ghost" size="sm" className="h-7 w-7 p-0" title="Imprimir folio" onClick={onPrint}>
+        <Printer className="w-3.5 h-3.5 text-muted-foreground" />
+      </Button>
+      {canCorrect && (
+        <Button variant="ghost" size="sm" className="h-7 w-7 p-0" title="Corregir" onClick={onCorrect}>
+          <PenLine className="w-3.5 h-3.5 text-muted-foreground" />
+        </Button>
+      )}
+    </div>
+  </div>
+);
 
 // ── Admision Section (Collapsible) ───────────────────────
 interface AdmisionSectionProps {
@@ -570,20 +626,17 @@ interface AdmisionSectionProps {
   canCorrect: boolean;
   onCorrect: (resp: RespuestaFormulario) => void;
   onPrintFolio: (resp: RespuestaFormulario) => void;
-  getQuestionLabel: (resp: RespuestaFormulario, key: string) => string;
-  getQuestionsForRespuesta: (resp: RespuestaFormulario) => any[];
-  formatValue: (val: any) => string;
+  onViewFolio: (resp: RespuestaFormulario, folioIdx: number) => void;
 }
 
 const AdmisionSection: React.FC<AdmisionSectionProps> = ({
   admision, folios, defaultOpen, correccionesByRespuesta, canCorrect,
-  onCorrect, onPrintFolio, getQuestionLabel, getQuestionsForRespuesta, formatValue,
+  onCorrect, onPrintFolio, onViewFolio,
 }) => {
   const [open, setOpen] = useState(defaultOpen);
 
   return (
     <Collapsible open={open} onOpenChange={setOpen} className="print:break-before-page">
-      {/* Admission header */}
       <CollapsibleTrigger className="w-full text-left group">
         <div className="flex items-start gap-2 py-3 hover:bg-muted/30 -mx-2 px-2 rounded transition-colors">
           {open
@@ -605,6 +658,9 @@ const AdmisionSection: React.FC<AdmisionSectionProps> = ({
               }`}>
                 {admision.estado === 'en_curso' ? 'En curso' : admision.estado}
               </span>
+              <span className="text-xs text-muted-foreground">
+                · {folios.length} {folios.length === 1 ? 'folio' : 'folios'}
+              </span>
             </div>
             <p className="text-xs text-muted-foreground mt-0.5">
               {admision.profesional_nombre || 'Sin profesional'}
@@ -618,91 +674,128 @@ const AdmisionSection: React.FC<AdmisionSectionProps> = ({
         {folios.length === 0 ? (
           <p className="text-xs text-muted-foreground pl-6 pb-4">Sin registros clínicos en este ingreso.</p>
         ) : (
-          <div className="pl-2 mb-6">
-            {folios.map((folio, folioIdx) => {
-              const preguntas = getQuestionsForRespuesta(folio);
-              const respData = folio.datos_respuesta as Record<string, any>;
-              const folioCorrecciones = correccionesByRespuesta[folio.id] || [];
-
-              return (
-                <div key={folio.id} className="border-l-2 border-muted pl-4 ml-2 relative">
-                  {/* Folio header */}
-                  <div className="flex items-center justify-between pt-3 pb-1">
-                    <p className="text-sm">
-                      <span className="font-medium">Folio {folioIdx + 1}</span>
-                      <span className="text-muted-foreground"> · </span>
-                      <span>{folio.formularios?.titulo || 'Registro'}</span>
-                      <span className="text-muted-foreground"> · </span>
-                      <span className="text-xs text-muted-foreground">
-                        {format(new Date(folio.created_at), "dd/MM/yyyy HH:mm")}
-                      </span>
-                    </p>
-                    <div className="flex items-center gap-1 print:hidden">
-                      <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => onPrintFolio(folio)} title="Imprimir folio">
-                        <Printer className="w-3.5 h-3.5 text-muted-foreground" />
-                      </Button>
-                      {canCorrect && (
-                        <Button variant="ghost" size="sm" className="h-7 gap-1 px-2 text-xs" onClick={() => onCorrect(folio)}>
-                          <PenLine className="w-3.5 h-3.5" />
-                          Corregir
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Folio content — question/answer pairs */}
-                  <div className="space-y-1 pb-3">
-                    {preguntas.map((q: any) => {
-                      const val = respData[q.id];
-                      if (val === undefined || val === null || val === '') return null;
-                      return (
-                        <div key={q.id} className="text-sm">
-                          <span className="font-medium text-muted-foreground">{q.title}:</span>{' '}
-                          <span className="text-foreground">{formatValue(val)}</span>
-                        </div>
-                      );
-                    })}
-                  </div>
-
-                  {/* Corrections */}
-                  {folioCorrecciones.map(c => (
-                    <div key={c.id} className="bg-amber-50/50 dark:bg-amber-950/20 border-l-2 border-amber-400 p-3 mb-2 rounded-r text-xs">
-                      <div className="flex items-center gap-1.5 font-medium mb-1">
-                        <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />
-                        <span>{TIPO_LABELS[c.tipo_correccion] || 'Corrección'}</span>
-                        <span className="text-muted-foreground font-normal">
-                          — {format(new Date(c.created_at), "dd/MM/yyyy HH:mm")} por {c.medico_nombre}
-                        </span>
-                      </div>
-                      <p>
-                        <span className="font-medium">Campo:</span> {getQuestionLabel(folio, c.campo_corregido)}
-                      </p>
-                      <p>
-                        <span className="font-medium">Motivo:</span> "{c.motivo}"
-                      </p>
-                      {c.valor_anterior != null && (
-                        <p>
-                          <span className="font-medium">Antes:</span> {formatValue(c.valor_anterior)}
-                          {c.valor_nuevo != null && (
-                            <> → <span className="font-medium">Después:</span> {formatValue(c.valor_nuevo)}</>
-                          )}
-                        </p>
-                      )}
-                    </div>
-                  ))}
-
-                  {/* Separator between folios */}
-                  {folioIdx < folios.length - 1 && (
-                    <div className="border-b border-dashed my-1" />
-                  )}
-                </div>
-              );
-            })}
+          <div className="mb-4">
+            {folios.map((folio, folioIdx) => (
+              <FolioRow
+                key={folio.id}
+                folio={folio}
+                folioNumber={folioIdx + 1}
+                canCorrect={canCorrect}
+                hasCorrections={(correccionesByRespuesta[folio.id] || []).length > 0}
+                onView={() => onViewFolio(folio, folioIdx)}
+                onPrint={() => onPrintFolio(folio)}
+                onCorrect={() => onCorrect(folio)}
+                isLast={folioIdx === folios.length - 1}
+              />
+            ))}
           </div>
         )}
       </CollapsibleContent>
     </Collapsible>
   );
 };
+
+// ── Correction Dialog ────────────────────────────────────
+interface CorrectionDialogProps {
+  correctionTarget: { respuesta: RespuestaFormulario; admisionId: string } | null;
+  setCorrectionTarget: (v: any) => void;
+  corrForm: any;
+  setCorrForm: (v: any) => void;
+  corrErrors: Record<string, string>;
+  handleSubmitCorrection: () => void;
+  createCorrection: any;
+  getQuestionsForRespuesta: (r: RespuestaFormulario) => any[];
+  formatValue: (v: any) => string;
+}
+
+const CorrectionDialog: React.FC<CorrectionDialogProps> = ({
+  correctionTarget, setCorrectionTarget, corrForm, setCorrForm,
+  corrErrors, handleSubmitCorrection, createCorrection,
+  getQuestionsForRespuesta, formatValue,
+}) => (
+  <Dialog open={!!correctionTarget} onOpenChange={(open) => { if (!open) setCorrectionTarget(null); }}>
+    <DialogContent className="max-w-lg">
+      <DialogHeader>
+        <DialogTitle className="flex items-center gap-2">
+          <PenLine className="w-4 h-4" />
+          Registrar corrección
+        </DialogTitle>
+        <DialogDescription>
+          Las correcciones son inmutables y quedan registradas como parte del expediente clínico.
+        </DialogDescription>
+      </DialogHeader>
+
+      <div className="space-y-4">
+        <div className="space-y-1.5">
+          <Label className="text-xs">Campo a corregir *</Label>
+          <Select value={corrForm.campo_corregido} onValueChange={(v: string) => setCorrForm((p: any) => ({ ...p, campo_corregido: v }))}>
+            <SelectTrigger className="text-sm">
+              <SelectValue placeholder="Seleccionar campo" />
+            </SelectTrigger>
+            <SelectContent>
+              {correctionTarget && getQuestionsForRespuesta(correctionTarget.respuesta).map((q: any) => (
+                <SelectItem key={q.id} value={q.id}>{q.title}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {corrErrors.campo_corregido && <p className="text-xs text-destructive">{corrErrors.campo_corregido}</p>}
+        </div>
+
+        {corrForm.campo_corregido && correctionTarget && (
+          <div className="space-y-1.5">
+            <Label className="text-xs">Valor anterior</Label>
+            <div className="p-2 rounded-md bg-muted text-sm min-h-[36px]">
+              {formatValue((correctionTarget.respuesta.datos_respuesta as Record<string, any>)[corrForm.campo_corregido])}
+            </div>
+          </div>
+        )}
+
+        <div className="space-y-1.5">
+          <Label className="text-xs">Valor nuevo (opcional)</Label>
+          <Textarea
+            value={corrForm.valor_nuevo}
+            onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setCorrForm((p: any) => ({ ...p, valor_nuevo: e.target.value }))}
+            placeholder="Dejar vacío para notas aclaratorias"
+            className="text-sm min-h-[60px]"
+          />
+        </div>
+
+        <div className="space-y-1.5">
+          <Label className="text-xs">Tipo de corrección *</Label>
+          <Select value={corrForm.tipo_correccion} onValueChange={(v: string) => setCorrForm((p: any) => ({ ...p, tipo_correccion: v }))}>
+            <SelectTrigger className="text-sm">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="amendment">Corrección — Se corrige un error</SelectItem>
+              <SelectItem value="addendum">Adición — Se agrega información</SelectItem>
+              <SelectItem value="clarification">Aclaración — Se aclara sin cambiar valor</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-1.5">
+          <Label className="text-xs">Motivo * (mínimo 10 caracteres)</Label>
+          <Textarea
+            value={corrForm.motivo}
+            onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setCorrForm((p: any) => ({ ...p, motivo: e.target.value }))}
+            placeholder="Explique el motivo de la corrección..."
+            className="text-sm min-h-[80px]"
+          />
+          {corrErrors.motivo && <p className="text-xs text-destructive">{corrErrors.motivo}</p>}
+        </div>
+      </div>
+
+      <DialogFooter>
+        <DialogClose asChild>
+          <Button variant="outline" size="sm">Cancelar</Button>
+        </DialogClose>
+        <Button size="sm" onClick={handleSubmitCorrection} disabled={createCorrection.isPending}>
+          {createCorrection.isPending ? 'Guardando...' : 'Guardar corrección'}
+        </Button>
+      </DialogFooter>
+    </DialogContent>
+  </Dialog>
+);
 
 export default RegistroAtenciones;
