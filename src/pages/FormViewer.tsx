@@ -77,6 +77,8 @@ const FormViewer = () => {
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [pendingValues, setPendingValues] = useState<any>(null);
   const [showRegistro, setShowRegistro] = useState(false);
+  const [isRegistroDetail, setIsRegistroDetail] = useState(false);
+  const clearRegistroDetailRef = useRef<(() => void) | null>(null);
   const { toast: uiToast } = useToast();
 
   // Panel resize state
@@ -491,9 +493,17 @@ const FormViewer = () => {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            {showRegistro ? (
+            {showRegistro && isRegistroDetail ? (
+              <Button variant="outline" size="sm" className="gap-1.5 h-8 text-xs" onClick={() => {
+                clearRegistroDetailRef.current?.();
+              }}>
+                <ArrowLeft className="w-3.5 h-3.5" />
+                Volver al listado
+              </Button>
+            ) : showRegistro ? (
               <Button variant="outline" size="sm" className="gap-1.5 h-8 text-xs" onClick={() => {
                 setShowRegistro(false);
+                setIsRegistroDetail(false);
                 // Restore previous panel state
                 if (panelStateBeforeRegistroRef.current !== null) {
                   setIsCollapsed(panelStateBeforeRegistroRef.current);
@@ -555,6 +565,8 @@ const FormViewer = () => {
             <RegistroAtenciones
               patientId={patientId}
               headerConfig={headerConfig}
+              onDetailChange={setIsRegistroDetail}
+              clearDetailRef={clearRegistroDetailRef}
             />
           ) : (
             <>
