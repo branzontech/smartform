@@ -354,10 +354,10 @@ const FormViewer = () => {
   }
 
   return (
-    <div className={`${showPatientPanel ? 'min-h-screen' : 'container py-12'} print:py-6 print:mx-0 print:w-full print:max-w-none`}>
+    <div className={`${showPatientPanel ? 'h-[calc(100vh-5rem)] overflow-hidden' : 'container py-12'} print:py-6 print:mx-0 print:w-full print:max-w-none`}>
       <div className="hidden print:block text-center mb-6">
         <h1 className="text-2xl font-bold">{formTitle}</h1>
-        {formDescription && <p className="text-gray-600">{formDescription}</p>}
+        {formDescription && <p className="text-muted-foreground">{formDescription}</p>}
       </div>
 
       {!showPatientPanel && (
@@ -368,10 +368,10 @@ const FormViewer = () => {
       
       {showPatientPanel ? (
         // Two-column layout for consultation forms
-        <div className="flex h-screen">
-          {/* Main form column */}
-          <div className="flex-1 flex flex-col overflow-hidden">
-            <div className="print:hidden bg-white border-b p-4">
+        <div className="grid grid-cols-[1fr_380px] h-full gap-0">
+          {/* Left column — form with scroll */}
+          <div className="overflow-y-auto">
+            <div className="print:hidden bg-card border-b p-4 sticky top-0 z-10">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
                   <BackButton />
@@ -405,51 +405,49 @@ const FormViewer = () => {
               </div>
               
               {isConsultationForm && (
-                <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                  <p className="text-blue-700 dark:text-blue-300 text-sm font-medium">
+                <div className="mt-3 p-3 bg-primary/5 rounded-lg border border-primary/20">
+                  <p className="text-primary text-sm font-medium">
                     Consulta médica en curso - Complete el formulario de atención
                   </p>
                 </div>
               )}
               
               {showPatientPanel && !isConsultationForm && (
-                <div className="mt-3 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
-                  <p className="text-green-700 dark:text-green-300 text-sm font-medium">
+                <div className="mt-3 p-3 bg-accent/50 rounded-lg border border-accent">
+                  <p className="text-accent-foreground text-sm font-medium">
                     Formulario para paciente - Historial médico disponible en el panel lateral
                   </p>
                 </div>
               )}
             </div>
             
-            <div className="flex-1 overflow-auto">
-              <div className="p-6 bg-background">
-                <FormHeaderPreview config={headerConfig} formTitle={formTitle} />
-                <FormProvider {...form}>
-                  <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-                      {questions.map(question => (
-                        <QuestionRenderer
-                          key={question.id}
-                          question={question}
-                          formData={formData}
-                          onChange={handleInputChange}
-                          errors={form.formState.errors}
-                        />
-                      ))}
-                      <div className="sticky bottom-0 bg-background pt-4 border-t">
-                        <Button type="submit" className="w-full print:hidden">
-                          Completar atención
-                        </Button>
-                      </div>
-                    </form>
-                  </Form>
-                </FormProvider>
-              </div>
+            <div className="p-6 bg-background">
+              <FormHeaderPreview config={headerConfig} formTitle={formTitle} />
+              <FormProvider {...form}>
+                <Form {...form}>
+                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 max-w-none">
+                    {questions.map(question => (
+                      <QuestionRenderer
+                        key={question.id}
+                        question={question}
+                        formData={formData}
+                        onChange={handleInputChange}
+                        errors={form.formState.errors}
+                      />
+                    ))}
+                    <div className="sticky bottom-0 bg-background pt-4 pb-2 border-t">
+                      <Button type="submit" className="w-full print:hidden">
+                        Completar atención
+                      </Button>
+                    </div>
+                  </form>
+                </Form>
+              </FormProvider>
             </div>
           </div>
           
-          {/* Patient history side panel */}
-          <div className="w-80 border-l bg-muted/30 print:hidden">
+          {/* Right column — patient history, independent scroll */}
+          <div className="border-l bg-muted/30 overflow-y-auto print:hidden">
             <PatientHistoryPanel patientId={patientId} className="h-full" />
           </div>
         </div>

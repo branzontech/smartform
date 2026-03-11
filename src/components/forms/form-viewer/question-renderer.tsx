@@ -59,10 +59,10 @@ export const QuestionRenderer = ({ question, formData, onChange, errors }: Quest
           name={question.id}
           rules={{ required: question.required }}
           render={({ field }) => (
-            <FormItem>
+            <FormItem className="w-full">
               <FormLabel>{question.title}</FormLabel>
               <FormControl>
-                <Textarea {...field} placeholder="Párrafo" rows={3} required={question.required} />
+                <Textarea {...field} placeholder="Párrafo" rows={4} required={question.required} className="w-full min-h-[120px] resize-y" />
               </FormControl>
               <FormMessage />
             </FormItem>
