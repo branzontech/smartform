@@ -20,6 +20,7 @@ import type {
   ClienteCotizacion,
   ConfiguracionCotizaciones,
   CotizacionItemDraft,
+  EstadoCotizacion,
 } from "@/types/cotizacion-types";
 
 const clienteSchema = z.object({
@@ -296,7 +297,7 @@ const CotizacionForm = ({ editId, onCancel, onSaved }: Props) => {
 
   // --- Save ---
   const saveMutation = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (targetEstado: EstadoCotizacion) => {
       if (!selectedCliente) throw new Error("Selecciona un cliente");
       if (items.length === 0) throw new Error("Agrega al menos un servicio");
       if (!user?.id) throw new Error("No autenticado");
@@ -313,6 +314,7 @@ const CotizacionForm = ({ editId, onCancel, onSaved }: Props) => {
         moneda,
         observaciones: observaciones || null,
         leyenda_validez: leyendaValidez || null,
+        estado: targetEstado,
       } as any;
 
       let cotId: string;
@@ -332,7 +334,6 @@ const CotizacionForm = ({ editId, onCancel, onSaved }: Props) => {
         // INSERT new
         cotData.numero_cotizacion = "";
         cotData.fecha_emision = format(new Date(), "yyyy-MM-dd");
-        cotData.estado = "borrador";
         cotData.creado_por = user.id;
 
         const { data: cotizacion, error: cotError } = await supabase
@@ -362,11 +363,17 @@ const CotizacionForm = ({ editId, onCancel, onSaved }: Props) => {
 
       if (itemsError) throw itemsError;
     },
-    onSuccess: () => {
+    onSuccess: (_, targetEstado) => {
       queryClient.invalidateQueries({ queryKey: ["cotizaciones"] });
       queryClient.invalidateQueries({ queryKey: ["cotizacion", editId] });
       queryClient.invalidateQueries({ queryKey: ["cotizacion-items", editId] });
-      toast.success(isEditing ? "Cotización actualizada" : "Cotización guardada como borrador");
+
+      if (targetEstado === "enviada") {
+        toast.success(isEditing ? "Cotización oficializada y actualizada" : "Cotización guardada y oficializada");
+      } else {
+        toast.success(isEditing ? "Cotización actualizada" : "Cotización guardada como borrador");
+      }
+
       onSaved();
     },
     onError: (err: any) => {
@@ -664,8 +671,15 @@ const CotizacionForm = ({ editId, onCancel, onSaved }: Props) => {
           {/* Actions */}
           <div className="flex items-center justify-end gap-3 pb-6 pt-2">
             <Button variant="outline" onClick={onCancel}>Cancelar</Button>
-            <Button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending} className="shadow-sm">
+            <Button
+              variant="outline"
+              onClick={() => saveMutation.mutate(isEditing ? ((existingCot?.estado as EstadoCotizacion) || "borrador") : "borrador")}
+              disabled={saveMutation.isPending}
+            >
               {saveMutation.isPending ? "Guardando..." : isEditing ? "Guardar cambios" : "Guardar borrador"}
+            </Button>
+            <Button onClick={() => saveMutation.mutate("enviada")} disabled={saveMutation.isPending} className="shadow-sm">
+              {saveMutation.isPending ? "Guardando..." : "Guardar y oficializar"}
             </Button>
           </div>
         </div>
