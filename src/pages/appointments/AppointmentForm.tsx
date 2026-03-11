@@ -314,14 +314,11 @@ const AppointmentForm = () => {
 
   if (loading) {
     return (
-      <div className="h-screen flex flex-col bg-background overflow-hidden">
-        <Header />
-        <div className="flex-1 flex items-center justify-center">
-          <div className="animate-pulse text-center">
-            <div className="h-16 w-16 bg-primary/20 rounded-3xl mb-6 mx-auto"></div>
-            <div className="h-6 w-48 bg-muted rounded-xl mb-4 mx-auto"></div>
-            <div className="h-4 w-64 bg-muted/50 rounded-lg mx-auto"></div>
-          </div>
+      <div className="h-full flex items-center justify-center">
+        <div className="animate-pulse text-center">
+          <div className="h-16 w-16 bg-primary/20 rounded-3xl mb-6 mx-auto"></div>
+          <div className="h-6 w-48 bg-muted rounded-xl mb-4 mx-auto"></div>
+          <div className="h-4 w-64 bg-muted/50 rounded-lg mx-auto"></div>
         </div>
       </div>
     );
