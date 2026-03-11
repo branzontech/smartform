@@ -226,6 +226,20 @@ const FormViewer = () => {
             }
           }
           
+          // Restore draft from localStorage if available
+          try {
+            const savedDraft = localStorage.getItem(draftKey);
+            if (savedDraft) {
+              const draftData = JSON.parse(savedDraft);
+              setFormData(prev => ({ ...prev, ...draftData }));
+              toast("Borrador restaurado", {
+                description: "Se recuperaron los datos que no habías guardado",
+                icon: <Check size={16} className="text-primary" />,
+              });
+            }
+          } catch { /* corrupt draft — ignore */ }
+          draftRestoredRef.current = true;
+
         } catch (error) {
           console.error('Error loading form:', error);
           setError("Error al cargar el formulario");
