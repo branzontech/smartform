@@ -360,9 +360,9 @@ export const RegistroAtenciones: React.FC<RegistroAtencionesProps> = ({
       </div>
 
       {/* Empty state */}
-      {filteredAdmisiones.length === 0 && (
+      {filteredAdmisiones.length === 0 && unlinkedRegistros.length === 0 && (
         <p className="text-sm text-muted-foreground text-center py-8">
-          No se encontraron ingresos para este paciente.
+          No se encontraron registros clínicos para este paciente.
         </p>
       )}
 
@@ -390,6 +390,82 @@ export const RegistroAtenciones: React.FC<RegistroAtencionesProps> = ({
             />
           );
         })}
+
+        {/* Unlinked records (no admission linked) */}
+        {unlinkedRegistros.length > 0 && filterMedico === 'all' && (
+          <Collapsible defaultOpen={filteredAdmisiones.length === 0}>
+            <CollapsibleTrigger className="w-full text-left group">
+              <div className="flex items-start gap-2 py-3 hover:bg-muted/30 -mx-2 px-2 rounded transition-colors">
+                <ChevronDown className="w-4 h-4 mt-0.5 text-muted-foreground shrink-0 group-data-[state=closed]:hidden" />
+                <ChevronRight className="w-4 h-4 mt-0.5 text-muted-foreground shrink-0 group-data-[state=open]:hidden" />
+                <div className="flex-1 min-w-0">
+                  <span className="font-semibold text-sm uppercase tracking-wide">
+                    Registros sin ingreso vinculado
+                  </span>
+                  <span className="text-xs text-muted-foreground ml-2">
+                    ({unlinkedRegistros.length} {unlinkedRegistros.length === 1 ? 'registro' : 'registros'})
+                  </span>
+                </div>
+              </div>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <div className="pl-2 mb-6">
+                {unlinkedRegistros.map((folio, folioIdx) => {
+                  const preguntas = getQuestionsForRespuesta(folio);
+                  const respData = folio.datos_respuesta as Record<string, any>;
+                  const folioCorrecciones = correccionesByRespuesta[folio.id] || [];
+
+                  return (
+                    <div key={folio.id} className="border-l-2 border-muted pl-4 ml-2 relative">
+                      <div className="flex items-center justify-between pt-3 pb-1">
+                        <p className="text-sm">
+                          <span className="font-medium">Folio {folioIdx + 1}</span>
+                          <span className="text-muted-foreground"> · </span>
+                          <span>{folio.formularios?.titulo || 'Registro'}</span>
+                          <span className="text-muted-foreground"> · </span>
+                          <span className="text-xs text-muted-foreground">
+                            {format(new Date(folio.created_at), "dd/MM/yyyy HH:mm")}
+                          </span>
+                        </p>
+                        <div className="flex items-center gap-1 print:hidden">
+                          <Button variant="ghost" size="sm" className="h-7 w-7 p-0" title="Imprimir folio">
+                            <Printer className="w-3.5 h-3.5 text-muted-foreground" />
+                          </Button>
+                        </div>
+                      </div>
+                      <div className="space-y-1 pb-3">
+                        {preguntas.map((q: any) => {
+                          const val = respData[q.id];
+                          if (val === undefined || val === null || val === '') return null;
+                          return (
+                            <div key={q.id} className="text-sm">
+                              <span className="font-medium text-muted-foreground">{q.title}:</span>{' '}
+                              <span className="text-foreground">{formatValue(val)}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                      {folioCorrecciones.map(c => (
+                        <div key={c.id} className="bg-amber-50/50 dark:bg-amber-950/20 border-l-2 border-amber-400 p-3 mb-2 rounded-r text-xs">
+                          <div className="flex items-center gap-1.5 font-medium mb-1">
+                            <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />
+                            <span>{TIPO_LABELS[c.tipo_correccion] || 'Corrección'}</span>
+                            <span className="text-muted-foreground font-normal">
+                              — {format(new Date(c.created_at), "dd/MM/yyyy HH:mm")} por {c.medico_nombre}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                      {folioIdx < unlinkedRegistros.length - 1 && (
+                        <div className="border-b border-dashed my-1" />
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
+        )}
       </div>
 
       {/* ── Correction Dialog ─────────────────────────── */}
