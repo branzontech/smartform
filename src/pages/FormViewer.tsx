@@ -505,17 +505,17 @@ const FormViewer = () => {
               </Button>
             ) : (
               <Button
-                variant="outline"
-                size="sm"
-                className="gap-1.5 h-8 text-xs"
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 text-muted-foreground"
+                title="Registro de Atenciones"
                 onClick={() => {
                   panelStateBeforeRegistroRef.current = isCollapsed;
                   setIsCollapsed(true);
                   setShowRegistro(true);
                 }}
               >
-                <ClipboardList className="w-3.5 h-3.5" />
-                Registro de Atenciones
+                <ClipboardList className="w-4 h-4" />
               </Button>
             )}
             <DropdownMenu>
