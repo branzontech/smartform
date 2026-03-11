@@ -62,14 +62,16 @@ const FormViewer = () => {
   const [headerConfig, setHeaderConfig] = useState<any>(null);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [pendingValues, setPendingValues] = useState<any>(null);
+  const { toast: uiToast } = useToast();
 
-  useEffect(() => {
-    const loadForm = async () => {
+  // Get query parameters
   const queryParams = new URLSearchParams(location.search);
   const patientId = queryParams.get("patientId");
   const consultationId = queryParams.get("consultationId");
   const isEmbedded = queryParams.get("embedded") === "true";
 
+  useEffect(() => {
+    const loadForm = async () => {
   useEffect(() => {
     const loadForm = async () => {
   console.log("FormViewer - formId:", formId);
