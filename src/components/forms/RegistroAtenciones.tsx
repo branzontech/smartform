@@ -387,13 +387,13 @@ export const RegistroAtenciones: React.FC<RegistroAtencionesProps> = ({
               defaultOpen={admIdx === 0}
               correccionesByRespuesta={correccionesByRespuesta}
               canCorrect={canCorrect}
+              headerConfig={headerConfig}
               onCorrect={(resp) => {
                 setCorrectionTarget({ respuesta: resp, admisionId: admision.id });
                 setCorrForm({ campo_corregido: '', valor_nuevo: '', motivo: '', tipo_correccion: 'amendment' });
                 setCorrErrors({});
               }}
               onPrintFolio={(resp) => printFolio(resp, admision)}
-              onViewFolio={(resp, folioIdx) => setSelectedFolio({ respuesta: resp, admision, folioNumber: folioIdx + 1 })}
             />
           );
         })}
