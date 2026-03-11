@@ -482,7 +482,24 @@ const FormViewer = () => {
       <div className="shrink-0 print:hidden bg-card border-b px-6 py-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <BackButton />
+            <Button
+              variant="ghost"
+              onClick={() => {
+                if (patientId) {
+                  navigate(`/app/pacientes/nueva-consulta?patientId=${patientId}`);
+                } else {
+                  navigate(-1);
+                }
+              }}
+              className="group flex items-center gap-2 px-4 py-2 rounded-xl bg-card/60 backdrop-blur-md border border-border/50 hover:bg-primary/10 hover:border-primary/30 transition-all duration-200"
+            >
+              <div className="p-1.5 rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors">
+                <ArrowLeft className="h-4 w-4 text-primary" />
+              </div>
+              <span className="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors">
+                Volver
+              </span>
+            </Button>
             <div>
               <h1 className="text-lg font-semibold">{formTitle}</h1>
               {formDescription && (
