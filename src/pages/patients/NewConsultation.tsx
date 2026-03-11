@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Calendar as CalendarIcon, Clock, Save, FileText, ArrowRight, ArrowLeft, Bell, AlertTriangle, User, ClipboardList, Check, Stethoscope, Search, Loader2, Phone, Mail, MapPin, Shield, Briefcase, CreditCard, Hash, Heart } from "lucide-react";
+import { Clock, Save, FileText, ArrowRight, ArrowLeft, Bell, AlertTriangle, User, ClipboardList, Check, Stethoscope, Search, Loader2, Phone, Mail, MapPin, Shield, Briefcase, CreditCard, Hash, Heart } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Calendar } from "@/components/ui/calendar";
