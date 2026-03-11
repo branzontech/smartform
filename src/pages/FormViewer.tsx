@@ -492,7 +492,14 @@ const FormViewer = () => {
           </div>
           <div className="flex items-center gap-2">
             {showRegistro ? (
-              <Button variant="outline" size="sm" className="gap-1.5 h-8 text-xs" onClick={() => setShowRegistro(false)}>
+              <Button variant="outline" size="sm" className="gap-1.5 h-8 text-xs" onClick={() => {
+                setShowRegistro(false);
+                // Restore previous panel state
+                if (panelStateBeforeRegistroRef.current !== null) {
+                  setIsCollapsed(panelStateBeforeRegistroRef.current);
+                  panelStateBeforeRegistroRef.current = null;
+                }
+              }}>
                 <ArrowLeft className="w-3.5 h-3.5" />
                 Volver al formulario
               </Button>
@@ -501,7 +508,11 @@ const FormViewer = () => {
                 variant="outline"
                 size="sm"
                 className="gap-1.5 h-8 text-xs"
-                onClick={() => setShowRegistro(true)}
+                onClick={() => {
+                  panelStateBeforeRegistroRef.current = isCollapsed;
+                  setIsCollapsed(true);
+                  setShowRegistro(true);
+                }}
               >
                 <ClipboardList className="w-3.5 h-3.5" />
                 Registro de Atenciones
