@@ -19,7 +19,7 @@ import { QuestionRenderer } from '@/components/forms/form-viewer/question-render
 import { QuestionData } from '@/components/forms/question/types';
 import { FormTitle } from '@/components/ui/form-title';
 import { BackButton } from '@/App';
-import { Check, Link as LinkIcon, FileText, Printer } from 'lucide-react';
+import { Check, Link as LinkIcon, FileText, Printer, AlertTriangle, CalendarIcon, ClipboardList } from 'lucide-react';
 import { toast } from "sonner";
 import { Form as FormType } from './FormsPage';
 import { FormLoading } from '@/components/forms/form-viewer/form-loading';
@@ -29,6 +29,19 @@ import { createDynamicSchema, fetchFormById, saveFormResponse } from '@/utils/fo
 import { useToast } from '@/hooks/use-toast';
 import { PatientHistoryPanel } from '@/components/patients/PatientHistoryPanel';
 import { FormHeaderPreview } from '@/components/forms/FormHeaderPreview';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { format } from "date-fns";
+import { es } from "date-fns/locale";
+import { Badge } from "@/components/ui/badge";
 
 interface FormData {
   [key: string]: any;
@@ -47,6 +60,8 @@ const FormViewer = () => {
   const [error, setError] = useState("");
   const [submitted, setSubmitted] = useState(false);
   const [headerConfig, setHeaderConfig] = useState<any>(null);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [pendingValues, setPendingValues] = useState<any>(null);
   const { toast: uiToast } = useToast();
 
   // Get query parameters
@@ -146,9 +161,7 @@ const FormViewer = () => {
   };
 
   const onSubmit = async (values: z.infer<typeof dynamicSchema>) => {
-    console.log("Formulario enviado:", values);
-    
-    // Process any special field types that need additional handling
+    // Process values before showing confirmation
     const processedValues = { ...values };
     
     questions.forEach(question => {
@@ -176,11 +189,17 @@ const FormViewer = () => {
         processedValues[question.id] = multifieldValues;
       }
     });
-    
-    // Remove internal fields for clean DB storage
-    const { _patientId, _consultationId, ...cleanData } = processedValues;
 
-    // Save to respuestas_formularios (FHIR QuestionnaireResponse) in DB
+    setPendingValues(processedValues);
+    setShowConfirmModal(true);
+  };
+
+  const handleConfirmSave = async () => {
+    if (!pendingValues) return;
+    setShowConfirmModal(false);
+
+    const { _patientId, _consultationId, ...cleanData } = pendingValues;
+
     if (formId && patientId) {
       const { data: { user } } = await supabase.auth.getUser();
       const medicoId = user?.id;
@@ -214,17 +233,10 @@ const FormViewer = () => {
         return;
       }
     } else if (formId) {
-      // Fallback for public/anonymous forms without patient context
-      processedValues._patientId = patientId || undefined;
-      processedValues._consultationId = consultationId || undefined;
-      saveFormResponse(formId, processedValues);
+      pendingValues._patientId = patientId || undefined;
+      pendingValues._consultationId = consultationId || undefined;
+      saveFormResponse(formId, pendingValues);
     }
-    
-    setSubmitted(true);
-    toast("Formulario enviado correctamente", {
-      description: "Gracias por completar el formulario",
-      duration: 5000,
-    });
 
     if (isEmbedded && formId) {
       window.parent.postMessage({
@@ -232,17 +244,43 @@ const FormViewer = () => {
         formId: formId
       }, '*');
     }
+
+    // Show success — stay on the same page
+    uiToast({
+      title: "✅ Formulario guardado exitosamente",
+      description: `${formTitle} — ${format(new Date(), "d 'de' MMMM 'de' yyyy, HH:mm", { locale: es })}`,
+    });
+
+    setPendingValues(null);
+  };
+
+  // Build summary of filled fields for confirmation modal
+  const getFilledFieldsSummary = () => {
+    if (!pendingValues) return [];
+    const summary: { label: string; value: string; isEmpty: boolean }[] = [];
     
-    if (patientId && consultationId && !isEmbedded) {
-      uiToast({
-        title: "Formulario guardado",
-        description: "El formulario ha sido guardado correctamente para esta consulta.",
-      });
+    questions.forEach(q => {
+      if (q.type === "section") return;
+      const val = pendingValues[q.id];
+      let displayValue = "";
+      let isEmpty = false;
       
-      setTimeout(() => {
-        navigate(`/pacientes/${patientId}`);
-      }, 2000);
-    }
+      if (val === undefined || val === null || val === "" || (Array.isArray(val) && val.length === 0)) {
+        displayValue = "Sin completar";
+        isEmpty = true;
+      } else if (typeof val === "object" && !Array.isArray(val)) {
+        displayValue = Object.values(val).filter(Boolean).join(", ") || "Sin completar";
+        isEmpty = !Object.values(val).some(Boolean);
+      } else if (Array.isArray(val)) {
+        displayValue = val.join(", ");
+      } else {
+        displayValue = String(val).length > 80 ? String(val).substring(0, 80) + "..." : String(val);
+      }
+      
+      summary.push({ label: q.title, value: displayValue, isEmpty });
+    });
+    
+    return summary;
   };
 
   const copyFormLinkToClipboard = () => {
@@ -467,6 +505,72 @@ const FormViewer = () => {
           </div>
         </div>
       )}
+
+      {/* Confirmation Modal */}
+      <AlertDialog open={showConfirmModal} onOpenChange={setShowConfirmModal}>
+        <AlertDialogContent className="max-w-lg max-h-[80vh] overflow-hidden flex flex-col rounded-2xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-lg">
+              <ClipboardList className="w-5 h-5 text-primary" />
+              Confirmar envío del formulario
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-sm">
+              Revisa los datos antes de guardar. Una vez enviado, no podrás modificar esta respuesta.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          
+          <div className="overflow-y-auto flex-1 -mx-6 px-6 py-2">
+            {/* Date & form info */}
+            <div className="flex items-center gap-3 p-3 rounded-xl bg-muted/50 mb-3">
+              <CalendarIcon className="w-4 h-4 text-muted-foreground shrink-0" />
+              <div className="text-sm">
+                <span className="font-medium">{formTitle}</span>
+                <span className="text-muted-foreground ml-2">
+                  {format(new Date(), "d 'de' MMMM 'de' yyyy, HH:mm", { locale: es })}
+                </span>
+              </div>
+            </div>
+
+            {/* Fields summary */}
+            <div className="space-y-1.5">
+              {getFilledFieldsSummary().map((field, i) => (
+                <div key={i} className="flex items-start gap-2 p-2.5 rounded-lg border border-border/30 bg-card/50">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-medium text-muted-foreground">{field.label}</p>
+                    <p className={`text-sm mt-0.5 ${field.isEmpty ? "text-destructive italic" : "text-foreground"}`}>
+                      {field.value}
+                    </p>
+                  </div>
+                  {field.isEmpty && (
+                    <Badge variant="outline" className="shrink-0 text-[10px] border-destructive/30 text-destructive">
+                      <AlertTriangle className="w-3 h-3 mr-1" />
+                      Vacío
+                    </Badge>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {/* Warning if empty fields */}
+            {getFilledFieldsSummary().some(f => f.isEmpty) && (
+              <div className="flex items-center gap-2 p-3 mt-3 rounded-xl bg-destructive/5 border border-destructive/10">
+                <AlertTriangle className="w-4 h-4 text-destructive shrink-0" />
+                <p className="text-xs text-destructive">
+                  Hay campos sin completar. ¿Deseas continuar de todas formas?
+                </p>
+              </div>
+            )}
+          </div>
+
+          <AlertDialogFooter className="mt-2">
+            <AlertDialogCancel className="rounded-xl">Volver a revisar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmSave} className="rounded-xl gap-2">
+              <Check className="w-4 h-4" />
+              Confirmar y guardar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
