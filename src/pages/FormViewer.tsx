@@ -462,7 +462,7 @@ const FormViewer = () => {
 
   // Two-column clinical layout with resizable panel
   return (
-    <div ref={containerRef} className="h-full overflow-hidden flex flex-col print:overflow-visible">
+    <div ref={containerRef} className="h-full overflow-hidden flex flex-col print:overflow-visible -mx-6">
       {/* Print header */}
       <div className="hidden print:block text-center mb-6">
         <h1 className="text-2xl font-bold">{formTitle}</h1>
