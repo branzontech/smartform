@@ -596,6 +596,7 @@ export const RegistroAtenciones: React.FC<RegistroAtencionesProps> = ({
 // ── Compact Folio Row ────────────────────────────────────
 interface FolioRowProps {
   folio: RespuestaFormulario;
+  admision: Admision | null;
   folioNumber: number;
   canCorrect: boolean;
   hasCorrections: boolean;
@@ -606,20 +607,27 @@ interface FolioRowProps {
 }
 
 const FolioRow: React.FC<FolioRowProps> = ({
-  folio, folioNumber, canCorrect, hasCorrections, onView, onPrint, onCorrect, isLast,
+  folio, admision, folioNumber, canCorrect, hasCorrections, onView, onPrint, onCorrect, isLast,
 }) => (
-  <div className={`flex items-center justify-between py-2 pl-4 ml-2 border-l-2 border-muted ${!isLast ? 'border-b border-dashed' : ''}`}>
-    <div className="flex items-center gap-2 min-w-0 flex-1">
-      <span className="text-sm font-medium shrink-0">Folio {folioNumber}</span>
-      <span className="text-muted-foreground text-xs">·</span>
-      <span className="text-sm truncate">{folio.formularios?.titulo || 'Registro'}</span>
-      <span className="text-muted-foreground text-xs">·</span>
-      <span className="text-xs text-muted-foreground shrink-0">
-        {format(new Date(folio.created_at), "dd/MM/yyyy HH:mm")}
-      </span>
-      {hasCorrections && (
-        <span title="Tiene correcciones"><AlertTriangle className="w-3 h-3 text-amber-500 shrink-0" /></span>
-      )}
+  <div className={`flex items-center justify-between py-2.5 pl-4 ml-2 border-l-2 border-muted ${!isLast ? 'border-b border-dashed' : ''}`}>
+    <div className="flex flex-col gap-0.5 min-w-0 flex-1">
+      <span className="text-sm font-medium truncate">{folio.formularios?.titulo || 'Registro'}</span>
+      <div className="flex items-center gap-2 flex-wrap">
+        <span className="text-sm text-muted-foreground">
+          {admision ? format(new Date(admision.fecha_inicio), "dd/MM/yyyy HH:mm") : '—'}
+        </span>
+        <span className="text-muted-foreground text-xs">·</span>
+        <span className="text-sm text-muted-foreground">
+          {admision?.profesional_nombre || '—'}
+        </span>
+        <span className="text-muted-foreground text-xs">·</span>
+        <span className="text-xs text-muted-foreground">
+          Registrado: {format(new Date(folio.created_at), "dd/MM/yyyy HH:mm:ss")}
+        </span>
+        {hasCorrections && (
+          <span title="Tiene correcciones"><AlertTriangle className="w-3 h-3 text-amber-500 shrink-0" /></span>
+        )}
+      </div>
     </div>
     <div className="flex items-center gap-0.5 shrink-0 print:hidden">
       <Button variant="ghost" size="sm" className="h-7 w-7 p-0" title="Ver registro" onClick={onView}>
