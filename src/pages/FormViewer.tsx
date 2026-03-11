@@ -90,6 +90,7 @@ const FormViewer = () => {
   const previousWidthRef = useRef(panelWidth);
   const isDraggingRef = useRef(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const panelStateBeforeRegistroRef = useRef<boolean | null>(null);
 
   // Get query parameters
   const queryParams = new URLSearchParams(location.search);
