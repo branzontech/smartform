@@ -75,20 +75,7 @@ const NewConsultation = () => {
   const [selectedFormIds, setSelectedFormIds] = useState<string[]>([]);
   const [selectedForms, setSelectedForms] = useState<FormType[]>([]);
   
-  const [consultationDate, setConsultationDate] = useState<Date>(new Date());
-  const [reason, setReason] = useState("");
-  const [diagnosis, setDiagnosis] = useState("");
-  const [treatment, setTreatment] = useState("");
-  const [notes, setNotes] = useState("");
-  const [followUpDate, setFollowUpDate] = useState<Date | undefined>(undefined);
-  const [status, setStatus] = useState<"Programada" | "En curso" | "Completada" | "Cancelada">("Programada");
-  
-  const [enableFollowUp, setEnableFollowUp] = useState(false);
-  const [followUpNotes, setFollowUpNotes] = useState("");
-  const [followUpReason, setFollowUpReason] = useState("");
-  const [createReminder, setCreateReminder] = useState(true);
-  const [reminderDays, setReminderDays] = useState(2);
-  const [followUpPriority, setFollowUpPriority] = useState<'Alta' | 'Media' | 'Baja'>('Media');
+  const [consultationDate] = useState<Date>(new Date());
 
   const goToStep = (step: WorkflowStep) => {
     setDirection(step > currentStep ? 1 : -1);
