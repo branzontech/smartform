@@ -20,13 +20,21 @@ import ForgotPassword from "./pages/auth/ForgotPassword";
 import ResetPassword from "./pages/auth/ResetPassword";
 import AppRoutes from "./routes/AppRoutes";
 
-export const BackButton = () => {
+export const BackButton = ({ fallbackPath }: { fallbackPath?: string } = {}) => {
   const navigate = useNavigate();
+  
+  const handleClick = () => {
+    if (fallbackPath && (!window.history.state || window.history.state.idx === 0)) {
+      navigate(fallbackPath);
+    } else {
+      navigate(-1);
+    }
+  };
   
   return (
     <Button 
       variant="ghost" 
-      onClick={() => navigate(-1)}
+      onClick={handleClick}
       className="group flex items-center gap-2 px-4 py-2 rounded-xl bg-card/60 backdrop-blur-md border border-border/50 hover:bg-primary/10 hover:border-primary/30 transition-all duration-200"
     >
       <div className="p-1.5 rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors">
