@@ -466,9 +466,10 @@ const FormCreator = () => {
                           <Plus size={16} />
                         </Button>
                       )}
-                    </div>
                   </div>
-                </TabsContent>
+                </div>
+                
+                <TabsContent value="content" className="hidden" />
                 
                 <TabsContent value="design" className="space-y-6">
                   <div>
