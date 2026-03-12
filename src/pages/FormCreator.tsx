@@ -357,30 +357,39 @@ const FormCreator = () => {
       <div className="flex-1 overflow-y-auto">
           <div className="container mx-auto py-6 px-4">
             <div className="max-w-3xl mx-auto relative">
-            <div className="form-card overflow-visible mb-6" style={{backgroundColor: designOptions.backgroundColor}}>
-              <FormTitle
-                defaultTitle={title}
-                defaultDescription={description}
-                onTitleChange={setTitle}
-                onDescriptionChange={setDescription}
-              />
-              
-              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full px-5 pb-5">
-                <TabsList className="grid w-full grid-cols-2 mb-4">
-                  <TabsTrigger value="content">Contenido</TabsTrigger>
-                  <TabsTrigger value="design" className="flex items-center gap-1">
-                    <Palette size={16} />
-                    <span>Diseño</span>
-                  </TabsTrigger>
-                </TabsList>
-                
-                <TabsContent value="content">
-                  <div className="mt-4">
-                    <label htmlFor="form-type" className="block text-sm font-medium text-foreground mb-2">
-                      Categoría del formulario
-                    </label>
-                    <div className="flex items-center gap-2">
-                      <Select
+            <div className="form-card overflow-visible mb-3" style={{backgroundColor: designOptions.backgroundColor}}>
+              {/* Bloque compacto: título + descripción */}
+              <div className="px-4 pt-3 pb-1">
+                <input
+                  type="text"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="Título del formulario"
+                  className="text-lg font-semibold w-full bg-transparent border-none focus:outline-none text-foreground placeholder:text-muted-foreground"
+                />
+                <input
+                  type="text"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="Descripción (opcional)"
+                  className="text-sm text-muted-foreground w-full bg-transparent border-none focus:outline-none mt-0.5"
+                />
+              </div>
+
+              {/* Tabs + categoría en la misma fila */}
+              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full px-4 pb-3">
+                <div className="flex items-center justify-between gap-3 mb-2">
+                  <TabsList className="h-8">
+                    <TabsTrigger value="content" className="text-xs px-3 py-1">Contenido</TabsTrigger>
+                    <TabsTrigger value="design" className="flex items-center gap-1 text-xs px-3 py-1">
+                      <Palette size={14} />
+                      <span>Diseño</span>
+                    </TabsTrigger>
+                  </TabsList>
+
+                  {/* Categoría inline */}
+                  <div className="flex items-center gap-1.5">
+                    <Select
                         value={formType}
                         onValueChange={(value: string) => {
                           if (value === "__custom__") return;
