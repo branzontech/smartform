@@ -322,44 +322,39 @@ const FormCreator = () => {
   }
 
   return (
-    <div className="h-screen flex flex-col" style={applyDesignToPreview()}>
-      <Header showCreate={false} />
-      <main className="flex-1 min-h-0 flex flex-col">
-        {/* Barra de acciones sticky */}
-        <div className="shrink-0 sticky top-0 z-30 bg-background/95 backdrop-blur-sm border-b border-border">
-          <div className="container mx-auto px-4 py-2">
-            <div className="max-w-3xl mx-auto flex items-center justify-between">
-              <BackButton />
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => navigate("/app/home/formularios")}
-                  disabled={saving}
-                  className="text-muted-foreground"
-                >
-                  <X size={16} className="mr-1" />
-                  Cancelar
-                </Button>
-                <Button
-                  size="sm"
-                  onClick={saveForm}
-                  disabled={saving}
-                  style={{
-                    backgroundColor: designOptions.primaryColor,
-                    borderColor: designOptions.primaryColor
-                  }}
-                  className="text-white"
-                >
-                  <Save size={16} className="mr-1" />
-                  {saving ? "Guardando..." : "Guardar"}
-                </Button>
-              </div>
-            </div>
-          </div>
+    <div className="h-full flex flex-col overflow-hidden" style={applyDesignToPreview()}>
+      {/* Barra de acciones — FIJA, nunca se mueve */}
+      <div className="flex-shrink-0 flex items-center justify-between px-4 py-2 border-b border-border bg-background z-10">
+        <BackButton />
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate("/app/home/formularios")}
+            disabled={saving}
+            className="text-muted-foreground"
+          >
+            <X size={16} className="mr-1" />
+            Cancelar
+          </Button>
+          <Button
+            size="sm"
+            onClick={saveForm}
+            disabled={saving}
+            style={{
+              backgroundColor: designOptions.primaryColor,
+              borderColor: designOptions.primaryColor
+            }}
+            className="text-white"
+          >
+            <Save size={16} className="mr-1" />
+            {saving ? "Guardando..." : "Guardar"}
+          </Button>
         </div>
-        {/* Contenido scrollable */}
-        <div className="flex-1 min-h-0 overflow-y-auto">
+      </div>
+
+      {/* Contenido — ÚNICO elemento con scroll */}
+      <div className="flex-1 overflow-y-auto">
           <div className="container mx-auto py-6 px-4">
             <div className="max-w-3xl mx-auto relative">
             <div className="form-card overflow-visible mb-6" style={{backgroundColor: designOptions.backgroundColor}}>
