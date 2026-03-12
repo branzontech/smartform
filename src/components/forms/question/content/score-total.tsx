@@ -209,19 +209,21 @@ export const ScoreTotal: React.FC<ScoreTotalProps> = ({
                 className="grid grid-cols-[4rem_4rem_1fr_auto_auto] gap-1.5 items-center animate-fade-in"
               >
                 <input
-                  type="number"
-                  value={range.min}
-                  onChange={(e) =>
-                    updateRange(i, { min: Number(e.target.value) })
-                  }
+                  type="text"
+                  inputMode="decimal"
+                  value={rawRanges[i]?.min ?? ""}
+                  onChange={(e) => handleRangeNumChange(i, "min", e.target.value)}
+                  onBlur={() => handleRangeNumBlur(i, "min")}
+                  placeholder="0"
                   className="w-16 text-sm border border-border rounded px-1.5 py-1 bg-background text-foreground font-mono"
                 />
                 <input
-                  type="number"
-                  value={range.max}
-                  onChange={(e) =>
-                    updateRange(i, { max: Number(e.target.value) })
-                  }
+                  type="text"
+                  inputMode="decimal"
+                  value={rawRanges[i]?.max ?? ""}
+                  onChange={(e) => handleRangeNumChange(i, "max", e.target.value)}
+                  onBlur={() => handleRangeNumBlur(i, "max")}
+                  placeholder="0"
                   className="w-16 text-sm border border-border rounded px-1.5 py-1 bg-background text-foreground font-mono"
                 />
                 <input
