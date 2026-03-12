@@ -625,7 +625,7 @@ const FormCreator = () => {
 
               {/* Toolbar lateral sticky - pegada al formulario */}
               <div className="shrink-0">
-                <div className="sticky top-20 flex flex-col gap-1 bg-background border border-border rounded-lg shadow-md p-1.5">
+                <div className="sticky top-4 flex flex-col gap-1 bg-background border border-border rounded-lg shadow-md p-1.5">
                   <button
                     onClick={handleAddQuestion}
                     className="p-2 rounded-md hover:bg-muted transition-colors group"
