@@ -120,7 +120,7 @@ const FormCreator = () => {
       };
       loadForm();
     } else if (!draft) {
-      setQuestions([]);
+      setQuestions([{ id: nanoid(), type: "short", title: "", required: false } as QuestionData]);
     }
   }, [id, navigate, toast]);
 
