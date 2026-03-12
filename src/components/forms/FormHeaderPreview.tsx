@@ -67,49 +67,35 @@ export const FormHeaderPreview = ({
         className
       )}
     >
-      <div className="flex items-start gap-4">
+      <div className="flex items-center gap-4">
         {/* Logo */}
         {config.logo_url && (
-          <img
-            src={config.logo_url}
-            alt={name}
-            className="h-14 w-auto object-contain shrink-0 print:h-12"
-          />
+          <div className="shrink-0">
+            <img
+              src={config.logo_url}
+              alt={name}
+              className="w-20 h-20 object-contain rounded-md print:w-16 print:h-16"
+            />
+          </div>
         )}
 
-        {/* Center: Institution info */}
-        <div className="flex-1 text-center">
-          <h2 className="text-base font-bold text-foreground uppercase tracking-wide print:text-sm">
+        {/* Institution data — left aligned */}
+        <div className="flex-1 min-w-0">
+          <p className="text-base font-bold text-foreground leading-tight">
             {name}
-          </h2>
-          <div className="text-[11px] text-muted-foreground space-y-0.5 mt-1">
-            {/* Fiscal identification entries */}
+          </p>
+          <div className="text-xs text-muted-foreground leading-tight space-y-0.5 mt-1">
             {renderJsonbEntries(config.identificacion_fiscal)}
-
-            {/* Legacy NIT support */}
             {!config.identificacion_fiscal && config.nit && (
               <p>NIT: {config.nit}</p>
             )}
-
             {config.direccion && <p>{config.direccion}</p>}
-            <div className="flex items-center justify-center gap-3">
-              {config.telefono && <span>Tel: {config.telefono}</span>}
-              {config.email_institucion && (
-                <span>{config.email_institucion}</span>
-              )}
-            </div>
-
-            {/* Regulatory data entries */}
+            {config.telefono && <p>Tel: {config.telefono}</p>}
+            {config.email_institucion && <p>{config.email_institucion}</p>}
             {renderJsonbEntries(config.datos_regulatorios)}
-
-            {/* Legacy resolution support */}
-            {!config.datos_regulatorios &&
-              config.resolucion_habilitacion && (
-                <p className="font-medium">
-                  {config.resolucion_habilitacion}
-                </p>
-              )}
-
+            {!config.datos_regulatorios && config.resolucion_habilitacion && (
+              <p>{config.resolucion_habilitacion}</p>
+            )}
             {config.campos_personalizados?.map((field) =>
               field.label && field.value ? (
                 <p key={field.id}>
@@ -120,16 +106,16 @@ export const FormHeaderPreview = ({
           </div>
         </div>
 
-        {/* Right: Form code */}
+        {/* Document type — right aligned */}
         {(formTitle || formCode) && (
-          <div className="text-right shrink-0">
+          <div className="shrink-0 text-right">
             {formTitle && (
-              <p className="text-xs font-semibold text-foreground">
+              <p className="text-sm font-semibold text-foreground">
                 {formTitle}
               </p>
             )}
             {formCode && (
-              <p className="text-[10px] text-muted-foreground mt-0.5">
+              <p className="text-xs text-muted-foreground mt-0.5">
                 Código: {formCode}
               </p>
             )}
