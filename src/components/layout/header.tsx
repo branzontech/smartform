@@ -41,6 +41,7 @@ export const Header = ({ showCreate = true }: HeaderProps) => {
   const isMobile = useIsMobile();
   const navigate = useNavigate();
   const { profile, signOut } = useAuth();
+  const [theme, setTheme] = useState<"light" | "dark">("light");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [appLauncherOpen, setAppLauncherOpen] = useState(false);
