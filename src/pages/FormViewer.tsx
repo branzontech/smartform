@@ -19,7 +19,7 @@ import { QuestionRenderer } from '@/components/forms/form-viewer/question-render
 import { QuestionData } from '@/components/forms/question/types';
 import { FormTitle } from '@/components/ui/form-title';
 import { BackButton } from '@/App';
-import { Check, Link as LinkIcon, Printer, AlertTriangle, CalendarIcon, ClipboardList, PanelRightClose, PanelRightOpen, GripVertical, MoreHorizontal, ArrowLeft, Edit } from 'lucide-react';
+import { Check, Link as LinkIcon, Printer, AlertTriangle, CalendarIcon, ClipboardList, PanelRightClose, PanelRightOpen, GripVertical, MoreHorizontal, ArrowLeft } from 'lucide-react';
 import { toast } from "sonner";
 import { Form as FormType } from './FormsPage';
 import { FormLoading } from '@/components/forms/form-viewer/form-loading';
@@ -458,30 +458,8 @@ const FormViewer = () => {
           <h1 className="text-2xl font-bold">{formTitle}</h1>
           {formDescription && <p className="text-muted-foreground">{formDescription}</p>}
         </div>
-        <div className="print:hidden flex items-center gap-2 mb-4">
-          <Button 
-            variant="ghost" 
-            onClick={() => navigate("/app/home/formularios")}
-            className="group flex items-center gap-2 px-4 py-2 rounded-xl bg-card/60 backdrop-blur-md border border-border/50 hover:bg-primary/10 hover:border-primary/30 transition-all duration-200"
-          >
-            <div className="p-1.5 rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors">
-              <ArrowLeft className="h-4 w-4 text-primary" />
-            </div>
-            <span className="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors">
-              Volver al listado
-            </span>
-          </Button>
-          {formId && (
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => navigate(`/app/crear/${formId}`)}
-              className="gap-1.5"
-            >
-              <Edit className="h-4 w-4" />
-              Editar
-            </Button>
-          )}
+        <div className="print:hidden">
+          <BackButton />
         </div>
         <div className="mb-6 flex justify-between items-center print:hidden">
           <FormTitle 

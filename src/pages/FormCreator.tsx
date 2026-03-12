@@ -277,8 +277,6 @@ const FormCreator = () => {
         fhir_extensions: {} as any,
       };
       
-      let targetId = id;
-      
       if (id) {
         const { error } = await supabase
           .from("formularios")
@@ -292,14 +290,11 @@ const FormCreator = () => {
           description: "Los cambios han sido guardados",
         });
       } else {
-        const { data: newForm, error } = await supabase
+        const { error } = await supabase
           .from("formularios")
-          .insert(formPayload)
-          .select('id')
-          .single();
+          .insert(formPayload);
 
         if (error) throw error;
-        targetId = newForm?.id;
         
         toast({
           title: "Formulario creado",
@@ -309,7 +304,7 @@ const FormCreator = () => {
       
       clearDraft();
       setTimeout(() => {
-        navigate(`/app/ver/${targetId}`);
+        navigate("/app/home/formularios");
       }, 500);
     } catch (error) {
       console.error("Error saving form:", error);
