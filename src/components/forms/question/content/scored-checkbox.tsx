@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { CheckSquare, Circle, Minus, Plus, X } from "lucide-react";
+import { CheckSquare, Circle, Plus, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ContentComponentProps, ScoredOption } from "../types";
 import { nanoid } from "nanoid";
@@ -9,7 +9,6 @@ export const ScoredCheckbox: React.FC<ContentComponentProps> = ({
   onUpdate,
   readOnly,
 }) => {
-  // Migrate from legacy format if needed
   const migrateOptions = (): ScoredOption[] => {
     if (question.scoredItems && question.scoredItems.length > 0) {
       return question.scoredItems;
@@ -31,6 +30,15 @@ export const ScoredCheckbox: React.FC<ContentComponentProps> = ({
   const selectionMode = question.selectionMode || question.scoredSelectionMode || "single";
   const [focusIndex, setFocusIndex] = useState<number | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Track raw string values for score inputs to allow empty state while editing
+  const [rawScores, setRawScores] = useState<Record<string, string>>(() => {
+    const map: Record<string, string> = {};
+    for (const opt of migrateOptions()) {
+      map[opt.id] = opt.score === 0 ? "" : String(opt.score);
+    }
+    return map;
+  });
 
   useEffect(() => {
     if (focusIndex !== null && containerRef.current) {
@@ -54,27 +62,53 @@ export const ScoredCheckbox: React.FC<ContentComponentProps> = ({
   };
 
   const handleScoreChange = (index: number, value: string) => {
+    if (value !== "" && !/^-?\d*\.?\d*$/.test(value)) return;
+    const opt = options[index];
+    setRawScores((prev) => ({ ...prev, [opt.id]: value }));
     const score = value === "" ? 0 : parseFloat(value);
     const updated = [...options];
     updated[index] = { ...updated[index], score: isNaN(score) ? 0 : score };
     sync(updated);
   };
 
+  const handleScoreBlur = (index: number) => {
+    const opt = options[index];
+    const raw = rawScores[opt.id] ?? "";
+    const parsed = parseFloat(raw);
+    const finalScore = isNaN(parsed) ? 0 : parsed;
+    setRawScores((prev) => ({ ...prev, [opt.id]: finalScore === 0 ? "" : String(finalScore) }));
+    if (opt.score !== finalScore) {
+      const updated = [...options];
+      updated[index] = { ...updated[index], score: finalScore };
+      sync(updated);
+    }
+  };
+
   const addOption = () => {
-    const updated = [...options, { id: nanoid(), text: "", score: 0 }];
+    const newId = nanoid();
+    const updated = [...options, { id: newId, text: "", score: 0 }];
+    setRawScores((prev) => ({ ...prev, [newId]: "" }));
     sync(updated);
     setFocusIndex(updated.length - 1);
   };
 
   const addOptionAfter = (index: number) => {
+    const newId = nanoid();
     const updated = [...options];
-    updated.splice(index + 1, 0, { id: nanoid(), text: "", score: 0 });
+    updated.splice(index + 1, 0, { id: newId, text: "", score: 0 });
+    setRawScores((prev) => ({ ...prev, [newId]: "" }));
     sync(updated);
     setFocusIndex(index + 1);
   };
 
   const removeOption = (index: number) => {
     if (options.length <= 2) return;
+    const removed = options[index];
+    setRawScores((prev) => {
+      const next = { ...prev };
+      delete next[removed.id];
+      return next;
+    });
     const updated = options.filter((_, i) => i !== index);
     sync(updated);
   };
@@ -103,7 +137,6 @@ export const ScoredCheckbox: React.FC<ContentComponentProps> = ({
 
   return (
     <div className="mt-2" ref={containerRef}>
-      {/* Options */}
       <div className="text-xs text-muted-foreground mb-2 flex items-center justify-between">
         <span>Opciones con puntaje</span>
         <span className="font-mono">Pts</span>
@@ -126,10 +159,11 @@ export const ScoredCheckbox: React.FC<ContentComponentProps> = ({
             className="flex-1 border-b border-border focus:border-primary focus:outline-none py-1 px-0 bg-transparent text-sm"
           />
           <input
-            type="number"
-            step="any"
-            value={opt.score}
+            type="text"
+            inputMode="decimal"
+            value={rawScores[opt.id] ?? ""}
             onChange={(e) => handleScoreChange(index, e.target.value)}
+            onBlur={() => handleScoreBlur(index)}
             placeholder="Pts"
             className="w-20 text-right border-b border-border focus:border-primary focus:outline-none py-1 px-1 bg-transparent text-sm font-mono"
           />
@@ -155,7 +189,6 @@ export const ScoredCheckbox: React.FC<ContentComponentProps> = ({
         <span>Agregar opción</span>
       </button>
 
-      {/* Selection mode toggle - below options */}
       <div className="flex items-center gap-1 mt-4 p-1 bg-muted rounded-md w-fit">
         <button
           type="button"
