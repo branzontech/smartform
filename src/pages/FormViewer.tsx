@@ -485,7 +485,7 @@ const FormViewer = () => {
           <FormHeaderPreview config={headerConfig} formTitle={formTitle} />
           <FormProvider {...form}>
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3">
                 {questions.map(question => (
                   <QuestionRenderer
                     key={question.id}
