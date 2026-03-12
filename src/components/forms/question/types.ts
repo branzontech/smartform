@@ -123,6 +123,11 @@ export interface QuestionData {
   // score_total fields
   sourceQuestionIds?: string[];
   scoring?: ScoringConfig;
+  // vitals fields
+  layout?: { columns: number };
+  predefinedVitals?: Record<string, PredefinedVital>;
+  customVitals?: CustomVital[];
+  showBmiClassification?: boolean;
 }
 
 export interface QuestionProps {
