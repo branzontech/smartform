@@ -114,8 +114,15 @@ export interface QuestionData {
   isCalculated?: boolean;
   calculationType?: "sum" | "subtract" | "multiply" | "divide";
   numberType?: "integer" | "decimal";
+  // Legacy scored_checkbox fields (kept for backward compat)
   scoredOptions?: { label: string; score: number }[];
   scoredSelectionMode?: "single" | "multiple";
+  // New scored_checkbox fields
+  selectionMode?: "single" | "multiple";
+  scoredItems?: ScoredOption[];
+  // score_total fields
+  sourceQuestionIds?: string[];
+  scoring?: ScoringConfig;
 }
 
 export interface QuestionProps {
