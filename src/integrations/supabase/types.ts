@@ -769,6 +769,87 @@ export type Database = {
           },
         ]
       }
+      ordenes_medicas: {
+        Row: {
+          admision_id: string | null
+          created_at: string | null
+          diagnostico_codigo: string | null
+          diagnostico_descripcion: string | null
+          diagnostico_sistema: string | null
+          estado: string
+          fecha_orden: string | null
+          fecha_vigencia: string | null
+          fhir_extensions: Json | null
+          id: string
+          indicaciones: string | null
+          items: Json
+          medico_id: string
+          medico_nombre: string
+          numero_orden: string
+          paciente_id: string
+          prioridad: string | null
+          tipo: string
+          updated_at: string | null
+        }
+        Insert: {
+          admision_id?: string | null
+          created_at?: string | null
+          diagnostico_codigo?: string | null
+          diagnostico_descripcion?: string | null
+          diagnostico_sistema?: string | null
+          estado?: string
+          fecha_orden?: string | null
+          fecha_vigencia?: string | null
+          fhir_extensions?: Json | null
+          id?: string
+          indicaciones?: string | null
+          items?: Json
+          medico_id: string
+          medico_nombre: string
+          numero_orden: string
+          paciente_id: string
+          prioridad?: string | null
+          tipo: string
+          updated_at?: string | null
+        }
+        Update: {
+          admision_id?: string | null
+          created_at?: string | null
+          diagnostico_codigo?: string | null
+          diagnostico_descripcion?: string | null
+          diagnostico_sistema?: string | null
+          estado?: string
+          fecha_orden?: string | null
+          fecha_vigencia?: string | null
+          fhir_extensions?: Json | null
+          id?: string
+          indicaciones?: string | null
+          items?: Json
+          medico_id?: string
+          medico_nombre?: string
+          numero_orden?: string
+          paciente_id?: string
+          prioridad?: string | null
+          tipo?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ordenes_medicas_admision_id_fkey"
+            columns: ["admision_id"]
+            isOneToOne: false
+            referencedRelation: "admisiones"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ordenes_medicas_paciente_id_fkey"
+            columns: ["paciente_id"]
+            isOneToOne: false
+            referencedRelation: "pacientes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pacientes: {
         Row: {
           apellidos: string
