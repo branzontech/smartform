@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { ChevronDown, Menu, Stethoscope, Moon, Sun, Search, Bell, UserCircle, LogOut, LayoutGrid } from "lucide-react";
 import { AppLauncherModal } from "./AppLauncherModal";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useAuth } from "@/contexts/AuthContext";
 import { MobileMenu } from "./mobile-menu";
 import { DesktopMenu } from "./desktop-menu";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -39,6 +40,7 @@ interface HeaderProps {
 export const Header = ({ showCreate = true }: HeaderProps) => {
   const isMobile = useIsMobile();
   const navigate = useNavigate();
+  const { profile, signOut } = useAuth();
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -135,15 +137,12 @@ export const Header = ({ showCreate = true }: HeaderProps) => {
     navigate(path);
   };
 
-  const [user] = useState({
-    name: "Dr. Martínez",
-    initials: "DM",
-    unreadNotifications: unreadNotificationsCount
-  });
+  const userName = profile?.full_name || "Usuario";
+  const userInitials = userName.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase();
 
-  const handleLogout = () => {
-    console.log("Cerrando sesión...");
-    // navigate("/login");
+  const handleLogout = async () => {
+    await signOut();
+    navigate("/auth/login");
   };
 
   const handleMarkAsRead = (id: number) => {
@@ -288,10 +287,10 @@ export const Header = ({ showCreate = true }: HeaderProps) => {
                 >
                   <Avatar className="h-8 w-8 bg-white/20 shrink-0">
                     <AvatarFallback className="text-sm text-white">
-                      {user.initials}
+                      {userInitials}
                     </AvatarFallback>
                   </Avatar>
-                  <span className="hidden md:block text-sm font-medium text-white whitespace-nowrap">{user.name}</span>
+                  <span className="hidden md:block text-sm font-medium text-white whitespace-nowrap">{userName}</span>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56" sideOffset={8}>
