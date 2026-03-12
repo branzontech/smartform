@@ -1,20 +1,34 @@
 import React, { useState, useRef, useEffect } from "react";
-import { CheckSquare, Circle, Minus, Plus } from "lucide-react";
+import { CheckSquare, Circle, Minus, Plus, X } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { ContentComponentProps } from "../types";
+import { ContentComponentProps, ScoredOption } from "../types";
+import { nanoid } from "nanoid";
 
 export const ScoredCheckbox: React.FC<ContentComponentProps> = ({
   question,
   onUpdate,
   readOnly,
 }) => {
-  const [scoredOptions, setScoredOptions] = useState(
-    question.scoredOptions || [
-      { label: "", score: 0 },
-      { label: "", score: 0 },
-    ]
-  );
-  const selectionMode = question.scoredSelectionMode || "single";
+  // Migrate from legacy format if needed
+  const migrateOptions = (): ScoredOption[] => {
+    if (question.scoredItems && question.scoredItems.length > 0) {
+      return question.scoredItems;
+    }
+    if (question.scoredOptions && question.scoredOptions.length > 0) {
+      return question.scoredOptions.map((o) => ({
+        id: nanoid(),
+        text: o.label,
+        score: o.score,
+      }));
+    }
+    return [
+      { id: nanoid(), text: "", score: 0 },
+      { id: nanoid(), text: "", score: 0 },
+    ];
+  };
+
+  const [options, setOptions] = useState<ScoredOption[]>(migrateOptions);
+  const selectionMode = question.selectionMode || question.scoredSelectionMode || "single";
   const [focusIndex, setFocusIndex] = useState<number | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -26,43 +40,43 @@ export const ScoredCheckbox: React.FC<ContentComponentProps> = ({
       inputs[focusIndex]?.focus();
       setFocusIndex(null);
     }
-  }, [focusIndex, scoredOptions.length]);
+  }, [focusIndex, options.length]);
 
-  const handleLabelChange = (index: number, label: string) => {
-    const updated = [...scoredOptions];
-    updated[index] = { ...updated[index], label };
-    setScoredOptions(updated);
-    onUpdate({ scoredOptions: updated });
+  const sync = (updated: ScoredOption[]) => {
+    setOptions(updated);
+    onUpdate({ scoredItems: updated });
+  };
+
+  const handleTextChange = (index: number, text: string) => {
+    const updated = [...options];
+    updated[index] = { ...updated[index], text };
+    sync(updated);
   };
 
   const handleScoreChange = (index: number, value: string) => {
     const score = value === "" ? 0 : parseFloat(value);
-    const updated = [...scoredOptions];
+    const updated = [...options];
     updated[index] = { ...updated[index], score: isNaN(score) ? 0 : score };
-    setScoredOptions(updated);
-    onUpdate({ scoredOptions: updated });
+    sync(updated);
   };
 
   const addOption = () => {
-    const updated = [...scoredOptions, { label: "", score: 0 }];
-    setScoredOptions(updated);
-    onUpdate({ scoredOptions: updated });
+    const updated = [...options, { id: nanoid(), text: "", score: 0 }];
+    sync(updated);
     setFocusIndex(updated.length - 1);
   };
 
   const addOptionAfter = (index: number) => {
-    const updated = [...scoredOptions];
-    updated.splice(index + 1, 0, { label: "", score: 0 });
-    setScoredOptions(updated);
-    onUpdate({ scoredOptions: updated });
+    const updated = [...options];
+    updated.splice(index + 1, 0, { id: nanoid(), text: "", score: 0 });
+    sync(updated);
     setFocusIndex(index + 1);
   };
 
   const removeOption = (index: number) => {
-    if (scoredOptions.length <= 2) return;
-    const updated = scoredOptions.filter((_, i) => i !== index);
-    setScoredOptions(updated);
-    onUpdate({ scoredOptions: updated });
+    if (options.length <= 2) return;
+    const updated = options.filter((_, i) => i !== index);
+    sync(updated);
   };
 
   const OptionIcon = selectionMode === "single" ? Circle : CheckSquare;
@@ -70,14 +84,14 @@ export const ScoredCheckbox: React.FC<ContentComponentProps> = ({
   if (readOnly) {
     return (
       <div className="space-y-2">
-        {scoredOptions.map((opt, index) => (
-          <div key={index} className="flex items-center gap-2">
+        {options.map((opt, index) => (
+          <div key={opt.id} className="flex items-center gap-2">
             {selectionMode === "single" ? (
               <input type="radio" disabled className="text-primary" />
             ) : (
               <input type="checkbox" disabled className="text-primary" />
             )}
-            <span>{opt.label || `Opción ${index + 1}`}</span>
+            <span>{opt.text || `Opción ${index + 1}`}</span>
             <span className="ml-auto text-xs text-muted-foreground font-mono">
               ({opt.score} pts)
             </span>
@@ -89,48 +103,19 @@ export const ScoredCheckbox: React.FC<ContentComponentProps> = ({
 
   return (
     <div className="mt-2" ref={containerRef}>
-      {/* Selection mode toggle */}
-      <div className="flex items-center gap-1 mb-3 p-1 bg-muted rounded-md w-fit">
-        <button
-          type="button"
-          onClick={() => onUpdate({ scoredSelectionMode: "single" })}
-          className={cn(
-            "flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-medium transition-colors",
-            selectionMode === "single"
-              ? "bg-background text-foreground shadow-sm"
-              : "text-muted-foreground hover:text-foreground"
-          )}
-        >
-          <Circle size={14} />
-          Selección única
-        </button>
-        <button
-          type="button"
-          onClick={() => onUpdate({ scoredSelectionMode: "multiple" })}
-          className={cn(
-            "flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-medium transition-colors",
-            selectionMode === "multiple"
-              ? "bg-background text-foreground shadow-sm"
-              : "text-muted-foreground hover:text-foreground"
-          )}
-        >
-          <CheckSquare size={14} />
-          Selección múltiple
-        </button>
-      </div>
-
+      {/* Options */}
       <div className="text-xs text-muted-foreground mb-2 flex items-center justify-between">
         <span>Opciones con puntaje</span>
         <span className="font-mono">Pts</span>
       </div>
-      {scoredOptions.map((opt, index) => (
-        <div key={index} className="flex items-center gap-2 mb-2 animate-fade-in">
+      {options.map((opt, index) => (
+        <div key={opt.id} className="flex items-center gap-2 mb-2 animate-fade-in">
           <OptionIcon size={18} className="text-muted-foreground shrink-0" />
           <input
             data-role="label"
             type="text"
-            value={opt.label}
-            onChange={(e) => handleLabelChange(index, e.target.value)}
+            value={opt.text}
+            onChange={(e) => handleTextChange(index, e.target.value)}
             onKeyDown={(e) => {
               if (e.key === "Enter") {
                 e.preventDefault();
@@ -145,19 +130,20 @@ export const ScoredCheckbox: React.FC<ContentComponentProps> = ({
             step="any"
             value={opt.score}
             onChange={(e) => handleScoreChange(index, e.target.value)}
+            placeholder="Pts"
             className="w-20 text-right border-b border-border focus:border-primary focus:outline-none py-1 px-1 bg-transparent text-sm font-mono"
           />
           <button
             onClick={() => removeOption(index)}
-            disabled={scoredOptions.length <= 2}
+            disabled={options.length <= 2}
             className={cn(
               "p-1 rounded-full transition-all",
-              scoredOptions.length > 2
+              options.length > 2
                 ? "text-muted-foreground hover:bg-muted"
                 : "text-muted-foreground/30 cursor-not-allowed"
             )}
           >
-            <Minus size={16} />
+            <X size={16} />
           </button>
         </div>
       ))}
@@ -168,6 +154,36 @@ export const ScoredCheckbox: React.FC<ContentComponentProps> = ({
         <Plus size={16} />
         <span>Agregar opción</span>
       </button>
+
+      {/* Selection mode toggle - below options */}
+      <div className="flex items-center gap-1 mt-4 p-1 bg-muted rounded-md w-fit">
+        <button
+          type="button"
+          onClick={() => onUpdate({ selectionMode: "single" })}
+          className={cn(
+            "flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-medium transition-colors",
+            selectionMode === "single"
+              ? "bg-background text-foreground shadow-sm"
+              : "text-muted-foreground hover:text-foreground"
+          )}
+        >
+          <Circle size={14} />
+          Selección única
+        </button>
+        <button
+          type="button"
+          onClick={() => onUpdate({ selectionMode: "multiple" })}
+          className={cn(
+            "flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-medium transition-colors",
+            selectionMode === "multiple"
+              ? "bg-background text-foreground shadow-sm"
+              : "text-muted-foreground hover:text-foreground"
+          )}
+        >
+          <CheckSquare size={14} />
+          Selección múltiple
+        </button>
+      </div>
     </div>
   );
 };

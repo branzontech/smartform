@@ -1,6 +1,6 @@
 
 import React from "react";
-import { QuestionContentProps } from "./types";
+import { QuestionContentProps, QuestionData } from "./types";
 import { ShortText } from "./content/short-text";
 import { Paragraph } from "./content/paragraph";
 import { MultipleChoice } from "./content/multiple-choice";
@@ -15,11 +15,17 @@ import { Signature } from "./content/signature";
 import { FileUpload } from "./content/file-upload";
 import { MedicationContent } from "./content/medication";
 import { ScoredCheckbox } from "./content/scored-checkbox";
+import { ScoreTotal } from "./content/score-total";
 
-export const QuestionContent: React.FC<QuestionContentProps> = ({ 
+interface ExtendedQuestionContentProps extends QuestionContentProps {
+  allQuestions?: QuestionData[];
+}
+
+export const QuestionContent: React.FC<ExtendedQuestionContentProps> = ({ 
   question, 
   onUpdate, 
-  readOnly 
+  readOnly,
+  allQuestions,
 }) => {
   switch (question.type) {
     case "short":
@@ -50,6 +56,8 @@ export const QuestionContent: React.FC<QuestionContentProps> = ({
       return <MedicationContent question={question} onUpdate={onUpdate} readOnly={readOnly} />;
     case "scored_checkbox":
       return <ScoredCheckbox question={question} onUpdate={onUpdate} readOnly={readOnly} />;
+    case "score_total":
+      return <ScoreTotal question={question} onUpdate={onUpdate} readOnly={readOnly} allQuestions={allQuestions} />;
     default:
       return <div>Tipo de pregunta no soportado: {question.type}</div>;
   }
