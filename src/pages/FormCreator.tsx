@@ -68,6 +68,7 @@ const FormCreator = () => {
   const [questions, setQuestions] = useState<QuestionData[]>(draft?.questions || []);
   const [saving, setSaving] = useState(false);
   const [expandedQuestions, setExpandedQuestions] = useState<string[]>([]);
+  const [activeQuestionId, setActiveQuestionId] = useState<string | null>(null);
   const [designOptions, setDesignOptions] = useState<FormDesignOptions>(draft?.designOptions || defaultDesignOptions);
   const [draftRestored, setDraftRestored] = useState(!!draft);
 
