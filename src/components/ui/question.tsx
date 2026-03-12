@@ -36,6 +36,7 @@ export const Question = ({
   isFirst = false,
   isLast = false,
   designOptions,
+  allQuestions,
 }: QuestionProps) => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
