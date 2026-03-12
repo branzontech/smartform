@@ -65,7 +65,9 @@ const FormCreator = () => {
   const [description, setDescription] = useState(draft?.description || "Formulario para registro de datos clínicos");
   const [formType, setFormType] = useState<string>(draft?.formType || "historia_clinica");
   const [customCategory, setCustomCategory] = useState("");
-  const [questions, setQuestions] = useState<QuestionData[]>(draft?.questions || []);
+  const [questions, setQuestions] = useState<QuestionData[]>(
+    draft?.questions || (!id ? [{ id: nanoid(), type: "short", title: "", required: false } as QuestionData] : [])
+  );
   const [saving, setSaving] = useState(false);
   const [expandedQuestions, setExpandedQuestions] = useState<string[]>([]);
   const [activeQuestionId, setActiveQuestionId] = useState<string | null>(null);
@@ -118,7 +120,7 @@ const FormCreator = () => {
       };
       loadForm();
     } else if (!draft) {
-      setQuestions([]);
+      setQuestions([{ id: nanoid(), type: "short", title: "", required: false } as QuestionData]);
     }
   }, [id, navigate, toast]);
 
@@ -637,6 +639,23 @@ const FormCreator = () => {
               </Tabs>
             </div>
             
+            {/* Empty state when no questions */}
+            {questions.length === 0 && (
+              <div className="border-2 border-dashed border-muted-foreground/20 rounded-lg p-8 text-center mb-4">
+                <p className="text-sm text-muted-foreground mb-3">
+                  Agrega el primer campo para empezar a construir tu formulario
+                </p>
+                <div className="flex items-center justify-center gap-2">
+                  <Button variant="outline" onClick={handleAddQuestion} className="gap-1.5">
+                    <Plus size={16} /> Agregar pregunta
+                  </Button>
+                  <Button variant="outline" onClick={handleAddSection} className="gap-1.5">
+                    <SeparatorHorizontal size={16} /> Agregar sección
+                  </Button>
+                </div>
+              </div>
+            )}
+
             {/* Questions list with inline floating toolbar */}
             <div className="space-y-4 mb-8">
               {questions.map((question, index) => (
