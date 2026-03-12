@@ -40,7 +40,7 @@ interface HeaderProps {
 export const Header = ({ showCreate = true }: HeaderProps) => {
   const isMobile = useIsMobile();
   const navigate = useNavigate();
-  const [theme, setTheme] = useState<"light" | "dark">("light");
+  const { profile, signOut } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [appLauncherOpen, setAppLauncherOpen] = useState(false);
