@@ -646,7 +646,7 @@ const FormCreator = () => {
             </div>
           </div>
         </div>
-      </main>
+      </div>
     </div>
   );
 };
