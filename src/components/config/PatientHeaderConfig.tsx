@@ -227,7 +227,7 @@ export const PatientHeaderConfig: React.FC = () => {
         </CardHeader>
         <CardContent className="space-y-2">
           {localFields.map((field, index) => {
-            const IconComp = field.icono ? ICON_MAP[field.icono] : User;
+            const IconComp = (field.icono && ICON_MAP[field.icono]) || User;
             return (
               <div
                 key={field.id}
