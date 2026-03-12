@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { ChevronDown, Menu, Stethoscope, Moon, Sun, Search, Bell, UserCircle, LogOut, LayoutGrid } from "lucide-react";
 import { AppLauncherModal } from "./AppLauncherModal";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useAuth } from "@/contexts/AuthContext";
 import { MobileMenu } from "./mobile-menu";
 import { DesktopMenu } from "./desktop-menu";
 import { TooltipProvider } from "@/components/ui/tooltip";
