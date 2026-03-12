@@ -710,6 +710,7 @@ const FormViewer = () => {
               >
                 <Save size={14} />
                 Guardar
+              </Button>
             </>
           )}
         </div>
