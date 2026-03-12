@@ -19,7 +19,7 @@ import { QuestionRenderer } from '@/components/forms/form-viewer/question-render
 import { QuestionData } from '@/components/forms/question/types';
 import { FormTitle } from '@/components/ui/form-title';
 import { BackButton } from '@/App';
-import { Check, Link as LinkIcon, Printer, AlertTriangle, CalendarIcon, ClipboardList, PanelRightClose, PanelRightOpen, GripVertical, MoreHorizontal, ArrowLeft } from 'lucide-react';
+import { Check, Link as LinkIcon, Printer, AlertTriangle, CalendarIcon, ClipboardList, PanelRightClose, PanelRightOpen, GripVertical, MoreHorizontal, ArrowLeft, Save } from 'lucide-react';
 import { toast } from "sonner";
 import { Form as FormType } from './FormsPage';
 import { FormLoading } from '@/components/forms/form-viewer/form-loading';
