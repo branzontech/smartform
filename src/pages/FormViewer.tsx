@@ -19,7 +19,7 @@ import { QuestionRenderer } from '@/components/forms/form-viewer/question-render
 import { QuestionData } from '@/components/forms/question/types';
 import { FormTitle } from '@/components/ui/form-title';
 import { BackButton } from '@/App';
-import { Check, Link as LinkIcon, Printer, AlertTriangle, CalendarIcon, ClipboardList, PanelRightClose, PanelRightOpen, GripVertical, MoreHorizontal, ArrowLeft, Save } from 'lucide-react';
+import { Check, Link as LinkIcon, Printer, AlertTriangle, CalendarIcon, ClipboardList, PanelRightClose, PanelRightOpen, GripVertical, MoreHorizontal, ArrowLeft, Save, ClipboardPlus, Pill, TestTube, Scan, UserPlus, Scissors, List } from 'lucide-react';
 import { toast } from "sonner";
 import { Form as FormType } from './FormsPage';
 import { FormLoading } from '@/components/forms/form-viewer/form-loading';
@@ -29,6 +29,8 @@ import { createDynamicSchema, fetchFormById, saveFormResponse } from '@/utils/fo
 import { useToast } from '@/hooks/use-toast';
 import { PatientHistoryPanel } from '@/components/patients/PatientHistoryPanel';
 import { FormHeaderPreview } from '@/components/forms/FormHeaderPreview';
+import { useAuth } from '@/contexts/AuthContext';
+import { DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { PatientHeaderBanner } from '@/components/forms/PatientHeaderBanner';
 import { RegistroAtenciones } from '@/components/forms/RegistroAtenciones';
 import {
@@ -78,6 +80,8 @@ const FormViewer = () => {
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [pendingValues, setPendingValues] = useState<any>(null);
   const [showRegistro, setShowRegistro] = useState(false);
+  const { hasRole } = useAuth();
+  const canCreateOrders = hasRole('doctor') || hasRole('admin');
   const { toast: uiToast } = useToast();
 
   // Panel resize state
@@ -596,6 +600,43 @@ const FormViewer = () => {
               >
                 <ClipboardList className="w-4 h-4" />
               </Button>
+            )}
+            {canCreateOrders && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="gap-1.5 h-8 text-xs">
+                    <ClipboardPlus className="w-3.5 h-3.5" />
+                    Órdenes
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-52">
+                  <DropdownMenuItem onClick={() => toast("Próximamente")} className="flex items-center gap-2 text-sm">
+                    <Pill className="w-4 h-4 text-muted-foreground" />
+                    Medicamentos
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => toast("Próximamente")} className="flex items-center gap-2 text-sm">
+                    <TestTube className="w-4 h-4 text-muted-foreground" />
+                    Laboratorio
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => toast("Próximamente")} className="flex items-center gap-2 text-sm">
+                    <Scan className="w-4 h-4 text-muted-foreground" />
+                    Imagenología
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => toast("Próximamente")} className="flex items-center gap-2 text-sm">
+                    <UserPlus className="w-4 h-4 text-muted-foreground" />
+                    Interconsulta
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => toast("Próximamente")} className="flex items-center gap-2 text-sm">
+                    <Scissors className="w-4 h-4 text-muted-foreground" />
+                    Procedimientos
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => toast("Próximamente")} className="flex items-center gap-2 text-sm">
+                    <List className="w-4 h-4 text-muted-foreground" />
+                    Ver órdenes del paciente
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             )}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
