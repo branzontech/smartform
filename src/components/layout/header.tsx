@@ -287,10 +287,10 @@ export const Header = ({ showCreate = true }: HeaderProps) => {
                 >
                   <Avatar className="h-8 w-8 bg-white/20 shrink-0">
                     <AvatarFallback className="text-sm text-white">
-                      {user.initials}
+                      {userInitials}
                     </AvatarFallback>
                   </Avatar>
-                  <span className="hidden md:block text-sm font-medium text-white whitespace-nowrap">{user.name}</span>
+                  <span className="hidden md:block text-sm font-medium text-white whitespace-nowrap">{userName}</span>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56" sideOffset={8}>
