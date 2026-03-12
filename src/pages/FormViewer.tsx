@@ -697,15 +697,21 @@ const FormViewer = () => {
                         errors={form.formState.errors}
                       />
                     ))}
-                    <div className="sticky bottom-0 bg-background pt-4 pb-2 border-t">
-                      <Button type="submit" className="w-full print:hidden gap-2">
-                        <Save size={16} />
-                        Guardar
-                      </Button>
-                    </div>
+                    <div className="h-12" />
                   </form>
                 </Form>
               </FormProvider>
+              <div className="sticky bottom-4 flex justify-end pointer-events-none print:hidden">
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={form.handleSubmit(onSubmit)}
+                  className="rounded-full shadow-lg pointer-events-auto gap-1.5 h-9 px-4 text-xs"
+                >
+                  <Save size={14} />
+                  Guardar
+                </Button>
+              </div>
             </>
           )}
         </div>
