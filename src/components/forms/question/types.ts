@@ -31,6 +31,24 @@ export interface ScoringConfig {
   ranges: ScoringRange[];
 }
 
+export interface PredefinedVital {
+  enabled: boolean;
+  label: string;
+  unit: string;
+  loinc: string;
+  calculated?: boolean;
+  formula?: string;
+}
+
+export interface CustomVital {
+  id: string;
+  label: string;
+  unit: string;
+  valueType: "number" | "text";
+  calculated: boolean;
+  formula?: string;
+}
+
 export type QuestionType = 
   | "short" 
   | "paragraph" 
@@ -123,6 +141,11 @@ export interface QuestionData {
   // score_total fields
   sourceQuestionIds?: string[];
   scoring?: ScoringConfig;
+  // vitals fields
+  layout?: { columns: number };
+  predefinedVitals?: Record<string, PredefinedVital>;
+  customVitals?: CustomVital[];
+  showBmiClassification?: boolean;
 }
 
 export interface QuestionProps {
