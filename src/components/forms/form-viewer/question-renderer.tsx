@@ -528,6 +528,121 @@ export const QuestionRenderer = ({ question, formData, onChange, errors, allQues
         </FormItem>
       );
       
+    case "scored_checkbox": {
+      const items: ScoredOption[] = question.scoredItems || 
+        (question.scoredOptions?.map((o, i) => ({ id: `opt${i}`, text: o.label, score: o.score })) || []);
+      const mode = question.selectionMode || question.scoredSelectionMode || "single";
+      const current = formData[question.id] || { selectedOptions: [], score: 0 };
+      const selectedIds: string[] = current.selectedOptions || [];
+
+      const handleToggle = (optId: string, optScore: number) => {
+        let next: string[];
+        if (mode === "single") {
+          next = [optId];
+        } else {
+          next = selectedIds.includes(optId)
+            ? selectedIds.filter((id: string) => id !== optId)
+            : [...selectedIds, optId];
+        }
+        const totalScore = items
+          .filter((it) => next.includes(it.id))
+          .reduce((sum, it) => sum + it.score, 0);
+        onChange(question.id, { selectedOptions: next, score: totalScore });
+      };
+
+      return (
+        <div className="space-y-3">
+          <FormLabel>{question.title}</FormLabel>
+          <div className="space-y-2">
+            {items.map((opt) => {
+              const isSelected = selectedIds.includes(opt.id);
+              return (
+                <label
+                  key={opt.id}
+                  className="flex items-center gap-3 cursor-pointer hover:bg-muted/50 rounded px-2 py-1.5 transition-colors"
+                >
+                  {mode === "single" ? (
+                    <input
+                      type="radio"
+                      name={question.id}
+                      checked={isSelected}
+                      onChange={() => handleToggle(opt.id, opt.score)}
+                      className="accent-primary"
+                    />
+                  ) : (
+                    <Checkbox
+                      checked={isSelected}
+                      onCheckedChange={() => handleToggle(opt.id, opt.score)}
+                    />
+                  )}
+                  <span className="flex-1">{opt.text}</span>
+                  <span className="text-xs text-muted-foreground">({opt.score} pts)</span>
+                </label>
+              );
+            })}
+          </div>
+          <div className="text-sm font-medium text-foreground pt-1">
+            Puntaje: {current.score || 0}
+          </div>
+        </div>
+      );
+    }
+
+    case "score_total": {
+      const sourceIds = question.sourceQuestionIds || [];
+      const totalScore = useMemo(() => {
+        return sourceIds.reduce((sum: number, qId: string) => {
+          const answer = formData[qId];
+          return sum + (answer?.score || 0);
+        }, 0);
+      }, [sourceIds.join(","), ...sourceIds.map((id: string) => JSON.stringify(formData[id]))]);
+
+      // Auto-save the score_total value
+      React.useEffect(() => {
+        const scoring = question.scoring;
+        let interpretation = "";
+        if (scoring?.enabled && scoring.ranges?.length) {
+          const match = scoring.ranges.find(
+            (r: ScoringRange) => totalScore >= r.min && totalScore <= r.max
+          );
+          if (match) interpretation = match.label;
+        }
+        const currentVal = formData[question.id];
+        if (!currentVal || currentVal.score !== totalScore || currentVal.interpretation !== interpretation) {
+          onChange(question.id, { score: totalScore, interpretation });
+        }
+      }, [totalScore]);
+
+      const scoring = question.scoring;
+      let matchedRange: ScoringRange | null = null;
+      if (scoring?.enabled && scoring.ranges?.length) {
+        matchedRange = scoring.ranges.find(
+          (r: ScoringRange) => totalScore >= r.min && totalScore <= r.max
+        ) || null;
+      }
+
+      const colors = matchedRange ? RANGE_COLOR_MAP[matchedRange.color] || RANGE_COLOR_MAP.gray : null;
+
+      return (
+        <div
+          className={cn(
+            "rounded-lg p-4 border-l-4",
+            colors ? `${colors.bg} ${colors.border}` : "bg-muted/30 border-border"
+          )}
+        >
+          <FormLabel className="text-sm text-muted-foreground">{question.title}</FormLabel>
+          <div className="text-2xl font-bold mt-1">{totalScore}</div>
+          {matchedRange && colors && (
+            <div className="flex items-center gap-2 mt-2">
+              <span className={cn("px-2 py-0.5 rounded-full text-xs font-medium text-white", colors.badge)}>
+                {matchedRange.label}
+              </span>
+            </div>
+          )}
+        </div>
+      );
+    }
+
     default:
       return <div>Tipo de pregunta no soportado</div>;
   }
