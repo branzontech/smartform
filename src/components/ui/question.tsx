@@ -20,6 +20,7 @@ interface QuestionProps {
   isFirst?: boolean;
   isLast?: boolean;
   designOptions?: any;
+  allQuestions?: QuestionData[];
 }
 
 export const Question = ({
