@@ -4,7 +4,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { Plus, FileText, Palette, SeparatorHorizontal, Save, X } from "lucide-react";
 import { nanoid } from "nanoid";
 import { supabase } from "@/integrations/supabase/client";
-import { FormTitle } from "@/components/ui/form-title";
+
 import { Question } from "@/components/ui/question";
 import { QuestionData, FormDesignOptions, defaultDesignOptions } from "@/components/forms/question/types";
 import { Button } from "@/components/ui/button";
