@@ -353,7 +353,7 @@ const FormCreator = () => {
     <div className="h-full flex flex-col overflow-hidden" style={applyDesignToPreview()}>
       {/* Barra de acciones — FIJA, nunca se mueve */}
       <div className="flex-shrink-0 flex items-center justify-between px-4 py-2 border-b border-border bg-background z-10">
-        <BackButton />
+        <BackButton fallbackPath="/app/configuracion?tab=forms" />
         <div className="flex items-center gap-2">
           <Button
             variant="ghost"
