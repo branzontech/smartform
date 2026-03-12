@@ -659,11 +659,9 @@ const FormViewer = () => {
         </div>
 
         {isConsultationForm && (
-          <div className="mt-2 p-2.5 bg-primary/5 rounded-md border border-primary/20">
-            <p className="text-primary text-xs font-medium">
-              Consulta médica en curso — Complete el formulario de atención
-            </p>
-          </div>
+          <p className="mt-1.5 text-[10px] text-muted-foreground tracking-wide uppercase">
+            ● Consulta en curso
+          </p>
         )}
       </div>
 
