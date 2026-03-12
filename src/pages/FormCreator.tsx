@@ -154,6 +154,26 @@ const FormCreator = () => {
     setQuestions([...questions, newSection]);
   };
 
+  const handleAddQuestionAfter = (afterId: string) => {
+    const newQuestionId = nanoid();
+    const newQuestion = { id: newQuestionId, ...defaultQuestion, title: "" };
+    const index = questions.findIndex(q => q.id === afterId);
+    const newQuestions = [...questions];
+    newQuestions.splice(index + 1, 0, newQuestion);
+    setQuestions(newQuestions);
+    setExpandedQuestions([newQuestionId]);
+    setActiveQuestionId(newQuestionId);
+  };
+
+  const handleAddSectionAfter = (afterId: string) => {
+    const newSectionId = nanoid();
+    const newSection: QuestionData = { id: newSectionId, type: "section", title: "", required: false };
+    const index = questions.findIndex(q => q.id === afterId);
+    const newQuestions = [...questions];
+    newQuestions.splice(index + 1, 0, newSection);
+    setQuestions(newQuestions);
+  };
+
   const handleDuplicateQuestion = (id: string) => {
     const original = questions.find(q => q.id === id);
     if (!original) return;
