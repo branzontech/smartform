@@ -26,7 +26,8 @@ export type QuestionType =
   | "multifield"
   | "signature"
   | "file"
-  | "medication";
+  | "medication"
+  | "scored_checkbox";
 
 export interface QuestionTypeOption {
   id: QuestionType;
@@ -94,6 +95,7 @@ export interface QuestionData {
   isCalculated?: boolean;
   calculationType?: "sum" | "subtract" | "multiply" | "divide";
   numberType?: "integer" | "decimal";
+  scoredOptions?: { label: string; score: number }[];
 }
 
 export interface QuestionProps {
