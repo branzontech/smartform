@@ -68,6 +68,7 @@ const FormCreator = () => {
   const [questions, setQuestions] = useState<QuestionData[]>(draft?.questions || []);
   const [saving, setSaving] = useState(false);
   const [expandedQuestions, setExpandedQuestions] = useState<string[]>([]);
+  const [activeQuestionId, setActiveQuestionId] = useState<string | null>(null);
   const [designOptions, setDesignOptions] = useState<FormDesignOptions>(draft?.designOptions || defaultDesignOptions);
   const [draftRestored, setDraftRestored] = useState(!!draft);
 
@@ -151,6 +152,26 @@ const FormCreator = () => {
       required: false,
     };
     setQuestions([...questions, newSection]);
+  };
+
+  const handleAddQuestionAfter = (afterId: string) => {
+    const newQuestionId = nanoid();
+    const newQuestion = { id: newQuestionId, ...defaultQuestion, title: "" };
+    const index = questions.findIndex(q => q.id === afterId);
+    const newQuestions = [...questions];
+    newQuestions.splice(index + 1, 0, newQuestion);
+    setQuestions(newQuestions);
+    setExpandedQuestions([newQuestionId]);
+    setActiveQuestionId(newQuestionId);
+  };
+
+  const handleAddSectionAfter = (afterId: string) => {
+    const newSectionId = nanoid();
+    const newSection: QuestionData = { id: newSectionId, type: "section", title: "", required: false };
+    const index = questions.findIndex(q => q.id === afterId);
+    const newQuestions = [...questions];
+    newQuestions.splice(index + 1, 0, newSection);
+    setQuestions(newQuestions);
   };
 
   const handleDuplicateQuestion = (id: string) => {
@@ -611,47 +632,52 @@ const FormCreator = () => {
               </Tabs>
             </div>
             
-            {/* Questions list + sticky side toolbar */}
-            <div className="flex gap-3 mb-8">
-              {/* Questions */}
-              <div className="flex-1 space-y-4">
-                {questions.map((question, index) => (
-                  <Question
-                    key={question.id}
-                    question={question}
-                    onUpdate={handleUpdateQuestion}
-                    onDelete={handleDeleteQuestion}
-                    onDuplicate={handleDuplicateQuestion}
-                    isExpanded={expandedQuestions.includes(question.id)}
-                    onToggleExpand={() => toggleQuestionExpansion(question.id)}
-                    onMoveUp={handleMoveQuestionUp}
-                    onMoveDown={handleMoveQuestionDown}
-                    isFirst={index === 0}
-                    isLast={index === questions.length - 1}
-                    designOptions={designOptions}
-                  />
-                ))}
-              </div>
+            {/* Questions list with inline floating toolbar */}
+            <div className="space-y-4 mb-8">
+              {questions.map((question, index) => (
+                <div
+                  key={question.id}
+                  className="flex gap-2 items-start"
+                  onMouseEnter={() => setActiveQuestionId(question.id)}
+                  onClick={() => setActiveQuestionId(question.id)}
+                >
+                  <div className="flex-1 min-w-0">
+                    <Question
+                      question={question}
+                      onUpdate={handleUpdateQuestion}
+                      onDelete={handleDeleteQuestion}
+                      onDuplicate={handleDuplicateQuestion}
+                      isExpanded={expandedQuestions.includes(question.id)}
+                      onToggleExpand={() => toggleQuestionExpansion(question.id)}
+                      onMoveUp={handleMoveQuestionUp}
+                      onMoveDown={handleMoveQuestionDown}
+                      isFirst={index === 0}
+                      isLast={index === questions.length - 1}
+                      designOptions={designOptions}
+                    />
+                  </div>
 
-              {/* Toolbar lateral sticky - pegada al formulario */}
-              <div className="shrink-0">
-                <div className="sticky top-4 flex flex-col gap-1 bg-background border border-border rounded-lg shadow-md p-1.5">
-                  <button
-                    onClick={handleAddQuestion}
-                    className="p-2 rounded-md hover:bg-muted transition-colors group"
-                    title="Añadir pregunta"
-                  >
-                    <Plus size={18} className="text-muted-foreground group-hover:text-foreground" />
-                  </button>
-                  <button
-                    onClick={handleAddSection}
-                    className="p-2 rounded-md hover:bg-muted transition-colors group"
-                    title="Añadir sección"
-                  >
-                    <SeparatorHorizontal size={18} className="text-muted-foreground group-hover:text-foreground" />
-                  </button>
+                  {/* Toolbar — solo visible en el campo activo */}
+                  <div className={`shrink-0 flex flex-col gap-1 bg-background border border-border rounded-lg shadow-sm p-1 transition-opacity duration-200 ${
+                    activeQuestionId === question.id ? 'opacity-100' : 'opacity-0 pointer-events-none'
+                  }`}>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleAddQuestionAfter(question.id); }}
+                      className="p-1.5 rounded-md hover:bg-muted transition-colors group"
+                      title="Añadir pregunta"
+                    >
+                      <Plus size={18} className="text-muted-foreground group-hover:text-foreground" />
+                    </button>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleAddSectionAfter(question.id); }}
+                      className="p-1.5 rounded-md hover:bg-muted transition-colors group"
+                      title="Añadir sección"
+                    >
+                      <SeparatorHorizontal size={18} className="text-muted-foreground group-hover:text-foreground" />
+                    </button>
+                  </div>
                 </div>
-              </div>
+              ))}
             </div>
           </div>
         </div>
