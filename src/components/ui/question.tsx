@@ -214,6 +214,7 @@ export const Question = ({
                   question={question}
                   onUpdate={handleUpdate}
                   readOnly={readOnly}
+                  allQuestions={allQuestions}
                 />
               </div>
 
