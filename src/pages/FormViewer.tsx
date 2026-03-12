@@ -495,7 +495,7 @@ const FormViewer = () => {
                     errors={form.formState.errors}
                   />
                 ))}
-                <Button type="submit" className="w-full sm:w-auto print:hidden">Enviar respuestas</Button>
+                <Button type="submit" className="w-full sm:w-auto print:hidden gap-2"><Save size={16} />Guardar</Button>
               </form>
             </Form>
           </FormProvider>

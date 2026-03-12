@@ -3,14 +3,14 @@ import { FormLabel } from "@/components/ui/form";
 import { cn } from "@/lib/utils";
 import { QuestionData, ScoringRange } from "../question/types";
 
-const RANGE_COLOR_MAP: Record<string, { bg: string; border: string; text: string; badge: string }> = {
-  red:    { bg: "bg-red-50",    border: "border-red-500",    text: "text-red-700",    badge: "bg-red-500" },
-  orange: { bg: "bg-orange-50", border: "border-orange-500", text: "text-orange-700", badge: "bg-orange-500" },
-  yellow: { bg: "bg-yellow-50", border: "border-yellow-500", text: "text-yellow-700", badge: "bg-yellow-400" },
-  lime:   { bg: "bg-lime-50",   border: "border-lime-500",   text: "text-lime-700",   badge: "bg-lime-500" },
-  green:  { bg: "bg-green-50",  border: "border-green-500",  text: "text-green-700",  badge: "bg-green-600" },
-  blue:   { bg: "bg-blue-50",   border: "border-blue-500",   text: "text-blue-700",   badge: "bg-blue-500" },
-  gray:   { bg: "bg-gray-50",   border: "border-gray-500",   text: "text-gray-700",   badge: "bg-gray-400" },
+const RANGE_COLOR_MAP: Record<string, { bg: string; text: string }> = {
+  red:    { bg: "bg-red-50",    text: "text-red-700" },
+  orange: { bg: "bg-orange-50", text: "text-orange-700" },
+  yellow: { bg: "bg-yellow-50", text: "text-yellow-700" },
+  lime:   { bg: "bg-lime-50",   text: "text-lime-700" },
+  green:  { bg: "bg-green-50",  text: "text-green-700" },
+  blue:   { bg: "bg-blue-50",   text: "text-blue-700" },
+  gray:   { bg: "bg-gray-50",   text: "text-gray-700" },
 };
 
 interface ScoreTotalViewerProps {
@@ -48,22 +48,36 @@ export const ScoreTotalViewer: React.FC<ScoreTotalViewerProps> = ({ question, fo
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [totalScore, interpretation]);
 
-  const colors = matchedRange ? RANGE_COLOR_MAP[matchedRange.color] || RANGE_COLOR_MAP.gray : null;
+  const ranges = scoring?.enabled && scoring.ranges?.length ? scoring.ranges : [];
 
   return (
-    <div
-      className={cn(
-        "rounded-lg p-4 border-l-4",
-        colors ? `${colors.bg} ${colors.border}` : "bg-muted/30 border-border"
-      )}
-    >
-      <FormLabel className="text-sm text-muted-foreground">{question.title}</FormLabel>
-      <div className="text-2xl font-bold mt-1">{totalScore}</div>
-      {matchedRange && colors && (
-        <div className="flex items-center gap-2 mt-2">
-          <span className={cn("px-2 py-0.5 rounded-full text-xs font-medium text-white", colors.badge)}>
-            {matchedRange.label}
-          </span>
+    <div className="border-t-2 border-primary/20 pt-4 mt-4">
+      <div className="flex items-baseline justify-between mb-3">
+        <span className="font-semibold text-sm">{question.title}</span>
+        <span className="text-3xl font-bold tabular-nums">{totalScore}</span>
+      </div>
+      {ranges.length > 0 && (
+        <div className="space-y-0.5">
+          {ranges.map((r: ScoringRange, i: number) => {
+            const isActive = matchedRange === r;
+            const colors = RANGE_COLOR_MAP[r.color] || RANGE_COLOR_MAP.gray;
+            return (
+              <div
+                key={i}
+                className={cn(
+                  "flex items-center gap-3 px-3 py-1.5 rounded-md text-sm transition-colors",
+                  isActive
+                    ? `${colors.bg} ${colors.text} font-medium`
+                    : "text-muted-foreground"
+                )}
+              >
+                <span className="tabular-nums w-16 shrink-0 text-right">
+                  {r.min === r.max ? r.min : `${r.min} - ${r.max}`}
+                </span>
+                <span>{r.label}</span>
+              </div>
+            );
+          })}
         </div>
       )}
     </div>
