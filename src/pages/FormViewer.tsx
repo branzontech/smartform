@@ -29,6 +29,8 @@ import { createDynamicSchema, fetchFormById, saveFormResponse } from '@/utils/fo
 import { useToast } from '@/hooks/use-toast';
 import { PatientHistoryPanel } from '@/components/patients/PatientHistoryPanel';
 import { FormHeaderPreview } from '@/components/forms/FormHeaderPreview';
+import { useAuth } from '@/contexts/AuthContext';
+import { DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { PatientHeaderBanner } from '@/components/forms/PatientHeaderBanner';
 import { RegistroAtenciones } from '@/components/forms/RegistroAtenciones';
 import {
