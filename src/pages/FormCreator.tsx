@@ -113,7 +113,7 @@ const FormCreator = () => {
             description: "El formulario no existe",
             variant: "destructive",
           });
-          navigate("/app/home/formularios");
+          navigate("/app/configuracion");
         }
       };
       loadForm();
