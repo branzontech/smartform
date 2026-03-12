@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Header } from "@/components/layout/header";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, FileText, Palette, Bell, Save, User, Shield, Plus, Cog, HelpCircle, Trash2, SlidersHorizontal, ClipboardList, Loader2, Eye, Edit, BarChart, Building2, UserCog } from "lucide-react";
+import { ArrowLeft, FileText, Palette, Bell, Save, User, Shield, Cog, HelpCircle, Trash2, SlidersHorizontal, ClipboardList, Building2, UserCog } from "lucide-react";
 import { InstitutionHeaderConfig } from "@/components/config/InstitutionHeaderConfig";
 import { supabase } from "@/integrations/supabase/client";
 import { PatientFieldsConfig } from "@/components/config/PatientFieldsConfig";
@@ -43,23 +43,6 @@ export const SettingsPage = () => {
   const [darkPrint, setDarkPrint] = useState(false);
   const [language, setLanguage] = useState("es");
   const [activeCategory, setActiveCategory] = useState("general");
-  const [forms, setForms] = useState<any[]>([]);
-  const [formsLoading, setFormsLoading] = useState(false);
-
-  // Load forms when "forms" category is active
-  useEffect(() => {
-    if (activeCategory !== "forms") return;
-    const loadForms = async () => {
-      setFormsLoading(true);
-      const { data } = await supabase
-        .from("formularios")
-        .select("*")
-        .order("created_at", { ascending: false });
-      setForms(data || []);
-      setFormsLoading(false);
-    };
-    loadForms();
-  }, [activeCategory]);
 
   const handleSave = () => {
     toast.success("Configuración guardada con éxito");
@@ -204,64 +187,14 @@ export const SettingsPage = () => {
             {/* Forms Settings */}
             {activeCategory === "forms" && (
               <div>
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-base font-semibold">Formularios</h2>
-                  <Button size="sm" className="gap-1.5" onClick={() => navigate("/app/crear")}>
-                    <Plus className="h-3.5 w-3.5" />
-                    Nuevo formulario
-                  </Button>
-                </div>
-                
-                {formsLoading ? (
-                  <div className="flex items-center justify-center py-12">
-                    <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-                  </div>
-                ) : forms.length === 0 ? (
-                  <div className="rounded-xl border border-dashed border-border bg-card/50 p-8 text-center">
-                    <FileText className="h-10 w-10 text-muted-foreground/40 mx-auto mb-3" />
-                    <p className="text-sm text-muted-foreground mb-3">No hay formularios creados</p>
-                    <Button size="sm" variant="outline" onClick={() => navigate("/app/crear")}>
-                      <Plus className="h-3.5 w-3.5 mr-1.5" />
-                      Crear primer formulario
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    {forms.map((f) => (
-                      <div key={f.id} className="rounded-xl border border-border bg-card/50 px-4 py-3 flex items-center justify-between group hover:bg-card transition-colors">
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-2">
-                            <h3 className="text-sm font-medium truncate">{f.titulo}</h3>
-                            <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-muted text-muted-foreground shrink-0">
-                              {f.tipo === "formato" ? "Formato" : "Form"}
-                            </span>
-                            <span className={cn(
-                              "text-[10px] px-1.5 py-0.5 rounded-md shrink-0",
-                              f.estado === "activo" ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"
-                            )}>
-                              {f.estado}
-                            </span>
-                          </div>
-                          {f.descripcion && <p className="text-xs text-muted-foreground mt-0.5 truncate">{f.descripcion}</p>}
-                          <p className="text-[10px] text-muted-foreground mt-1">
-                            {f.respuestas_count || 0} respuestas · {new Date(f.created_at).toLocaleDateString("es")}
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => navigate(`/app/crear/${f.id}`)}>
-                            <Edit className="h-3.5 w-3.5" />
-                          </Button>
-                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => navigate(`/app/ver/${f.id}`)}>
-                            <Eye className="h-3.5 w-3.5" />
-                          </Button>
-                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => navigate(`/app/formulario/${f.id}/respuestas`)}>
-                            <BarChart className="h-3.5 w-3.5" />
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
+                <h2 className="text-base font-semibold mb-1">Formularios</h2>
+                <p className="text-xs text-muted-foreground mb-4">
+                  Gestiona los formularios clínicos del sistema.
+                </p>
+                <Button onClick={() => navigate("/app/home/formularios")} className="gap-1.5">
+                  <FileText className="h-4 w-4" />
+                  Ir a gestión de formularios
+                </Button>
               </div>
             )}
 
