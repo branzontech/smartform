@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import { useFormContext } from 'react-hook-form';
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
@@ -8,9 +8,10 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { SignaturePad } from "@/components/ui/question-types";
-import { QuestionData, ScoredOption, ScoringRange } from "../question/types";
+import { QuestionData, ScoredOption } from "../question/types";
 import { FileUp } from "lucide-react";
 import { MedicationManager } from "@/components/medical/MedicationManager";
+import { ScoreTotalViewer } from "./score-total-viewer";
 
 const RANGE_COLOR_MAP: Record<string, { bg: string; border: string; text: string; badge: string }> = {
   red:    { bg: "bg-red-50",    border: "border-red-500",    text: "text-red-700",    badge: "bg-red-500" },
