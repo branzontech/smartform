@@ -1,8 +1,7 @@
 import React from "react";
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 
 import Home from "@/pages/Home";
-import FormsPage from "@/pages/FormsPage";
 import FormCreator from "@/pages/FormCreator";
 import FormViewer from "@/pages/FormViewer";
 import FormResponses from "@/pages/FormResponses";
@@ -59,7 +58,7 @@ const AppRoutes = () => {
       <Routes>
         <Route index element={<Home />} />
         <Route path="home" element={<Home />} />
-        <Route path="home/formularios" element={<FormsPage />} />
+        <Route path="home/formularios" element={<Navigate to="/app/configuracion" replace />} />
         <Route path="crear" element={<FormCreator />} />
         <Route path="crear/:id" element={<FormCreator />} />
         <Route path="editar/:id" element={<FormCreator />} />

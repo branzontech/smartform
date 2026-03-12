@@ -113,7 +113,7 @@ const FormCreator = () => {
             description: "El formulario no existe",
             variant: "destructive",
           });
-          navigate("/app/home/formularios");
+          navigate("/app/configuracion");
         }
       };
       loadForm();
@@ -277,6 +277,8 @@ const FormCreator = () => {
         fhir_extensions: {} as any,
       };
       
+      let formId = id;
+      
       if (id) {
         const { error } = await supabase
           .from("formularios")
@@ -290,11 +292,14 @@ const FormCreator = () => {
           description: "Los cambios han sido guardados",
         });
       } else {
-        const { error } = await supabase
+        const { data, error } = await supabase
           .from("formularios")
-          .insert(formPayload);
+          .insert(formPayload)
+          .select("id")
+          .single();
 
         if (error) throw error;
+        formId = data.id;
         
         toast({
           title: "Formulario creado",
@@ -304,7 +309,7 @@ const FormCreator = () => {
       
       clearDraft();
       setTimeout(() => {
-        navigate("/app/home/formularios");
+        navigate(`/app/ver/${formId}`);
       }, 500);
     } catch (error) {
       console.error("Error saving form:", error);
@@ -351,7 +356,7 @@ const FormCreator = () => {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => navigate("/app/home/formularios")}
+            onClick={() => navigate("/app/configuracion")}
             disabled={saving}
             className="text-muted-foreground"
           >
