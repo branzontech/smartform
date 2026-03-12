@@ -601,6 +601,43 @@ const FormViewer = () => {
                 <ClipboardList className="w-4 h-4" />
               </Button>
             )}
+            {canCreateOrders && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="gap-1.5 h-8 text-xs">
+                    <ClipboardPlus className="w-3.5 h-3.5" />
+                    Órdenes
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-52">
+                  <DropdownMenuItem onClick={() => toast("Próximamente")} className="flex items-center gap-2 text-sm">
+                    <Pill className="w-4 h-4 text-muted-foreground" />
+                    Medicamentos
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => toast("Próximamente")} className="flex items-center gap-2 text-sm">
+                    <TestTube className="w-4 h-4 text-muted-foreground" />
+                    Laboratorio
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => toast("Próximamente")} className="flex items-center gap-2 text-sm">
+                    <Scan className="w-4 h-4 text-muted-foreground" />
+                    Imagenología
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => toast("Próximamente")} className="flex items-center gap-2 text-sm">
+                    <UserPlus className="w-4 h-4 text-muted-foreground" />
+                    Interconsulta
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => toast("Próximamente")} className="flex items-center gap-2 text-sm">
+                    <Scissors className="w-4 h-4 text-muted-foreground" />
+                    Procedimientos
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => toast("Próximamente")} className="flex items-center gap-2 text-sm">
+                    <List className="w-4 h-4 text-muted-foreground" />
+                    Ver órdenes del paciente
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
