@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { CheckSquare, Minus, Plus } from "lucide-react";
+import { CheckSquare, Circle, Minus, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ContentComponentProps } from "../types";
 
@@ -14,6 +14,7 @@ export const ScoredCheckbox: React.FC<ContentComponentProps> = ({
       { label: "", score: 0 },
     ]
   );
+  const selectionMode = question.scoredSelectionMode || "single";
   const [focusIndex, setFocusIndex] = useState<number | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -64,16 +65,18 @@ export const ScoredCheckbox: React.FC<ContentComponentProps> = ({
     onUpdate({ scoredOptions: updated });
   };
 
+  const OptionIcon = selectionMode === "single" ? Circle : CheckSquare;
+
   if (readOnly) {
     return (
       <div className="space-y-2">
         {scoredOptions.map((opt, index) => (
           <div key={index} className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              disabled
-              className="text-primary"
-            />
+            {selectionMode === "single" ? (
+              <input type="radio" disabled className="text-primary" />
+            ) : (
+              <input type="checkbox" disabled className="text-primary" />
+            )}
             <span>{opt.label || `Opción ${index + 1}`}</span>
             <span className="ml-auto text-xs text-muted-foreground font-mono">
               ({opt.score} pts)
@@ -86,13 +89,43 @@ export const ScoredCheckbox: React.FC<ContentComponentProps> = ({
 
   return (
     <div className="mt-2" ref={containerRef}>
+      {/* Selection mode toggle */}
+      <div className="flex items-center gap-1 mb-3 p-1 bg-muted rounded-md w-fit">
+        <button
+          type="button"
+          onClick={() => onUpdate({ scoredSelectionMode: "single" })}
+          className={cn(
+            "flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-medium transition-colors",
+            selectionMode === "single"
+              ? "bg-background text-foreground shadow-sm"
+              : "text-muted-foreground hover:text-foreground"
+          )}
+        >
+          <Circle size={14} />
+          Selección única
+        </button>
+        <button
+          type="button"
+          onClick={() => onUpdate({ scoredSelectionMode: "multiple" })}
+          className={cn(
+            "flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-medium transition-colors",
+            selectionMode === "multiple"
+              ? "bg-background text-foreground shadow-sm"
+              : "text-muted-foreground hover:text-foreground"
+          )}
+        >
+          <CheckSquare size={14} />
+          Selección múltiple
+        </button>
+      </div>
+
       <div className="text-xs text-muted-foreground mb-2 flex items-center justify-between">
         <span>Opciones con puntaje</span>
         <span className="font-mono">Pts</span>
       </div>
       {scoredOptions.map((opt, index) => (
         <div key={index} className="flex items-center gap-2 mb-2 animate-fade-in">
-          <CheckSquare size={18} className="text-muted-foreground shrink-0" />
+          <OptionIcon size={18} className="text-muted-foreground shrink-0" />
           <input
             data-role="label"
             type="text"
