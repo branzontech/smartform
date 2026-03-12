@@ -13,22 +13,11 @@ import { FileUp } from "lucide-react";
 import { MedicationManager } from "@/components/medical/MedicationManager";
 import { ScoreTotalViewer } from "./score-total-viewer";
 
-const RANGE_COLOR_MAP: Record<string, { bg: string; border: string; text: string; badge: string }> = {
-  red:    { bg: "bg-red-50",    border: "border-red-500",    text: "text-red-700",    badge: "bg-red-500" },
-  orange: { bg: "bg-orange-50", border: "border-orange-500", text: "text-orange-700", badge: "bg-orange-500" },
-  yellow: { bg: "bg-yellow-50", border: "border-yellow-500", text: "text-yellow-700", badge: "bg-yellow-400" },
-  lime:   { bg: "bg-lime-50",   border: "border-lime-500",   text: "text-lime-700",   badge: "bg-lime-500" },
-  green:  { bg: "bg-green-50",  border: "border-green-500",  text: "text-green-700",  badge: "bg-green-600" },
-  blue:   { bg: "bg-blue-50",   border: "border-blue-500",   text: "text-blue-700",   badge: "bg-blue-500" },
-  gray:   { bg: "bg-gray-50",   border: "border-gray-500",   text: "text-gray-700",   badge: "bg-gray-400" },
-};
-
 interface QuestionRendererProps {
   question: QuestionData;
   formData: Record<string, any>;
   onChange: (id: string, value: any) => void;
   errors: any;
-  allQuestions?: QuestionData[];
 }
 
 export const QuestionRenderer = ({ question, formData, onChange, errors, allQuestions = [] }: QuestionRendererProps) => {
