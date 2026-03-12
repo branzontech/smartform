@@ -30,6 +30,18 @@ export const ScoreTotal: React.FC<ScoreTotalProps> = ({
   const sourceIds = question.sourceQuestionIds || [];
   const scoring = question.scoring || { enabled: false, ranges: [] };
 
+  // Track raw string values for range numeric inputs
+  const [rawRanges, setRawRanges] = useState<Record<string, { min: string; max: string }>>(() => {
+    const map: Record<string, { min: string; max: string }> = {};
+    scoring.ranges.forEach((r: ScoringRange, i: number) => {
+      map[i] = {
+        min: r.min === 0 ? "" : String(r.min),
+        max: r.max === 0 ? "" : String(r.max),
+      };
+    });
+    return map;
+  });
+
   const toggleSource = (id: string) => {
     const next = sourceIds.includes(id)
       ? sourceIds.filter((s) => s !== id)
@@ -42,11 +54,40 @@ export const ScoreTotal: React.FC<ScoreTotalProps> = ({
   };
 
   const addRange = () => {
+    const newIndex = scoring.ranges.length;
     const ranges: ScoringRange[] = [
       ...scoring.ranges,
       { min: 0, max: 0, label: "", color: "green" },
     ];
+    setRawRanges((prev) => ({ ...prev, [newIndex]: { min: "", max: "" } }));
     updateScoring({ ranges });
+  };
+
+  const handleRangeNumChange = (index: number, field: "min" | "max", value: string) => {
+    if (value !== "" && value !== "-" && !/^-?\d*\.?\d*$/.test(value)) return;
+    setRawRanges((prev) => ({
+      ...prev,
+      [index]: { ...(prev[index] || { min: "", max: "" }), [field]: value },
+    }));
+    const parsed = value === "" ? 0 : parseFloat(value);
+    const ranges = [...scoring.ranges];
+    ranges[index] = { ...ranges[index], [field]: isNaN(parsed) ? 0 : parsed };
+    updateScoring({ ranges });
+  };
+
+  const handleRangeNumBlur = (index: number, field: "min" | "max") => {
+    const raw = rawRanges[index]?.[field] ?? "";
+    const parsed = parseFloat(raw);
+    const final = isNaN(parsed) ? 0 : parsed;
+    setRawRanges((prev) => ({
+      ...prev,
+      [index]: { ...(prev[index] || { min: "", max: "" }), [field]: final === 0 ? "" : String(final) },
+    }));
+    if (scoring.ranges[index]?.[field] !== final) {
+      const ranges = [...scoring.ranges];
+      ranges[index] = { ...ranges[index], [field]: final };
+      updateScoring({ ranges });
+    }
   };
 
   const updateRange = (index: number, patch: Partial<ScoringRange>) => {
@@ -56,7 +97,15 @@ export const ScoreTotal: React.FC<ScoreTotalProps> = ({
   };
 
   const removeRange = (index: number) => {
-    updateScoring({ ranges: scoring.ranges.filter((_, i) => i !== index) });
+    const newRanges = scoring.ranges.filter((_: ScoringRange, i: number) => i !== index);
+    // Rebuild rawRanges indices
+    const newRaw: Record<string, { min: string; max: string }> = {};
+    newRanges.forEach((r: ScoringRange, i: number) => {
+      const oldIdx = i >= index ? i + 1 : i;
+      newRaw[i] = rawRanges[oldIdx] || { min: r.min === 0 ? "" : String(r.min), max: r.max === 0 ? "" : String(r.max) };
+    });
+    setRawRanges(newRaw);
+    updateScoring({ ranges: newRanges });
   };
 
   if (readOnly) {
