@@ -49,7 +49,7 @@ const quickActions = [
     icon: FileText,
     label: "Formularios",
     description: "Crea y gestiona formularios clínicos",
-    route: "/app/home/formularios",
+    route: "/app/configuracion",
     accent: "group-hover:text-primary",
     bgAccent: "group-hover:bg-primary/10",
   },

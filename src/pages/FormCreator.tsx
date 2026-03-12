@@ -356,7 +356,7 @@ const FormCreator = () => {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => navigate("/app/home/formularios")}
+            onClick={() => navigate("/app/configuracion")}
             disabled={saving}
             className="text-muted-foreground"
           >
