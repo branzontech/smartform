@@ -4,7 +4,6 @@ import { useNavigate, useParams } from "react-router-dom";
 import { Plus, FileText, Palette, SeparatorHorizontal, Save, X } from "lucide-react";
 import { nanoid } from "nanoid";
 import { supabase } from "@/integrations/supabase/client";
-import { Header } from "@/components/layout/header";
 import { FormTitle } from "@/components/ui/form-title";
 import { Question } from "@/components/ui/question";
 import { QuestionData, FormDesignOptions, defaultDesignOptions } from "@/components/forms/question/types";
@@ -308,17 +307,14 @@ const FormCreator = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex flex-col">
-        <Header showCreate={false} />
-        <div className="flex-1 flex items-center justify-center">
-          <div className="animate-pulse space-y-6 w-full max-w-3xl px-4">
-            <div className="h-12 bg-gray-200 dark:bg-gray-800 rounded-md w-3/4"></div>
-            <div className="h-8 bg-gray-200 dark:bg-gray-800 rounded-md w-1/2"></div>
-            <div className="space-y-4">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="h-36 bg-gray-200 dark:bg-gray-800 rounded-md"></div>
-              ))}
-            </div>
+      <div className="h-full flex items-center justify-center">
+        <div className="animate-pulse space-y-6 w-full max-w-3xl px-4">
+          <div className="h-12 bg-muted rounded-md w-3/4"></div>
+          <div className="h-8 bg-muted rounded-md w-1/2"></div>
+          <div className="space-y-4">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="h-36 bg-muted rounded-md"></div>
+            ))}
           </div>
         </div>
       </div>
@@ -326,44 +322,39 @@ const FormCreator = () => {
   }
 
   return (
-    <div className="h-screen flex flex-col" style={applyDesignToPreview()}>
-      <Header showCreate={false} />
-      <main className="flex-1 min-h-0 flex flex-col">
-        {/* Barra de acciones sticky */}
-        <div className="shrink-0 sticky top-0 z-30 bg-background/95 backdrop-blur-sm border-b border-border">
-          <div className="container mx-auto px-4 py-2">
-            <div className="max-w-3xl mx-auto flex items-center justify-between">
-              <BackButton />
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => navigate("/app/home/formularios")}
-                  disabled={saving}
-                  className="text-muted-foreground"
-                >
-                  <X size={16} className="mr-1" />
-                  Cancelar
-                </Button>
-                <Button
-                  size="sm"
-                  onClick={saveForm}
-                  disabled={saving}
-                  style={{
-                    backgroundColor: designOptions.primaryColor,
-                    borderColor: designOptions.primaryColor
-                  }}
-                  className="text-white"
-                >
-                  <Save size={16} className="mr-1" />
-                  {saving ? "Guardando..." : "Guardar"}
-                </Button>
-              </div>
-            </div>
-          </div>
+    <div className="h-full flex flex-col overflow-hidden" style={applyDesignToPreview()}>
+      {/* Barra de acciones — FIJA, nunca se mueve */}
+      <div className="flex-shrink-0 flex items-center justify-between px-4 py-2 border-b border-border bg-background z-10">
+        <BackButton />
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate("/app/home/formularios")}
+            disabled={saving}
+            className="text-muted-foreground"
+          >
+            <X size={16} className="mr-1" />
+            Cancelar
+          </Button>
+          <Button
+            size="sm"
+            onClick={saveForm}
+            disabled={saving}
+            style={{
+              backgroundColor: designOptions.primaryColor,
+              borderColor: designOptions.primaryColor
+            }}
+            className="text-white"
+          >
+            <Save size={16} className="mr-1" />
+            {saving ? "Guardando..." : "Guardar"}
+          </Button>
         </div>
-        {/* Contenido scrollable */}
-        <div className="flex-1 min-h-0 overflow-y-auto">
+      </div>
+
+      {/* Contenido — ÚNICO elemento con scroll */}
+      <div className="flex-1 overflow-y-auto">
           <div className="container mx-auto py-6 px-4">
             <div className="max-w-3xl mx-auto relative">
             <div className="form-card overflow-visible mb-6" style={{backgroundColor: designOptions.backgroundColor}}>
@@ -634,7 +625,7 @@ const FormCreator = () => {
 
               {/* Toolbar lateral sticky - pegada al formulario */}
               <div className="shrink-0">
-                <div className="sticky top-20 flex flex-col gap-1 bg-background border border-border rounded-lg shadow-md p-1.5">
+                <div className="sticky top-4 flex flex-col gap-1 bg-background border border-border rounded-lg shadow-md p-1.5">
                   <button
                     onClick={handleAddQuestion}
                     className="p-2 rounded-md hover:bg-muted transition-colors group"
@@ -652,10 +643,9 @@ const FormCreator = () => {
                 </div>
               </div>
             </div>
-            </div>
           </div>
         </div>
-      </main>
+      </div>
     </div>
   );
 };
