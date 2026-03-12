@@ -385,7 +385,7 @@ const BannerPreview: React.FC<{ fields: FieldConfig[]; patient: any }> = ({ fiel
         {expanded && secondaryFields.length > 0 && (
           <div className="mt-3 pt-3 border-t border-border/30 flex flex-wrap gap-x-5 gap-y-2">
             {secondaryFields.map((field) => {
-              const IconComp = field.icono ? ICON_MAP[field.icono] : null;
+              const IconComp = field.icono ? (ICON_MAP[field.icono] || null) : null;
               return (
                 <div key={field.id} className="flex items-center gap-1.5 text-sm">
                   {IconComp && <IconComp className="w-3.5 h-3.5 text-muted-foreground shrink-0" />}
