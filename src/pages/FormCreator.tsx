@@ -65,7 +65,9 @@ const FormCreator = () => {
   const [description, setDescription] = useState(draft?.description || "Formulario para registro de datos clínicos");
   const [formType, setFormType] = useState<string>(draft?.formType || "historia_clinica");
   const [customCategory, setCustomCategory] = useState("");
-  const [questions, setQuestions] = useState<QuestionData[]>(draft?.questions || []);
+  const [questions, setQuestions] = useState<QuestionData[]>(
+    draft?.questions || (!id ? [{ id: nanoid(), type: "short", title: "", required: false } as QuestionData] : [])
+  );
   const [saving, setSaving] = useState(false);
   const [expandedQuestions, setExpandedQuestions] = useState<string[]>([]);
   const [activeQuestionId, setActiveQuestionId] = useState<string | null>(null);
