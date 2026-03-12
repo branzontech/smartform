@@ -63,35 +63,42 @@ export const FormHeaderPreview = ({
   return (
     <div
       className={cn(
-        "border-b border-border pb-4 mb-6 print:pb-2 print:mb-4",
+        "border-b border-border pb-2 mb-4 print:pb-1 print:mb-3",
         className
       )}
     >
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-3">
         {/* Logo */}
         {config.logo_url && (
           <div className="shrink-0">
             <img
               src={config.logo_url}
               alt={name}
-              className="w-20 h-20 object-contain rounded-md print:w-16 print:h-16"
+              className="w-24 h-24 object-contain rounded-md print:w-20 print:h-20"
             />
           </div>
         )}
 
-        {/* Institution data — left aligned */}
+        {/* Institution data — compact block */}
         <div className="flex-1 min-w-0">
-          <p className="text-base font-bold text-foreground leading-tight">
+          <p className="text-sm font-bold text-foreground leading-tight">
             {name}
           </p>
-          <div className="text-xs text-muted-foreground leading-tight space-y-0.5 mt-1">
+          <div className="text-xs text-muted-foreground leading-tight space-y-0">
             {renderJsonbEntries(config.identificacion_fiscal)}
             {!config.identificacion_fiscal && config.nit && (
               <p>NIT: {config.nit}</p>
             )}
-            {config.direccion && <p>{config.direccion}</p>}
-            {config.telefono && <p>Tel: {config.telefono}</p>}
-            {config.email_institucion && <p>{config.email_institucion}</p>}
+            {(config.direccion) && (
+              <p>{config.direccion}{config.pais || config.tipo_entidad ? "" : ""}</p>
+            )}
+            {(config.telefono || config.email_institucion) && (
+              <p>
+                {config.telefono && <>Tel: {config.telefono}</>}
+                {config.telefono && config.email_institucion && " · "}
+                {config.email_institucion}
+              </p>
+            )}
             {renderJsonbEntries(config.datos_regulatorios)}
             {!config.datos_regulatorios && config.resolucion_habilitacion && (
               <p>{config.resolucion_habilitacion}</p>
