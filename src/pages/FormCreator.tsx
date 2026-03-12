@@ -307,17 +307,14 @@ const FormCreator = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex flex-col">
-        <Header showCreate={false} />
-        <div className="flex-1 flex items-center justify-center">
-          <div className="animate-pulse space-y-6 w-full max-w-3xl px-4">
-            <div className="h-12 bg-gray-200 dark:bg-gray-800 rounded-md w-3/4"></div>
-            <div className="h-8 bg-gray-200 dark:bg-gray-800 rounded-md w-1/2"></div>
-            <div className="space-y-4">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="h-36 bg-gray-200 dark:bg-gray-800 rounded-md"></div>
-              ))}
-            </div>
+      <div className="h-full flex items-center justify-center">
+        <div className="animate-pulse space-y-6 w-full max-w-3xl px-4">
+          <div className="h-12 bg-muted rounded-md w-3/4"></div>
+          <div className="h-8 bg-muted rounded-md w-1/2"></div>
+          <div className="space-y-4">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="h-36 bg-muted rounded-md"></div>
+            ))}
           </div>
         </div>
       </div>
