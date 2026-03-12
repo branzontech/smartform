@@ -641,8 +641,9 @@ const FormViewer = () => {
                       />
                     ))}
                     <div className="sticky bottom-0 bg-background pt-4 pb-2 border-t">
-                      <Button type="submit" className="w-full print:hidden">
-                        Completar atención
+                      <Button type="submit" className="w-full print:hidden gap-2">
+                        <Save size={16} />
+                        Guardar
                       </Button>
                     </div>
                   </form>
