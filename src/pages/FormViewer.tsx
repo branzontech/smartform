@@ -80,6 +80,8 @@ const FormViewer = () => {
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [pendingValues, setPendingValues] = useState<any>(null);
   const [showRegistro, setShowRegistro] = useState(false);
+  const { hasRole } = useAuth();
+  const canCreateOrders = hasRole('doctor') || hasRole('admin');
   const { toast: uiToast } = useToast();
 
   // Panel resize state
