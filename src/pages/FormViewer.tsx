@@ -697,20 +697,21 @@ const FormViewer = () => {
                         errors={form.formState.errors}
                       />
                     ))}
-                    <div className="h-8" /> {/* spacer for floating button */}
+                    <div className="h-12" />
                   </form>
                 </Form>
               </FormProvider>
-              {/* Floating save button */}
-              <Button
-                type="button"
-                size="sm"
-                onClick={form.handleSubmit(onSubmit)}
-                className="fixed bottom-6 right-6 z-30 rounded-full shadow-lg print:hidden gap-1.5 h-9 px-4 text-xs"
-              >
-                <Save size={14} />
-                Guardar
-              </Button>
+              <div className="sticky bottom-4 flex justify-end pointer-events-none print:hidden">
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={form.handleSubmit(onSubmit)}
+                  className="rounded-full shadow-lg pointer-events-auto gap-1.5 h-9 px-4 text-xs"
+                >
+                  <Save size={14} />
+                  Guardar
+                </Button>
+              </div>
             </>
           )}
         </div>
