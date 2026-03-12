@@ -270,17 +270,33 @@ const FormViewer = () => {
     const processedValues = { ...values };
     
     questions.forEach(question => {
-      if (question.type === "vitals" && question.vitalType === "TA") {
-        processedValues[question.id] = {
-          sys: formData[`${question.id}_sys`],
-          dia: formData[`${question.id}_dia`]
-        };
-      } else if (question.type === "vitals" && question.vitalType === "IMC") {
-        processedValues[question.id] = {
-          weight: formData[`${question.id}_weight`],
-          height: formData[`${question.id}_height`],
-          bmi: formData[`${question.id}_bmi`]
-        };
+      if (question.type === "vitals") {
+        // New vitals structure: collect all enabled vital fields
+        const predefined = question.predefinedVitals;
+        if (predefined) {
+          const vitalsData: Record<string, any> = {};
+          Object.entries(predefined).forEach(([key, v]) => {
+            if (v.enabled) {
+              vitalsData[key] = formData[`${question.id}_${key}`] || "";
+            }
+          });
+          // Include custom vitals
+          (question.customVitals || []).forEach(cv => {
+            vitalsData[`custom_${cv.id}`] = formData[`${question.id}_custom_${cv.id}`] || "";
+          });
+          processedValues[question.id] = vitalsData;
+        } else if (question.vitalType === "TA") {
+          processedValues[question.id] = {
+            sys: formData[`${question.id}_sys`],
+            dia: formData[`${question.id}_dia`]
+          };
+        } else if (question.vitalType === "IMC") {
+          processedValues[question.id] = {
+            weight: formData[`${question.id}_weight`],
+            height: formData[`${question.id}_height`],
+            bmi: formData[`${question.id}_bmi`]
+          };
+        }
       } else if (question.type === "clinical") {
         processedValues[question.id] = {
           title: formData[`${question.id}_title`],
