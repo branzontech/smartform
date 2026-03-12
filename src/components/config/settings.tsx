@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Header } from "@/components/layout/header";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, FileText, Palette, Bell, Save, User, Shield, Plus, Cog, HelpCircle, Trash2, SlidersHorizontal, ClipboardList, Loader2, Eye, Edit, BarChart, Building2, UserCog } from "lucide-react";
+import { ArrowLeft, FileText, Palette, Bell, Save, User, Shield, Cog, HelpCircle, Trash2, SlidersHorizontal, ClipboardList, Building2, UserCog } from "lucide-react";
 import { InstitutionHeaderConfig } from "@/components/config/InstitutionHeaderConfig";
 import { supabase } from "@/integrations/supabase/client";
 import { PatientFieldsConfig } from "@/components/config/PatientFieldsConfig";
