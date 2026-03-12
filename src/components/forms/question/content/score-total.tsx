@@ -81,7 +81,7 @@ export const ScoreTotal: React.FC<ScoreTotalProps> = ({
     const final = isNaN(parsed) ? 0 : parsed;
     setRawRanges((prev) => ({
       ...prev,
-      [index]: { ...(prev[index] || { min: "", max: "" }), [field]: final === 0 ? "" : String(final) },
+      [index]: { ...(prev[index] || { min: "", max: "" }), [field]: raw === "" ? "" : String(final) },
     }));
     if (scoring.ranges[index]?.[field] !== final) {
       const ranges = [...scoring.ranges];
