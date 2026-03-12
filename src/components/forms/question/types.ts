@@ -13,6 +13,24 @@ export interface MultifieldConfig {
   label: string;
 }
 
+export interface ScoredOption {
+  id: string;
+  text: string;
+  score: number;
+}
+
+export interface ScoringRange {
+  min: number;
+  max: number;
+  label: string;
+  color: string;
+}
+
+export interface ScoringConfig {
+  enabled: boolean;
+  ranges: ScoringRange[];
+}
+
 export type QuestionType = 
   | "short" 
   | "paragraph" 
@@ -27,7 +45,8 @@ export type QuestionType =
   | "signature"
   | "file"
   | "medication"
-  | "scored_checkbox";
+  | "scored_checkbox"
+  | "score_total";
 
 export interface QuestionTypeOption {
   id: QuestionType;
