@@ -588,60 +588,14 @@ export const QuestionRenderer = ({ question, formData, onChange, errors, allQues
       );
     }
 
-    case "score_total": {
-      const sourceIds = question.sourceQuestionIds || [];
-      const totalScore = useMemo(() => {
-        return sourceIds.reduce((sum: number, qId: string) => {
-          const answer = formData[qId];
-          return sum + (answer?.score || 0);
-        }, 0);
-      }, [sourceIds.join(","), ...sourceIds.map((id: string) => JSON.stringify(formData[id]))]);
-
-      // Auto-save the score_total value
-      React.useEffect(() => {
-        const scoring = question.scoring;
-        let interpretation = "";
-        if (scoring?.enabled && scoring.ranges?.length) {
-          const match = scoring.ranges.find(
-            (r: ScoringRange) => totalScore >= r.min && totalScore <= r.max
-          );
-          if (match) interpretation = match.label;
-        }
-        const currentVal = formData[question.id];
-        if (!currentVal || currentVal.score !== totalScore || currentVal.interpretation !== interpretation) {
-          onChange(question.id, { score: totalScore, interpretation });
-        }
-      }, [totalScore]);
-
-      const scoring = question.scoring;
-      let matchedRange: ScoringRange | null = null;
-      if (scoring?.enabled && scoring.ranges?.length) {
-        matchedRange = scoring.ranges.find(
-          (r: ScoringRange) => totalScore >= r.min && totalScore <= r.max
-        ) || null;
-      }
-
-      const colors = matchedRange ? RANGE_COLOR_MAP[matchedRange.color] || RANGE_COLOR_MAP.gray : null;
-
+    case "score_total":
       return (
-        <div
-          className={cn(
-            "rounded-lg p-4 border-l-4",
-            colors ? `${colors.bg} ${colors.border}` : "bg-muted/30 border-border"
-          )}
-        >
-          <FormLabel className="text-sm text-muted-foreground">{question.title}</FormLabel>
-          <div className="text-2xl font-bold mt-1">{totalScore}</div>
-          {matchedRange && colors && (
-            <div className="flex items-center gap-2 mt-2">
-              <span className={cn("px-2 py-0.5 rounded-full text-xs font-medium text-white", colors.badge)}>
-                {matchedRange.label}
-              </span>
-            </div>
-          )}
-        </div>
+        <ScoreTotalViewer
+          question={question}
+          formData={formData}
+          onChange={onChange}
+        />
       );
-    }
 
     default:
       return <div>Tipo de pregunta no soportado</div>;
