@@ -292,6 +292,8 @@ const FormViewer = () => {
           multifieldValues[field.id] = formData[`${question.id}_${field.id}`] || '';
         });
         processedValues[question.id] = multifieldValues;
+      } else if (question.type === "scored_checkbox" || question.type === "score_total") {
+        processedValues[question.id] = formData[question.id] || { score: 0 };
       }
     });
 

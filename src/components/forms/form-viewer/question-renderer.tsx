@@ -8,9 +8,10 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { SignaturePad } from "@/components/ui/question-types";
-import { QuestionData } from "../question/types";
+import { QuestionData, ScoredOption } from "../question/types";
 import { FileUp } from "lucide-react";
 import { MedicationManager } from "@/components/medical/MedicationManager";
+import { ScoreTotalViewer } from "./score-total-viewer";
 
 interface QuestionRendererProps {
   question: QuestionData;
@@ -517,6 +518,75 @@ export const QuestionRenderer = ({ question, formData, onChange, errors }: Quest
         </FormItem>
       );
       
+    case "scored_checkbox": {
+      const items: ScoredOption[] = question.scoredItems || 
+        (question.scoredOptions?.map((o, i) => ({ id: `opt${i}`, text: o.label, score: o.score })) || []);
+      const mode = question.selectionMode || question.scoredSelectionMode || "single";
+      const current = formData[question.id] || { selectedOptions: [], score: 0 };
+      const selectedIds: string[] = current.selectedOptions || [];
+
+      const handleToggle = (optId: string, optScore: number) => {
+        let next: string[];
+        if (mode === "single") {
+          next = [optId];
+        } else {
+          next = selectedIds.includes(optId)
+            ? selectedIds.filter((id: string) => id !== optId)
+            : [...selectedIds, optId];
+        }
+        const totalScore = items
+          .filter((it) => next.includes(it.id))
+          .reduce((sum, it) => sum + it.score, 0);
+        onChange(question.id, { selectedOptions: next, score: totalScore });
+      };
+
+      return (
+        <div className="space-y-3">
+          <FormLabel>{question.title}</FormLabel>
+          <div className="space-y-2">
+            {items.map((opt) => {
+              const isSelected = selectedIds.includes(opt.id);
+              return (
+                <label
+                  key={opt.id}
+                  className="flex items-center gap-3 cursor-pointer hover:bg-muted/50 rounded px-2 py-1.5 transition-colors"
+                >
+                  {mode === "single" ? (
+                    <input
+                      type="radio"
+                      name={question.id}
+                      checked={isSelected}
+                      onChange={() => handleToggle(opt.id, opt.score)}
+                      className="accent-primary"
+                    />
+                  ) : (
+                    <Checkbox
+                      checked={isSelected}
+                      onCheckedChange={() => handleToggle(opt.id, opt.score)}
+                    />
+                  )}
+                  <span className="flex-1">{opt.text}</span>
+                  <span className="text-xs text-muted-foreground">({opt.score} pts)</span>
+                </label>
+              );
+            })}
+          </div>
+          <div className="text-sm font-medium text-foreground pt-1">
+            Puntaje: {current.score || 0}
+          </div>
+        </div>
+      );
+    }
+
+    case "score_total":
+      return (
+        <ScoreTotalViewer
+          question={question}
+          formData={formData}
+          onChange={onChange}
+        />
+      );
+
     default:
       return <div>Tipo de pregunta no soportado</div>;
   }
