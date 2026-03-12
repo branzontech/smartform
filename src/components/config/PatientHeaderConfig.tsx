@@ -365,7 +365,7 @@ const BannerPreview: React.FC<{ fields: FieldConfig[]; patient: any }> = ({ fiel
             )}
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1">
               {otherPrincipal.map((field) => {
-                const IconComp = field.icono ? ICON_MAP[field.icono] : null;
+                const IconComp = field.icono ? (ICON_MAP[field.icono] || null) : null;
                 return (
                   <div key={field.id} className="flex items-center gap-1.5 text-sm text-muted-foreground">
                     {IconComp && <IconComp className="w-3.5 h-3.5 shrink-0" />}
