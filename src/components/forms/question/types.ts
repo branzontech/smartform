@@ -26,7 +26,8 @@ export type QuestionType =
   | "multifield"
   | "signature"
   | "file"
-  | "medication";
+  | "medication"
+  | "scored_checkbox";
 
 export interface QuestionTypeOption {
   id: QuestionType;
