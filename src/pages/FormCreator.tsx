@@ -113,7 +113,7 @@ const FormCreator = () => {
             description: "El formulario no existe",
             variant: "destructive",
           });
-          navigate("/app/configuracion");
+          navigate("/app/configuracion?tab=forms");
         }
       };
       loadForm();
@@ -356,7 +356,7 @@ const FormCreator = () => {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => navigate("/app/configuracion")}
+            onClick={() => navigate("/app/configuracion?tab=forms")}
             disabled={saving}
             className="text-muted-foreground"
           >

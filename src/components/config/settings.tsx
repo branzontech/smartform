@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Header } from "@/components/layout/header";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowLeft, FileText, Palette, Bell, Save, User, Shield, Plus, Cog, HelpCircle, Trash2, SlidersHorizontal, ClipboardList, Loader2, Eye, Edit, BarChart, Building2, UserCog } from "lucide-react";
 import { InstitutionHeaderConfig } from "@/components/config/InstitutionHeaderConfig";
 import { supabase } from "@/integrations/supabase/client";
@@ -42,11 +42,28 @@ export const SettingsPage = () => {
   const [notifications, setNotifications] = useState(true);
   const [darkPrint, setDarkPrint] = useState(false);
   const [language, setLanguage] = useState("es");
-  const [activeCategory, setActiveCategory] = useState("general");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tabParam = searchParams.get("tab");
+  const activeCategory = categories.some((category) => category.id === tabParam)
+    ? tabParam!
+    : "general";
+  const setActiveCategory = (categoryId: string) => {
+    const nextParams = new URLSearchParams(searchParams);
+    if (categoryId === "general") {
+      nextParams.delete("tab");
+    } else {
+      nextParams.set("tab", categoryId);
+    }
+    setSearchParams(nextParams, { replace: true });
+  };
   const [forms, setForms] = useState<any[]>([]);
   const [formsLoading, setFormsLoading] = useState(false);
 
-  // Load forms when "forms" category is active
+  useEffect(() => {
+    if (tabParam && !categories.some((category) => category.id === tabParam)) {
+      setActiveCategory("general");
+    }
+  }, [tabParam]);
   useEffect(() => {
     if (activeCategory !== "forms") return;
     const loadForms = async () => {

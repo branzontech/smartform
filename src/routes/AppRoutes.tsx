@@ -58,7 +58,7 @@ const AppRoutes = () => {
       <Routes>
         <Route index element={<Home />} />
         <Route path="home" element={<Home />} />
-        <Route path="home/formularios" element={<Navigate to="/app/configuracion" replace />} />
+        <Route path="home/formularios" element={<Navigate to="/app/configuracion?tab=forms" replace />} />
         <Route path="crear" element={<FormCreator />} />
         <Route path="crear/:id" element={<FormCreator />} />
         <Route path="editar/:id" element={<FormCreator />} />
