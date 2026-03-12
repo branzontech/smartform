@@ -43,23 +43,6 @@ export const SettingsPage = () => {
   const [darkPrint, setDarkPrint] = useState(false);
   const [language, setLanguage] = useState("es");
   const [activeCategory, setActiveCategory] = useState("general");
-  const [forms, setForms] = useState<any[]>([]);
-  const [formsLoading, setFormsLoading] = useState(false);
-
-  // Load forms when "forms" category is active
-  useEffect(() => {
-    if (activeCategory !== "forms") return;
-    const loadForms = async () => {
-      setFormsLoading(true);
-      const { data } = await supabase
-        .from("formularios")
-        .select("*")
-        .order("created_at", { ascending: false });
-      setForms(data || []);
-      setFormsLoading(false);
-    };
-    loadForms();
-  }, [activeCategory]);
 
   const handleSave = () => {
     toast.success("Configuración guardada con éxito");
