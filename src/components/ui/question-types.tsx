@@ -19,6 +19,7 @@ const questionTypeGroups = [
       { id: "multiple", label: "Selección múltiple", icon: Circle },
       { id: "checkbox", label: "Casillas", icon: CheckSquare },
       { id: "dropdown", label: "Desplegable", icon: List },
+      { id: "scored_checkbox", label: "Escala / Puntaje", icon: Calculator },
     ],
   },
   {

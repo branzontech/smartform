@@ -95,6 +95,7 @@ export interface QuestionData {
   isCalculated?: boolean;
   calculationType?: "sum" | "subtract" | "multiply" | "divide";
   numberType?: "integer" | "decimal";
+  scoredOptions?: { label: string; score: number }[];
 }
 
 export interface QuestionProps {
