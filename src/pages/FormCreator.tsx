@@ -639,6 +639,23 @@ const FormCreator = () => {
               </Tabs>
             </div>
             
+            {/* Empty state when no questions */}
+            {questions.length === 0 && (
+              <div className="border-2 border-dashed border-muted-foreground/20 rounded-lg p-8 text-center mb-4">
+                <p className="text-sm text-muted-foreground mb-3">
+                  Agrega el primer campo para empezar a construir tu formulario
+                </p>
+                <div className="flex items-center justify-center gap-2">
+                  <Button variant="outline" onClick={handleAddQuestion} className="gap-1.5">
+                    <Plus size={16} /> Agregar pregunta
+                  </Button>
+                  <Button variant="outline" onClick={handleAddSection} className="gap-1.5">
+                    <SeparatorHorizontal size={16} /> Agregar sección
+                  </Button>
+                </div>
+              </div>
+            )}
+
             {/* Questions list with inline floating toolbar */}
             <div className="space-y-4 mb-8">
               {questions.map((question, index) => (
