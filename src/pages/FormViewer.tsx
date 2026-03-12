@@ -19,7 +19,7 @@ import { QuestionRenderer } from '@/components/forms/form-viewer/question-render
 import { QuestionData } from '@/components/forms/question/types';
 import { FormTitle } from '@/components/ui/form-title';
 import { BackButton } from '@/App';
-import { Check, Link as LinkIcon, Printer, AlertTriangle, CalendarIcon, ClipboardList, PanelRightClose, PanelRightOpen, GripVertical, MoreHorizontal, ArrowLeft } from 'lucide-react';
+import { Check, Link as LinkIcon, Printer, AlertTriangle, CalendarIcon, ClipboardList, PanelRightClose, PanelRightOpen, GripVertical, MoreHorizontal, ArrowLeft, Save } from 'lucide-react';
 import { toast } from "sonner";
 import { Form as FormType } from './FormsPage';
 import { FormLoading } from '@/components/forms/form-viewer/form-loading';
@@ -495,7 +495,7 @@ const FormViewer = () => {
                     errors={form.formState.errors}
                   />
                 ))}
-                <Button type="submit" className="w-full sm:w-auto print:hidden">Enviar respuestas</Button>
+                <Button type="submit" className="w-full sm:w-auto print:hidden gap-2"><Save size={16} />Guardar</Button>
               </form>
             </Form>
           </FormProvider>
@@ -641,8 +641,9 @@ const FormViewer = () => {
                       />
                     ))}
                     <div className="sticky bottom-0 bg-background pt-4 pb-2 border-t">
-                      <Button type="submit" className="w-full print:hidden">
-                        Completar atención
+                      <Button type="submit" className="w-full print:hidden gap-2">
+                        <Save size={16} />
+                        Guardar
                       </Button>
                     </div>
                   </form>

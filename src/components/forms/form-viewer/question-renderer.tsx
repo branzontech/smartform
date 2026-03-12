@@ -541,15 +541,15 @@ export const QuestionRenderer = ({ question, formData, onChange, errors }: Quest
       };
 
       return (
-        <div className="space-y-3">
-          <FormLabel>{question.title}</FormLabel>
-          <div className="space-y-2">
+        <div className="border-b border-dashed pb-4 mb-4">
+          <FormLabel className="font-medium text-sm">{question.title}</FormLabel>
+          <div className="space-y-1.5 mt-2">
             {items.map((opt) => {
               const isSelected = selectedIds.includes(opt.id);
               return (
                 <label
                   key={opt.id}
-                  className="flex items-center gap-3 cursor-pointer hover:bg-muted/50 rounded px-2 py-1.5 transition-colors"
+                  className="flex items-center gap-2 cursor-pointer hover:bg-muted/50 rounded px-2 py-1.5 transition-colors"
                 >
                   {mode === "single" ? (
                     <input
@@ -557,21 +557,22 @@ export const QuestionRenderer = ({ question, formData, onChange, errors }: Quest
                       name={question.id}
                       checked={isSelected}
                       onChange={() => handleToggle(opt.id, opt.score)}
-                      className="accent-primary"
+                      className="accent-primary shrink-0"
                     />
                   ) : (
                     <Checkbox
                       checked={isSelected}
                       onCheckedChange={() => handleToggle(opt.id, opt.score)}
+                      className="shrink-0"
                     />
                   )}
-                  <span className="flex-1">{opt.text}</span>
-                  <span className="text-xs text-muted-foreground">({opt.score} pts)</span>
+                  <span className="flex-1 text-sm">{opt.text}</span>
+                  <span className="text-xs text-muted-foreground tabular-nums ml-auto">({opt.score} pts)</span>
                 </label>
               );
             })}
           </div>
-          <div className="text-sm font-medium text-foreground pt-1">
+          <div className="text-xs text-muted-foreground text-right pt-1.5">
             Puntaje: {current.score || 0}
           </div>
         </div>
