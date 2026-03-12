@@ -13,6 +13,24 @@ export interface MultifieldConfig {
   label: string;
 }
 
+export interface ScoredOption {
+  id: string;
+  text: string;
+  score: number;
+}
+
+export interface ScoringRange {
+  min: number;
+  max: number;
+  label: string;
+  color: string;
+}
+
+export interface ScoringConfig {
+  enabled: boolean;
+  ranges: ScoringRange[];
+}
+
 export type QuestionType = 
   | "short" 
   | "paragraph" 
@@ -27,7 +45,8 @@ export type QuestionType =
   | "signature"
   | "file"
   | "medication"
-  | "scored_checkbox";
+  | "scored_checkbox"
+  | "score_total";
 
 export interface QuestionTypeOption {
   id: QuestionType;
@@ -95,8 +114,15 @@ export interface QuestionData {
   isCalculated?: boolean;
   calculationType?: "sum" | "subtract" | "multiply" | "divide";
   numberType?: "integer" | "decimal";
+  // Legacy scored_checkbox fields (kept for backward compat)
   scoredOptions?: { label: string; score: number }[];
   scoredSelectionMode?: "single" | "multiple";
+  // New scored_checkbox fields
+  selectionMode?: "single" | "multiple";
+  scoredItems?: ScoredOption[];
+  // score_total fields
+  sourceQuestionIds?: string[];
+  scoring?: ScoringConfig;
 }
 
 export interface QuestionProps {

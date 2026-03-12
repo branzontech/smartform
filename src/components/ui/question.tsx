@@ -20,6 +20,7 @@ interface QuestionProps {
   isFirst?: boolean;
   isLast?: boolean;
   designOptions?: any;
+  allQuestions?: QuestionData[];
 }
 
 export const Question = ({
@@ -35,6 +36,7 @@ export const Question = ({
   isFirst = false,
   isLast = false,
   designOptions,
+  allQuestions,
 }: QuestionProps) => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
@@ -212,6 +214,7 @@ export const Question = ({
                   question={question}
                   onUpdate={handleUpdate}
                   readOnly={readOnly}
+                  allQuestions={allQuestions}
                 />
               </div>
 
@@ -298,6 +301,7 @@ export const Question = ({
                 question={question}
                 onUpdate={handleUpdate}
                 readOnly={true}
+                allQuestions={allQuestions}
               />
             </div>
           )}

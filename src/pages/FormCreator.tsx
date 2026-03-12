@@ -678,6 +678,7 @@ const FormCreator = () => {
                       isFirst={index === 0}
                       isLast={index === questions.length - 1}
                       designOptions={designOptions}
+                      allQuestions={questions}
                     />
                   </div>
 
