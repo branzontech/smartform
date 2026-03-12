@@ -76,7 +76,7 @@ export const ScoredCheckbox: React.FC<ContentComponentProps> = ({
     const raw = rawScores[opt.id] ?? "";
     const parsed = parseFloat(raw);
     const finalScore = isNaN(parsed) ? 0 : parsed;
-    setRawScores((prev) => ({ ...prev, [opt.id]: finalScore === 0 ? "" : String(finalScore) }));
+    setRawScores((prev) => ({ ...prev, [opt.id]: raw === "" ? "" : String(finalScore) }));
     if (opt.score !== finalScore) {
       const updated = [...options];
       updated[index] = { ...updated[index], score: finalScore };
