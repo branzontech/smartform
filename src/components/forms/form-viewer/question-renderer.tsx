@@ -30,7 +30,7 @@ interface QuestionRendererProps {
   allQuestions?: QuestionData[];
 }
 
-export const QuestionRenderer = ({ question, formData, onChange, errors }: QuestionRendererProps) => {
+export const QuestionRenderer = ({ question, formData, onChange, errors, allQuestions = [] }: QuestionRendererProps) => {
   if (question.type === "section") {
     return (
       <div className="relative py-1">
