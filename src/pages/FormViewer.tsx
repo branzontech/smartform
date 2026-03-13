@@ -127,9 +127,8 @@ const FormViewer = () => {
   const [emptyFormIds, setEmptyFormIds] = useState<string[]>([]);
   const [validationErrorsByForm, setValidationErrorsByForm] = useState<Record<string, string[]>>({});
 
-  // Right panel tabs
-  const [rightPanelTab, setRightPanelTab] = useState<'antecedentes' | 'ordenes'>('antecedentes');
-  const [selectedOrderType, setSelectedOrderType] = useState<string | null>(null);
+
+  // Panel resize state
 
   // Panel resize state
   const [panelWidth, setPanelWidth] = useState(() => {
