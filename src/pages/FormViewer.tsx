@@ -980,9 +980,16 @@ const FormViewer = () => {
         </div>
 
         {isConsultationForm && (
-          <p className="mt-1.5 text-[10px] text-muted-foreground tracking-wide uppercase">
-            ● Consulta en curso
-          </p>
+          isCompleted ? (
+            <div className="mt-1.5 flex items-center gap-1.5 text-[10px] tracking-wide uppercase" style={{ color: '#15803d' }}>
+              <CheckCircle className="w-3 h-3" />
+              Atención completada
+            </div>
+          ) : (
+            <p className="mt-1.5 text-[10px] text-muted-foreground tracking-wide uppercase">
+              ● Consulta en curso
+            </p>
+          )
         )}
       </div>
 
