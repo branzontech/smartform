@@ -74,7 +74,9 @@ interface FormEntry {
   formData: FormData;
   saved: boolean;
   isDirty: boolean;
-  responseId?: string; // track existing response for upsert
+  responseId?: string;
+  lastSavedTime?: string;
+  saveError?: boolean;
 }
 
 const PANEL_WIDTH_KEY = 'kerhub-antecedentes-panel-width';
