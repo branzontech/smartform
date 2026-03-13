@@ -326,17 +326,16 @@ const FormViewer = () => {
       const admisionId = consultationId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(consultationId) ? consultationId : null;
 
       if (entry.responseId) {
-        // Update existing response
         const { error: updateError } = await supabase
           .from("respuestas_formularios" as any)
           .update({ datos_respuesta: processed, updated_at: new Date().toISOString() })
           .eq('id', entry.responseId);
         if (updateError) {
           if (showToast) uiToast({ title: "Error al guardar", description: `${entry.title}: ${updateError.message}`, variant: "destructive" });
+          setFormsMap(prev => ({ ...prev, [fId]: { ...prev[fId], saveError: true } }));
           return false;
         }
       } else {
-        // Insert new response
         const { data: insertData, error: insertError } = await supabase
           .from("respuestas_formularios" as any)
           .insert({
@@ -350,9 +349,9 @@ const FormViewer = () => {
           .single();
         if (insertError) {
           if (showToast) uiToast({ title: "Error al guardar", description: `${entry.title}: ${insertError.message}`, variant: "destructive" });
+          setFormsMap(prev => ({ ...prev, [fId]: { ...prev[fId], saveError: true } }));
           return false;
         }
-        // Store the response ID for future updates
         setFormsMap(prev => ({
           ...prev,
           [fId]: { ...prev[fId], responseId: (insertData as any)?.id },
@@ -362,13 +361,13 @@ const FormViewer = () => {
       saveFormResponse(fId, { ...processed, _patientId: patientId, _consultationId: consultationId });
     }
 
-    // Clear draft and mark clean
     const dk = `kerhub-draft-${fId}${patientId ? `-${patientId}` : ''}${consultationId ? `-${consultationId}` : ''}`;
     localStorage.removeItem(dk);
 
+    const timeStr = new Date().toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
     setFormsMap(prev => ({
       ...prev,
-      [fId]: { ...prev[fId], saved: true, isDirty: false },
+      [fId]: { ...prev[fId], saved: true, isDirty: false, lastSavedTime: timeStr, saveError: false },
     }));
 
     return true;
