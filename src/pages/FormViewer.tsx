@@ -776,11 +776,11 @@ const FormViewer = () => {
                   admisionId={consultationId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(consultationId) ? consultationId : undefined}
                />
               )}
-              {/* Multi-form chevron tabs */}
-              {isMultiForm && !showRegistro && (
+              {/* Multi-form chevron tabs + add button */}
+              {!showRegistro && (
                 <div className="mb-4 overflow-x-auto scrollbar-none">
                   <div className="flex items-center gap-0 min-w-0">
-                    {allFormIds.map((fId, idx) => {
+                    {isMultiForm && allFormIds.map((fId, idx) => {
                       const entry = formsMap[fId];
                       if (!entry) return null;
                       const isActive = fId === activeFormId;
