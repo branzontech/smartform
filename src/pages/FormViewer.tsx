@@ -1125,13 +1125,13 @@ const FormViewer = () => {
               <FormHeaderPreview config={headerConfig} formTitle={formTitle} />
               <FormProvider {...form}>
                 <Form {...form}>
-                  <form onSubmit={(e) => e.preventDefault()} className="space-y-3 max-w-none">
+                  <form onSubmit={(e) => e.preventDefault()} className={`space-y-3 max-w-none ${isCompleted ? 'pointer-events-none opacity-80' : ''}`}>
                     {questions.map(question => (
                       <QuestionRenderer
                         key={question.id}
                         question={question}
                         formData={formData}
-                        onChange={handleInputChange}
+                        onChange={isCompleted ? () => {} : handleInputChange}
                         errors={form.formState.errors}
                       />
                     ))}
@@ -1139,22 +1139,24 @@ const FormViewer = () => {
                   </form>
                 </Form>
               </FormProvider>
-              <div className="sticky bottom-4 flex justify-end pointer-events-none print:hidden">
-                <Button
-                  type="button"
-                  size="sm"
-                  onClick={handleCompleteAttention}
-                  disabled={isCompletingAttention}
-                  className="rounded-full shadow-lg pointer-events-auto gap-1.5 h-9 px-4 text-xs"
-                >
-                  {isCompletingAttention ? (
-                    <Loader2 size={14} className="animate-spin" />
-                  ) : (
-                    <CheckCircle size={14} />
-                  )}
-                  Completar atención
-                </Button>
-              </div>
+              {!isCompleted && (
+                <div className="sticky bottom-4 flex justify-end pointer-events-none print:hidden">
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={handleCompleteAttention}
+                    disabled={isCompletingAttention}
+                    className="rounded-full shadow-lg pointer-events-auto gap-1.5 h-9 px-4 text-xs"
+                  >
+                    {isCompletingAttention ? (
+                      <Loader2 size={14} className="animate-spin" />
+                    ) : (
+                      <CheckCircle size={14} />
+                    )}
+                    Completar atención
+                  </Button>
+                </div>
+              )}
             </>
           )}
         </div>
