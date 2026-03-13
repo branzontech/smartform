@@ -379,13 +379,13 @@ const FormViewer = () => {
     if (targetFormId === activeFormId) return;
 
     const currentEntry = formsMap[activeFormId];
-    if (currentEntry?.isDirty) {
+    if (currentEntry?.isDirty && !isFormEmpty(activeFormId)) {
       setSaveStatus('saving');
       const success = await saveFormToDb(activeFormId);
       if (!success) {
         setSaveStatus('idle');
         uiToast({ title: "Error al guardar", description: `No se pudo guardar "${currentEntry.title}". Corrige los errores antes de cambiar de formulario.`, variant: "destructive" });
-        return; // Don't switch tab
+        return;
       }
       setSaveStatus('saved');
       if (saveStatusTimerRef.current) clearTimeout(saveStatusTimerRef.current);
@@ -393,7 +393,7 @@ const FormViewer = () => {
     }
 
     setActiveFormId(targetFormId);
-  }, [activeFormId, formsMap, saveFormToDb, uiToast]);
+  }, [activeFormId, formsMap, saveFormToDb, uiToast, isFormEmpty]);
 
   // ── 30s interval autosave ──
   useEffect(() => {
