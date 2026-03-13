@@ -94,6 +94,41 @@ export const IndividualResponse = ({ response, index, formData, onPrint }: Indiv
         }
         return <span className="text-gray-400 italic">Sin firma</span>;
       
+      case "scored_checkbox": {
+        if (!answer || typeof answer !== 'object') return <span className="text-gray-400 italic">Sin respuesta</span>;
+        const scoredVal = answer as any;
+        const selectedIds: string[] = scoredVal.selectedOptions || [];
+        const items = question.scoredItems || [];
+        if (selectedIds.length === 0) return <span className="text-gray-400 italic">Sin respuesta</span>;
+        return (
+          <div className="space-y-1">
+            {selectedIds.map((optId: string) => {
+              const item = items.find((si: any) => si.id === optId);
+              return (
+                <div key={optId} className="flex items-center gap-2">
+                  <span>{item ? `${item.text} (${item.score} pts)` : optId}</span>
+                </div>
+              );
+            })}
+            <div className="text-sm font-medium text-gray-600">Puntaje: {scoredVal.score ?? 0}</div>
+          </div>
+        );
+      }
+
+      case "score_total": {
+        if (!answer || typeof answer !== 'object') {
+          if (answer !== undefined && answer !== null) return String(answer);
+          return <span className="text-gray-400 italic">Sin respuesta</span>;
+        }
+        const totalVal = answer as any;
+        return (
+          <div>
+            <span className="font-semibold">{totalVal.score ?? totalVal.total ?? 0} puntos</span>
+            {totalVal.label && <span className="text-sm text-gray-500 ml-2">{totalVal.label}</span>}
+          </div>
+        );
+      }
+
       default:
         return Array.isArray(answer) ? answer.join(", ") : String(answer);
     }

@@ -19,7 +19,7 @@ import { QuestionRenderer } from '@/components/forms/form-viewer/question-render
 import { QuestionData } from '@/components/forms/question/types';
 import { FormTitle } from '@/components/ui/form-title';
 import { BackButton } from '@/App';
-import { Check, Link as LinkIcon, Printer, AlertTriangle, CalendarIcon, ClipboardList, PanelRightClose, PanelRightOpen, GripVertical, MoreHorizontal, ArrowLeft, Save, ClipboardPlus, Pill, TestTube, Scan, UserPlus, Scissors, List, Plus, Search, CheckCircle, Loader2 } from 'lucide-react';
+import { Check, Link as LinkIcon, Printer, AlertTriangle, CalendarIcon, ClipboardList, PanelRightClose, PanelRightOpen, GripVertical, MoreHorizontal, ArrowLeft, Save, ClipboardPlus, Pill, TestTube, Scan, UserPlus, Scissors, List, Plus, Search, CheckCircle, Loader2, AlertCircle, Clock, XCircle } from 'lucide-react';
 import { toast } from "sonner";
 import { Form as FormType } from './FormsPage';
 import { FormLoading } from '@/components/forms/form-viewer/form-loading';
@@ -74,7 +74,9 @@ interface FormEntry {
   formData: FormData;
   saved: boolean;
   isDirty: boolean;
-  responseId?: string; // track existing response for upsert
+  responseId?: string;
+  lastSavedTime?: string;
+  saveError?: boolean;
 }
 
 const PANEL_WIDTH_KEY = 'kerhub-antecedentes-panel-width';
@@ -117,6 +119,11 @@ const FormViewer = () => {
   const [isCompletingAttention, setIsCompletingAttention] = useState(false);
   const [isCompleted, setIsCompleted] = useState(false);
   const [showCompletedDialog, setShowCompletedDialog] = useState(false);
+  const [showValidationDialog, setShowValidationDialog] = useState(false);
+  const [validationIssues, setValidationIssues] = useState<{formId: string; title: string; missingCount: number}[]>([]);
+  const [showEmptyFormDialog, setShowEmptyFormDialog] = useState(false);
+  const [emptyFormIds, setEmptyFormIds] = useState<string[]>([]);
+  const [validationErrorsByForm, setValidationErrorsByForm] = useState<Record<string, string[]>>({});
 
   // Panel resize state
   const [panelWidth, setPanelWidth] = useState(() => {
@@ -319,17 +326,16 @@ const FormViewer = () => {
       const admisionId = consultationId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(consultationId) ? consultationId : null;
 
       if (entry.responseId) {
-        // Update existing response
         const { error: updateError } = await supabase
           .from("respuestas_formularios" as any)
           .update({ datos_respuesta: processed, updated_at: new Date().toISOString() })
           .eq('id', entry.responseId);
         if (updateError) {
           if (showToast) uiToast({ title: "Error al guardar", description: `${entry.title}: ${updateError.message}`, variant: "destructive" });
+          setFormsMap(prev => ({ ...prev, [fId]: { ...prev[fId], saveError: true } }));
           return false;
         }
       } else {
-        // Insert new response
         const { data: insertData, error: insertError } = await supabase
           .from("respuestas_formularios" as any)
           .insert({
@@ -343,9 +349,9 @@ const FormViewer = () => {
           .single();
         if (insertError) {
           if (showToast) uiToast({ title: "Error al guardar", description: `${entry.title}: ${insertError.message}`, variant: "destructive" });
+          setFormsMap(prev => ({ ...prev, [fId]: { ...prev[fId], saveError: true } }));
           return false;
         }
-        // Store the response ID for future updates
         setFormsMap(prev => ({
           ...prev,
           [fId]: { ...prev[fId], responseId: (insertData as any)?.id },
@@ -355,13 +361,13 @@ const FormViewer = () => {
       saveFormResponse(fId, { ...processed, _patientId: patientId, _consultationId: consultationId });
     }
 
-    // Clear draft and mark clean
     const dk = `kerhub-draft-${fId}${patientId ? `-${patientId}` : ''}${consultationId ? `-${consultationId}` : ''}`;
     localStorage.removeItem(dk);
 
+    const timeStr = new Date().toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
     setFormsMap(prev => ({
       ...prev,
-      [fId]: { ...prev[fId], saved: true, isDirty: false },
+      [fId]: { ...prev[fId], saved: true, isDirty: false, lastSavedTime: timeStr, saveError: false },
     }));
 
     return true;
@@ -492,9 +498,74 @@ const FormViewer = () => {
         ...prev[activeFormId],
         formData: { ...prev[activeFormId]?.formData, [id]: value },
         isDirty: true,
+        saveError: false,
       }
     }));
+    setValidationErrorsByForm(prev => {
+      const errors = prev[activeFormId];
+      if (!errors) return prev;
+      const updated = errors.filter(e => e !== id);
+      if (updated.length === errors.length) return prev;
+      return { ...prev, [activeFormId]: updated };
+    });
   };
+
+  // ── Helper: check if form has no responses ──
+  const isFormEmpty = useCallback((fId: string): boolean => {
+    const entry = formsMap[fId];
+    if (!entry) return true;
+    return entry.questions.filter(q => q.type !== 'section' && q.type !== 'score_total').every(q => {
+      const val = entry.formData[q.id];
+      if (val === undefined || val === null || val === '') return true;
+      if (Array.isArray(val) && val.length === 0) return true;
+      if (typeof val === 'object' && !Array.isArray(val)) {
+        if (val.score !== undefined && val.selectedOptions) return !val.selectedOptions?.length;
+        return Object.values(val).every((v: any) => !v && v !== 0);
+      }
+      return false;
+    });
+  }, [formsMap]);
+
+  // ── Helper: get missing required fields ──
+  const getRequiredFieldErrors = useCallback((fId: string): string[] => {
+    const entry = formsMap[fId];
+    if (!entry) return [];
+    const missing: string[] = [];
+    entry.questions.forEach(q => {
+      if (!q.required || q.type === 'section' || q.type === 'score_total') return;
+      const val = entry.formData[q.id];
+      let isEmpty = false;
+      if (val === undefined || val === null || val === '') isEmpty = true;
+      else if (Array.isArray(val) && val.length === 0) isEmpty = true;
+      else if (typeof val === 'object' && !Array.isArray(val)) {
+        if (val.score !== undefined && val.selectedOptions) isEmpty = !val.selectedOptions?.length;
+        else isEmpty = Object.values(val).every((v: any) => !v && v !== 0);
+      }
+      if (isEmpty) missing.push(q.id);
+    });
+    return missing;
+  }, [formsMap]);
+
+  // ── Helper: get form status for display ──
+  const getFormStatus = useCallback((fId: string): { label: string; color: string; icon: 'empty' | 'dirty' | 'saved' | 'error' } => {
+    const entry = formsMap[fId];
+    if (!entry) return { label: 'Sin diligenciar', color: '#ef4444', icon: 'empty' };
+    if (entry.saveError) return { label: 'Error al guardar', color: '#dc2626', icon: 'error' };
+    if (entry.saved && !entry.isDirty) return { label: `Guardado ✓ ${entry.lastSavedTime || ''}`, color: '#16a34a', icon: 'saved' };
+    const hasData = entry.questions.filter(q => q.type !== 'section').some(q => {
+      const val = entry.formData[q.id];
+      if (val === undefined || val === null || val === '') return false;
+      if (Array.isArray(val) && val.length === 0) return false;
+      if (typeof val === 'object' && !Array.isArray(val)) {
+        if (val.score !== undefined) return !!val.selectedOptions?.length;
+        return Object.values(val).some((v: any) => !!v || v === 0);
+      }
+      return true;
+    });
+    if (entry.isDirty && hasData) return { label: 'En progreso - Sin guardar', color: '#f97316', icon: 'dirty' };
+    if (!hasData) return { label: 'Sin diligenciar', color: '#ef4444', icon: 'empty' };
+    return { label: 'En progreso - Sin guardar', color: '#f97316', icon: 'dirty' };
+  }, [formsMap]);
 
   const processFormValues = (qs: QuestionData[], fd: FormData, rawValues: any) => {
     const processedValues = { ...rawValues };
@@ -534,32 +605,77 @@ const FormViewer = () => {
 
   // ── "Completar atención" handler ──
   const handleCompleteAttention = async () => {
-    setIsCompletingAttention(true);
-    const failedForms: string[] = [];
-
-    // Save all dirty forms
-    for (const fId of allFormIds) {
-      const entry = formsMap[fId];
-      if (!entry) continue;
-      if (entry.isDirty) {
-        const success = await saveFormToDb(fId, true);
-        if (!success) {
-          failedForms.push(entry.title);
-        }
-      }
+    // Phase 1: Check for completely empty forms
+    const emptyForms = allFormIds.filter(fId => formsMap[fId] && isFormEmpty(fId));
+    if (emptyForms.length > 0) {
+      setEmptyFormIds(emptyForms);
+      setShowEmptyFormDialog(true);
+      return;
     }
 
-    if (failedForms.length > 0) {
-      uiToast({
-        title: "Error al completar",
-        description: `No se pudieron guardar: ${failedForms.join(', ')}`,
-        variant: "destructive",
-      });
+    // Phase 2: Validate required fields
+    const issues: {formId: string; title: string; missingCount: number}[] = [];
+    const errMap: Record<string, string[]> = {};
+    for (const fId of allFormIds) {
+      if (!formsMap[fId]) continue;
+      const errors = getRequiredFieldErrors(fId);
+      if (errors.length > 0) {
+        issues.push({ formId: fId, title: formsMap[fId]?.title || 'Formulario', missingCount: errors.length });
+        errMap[fId] = errors;
+      }
+    }
+    if (issues.length > 0) {
+      setValidationIssues(issues);
+      setValidationErrorsByForm(errMap);
+      setShowValidationDialog(true);
+      return;
+    }
+
+    // Phase 3: All good, proceed
+    await doCompleteAttention();
+  };
+
+  const handleDiscardEmptyForms = useCallback(() => {
+    setShowEmptyFormDialog(false);
+    setDynamicFormIds(prev => prev.filter(id => !emptyFormIds.includes(id)));
+    setFormsMap(prev => {
+      const next = { ...prev };
+      emptyFormIds.forEach(id => delete next[id]);
+      return next;
+    });
+    if (emptyFormIds.includes(activeFormId)) {
+      const remaining = allFormIds.filter(id => !emptyFormIds.includes(id) && formsMap[id]);
+      if (remaining.length > 0) setActiveFormId(remaining[0]);
+    }
+    setEmptyFormIds([]);
+  }, [emptyFormIds, activeFormId, allFormIds, formsMap]);
+
+  const doCompleteAttention = async () => {
+    setIsCompletingAttention(true);
+    const failedForms: string[] = [];
+    const formsToSave = allFormIds.filter(fId => formsMap[fId] && !isFormEmpty(fId));
+
+    if (formsToSave.length === 0) {
+      uiToast({ title: "Sin datos para guardar", description: "Debes diligenciar al menos un formulario.", variant: "destructive" });
       setIsCompletingAttention(false);
       return;
     }
 
-    // Update admission status if valid UUID
+    for (const fId of formsToSave) {
+      const entry = formsMap[fId];
+      if (!entry) continue;
+      if (entry.isDirty || !entry.saved) {
+        const success = await saveFormToDb(fId, true);
+        if (!success) failedForms.push(entry.title);
+      }
+    }
+
+    if (failedForms.length > 0) {
+      uiToast({ title: "Error al completar", description: `No se pudieron guardar: ${failedForms.join(', ')}`, variant: "destructive" });
+      setIsCompletingAttention(false);
+      return;
+    }
+
     if (consultationId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(consultationId)) {
       const { error: admError } = await supabase
         .from("admisiones" as any)
@@ -572,7 +688,6 @@ const FormViewer = () => {
       }
     }
 
-    // Clear all drafts
     for (const fId of allFormIds) {
       const dk = `kerhub-draft-${fId}${patientId ? `-${patientId}` : ''}${consultationId ? `-${consultationId}` : ''}`;
       localStorage.removeItem(dk);
@@ -1012,66 +1127,77 @@ const FormViewer = () => {
               )}
               {/* Multi-form chevron tabs + add button */}
               {!showRegistro && (
-                <div className="mb-4 overflow-x-auto scrollbar-none">
-                  <div className="flex items-center gap-0 min-w-0">
-                    {isMultiForm && allFormIds.map((fId, idx) => {
-                      const entry = formsMap[fId];
-                      if (!entry) return null;
-                      const isActive = fId === activeFormId;
-                      const isFirst = idx === 0;
-                      return (
-                        <button
-                          key={fId}
-                          type="button"
-                          onClick={() => handleTabSwitch(fId)}
-                          className={`shrink-0 h-9 px-4 text-xs font-medium flex items-center gap-1.5 transition-all duration-200 ${
-                            isActive
-                              ? 'bg-primary text-primary-foreground'
-                              : 'bg-muted/50 text-muted-foreground hover:bg-muted'
-                          }`}
-                          style={{
-                            clipPath: isFirst
-                              ? 'polygon(0 0, calc(100% - 12px) 0, 100% 50%, calc(100% - 12px) 100%, 0 100%)'
-                              : 'polygon(0 0, calc(100% - 12px) 0, 100% 50%, calc(100% - 12px) 100%, 0 100%, 12px 50%)',
-                            marginLeft: isFirst ? 0 : '-4px',
-                            paddingRight: '1.25rem',
-                            paddingLeft: isFirst ? '0.75rem' : '1.25rem',
-                          }}
-                        >
-                          <span className="max-w-[160px] truncate">{entry.title}</span>
-                          {/* Dirty/saved indicator dot */}
-                          <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${
-                            entry.isDirty
-                              ? 'bg-orange-400'
-                              : entry.saved
-                                ? 'bg-green-500'
-                                : 'bg-transparent'
-                          }`} />
-                        </button>
-                      );
-                    })}
-                    {/* Add form button */}
-                    <button
-                      type="button"
-                      onClick={() => setShowAddFormDialog(true)}
-                      className="shrink-0 w-7 h-7 rounded-full bg-muted hover:bg-muted-foreground/10 flex items-center justify-center ml-2 transition-colors"
-                      title="Agregar formulario"
-                    >
-                      <Plus className="w-3.5 h-3.5 text-muted-foreground" />
-                    </button>
-
-                    {/* Save status indicator */}
-                    {saveStatus !== 'idle' && (
-                      <span className="ml-3 text-xs text-muted-foreground flex items-center gap-1 shrink-0 animate-in fade-in duration-200">
-                        {saveStatus === 'saving' && (
-                          <><Loader2 className="w-3 h-3 animate-spin" /> Guardando...</>
-                        )}
-                        {saveStatus === 'saved' && (
-                          <><Check className="w-3 h-3 text-green-500" /> Guardado</>
-                        )}
-                      </span>
-                    )}
+                <div className="mb-4">
+                  <div className="overflow-x-auto scrollbar-none">
+                    <div className="flex items-center gap-0 min-w-0">
+                      {isMultiForm && allFormIds.map((fId, idx) => {
+                        const entry = formsMap[fId];
+                        if (!entry) return null;
+                        const isActive = fId === activeFormId;
+                        const isFirst = idx === 0;
+                        return (
+                          <button
+                            key={fId}
+                            type="button"
+                            onClick={() => handleTabSwitch(fId)}
+                            className={`shrink-0 h-9 px-4 text-xs font-medium flex items-center gap-1.5 transition-all duration-200 ${
+                              isActive
+                                ? 'bg-primary text-primary-foreground'
+                                : 'bg-muted/50 text-muted-foreground hover:bg-muted'
+                            }`}
+                            style={{
+                              clipPath: isFirst
+                                ? 'polygon(0 0, calc(100% - 12px) 0, 100% 50%, calc(100% - 12px) 100%, 0 100%)'
+                                : 'polygon(0 0, calc(100% - 12px) 0, 100% 50%, calc(100% - 12px) 100%, 0 100%, 12px 50%)',
+                              marginLeft: isFirst ? 0 : '-4px',
+                              paddingRight: '1.25rem',
+                              paddingLeft: isFirst ? '0.75rem' : '1.25rem',
+                            }}
+                          >
+                            <span className="max-w-[160px] truncate">{entry.title}</span>
+                            <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+                              entry.saveError
+                                ? 'bg-red-500'
+                                : entry.isDirty
+                                  ? 'bg-orange-400'
+                                  : entry.saved
+                                    ? 'bg-green-500'
+                                    : 'bg-transparent'
+                            }`} />
+                          </button>
+                        );
+                      })}
+                      <button
+                        type="button"
+                        onClick={() => setShowAddFormDialog(true)}
+                        className="shrink-0 w-7 h-7 rounded-full bg-muted hover:bg-muted-foreground/10 flex items-center justify-center ml-2 transition-colors"
+                        title="Agregar formulario"
+                      >
+                        <Plus className="w-3.5 h-3.5 text-muted-foreground" />
+                      </button>
+                      {saveStatus !== 'idle' && (
+                        <span className="ml-3 text-xs text-muted-foreground flex items-center gap-1 shrink-0 animate-in fade-in duration-200">
+                          {saveStatus === 'saving' && (
+                            <><Loader2 className="w-3 h-3 animate-spin" /> Guardando...</>
+                          )}
+                          {saveStatus === 'saved' && (
+                            <><Check className="w-3 h-3 text-green-500" /> Guardado</>
+                          )}
+                        </span>
+                      )}
+                    </div>
                   </div>
+                  {/* Status bar */}
+                  {(() => {
+                    const st = getFormStatus(activeFormId);
+                    const StatusIcon = st.icon === 'empty' ? AlertCircle : st.icon === 'dirty' ? Clock : st.icon === 'saved' ? CheckCircle : XCircle;
+                    return (
+                      <div className="h-6 flex items-center px-4 text-xs gap-1.5 rounded-b-md" style={{ backgroundColor: 'hsl(var(--muted) / 0.5)' }}>
+                        <StatusIcon className="w-3 h-3" style={{ color: st.color }} />
+                        <span style={{ color: st.color }}>{st.label}</span>
+                      </div>
+                    );
+                  })()}
                 </div>
               )}
 
@@ -1126,15 +1252,24 @@ const FormViewer = () => {
               <FormProvider {...form}>
                 <Form {...form}>
                   <form onSubmit={(e) => e.preventDefault()} className={`space-y-3 max-w-none ${isCompleted ? 'pointer-events-none opacity-80' : ''}`}>
-                    {questions.map(question => (
-                      <QuestionRenderer
-                        key={question.id}
-                        question={question}
-                        formData={formData}
-                        onChange={isCompleted ? () => {} : handleInputChange}
-                        errors={form.formState.errors}
-                      />
-                    ))}
+                    {questions.map(question => {
+                      const hasValidationError = (validationErrorsByForm[activeFormId] || []).includes(question.id);
+                      return (
+                        <div key={question.id}>
+                          <div className={hasValidationError ? 'rounded-lg ring-1 ring-red-500' : ''}>
+                            <QuestionRenderer
+                              question={question}
+                              formData={formData}
+                              onChange={isCompleted ? () => {} : handleInputChange}
+                              errors={form.formState.errors}
+                            />
+                          </div>
+                          {hasValidationError && (
+                            <p className="text-xs mt-1 ml-1" style={{ color: '#ef4444' }}>Este campo es obligatorio</p>
+                          )}
+                        </div>
+                      );
+                    })}
                     <div className="h-12" />
                   </form>
                 </Form>
@@ -1247,6 +1382,90 @@ const FormViewer = () => {
             <Button className="rounded-xl gap-1.5" onClick={handleExitSaveAndLeave}>
               <Save className="w-4 h-4" />
               Guardar y salir
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Validation errors dialog */}
+      <AlertDialog open={showValidationDialog} onOpenChange={setShowValidationDialog}>
+        <AlertDialogContent className="rounded-2xl max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertCircle className="w-5 h-5" style={{ color: '#ef4444' }} />
+              No se puede completar la atención
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Los siguientes formularios tienen campos obligatorios sin diligenciar:
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="space-y-2 my-2">
+            {validationIssues.map(issue => (
+              <div key={issue.formId} className="flex items-center justify-between p-3 rounded-lg border">
+                <div>
+                  <p className="text-sm font-medium">{issue.title}</p>
+                  <p className="text-xs" style={{ color: '#ef4444' }}>{issue.missingCount} campo(s) obligatorio(s) vacío(s)</p>
+                </div>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="text-xs h-7"
+                  onClick={() => {
+                    setShowValidationDialog(false);
+                    setActiveFormId(issue.formId);
+                  }}
+                >
+                  Ir al formulario
+                </Button>
+              </div>
+            ))}
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="rounded-xl">Entendido</AlertDialogCancel>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Empty form dialog */}
+      <AlertDialog open={showEmptyFormDialog} onOpenChange={setShowEmptyFormDialog}>
+        <AlertDialogContent className="rounded-2xl max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-orange-400" />
+              Formularios sin diligenciar
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {emptyFormIds.length === 1
+                ? `El formulario "${formsMap[emptyFormIds[0]]?.title}" está completamente vacío. ¿Deseas descartarlo o necesitas diligenciarlo?`
+                : `Los siguientes formularios están completamente vacíos:`}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          {emptyFormIds.length > 1 && (
+            <div className="space-y-1 my-2">
+              {emptyFormIds.map(fId => (
+                <p key={fId} className="text-sm pl-4">• {formsMap[fId]?.title || 'Formulario'}</p>
+              ))}
+            </div>
+          )}
+          <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+            <AlertDialogCancel className="rounded-xl">Cancelar</AlertDialogCancel>
+            <Button
+              variant="outline"
+              className="rounded-xl"
+              onClick={() => {
+                setShowEmptyFormDialog(false);
+                const firstEmpty = emptyFormIds[0];
+                if (firstEmpty) setActiveFormId(firstEmpty);
+              }}
+            >
+              Diligenciar
+            </Button>
+            <Button
+              variant="destructive"
+              className="rounded-xl"
+              onClick={handleDiscardEmptyForms}
+            >
+              Descartar {emptyFormIds.length > 1 ? 'formularios' : 'formulario'}
             </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
