@@ -528,6 +528,15 @@ const FormViewer = () => {
 
   
 
+  // ── Helper: check if a vitals question has at least one value ──
+  const vitalsHasData = useCallback((formData: Record<string, any>, qId: string): boolean => {
+    return Object.keys(formData).some(key => {
+      if (!key.startsWith(`${qId}_`)) return false;
+      const v = formData[key];
+      return v !== undefined && v !== null && v !== '';
+    });
+  }, []);
+
   // ── Helper: get missing required fields ──
   const getRequiredFieldErrors = useCallback((fId: string): string[] => {
     const entry = formsMap[fId];
@@ -535,6 +544,11 @@ const FormViewer = () => {
     const missing: string[] = [];
     entry.questions.forEach(q => {
       if (!q.required || q.type === 'section' || q.type === 'score_total') return;
+      // Vitals store data as ${qId}_temperature, ${qId}_weight, etc.
+      if (q.type === 'vitals') {
+        if (!vitalsHasData(entry.formData, q.id)) missing.push(q.id);
+        return;
+      }
       const val = entry.formData[q.id];
       let isEmpty = false;
       if (val === undefined || val === null || val === '') isEmpty = true;
@@ -546,7 +560,7 @@ const FormViewer = () => {
       if (isEmpty) missing.push(q.id);
     });
     return missing;
-  }, [formsMap]);
+  }, [formsMap, vitalsHasData]);
 
   // ── Helper: check if form has any response ──
   const formHasAnyResponse = useCallback((fId: string): boolean => {
