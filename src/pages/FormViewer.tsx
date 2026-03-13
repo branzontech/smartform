@@ -1422,7 +1422,7 @@ const FormViewer = () => {
                   <PatientHistoryPanel patientId={patientId!} className="h-full" />
                 ) : (
                   <OrdersPanel
-                    admisionId={consultationId || null}
+                    admisionId={consultationId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(consultationId) ? consultationId : null}
                     selectedOrderType={selectedOrderType}
                     onClearOrderType={() => setSelectedOrderType(null)}
                   />
