@@ -119,6 +119,11 @@ const FormViewer = () => {
   const [isCompletingAttention, setIsCompletingAttention] = useState(false);
   const [isCompleted, setIsCompleted] = useState(false);
   const [showCompletedDialog, setShowCompletedDialog] = useState(false);
+  const [showValidationDialog, setShowValidationDialog] = useState(false);
+  const [validationIssues, setValidationIssues] = useState<{formId: string; title: string; missingCount: number}[]>([]);
+  const [showEmptyFormDialog, setShowEmptyFormDialog] = useState(false);
+  const [emptyFormIds, setEmptyFormIds] = useState<string[]>([]);
+  const [validationErrorsByForm, setValidationErrorsByForm] = useState<Record<string, string[]>>({});
 
   // Panel resize state
   const [panelWidth, setPanelWidth] = useState(() => {
