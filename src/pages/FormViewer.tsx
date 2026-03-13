@@ -1252,15 +1252,24 @@ const FormViewer = () => {
               <FormProvider {...form}>
                 <Form {...form}>
                   <form onSubmit={(e) => e.preventDefault()} className={`space-y-3 max-w-none ${isCompleted ? 'pointer-events-none opacity-80' : ''}`}>
-                    {questions.map(question => (
-                      <QuestionRenderer
-                        key={question.id}
-                        question={question}
-                        formData={formData}
-                        onChange={isCompleted ? () => {} : handleInputChange}
-                        errors={form.formState.errors}
-                      />
-                    ))}
+                    {questions.map(question => {
+                      const hasValidationError = (validationErrorsByForm[activeFormId] || []).includes(question.id);
+                      return (
+                        <div key={question.id}>
+                          <div className={hasValidationError ? 'rounded-lg ring-1 ring-red-500' : ''}>
+                            <QuestionRenderer
+                              question={question}
+                              formData={formData}
+                              onChange={isCompleted ? () => {} : handleInputChange}
+                              errors={form.formState.errors}
+                            />
+                          </div>
+                          {hasValidationError && (
+                            <p className="text-xs mt-1 ml-1" style={{ color: '#ef4444' }}>Este campo es obligatorio</p>
+                          )}
+                        </div>
+                      );
+                    })}
                     <div className="h-12" />
                   </form>
                 </Form>
