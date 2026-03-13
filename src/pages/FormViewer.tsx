@@ -582,19 +582,9 @@ const FormViewer = () => {
       window.parent.postMessage({ type: 'formCompleted', formId }, '*');
     }
 
-    uiToast({
-      title: "✅ Atención completada",
-      description: `${allFormIds.length} formulario(s) guardados — ${format(new Date(), "d 'de' MMMM 'de' yyyy, HH:mm", { locale: es })}`,
-    });
-
     setIsCompletingAttention(false);
-
-    // Navigate back
-    if (patientId) {
-      navigate(`/app/pacientes/${patientId}`);
-    } else {
-      navigate(-1);
-    }
+    setIsCompleted(true);
+    setShowCompletedDialog(true);
   };
 
   // ── Navigation with protection ──
