@@ -68,7 +68,7 @@ const AppRoutes = () => {
         <Route path="pacientes/dashboard" element={<PatientDashboard />} />
         <Route path="pacientes/:id" element={<PatientDetail />} />
         <Route path="pacientes/nueva-consulta" element={<NewConsultation />} />
-        <Route path="consulta-multiple" element={<MultiFormViewer />} />
+        <Route path="consulta-multiple" element={<Navigate to="/app" replace />} />
         <Route path="citas" element={<AppointmentList />} />
         <Route path="citas/:id" element={<AppointmentDetail />} />
         <Route path="citas/nueva" element={<AppointmentForm />} />
