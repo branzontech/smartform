@@ -383,7 +383,7 @@ export const QuestionRenderer = ({ question, formData, onChange, errors }: Quest
               <FormControl>
                 <SignaturePad
                   value={field.value || ""}
-                  onChange={field.onChange}
+                  onChange={syncChange(field.onChange, question.id)}
                   readOnly={false}
                 />
               </FormControl>
