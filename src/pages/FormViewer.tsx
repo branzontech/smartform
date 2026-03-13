@@ -510,21 +510,7 @@ const FormViewer = () => {
     });
   };
 
-  // ── Helper: check if form has no responses ──
-  const isFormEmpty = useCallback((fId: string): boolean => {
-    const entry = formsMap[fId];
-    if (!entry) return true;
-    return entry.questions.filter(q => q.type !== 'section' && q.type !== 'score_total').every(q => {
-      const val = entry.formData[q.id];
-      if (val === undefined || val === null || val === '') return true;
-      if (Array.isArray(val) && val.length === 0) return true;
-      if (typeof val === 'object' && !Array.isArray(val)) {
-        if (val.score !== undefined && val.selectedOptions) return !val.selectedOptions?.length;
-        return Object.values(val).every((v: any) => !v && v !== 0);
-      }
-      return false;
-    });
-  }, [formsMap]);
+  // (isFormEmpty moved above handleTabSwitch)
 
   // ── Helper: get missing required fields ──
   const getRequiredFieldErrors = useCallback((fId: string): string[] => {
