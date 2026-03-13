@@ -229,11 +229,11 @@ const NewConsultation = () => {
       description: "Redirigiendo al formulario seleccionado...",
     });
     
+    const queryParts = [`patientId=${selectedPatientId}`, `consultationId=${newConsultation.id}`];
     if (selectedFormIds.length > 1) {
-      navigate(`/app/consulta-multiple?patientId=${selectedPatientId}&consultationId=${newConsultation.id}&forms=${selectedFormIds.join(',')}`);
-    } else {
-      navigate(`/app/ver/${selectedFormIds[0]}?patientId=${selectedPatientId}&consultationId=${newConsultation.id}`);
+      queryParts.push(`forms=${selectedFormIds.join(',')}`);
     }
+    navigate(`/app/ver/${selectedFormIds[0]}?${queryParts.join('&')}`);
   };
 
 

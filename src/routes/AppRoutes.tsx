@@ -8,7 +8,7 @@ import FormResponses from "@/pages/FormResponses";
 import PatientList from "@/pages/patients/PatientList";
 import PatientDetail from "@/pages/patients/PatientDetail";
 import NewConsultation from "@/pages/patients/NewConsultation";
-import MultiFormViewer from "@/pages/patients/MultiFormViewer";
+
 import PatientDashboard from "@/pages/patients/PatientDashboard";
 import { SettingsPage } from "@/components/config/settings";
 import AppointmentList from "@/pages/appointments/AppointmentList";
