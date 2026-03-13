@@ -66,11 +66,19 @@ export const ScoreTotalViewer: React.FC<ScoreTotalViewerProps> = ({ question, fo
                 key={i}
                 className={cn(
                   "flex items-center gap-3 px-3 py-1.5 rounded-md text-sm transition-colors",
-                  isActive
-                    ? `${colors.bg} ${colors.text} font-medium`
-                    : "text-muted-foreground"
+                  !isActive && "text-muted-foreground"
                 )}
+                style={isActive ? {
+                  backgroundColor: colors.bg,
+                  color: colors.text,
+                  fontWeight: 500,
+                  border: `1px solid ${colors.border}`,
+                } : undefined}
               >
+                <span
+                  className="w-2.5 h-2.5 rounded-full shrink-0"
+                  style={{ backgroundColor: colors.text }}
+                />
                 <span className="tabular-nums w-16 shrink-0 text-right">
                   {r.min === r.max ? r.min : `${r.min} - ${r.max}`}
                 </span>
