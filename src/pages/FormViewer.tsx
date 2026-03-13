@@ -29,7 +29,7 @@ import { FormSubmissionSuccess } from '@/components/forms/form-viewer/form-submi
 import { createDynamicSchema, fetchFormById, saveFormResponse } from '@/utils/form-utils';
 import { useToast } from '@/hooks/use-toast';
 import { PatientHistoryPanel } from '@/components/patients/PatientHistoryPanel';
-import { OrdersPanel } from '@/components/orders/OrdersPanel';
+import { RightPanelTabs } from '@/components/orders/RightPanelTabs';
 import { FormHeaderPreview } from '@/components/forms/FormHeaderPreview';
 import { useAuth } from '@/contexts/AuthContext';
 import { DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
