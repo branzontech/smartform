@@ -1087,28 +1087,28 @@ const FormViewer = () => {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-52">
-                  <DropdownMenuItem onClick={() => toast("Próximamente")} className="flex items-center gap-2 text-sm">
+                  <DropdownMenuItem onClick={() => { setRightPanelTab('ordenes'); setSelectedOrderType('medicamento'); if (isCollapsed) { setIsCollapsed(false); setPanelWidth(previousWidthRef.current || DEFAULT_PANEL_WIDTH); } }} className="flex items-center gap-2 text-sm">
                     <Pill className="w-4 h-4 text-muted-foreground" />
                     Medicamentos
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => toast("Próximamente")} className="flex items-center gap-2 text-sm">
+                  <DropdownMenuItem onClick={() => { setRightPanelTab('ordenes'); setSelectedOrderType('laboratorio'); if (isCollapsed) { setIsCollapsed(false); setPanelWidth(previousWidthRef.current || DEFAULT_PANEL_WIDTH); } }} className="flex items-center gap-2 text-sm">
                     <TestTube className="w-4 h-4 text-muted-foreground" />
                     Laboratorio
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => toast("Próximamente")} className="flex items-center gap-2 text-sm">
+                  <DropdownMenuItem onClick={() => { setRightPanelTab('ordenes'); setSelectedOrderType('imagenologia'); if (isCollapsed) { setIsCollapsed(false); setPanelWidth(previousWidthRef.current || DEFAULT_PANEL_WIDTH); } }} className="flex items-center gap-2 text-sm">
                     <Scan className="w-4 h-4 text-muted-foreground" />
                     Imagenología
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => toast("Próximamente")} className="flex items-center gap-2 text-sm">
+                  <DropdownMenuItem onClick={() => { setRightPanelTab('ordenes'); setSelectedOrderType('interconsulta'); if (isCollapsed) { setIsCollapsed(false); setPanelWidth(previousWidthRef.current || DEFAULT_PANEL_WIDTH); } }} className="flex items-center gap-2 text-sm">
                     <UserPlus className="w-4 h-4 text-muted-foreground" />
                     Interconsulta
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => toast("Próximamente")} className="flex items-center gap-2 text-sm">
+                  <DropdownMenuItem onClick={() => { setRightPanelTab('ordenes'); setSelectedOrderType('procedimiento'); if (isCollapsed) { setIsCollapsed(false); setPanelWidth(previousWidthRef.current || DEFAULT_PANEL_WIDTH); } }} className="flex items-center gap-2 text-sm">
                     <Scissors className="w-4 h-4 text-muted-foreground" />
                     Procedimientos
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => toast("Próximamente")} className="flex items-center gap-2 text-sm">
+                  <DropdownMenuItem onClick={() => { setRightPanelTab('ordenes'); setSelectedOrderType(null); if (isCollapsed) { setIsCollapsed(false); setPanelWidth(previousWidthRef.current || DEFAULT_PANEL_WIDTH); } }} className="flex items-center gap-2 text-sm">
                     <List className="w-4 h-4 text-muted-foreground" />
                     Ver órdenes del paciente
                   </DropdownMenuItem>
