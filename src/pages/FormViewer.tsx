@@ -19,7 +19,8 @@ import { QuestionRenderer } from '@/components/forms/form-viewer/question-render
 import { QuestionData } from '@/components/forms/question/types';
 import { FormTitle } from '@/components/ui/form-title';
 import { BackButton } from '@/App';
-import { Check, Link as LinkIcon, Printer, AlertTriangle, CalendarIcon, ClipboardList, PanelRightClose, PanelRightOpen, GripVertical, MoreHorizontal, ArrowLeft, Save, ClipboardPlus, Pill, TestTube, Scan, UserPlus, Scissors, List, Plus, Search, CheckCircle, Loader2, AlertCircle, Clock, XCircle } from 'lucide-react';
+import { Check, Link as LinkIcon, Printer, AlertTriangle, CalendarIcon, ClipboardList, PanelRightClose, PanelRightOpen, GripVertical, MoreHorizontal, ArrowLeft, Save, ClipboardPlus, Pill, TestTube, Scan, UserPlus, Scissors, List, Plus, Search, CheckCircle, Loader2, AlertCircle, Clock, XCircle, Circle } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { toast } from "sonner";
 import { Form as FormType } from './FormsPage';
 import { FormLoading } from '@/components/forms/form-viewer/form-loading';
@@ -373,18 +374,34 @@ const FormViewer = () => {
     return true;
   }, [formsMap, patientId, consultationId, uiToast]);
 
+  // ── Helper: check if form has no responses ──
+  const isFormEmpty = useCallback((fId: string): boolean => {
+    const entry = formsMap[fId];
+    if (!entry) return true;
+    return entry.questions.filter(q => q.type !== 'section' && q.type !== 'score_total').every(q => {
+      const val = entry.formData[q.id];
+      if (val === undefined || val === null || val === '') return true;
+      if (Array.isArray(val) && val.length === 0) return true;
+      if (typeof val === 'object' && !Array.isArray(val)) {
+        if (val.score !== undefined && val.selectedOptions) return !val.selectedOptions?.length;
+        return Object.values(val).every((v: any) => !v && v !== 0);
+      }
+      return false;
+    });
+  }, [formsMap]);
+
   // ── Autosave on tab switch ──
   const handleTabSwitch = useCallback(async (targetFormId: string) => {
     if (targetFormId === activeFormId) return;
 
     const currentEntry = formsMap[activeFormId];
-    if (currentEntry?.isDirty) {
+    if (currentEntry?.isDirty && !isFormEmpty(activeFormId)) {
       setSaveStatus('saving');
       const success = await saveFormToDb(activeFormId);
       if (!success) {
         setSaveStatus('idle');
         uiToast({ title: "Error al guardar", description: `No se pudo guardar "${currentEntry.title}". Corrige los errores antes de cambiar de formulario.`, variant: "destructive" });
-        return; // Don't switch tab
+        return;
       }
       setSaveStatus('saved');
       if (saveStatusTimerRef.current) clearTimeout(saveStatusTimerRef.current);
@@ -392,17 +409,16 @@ const FormViewer = () => {
     }
 
     setActiveFormId(targetFormId);
-  }, [activeFormId, formsMap, saveFormToDb, uiToast]);
+  }, [activeFormId, formsMap, saveFormToDb, uiToast, isFormEmpty]);
 
   // ── 30s interval autosave ──
   useEffect(() => {
     if (!draftRestoredRef.current) return;
 
     const interval = setInterval(async () => {
-      // Save ALL dirty forms silently
       for (const fId of allFormIds) {
         const entry = formsMap[fId];
-        if (entry?.isDirty) {
+        if (entry?.isDirty && !isFormEmpty(fId)) {
           setSaveStatus('saving');
           await saveFormToDb(fId);
           setSaveStatus('saved');
@@ -413,7 +429,7 @@ const FormViewer = () => {
     }, AUTOSAVE_INTERVAL);
 
     return () => clearInterval(interval);
-  }, [allFormIds, formsMap, saveFormToDb]);
+  }, [allFormIds, formsMap, saveFormToDb, isFormEmpty]);
 
   // ── Load all forms ──
   useEffect(() => {
@@ -510,21 +526,7 @@ const FormViewer = () => {
     });
   };
 
-  // ── Helper: check if form has no responses ──
-  const isFormEmpty = useCallback((fId: string): boolean => {
-    const entry = formsMap[fId];
-    if (!entry) return true;
-    return entry.questions.filter(q => q.type !== 'section' && q.type !== 'score_total').every(q => {
-      const val = entry.formData[q.id];
-      if (val === undefined || val === null || val === '') return true;
-      if (Array.isArray(val) && val.length === 0) return true;
-      if (typeof val === 'object' && !Array.isArray(val)) {
-        if (val.score !== undefined && val.selectedOptions) return !val.selectedOptions?.length;
-        return Object.values(val).every((v: any) => !v && v !== 0);
-      }
-      return false;
-    });
-  }, [formsMap]);
+  // (isFormEmpty moved above handleTabSwitch)
 
   // ── Helper: get missing required fields ──
   const getRequiredFieldErrors = useCallback((fId: string): string[] => {
@@ -546,13 +548,11 @@ const FormViewer = () => {
     return missing;
   }, [formsMap]);
 
-  // ── Helper: get form status for display ──
-  const getFormStatus = useCallback((fId: string): { label: string; color: string; icon: 'empty' | 'dirty' | 'saved' | 'error' } => {
+  // ── Helper: check if form has any response ──
+  const formHasAnyResponse = useCallback((fId: string): boolean => {
     const entry = formsMap[fId];
-    if (!entry) return { label: 'Sin diligenciar', color: '#ef4444', icon: 'empty' };
-    if (entry.saveError) return { label: 'Error al guardar', color: '#dc2626', icon: 'error' };
-    if (entry.saved && !entry.isDirty) return { label: `Guardado ✓ ${entry.lastSavedTime || ''}`, color: '#16a34a', icon: 'saved' };
-    const hasData = entry.questions.filter(q => q.type !== 'section').some(q => {
+    if (!entry) return false;
+    return entry.questions.filter(q => q.type !== 'section' && q.type !== 'score_total').some(q => {
       const val = entry.formData[q.id];
       if (val === undefined || val === null || val === '') return false;
       if (Array.isArray(val) && val.length === 0) return false;
@@ -562,10 +562,30 @@ const FormViewer = () => {
       }
       return true;
     });
-    if (entry.isDirty && hasData) return { label: 'En progreso - Sin guardar', color: '#f97316', icon: 'dirty' };
-    if (!hasData) return { label: 'Sin diligenciar', color: '#ef4444', icon: 'empty' };
-    return { label: 'En progreso - Sin guardar', color: '#f97316', icon: 'dirty' };
   }, [formsMap]);
+
+  // ── Helper: check if all required fields are filled ──
+  const allRequiredFilled = useCallback((fId: string): boolean => {
+    return getRequiredFieldErrors(fId).length === 0;
+  }, [getRequiredFieldErrors]);
+
+  // ── Helper: get form status for display ──
+  type FormStatusType = 'sin_diligenciar' | 'en_progreso_sin_guardar' | 'guardado_parcial' | 'completo_guardado' | 'error';
+  const getFormStatus = useCallback((fId: string): { label: string; color: string; status: FormStatusType } => {
+    const entry = formsMap[fId];
+    if (!entry) return { label: 'Sin diligenciar', color: 'hsl(var(--muted-foreground))', status: 'sin_diligenciar' };
+    if (entry.saveError) return { label: 'Error al guardar', color: '#dc2626', status: 'error' };
+
+    const hasData = formHasAnyResponse(fId);
+    if (!hasData) return { label: 'Sin diligenciar', color: 'hsl(var(--muted-foreground))', status: 'sin_diligenciar' };
+
+    const reqFilled = allRequiredFilled(fId);
+
+    if (entry.isDirty) return { label: 'En progreso - Sin guardar', color: '#f97316', status: 'en_progreso_sin_guardar' };
+    if (entry.saved && reqFilled) return { label: `Completo - Guardado ✓ ${entry.lastSavedTime || ''}`, color: '#16a34a', status: 'completo_guardado' };
+    if (entry.saved && !reqFilled) return { label: `En progreso - Guardado parcial ✓ ${entry.lastSavedTime || ''}`, color: '#f97316', status: 'guardado_parcial' };
+    return { label: 'En progreso - Sin guardar', color: '#f97316', status: 'en_progreso_sin_guardar' };
+  }, [formsMap, formHasAnyResponse, allRequiredFilled]);
 
   const processFormValues = (qs: QuestionData[], fd: FormData, rawValues: any) => {
     const processedValues = { ...rawValues };
@@ -1155,15 +1175,14 @@ const FormViewer = () => {
                             }}
                           >
                             <span className="max-w-[160px] truncate">{entry.title}</span>
-                            <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${
-                              entry.saveError
-                                ? 'bg-red-500'
-                                : entry.isDirty
-                                  ? 'bg-orange-400'
-                                  : entry.saved
-                                    ? 'bg-green-500'
-                                    : 'bg-transparent'
-                            }`} />
+                            {(() => {
+                              const st = getFormStatus(fId);
+                              return (
+                                <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{
+                                  backgroundColor: st.status === 'sin_diligenciar' ? 'transparent' : st.color
+                                }} />
+                              );
+                            })()}
                           </button>
                         );
                       })}
@@ -1190,7 +1209,11 @@ const FormViewer = () => {
                   {/* Status bar */}
                   {(() => {
                     const st = getFormStatus(activeFormId);
-                    const StatusIcon = st.icon === 'empty' ? AlertCircle : st.icon === 'dirty' ? Clock : st.icon === 'saved' ? CheckCircle : XCircle;
+                    const StatusIcon = st.status === 'sin_diligenciar' ? Circle
+                      : st.status === 'en_progreso_sin_guardar' ? Clock
+                      : st.status === 'guardado_parcial' ? AlertCircle
+                      : st.status === 'completo_guardado' ? CheckCircle
+                      : XCircle;
                     return (
                       <div className="h-6 flex items-center px-4 text-xs gap-1.5 rounded-b-md" style={{ backgroundColor: 'hsl(var(--muted) / 0.5)' }}>
                         <StatusIcon className="w-3 h-3" style={{ color: st.color }} />
@@ -1274,13 +1297,19 @@ const FormViewer = () => {
                   </form>
                 </Form>
               </FormProvider>
-              {!isCompleted && (
-                <div className="sticky bottom-4 flex justify-end pointer-events-none print:hidden">
+              {!isCompleted && (() => {
+                const formsWithData = allFormIds.filter(fId => formsMap[fId] && formHasAnyResponse(fId));
+                const allComplete = formsWithData.length > 0 && formsWithData.every(fId => {
+                  const st = getFormStatus(fId);
+                  return st.status === 'completo_guardado';
+                });
+                const isDisabled = isCompletingAttention || !allComplete;
+                const btn = (
                   <Button
                     type="button"
                     size="sm"
                     onClick={handleCompleteAttention}
-                    disabled={isCompletingAttention}
+                    disabled={isDisabled}
                     className="rounded-full shadow-lg pointer-events-auto gap-1.5 h-9 px-4 text-xs"
                   >
                     {isCompletingAttention ? (
@@ -1290,8 +1319,24 @@ const FormViewer = () => {
                     )}
                     Completar atención
                   </Button>
-                </div>
-              )}
+                );
+                return (
+                  <div className="sticky bottom-4 flex justify-end pointer-events-none print:hidden">
+                    {!allComplete && !isCompletingAttention ? (
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span className="pointer-events-auto">{btn}</span>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Hay formularios incompletos</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    ) : btn}
+                  </div>
+                );
+              })()}
             </>
           )}
         </div>
