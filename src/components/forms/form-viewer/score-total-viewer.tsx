@@ -3,14 +3,14 @@ import { FormLabel } from "@/components/ui/form";
 import { cn } from "@/lib/utils";
 import { QuestionData, ScoringRange } from "../question/types";
 
-const RANGE_COLOR_MAP: Record<string, { bg: string; text: string }> = {
-  red:    { bg: "bg-red-50",    text: "text-red-700" },
-  orange: { bg: "bg-orange-50", text: "text-orange-700" },
-  yellow: { bg: "bg-yellow-50", text: "text-yellow-700" },
-  lime:   { bg: "bg-lime-50",   text: "text-lime-700" },
-  green:  { bg: "bg-green-50",  text: "text-green-700" },
-  blue:   { bg: "bg-blue-50",   text: "text-blue-700" },
-  gray:   { bg: "bg-gray-50",   text: "text-gray-700" },
+const RANGE_COLOR_MAP: Record<string, { bg: string; text: string; border: string }> = {
+  red:    { bg: "rgba(239,68,68,0.12)",   text: "#b91c1c",  border: "rgba(239,68,68,0.3)" },
+  orange: { bg: "rgba(249,115,22,0.12)",  text: "#c2410c",  border: "rgba(249,115,22,0.3)" },
+  yellow: { bg: "rgba(234,179,8,0.12)",   text: "#a16207",  border: "rgba(234,179,8,0.3)" },
+  lime:   { bg: "rgba(132,204,22,0.12)",  text: "#4d7c0f",  border: "rgba(132,204,22,0.3)" },
+  green:  { bg: "rgba(34,197,94,0.12)",   text: "#15803d",  border: "rgba(34,197,94,0.3)" },
+  blue:   { bg: "rgba(59,130,246,0.12)",  text: "#1d4ed8",  border: "rgba(59,130,246,0.3)" },
+  gray:   { bg: "rgba(107,114,128,0.08)", text: "#374151",  border: "rgba(107,114,128,0.2)" },
 };
 
 interface ScoreTotalViewerProps {
@@ -66,11 +66,19 @@ export const ScoreTotalViewer: React.FC<ScoreTotalViewerProps> = ({ question, fo
                 key={i}
                 className={cn(
                   "flex items-center gap-3 px-3 py-1.5 rounded-md text-sm transition-colors",
-                  isActive
-                    ? `${colors.bg} ${colors.text} font-medium`
-                    : "text-muted-foreground"
+                  !isActive && "text-muted-foreground"
                 )}
+                style={isActive ? {
+                  backgroundColor: colors.bg,
+                  color: colors.text,
+                  fontWeight: 500,
+                  border: `1px solid ${colors.border}`,
+                } : undefined}
               >
+                <span
+                  className="w-2.5 h-2.5 rounded-full shrink-0"
+                  style={{ backgroundColor: colors.text }}
+                />
                 <span className="tabular-nums w-16 shrink-0 text-right">
                   {r.min === r.max ? r.min : `${r.min} - ${r.max}`}
                 </span>
