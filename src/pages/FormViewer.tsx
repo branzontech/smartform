@@ -1295,13 +1295,19 @@ const FormViewer = () => {
                   </form>
                 </Form>
               </FormProvider>
-              {!isCompleted && (
-                <div className="sticky bottom-4 flex justify-end pointer-events-none print:hidden">
+              {!isCompleted && (() => {
+                const formsWithData = allFormIds.filter(fId => formsMap[fId] && formHasAnyResponse(fId));
+                const allComplete = formsWithData.length > 0 && formsWithData.every(fId => {
+                  const st = getFormStatus(fId);
+                  return st.status === 'completo_guardado';
+                });
+                const isDisabled = isCompletingAttention || !allComplete;
+                const btn = (
                   <Button
                     type="button"
                     size="sm"
                     onClick={handleCompleteAttention}
-                    disabled={isCompletingAttention}
+                    disabled={isDisabled}
                     className="rounded-full shadow-lg pointer-events-auto gap-1.5 h-9 px-4 text-xs"
                   >
                     {isCompletingAttention ? (
@@ -1311,8 +1317,24 @@ const FormViewer = () => {
                     )}
                     Completar atención
                   </Button>
-                </div>
-              )}
+                );
+                return (
+                  <div className="sticky bottom-4 flex justify-end pointer-events-none print:hidden">
+                    {!allComplete && !isCompletingAttention ? (
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span className="pointer-events-auto">{btn}</span>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Hay formularios incompletos</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    ) : btn}
+                  </div>
+                );
+              })()}
             </>
           )}
         </div>
