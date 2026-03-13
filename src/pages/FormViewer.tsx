@@ -19,7 +19,7 @@ import { QuestionRenderer } from '@/components/forms/form-viewer/question-render
 import { QuestionData } from '@/components/forms/question/types';
 import { FormTitle } from '@/components/ui/form-title';
 import { BackButton } from '@/App';
-import { Check, Link as LinkIcon, Printer, AlertTriangle, CalendarIcon, ClipboardList, PanelRightClose, PanelRightOpen, GripVertical, MoreHorizontal, ArrowLeft, Save, ClipboardPlus, Pill, TestTube, Scan, UserPlus, Scissors, List, Plus, Search } from 'lucide-react';
+import { Check, Link as LinkIcon, Printer, AlertTriangle, CalendarIcon, ClipboardList, PanelRightClose, PanelRightOpen, GripVertical, MoreHorizontal, ArrowLeft, Save, ClipboardPlus, Pill, TestTube, Scan, UserPlus, Scissors, List, Plus, Search, CheckCircle, Loader2 } from 'lucide-react';
 import { toast } from "sonner";
 import { Form as FormType } from './FormsPage';
 import { FormLoading } from '@/components/forms/form-viewer/form-loading';
@@ -73,6 +73,8 @@ interface FormEntry {
   formType: string;
   formData: FormData;
   saved: boolean;
+  isDirty: boolean;
+  responseId?: string; // track existing response for upsert
 }
 
 const PANEL_WIDTH_KEY = 'kerhub-antecedentes-panel-width';
@@ -80,6 +82,7 @@ const PANEL_COLLAPSED_KEY = 'kerhub-antecedentes-panel-collapsed';
 const DEFAULT_PANEL_WIDTH = 380;
 const MIN_PANEL_WIDTH = 280;
 const MIN_FORM_WIDTH = 400;
+const AUTOSAVE_INTERVAL = 30_000; // 30 seconds
 
 const FormViewer = () => {
   const { id: formId } = useParams();
@@ -106,6 +109,13 @@ const FormViewer = () => {
   const [addFormLoading, setAddFormLoading] = useState(false);
   const [dynamicFormIds, setDynamicFormIds] = useState<string[]>([]);
 
+  // Autosave state
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+  const saveStatusTimerRef = useRef<ReturnType<typeof setTimeout>>();
+  const [showExitDialog, setShowExitDialog] = useState(false);
+  const pendingNavigationRef = useRef<string | number | null>(null);
+  const [isCompletingAttention, setIsCompletingAttention] = useState(false);
+
   // Panel resize state
   const [panelWidth, setPanelWidth] = useState(() => {
     const saved = localStorage.getItem(PANEL_WIDTH_KEY);
@@ -126,7 +136,7 @@ const FormViewer = () => {
   const isEmbedded = queryParams.get("embedded") === "true";
   const extraFormIds = queryParams.get("forms")?.split(',').filter(Boolean) || [];
 
-  // Build ordered list of all form IDs (primary + extras + dynamically added, deduplicated)
+  // Build ordered list of all form IDs
   const allFormIds = React.useMemo(() => {
     const ids: string[] = [];
     if (formId) ids.push(formId);
@@ -136,6 +146,30 @@ const FormViewer = () => {
   }, [formId, extraFormIds.join(','), dynamicFormIds.join(',')]);
 
   const isMultiForm = allFormIds.length > 1;
+
+  // Dirty flags derived from formsMap
+  const dirtyFlags = React.useMemo(() => {
+    const flags: Record<string, boolean> = {};
+    for (const [fId, entry] of Object.entries(formsMap)) {
+      flags[fId] = entry.isDirty;
+    }
+    return flags;
+  }, [formsMap]);
+
+  const hasAnyDirty = Object.values(dirtyFlags).some(Boolean);
+  const dirtyCount = Object.values(dirtyFlags).filter(Boolean).length;
+
+  // beforeunload protection
+  useEffect(() => {
+    const handler = (e: BeforeUnloadEvent) => {
+      if (hasAnyDirty) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, [hasAnyDirty]);
 
   // Search forms for add dialog
   const searchForms = useCallback(async (query: string) => {
@@ -158,12 +192,10 @@ const FormViewer = () => {
   }, [showAddFormDialog, addFormSearch, searchForms]);
 
   const handleAddNewForm = async (newFormId: string) => {
-    // Check if already in tabs
     if (allFormIds.includes(newFormId)) {
       toast("Este formulario ya fue agregado");
       return;
     }
-    // Fetch the form
     const result = await fetchFormById(newFormId);
     if (result.form) {
       const qs = result.form.questions as QuestionData[] || [];
@@ -177,6 +209,7 @@ const FormViewer = () => {
           formType: result.form!.formType || 'historia_clinica',
           formData: {},
           saved: false,
+          isDirty: false,
         },
       }));
       setDynamicFormIds(prev => [...prev, newFormId]);
@@ -194,12 +227,12 @@ const FormViewer = () => {
   const formDescription = activeEntry?.description || "";
   const formType = activeEntry?.formType || "historia_clinica";
 
-  // Draft cache key — unique per form + patient + consultation
+  // Draft cache key
   const draftKey = `kerhub-draft-${activeFormId || 'unknown'}${patientId ? `-${patientId}` : ''}${consultationId ? `-${consultationId}` : ''}`;
 
   // Auto-save draft to localStorage (debounced 500ms)
   useEffect(() => {
-    if (!draftRestoredRef.current) return; // Don't save until draft has been restored/checked
+    if (!draftRestoredRef.current) return;
     if (submitted) return;
     const hasData = Object.keys(formData).some(k => {
       const v = formData[k];
@@ -210,12 +243,11 @@ const FormViewer = () => {
     const timer = setTimeout(() => {
       try {
         localStorage.setItem(draftKey, JSON.stringify(formData));
-      } catch { /* quota exceeded — ignore */ }
+      } catch { /* quota exceeded */ }
     }, 500);
     return () => clearTimeout(timer);
   }, [formData, draftKey, submitted]);
 
-  // Clear draft helper
   const clearDraft = useCallback(() => {
     localStorage.removeItem(draftKey);
   }, [draftKey]);
@@ -245,11 +277,10 @@ const FormViewer = () => {
 
     const onMove = (moveEvent: MouseEvent) => {
       if (!isDraggingRef.current) return;
-      const delta = startX - moveEvent.clientX; // dragging left = bigger panel
+      const delta = startX - moveEvent.clientX;
       const containerWidth = containerRef.current?.offsetWidth || window.innerWidth;
       const maxWidth = Math.floor(containerWidth * 0.5);
       let newWidth = Math.max(MIN_PANEL_WIDTH, Math.min(maxWidth, startWidth + delta));
-      // Ensure form column has minimum width
       if (containerWidth - newWidth < MIN_FORM_WIDTH) {
         newWidth = containerWidth - MIN_FORM_WIDTH;
       }
@@ -267,6 +298,116 @@ const FormViewer = () => {
     document.addEventListener('mouseup', onUp);
   }, [panelWidth]);
 
+  // ── Save a single form to DB ──
+  const saveFormToDb = useCallback(async (fId: string, showToast = false): Promise<boolean> => {
+    const entry = formsMap[fId];
+    if (!entry) return false;
+
+    const { data: { user } } = await supabase.auth.getUser();
+    const medicoId = user?.id;
+
+    if (patientId && !medicoId) {
+      if (showToast) uiToast({ title: "Error de autenticación", description: "Debes iniciar sesión.", variant: "destructive" });
+      return false;
+    }
+
+    const processed = processFormValues(entry.questions, entry.formData, entry.formData);
+
+    if (patientId && medicoId) {
+      const admisionId = consultationId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(consultationId) ? consultationId : null;
+
+      if (entry.responseId) {
+        // Update existing response
+        const { error: updateError } = await supabase
+          .from("respuestas_formularios" as any)
+          .update({ datos_respuesta: processed, updated_at: new Date().toISOString() })
+          .eq('id', entry.responseId);
+        if (updateError) {
+          if (showToast) uiToast({ title: "Error al guardar", description: `${entry.title}: ${updateError.message}`, variant: "destructive" });
+          return false;
+        }
+      } else {
+        // Insert new response
+        const { data: insertData, error: insertError } = await supabase
+          .from("respuestas_formularios" as any)
+          .insert({
+            formulario_id: fId,
+            paciente_id: patientId,
+            admision_id: admisionId,
+            medico_id: medicoId,
+            datos_respuesta: processed,
+          })
+          .select('id')
+          .single();
+        if (insertError) {
+          if (showToast) uiToast({ title: "Error al guardar", description: `${entry.title}: ${insertError.message}`, variant: "destructive" });
+          return false;
+        }
+        // Store the response ID for future updates
+        setFormsMap(prev => ({
+          ...prev,
+          [fId]: { ...prev[fId], responseId: (insertData as any)?.id },
+        }));
+      }
+    } else {
+      saveFormResponse(fId, { ...processed, _patientId: patientId, _consultationId: consultationId });
+    }
+
+    // Clear draft and mark clean
+    const dk = `kerhub-draft-${fId}${patientId ? `-${patientId}` : ''}${consultationId ? `-${consultationId}` : ''}`;
+    localStorage.removeItem(dk);
+
+    setFormsMap(prev => ({
+      ...prev,
+      [fId]: { ...prev[fId], saved: true, isDirty: false },
+    }));
+
+    return true;
+  }, [formsMap, patientId, consultationId, uiToast]);
+
+  // ── Autosave on tab switch ──
+  const handleTabSwitch = useCallback(async (targetFormId: string) => {
+    if (targetFormId === activeFormId) return;
+
+    const currentEntry = formsMap[activeFormId];
+    if (currentEntry?.isDirty) {
+      setSaveStatus('saving');
+      const success = await saveFormToDb(activeFormId);
+      if (!success) {
+        setSaveStatus('idle');
+        uiToast({ title: "Error al guardar", description: `No se pudo guardar "${currentEntry.title}". Corrige los errores antes de cambiar de formulario.`, variant: "destructive" });
+        return; // Don't switch tab
+      }
+      setSaveStatus('saved');
+      if (saveStatusTimerRef.current) clearTimeout(saveStatusTimerRef.current);
+      saveStatusTimerRef.current = setTimeout(() => setSaveStatus('idle'), 2000);
+    }
+
+    setActiveFormId(targetFormId);
+  }, [activeFormId, formsMap, saveFormToDb, uiToast]);
+
+  // ── 30s interval autosave ──
+  useEffect(() => {
+    if (!draftRestoredRef.current) return;
+
+    const interval = setInterval(async () => {
+      // Save ALL dirty forms silently
+      for (const fId of allFormIds) {
+        const entry = formsMap[fId];
+        if (entry?.isDirty) {
+          setSaveStatus('saving');
+          await saveFormToDb(fId);
+          setSaveStatus('saved');
+          if (saveStatusTimerRef.current) clearTimeout(saveStatusTimerRef.current);
+          saveStatusTimerRef.current = setTimeout(() => setSaveStatus('idle'), 2000);
+        }
+      }
+    }, AUTOSAVE_INTERVAL);
+
+    return () => clearInterval(interval);
+  }, [allFormIds, formsMap, saveFormToDb]);
+
+  // ── Load all forms ──
   useEffect(() => {
     const loadAllForms = async () => {
       if (allFormIds.length === 0) return;
@@ -297,6 +438,7 @@ const FormViewer = () => {
               formType: result.form.formType || "historia_clinica",
               formData: {},
               saved: false,
+              isDirty: false,
             };
 
             // Restore draft
@@ -347,6 +489,7 @@ const FormViewer = () => {
       [activeFormId]: {
         ...prev[activeFormId],
         formData: { ...prev[activeFormId]?.formData, [id]: value },
+        isDirty: true,
       }
     }));
   };
@@ -387,6 +530,116 @@ const FormViewer = () => {
     return processedValues;
   };
 
+  // ── "Completar atención" handler ──
+  const handleCompleteAttention = async () => {
+    setIsCompletingAttention(true);
+    const failedForms: string[] = [];
+
+    // Save all dirty forms
+    for (const fId of allFormIds) {
+      const entry = formsMap[fId];
+      if (!entry) continue;
+      if (entry.isDirty) {
+        const success = await saveFormToDb(fId, true);
+        if (!success) {
+          failedForms.push(entry.title);
+        }
+      }
+    }
+
+    if (failedForms.length > 0) {
+      uiToast({
+        title: "Error al completar",
+        description: `No se pudieron guardar: ${failedForms.join(', ')}`,
+        variant: "destructive",
+      });
+      setIsCompletingAttention(false);
+      return;
+    }
+
+    // Update admission status if valid UUID
+    if (consultationId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(consultationId)) {
+      const { error: admError } = await supabase
+        .from("admisiones" as any)
+        .update({ estado: 'completada', fecha_fin: new Date().toISOString() })
+        .eq('id', consultationId);
+      if (admError) {
+        uiToast({ title: "Error al completar admisión", description: admError.message, variant: "destructive" });
+        setIsCompletingAttention(false);
+        return;
+      }
+    }
+
+    // Clear all drafts
+    for (const fId of allFormIds) {
+      const dk = `kerhub-draft-${fId}${patientId ? `-${patientId}` : ''}${consultationId ? `-${consultationId}` : ''}`;
+      localStorage.removeItem(dk);
+    }
+
+    if (isEmbedded && formId) {
+      window.parent.postMessage({ type: 'formCompleted', formId }, '*');
+    }
+
+    uiToast({
+      title: "✅ Atención completada",
+      description: `${allFormIds.length} formulario(s) guardados — ${format(new Date(), "d 'de' MMMM 'de' yyyy, HH:mm", { locale: es })}`,
+    });
+
+    setIsCompletingAttention(false);
+
+    // Navigate back
+    if (patientId) {
+      navigate(`/app/pacientes/${patientId}`);
+    } else {
+      navigate(-1);
+    }
+  };
+
+  // ── Navigation with protection ──
+  const handleNavigateBack = useCallback(() => {
+    if (hasAnyDirty) {
+      if (patientId) {
+        const params = new URLSearchParams({ patientId });
+        if (formId) params.set('selectedForms', formId);
+        pendingNavigationRef.current = `/app/pacientes/nueva-consulta?${params.toString()}`;
+      } else {
+        pendingNavigationRef.current = -1;
+      }
+      setShowExitDialog(true);
+    } else {
+      if (patientId) {
+        const params = new URLSearchParams({ patientId });
+        if (formId) params.set('selectedForms', formId);
+        navigate(`/app/pacientes/nueva-consulta?${params.toString()}`);
+      } else {
+        navigate(-1);
+      }
+    }
+  }, [hasAnyDirty, patientId, formId, navigate]);
+
+  const handleExitSaveAndLeave = async () => {
+    setShowExitDialog(false);
+    for (const fId of allFormIds) {
+      const entry = formsMap[fId];
+      if (entry?.isDirty) {
+        await saveFormToDb(fId);
+      }
+    }
+    const target = pendingNavigationRef.current;
+    pendingNavigationRef.current = null;
+    if (typeof target === 'number') navigate(target);
+    else if (target) navigate(target);
+  };
+
+  const handleExitWithoutSaving = () => {
+    setShowExitDialog(false);
+    const target = pendingNavigationRef.current;
+    pendingNavigationRef.current = null;
+    if (typeof target === 'number') navigate(target);
+    else if (target) navigate(target);
+  };
+
+  // Legacy onSubmit kept for non-clinical layouts
   const onSubmit = async (values: z.infer<typeof dynamicSchema>) => {
     const processedValues = processFormValues(questions, formData, values);
     setPendingValues(processedValues);
@@ -405,7 +658,6 @@ const FormViewer = () => {
       return;
     }
 
-    // Collect all forms to save: active form uses pendingValues, others use their stored formData
     const formsToSave: { fId: string; data: any }[] = [];
 
     for (const fId of allFormIds) {
@@ -415,7 +667,6 @@ const FormViewer = () => {
         const { _patientId, _consultationId, ...cleanData } = pendingValues;
         formsToSave.push({ fId, data: cleanData });
       } else {
-        // Process stored data for this form
         const processed = processFormValues(entry.questions, entry.formData, entry.formData);
         formsToSave.push({ fId, data: processed });
       }
@@ -441,19 +692,13 @@ const FormViewer = () => {
       } else {
         saveFormResponse(fId, { ...data, _patientId: patientId, _consultationId: consultationId });
       }
-      // Clear draft for this form
       const dk = `kerhub-draft-${fId}${patientId ? `-${patientId}` : ''}${consultationId ? `-${consultationId}` : ''}`;
       localStorage.removeItem(dk);
 
-      // Mark as saved
       setFormsMap(prev => ({
         ...prev,
-        [fId]: { ...prev[fId], saved: true },
+        [fId]: { ...prev[fId], saved: true, isDirty: false },
       }));
-    }
-
-    if (isEmbedded && formId) {
-      window.parent.postMessage({ type: 'formCompleted', formId }, '*');
     }
 
     if (!hadError) {
@@ -610,7 +855,6 @@ const FormViewer = () => {
           </FormProvider>
         </div>
 
-        {/* Confirmation Modal */}
         <ConfirmationModal
           open={showConfirmModal}
           onOpenChange={setShowConfirmModal}
@@ -637,15 +881,7 @@ const FormViewer = () => {
           <div className="flex items-center gap-4">
             <Button
               variant="ghost"
-              onClick={() => {
-                if (patientId) {
-                  const params = new URLSearchParams({ patientId });
-                  if (formId) params.set('selectedForms', formId);
-                  navigate(`/app/pacientes/nueva-consulta?${params.toString()}`);
-                } else {
-                  navigate(-1);
-                }
-              }}
+              onClick={handleNavigateBack}
               className="group flex items-center gap-2 px-4 py-2 rounded-xl bg-card/60 backdrop-blur-md border border-border/50 hover:bg-primary/10 hover:border-primary/30 transition-all duration-200"
             >
               <div className="p-1.5 rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors">
@@ -671,7 +907,6 @@ const FormViewer = () => {
             {showRegistro ? (
               <Button variant="outline" size="sm" className="gap-1.5 h-8 text-xs" onClick={() => {
                 setShowRegistro(false);
-                // Restore previous panel state
                 if (panelStateBeforeRegistroRef.current !== null) {
                   setIsCollapsed(panelStateBeforeRegistroRef.current);
                   panelStateBeforeRegistroRef.current = null;
@@ -789,7 +1024,7 @@ const FormViewer = () => {
                         <button
                           key={fId}
                           type="button"
-                          onClick={() => setActiveFormId(fId)}
+                          onClick={() => handleTabSwitch(fId)}
                           className={`shrink-0 h-9 px-4 text-xs font-medium flex items-center gap-1.5 transition-all duration-200 ${
                             isActive
                               ? 'bg-primary text-primary-foreground'
@@ -805,7 +1040,14 @@ const FormViewer = () => {
                           }}
                         >
                           <span className="max-w-[160px] truncate">{entry.title}</span>
-                          {entry.saved && <Check size={12} className="shrink-0 text-green-400" />}
+                          {/* Dirty/saved indicator dot */}
+                          <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+                            entry.isDirty
+                              ? 'bg-orange-400'
+                              : entry.saved
+                                ? 'bg-green-500'
+                                : 'bg-transparent'
+                          }`} />
                         </button>
                       );
                     })}
@@ -818,6 +1060,18 @@ const FormViewer = () => {
                     >
                       <Plus className="w-3.5 h-3.5 text-muted-foreground" />
                     </button>
+
+                    {/* Save status indicator */}
+                    {saveStatus !== 'idle' && (
+                      <span className="ml-3 text-xs text-muted-foreground flex items-center gap-1 shrink-0 animate-in fade-in duration-200">
+                        {saveStatus === 'saving' && (
+                          <><Loader2 className="w-3 h-3 animate-spin" /> Guardando...</>
+                        )}
+                        {saveStatus === 'saved' && (
+                          <><Check className="w-3 h-3 text-green-500" /> Guardado</>
+                        )}
+                      </span>
+                    )}
                   </div>
                 </div>
               )}
@@ -872,7 +1126,7 @@ const FormViewer = () => {
               <FormHeaderPreview config={headerConfig} formTitle={formTitle} />
               <FormProvider {...form}>
                 <Form {...form}>
-                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3 max-w-none">
+                  <form onSubmit={(e) => e.preventDefault()} className="space-y-3 max-w-none">
                     {questions.map(question => (
                       <QuestionRenderer
                         key={question.id}
@@ -890,11 +1144,16 @@ const FormViewer = () => {
                 <Button
                   type="button"
                   size="sm"
-                  onClick={form.handleSubmit(onSubmit)}
+                  onClick={handleCompleteAttention}
+                  disabled={isCompletingAttention}
                   className="rounded-full shadow-lg pointer-events-auto gap-1.5 h-9 px-4 text-xs"
                 >
-                  <Save size={14} />
-                  Guardar
+                  {isCompletingAttention ? (
+                    <Loader2 size={14} className="animate-spin" />
+                  ) : (
+                    <CheckCircle size={14} />
+                  )}
+                  Completar atención
                 </Button>
               </div>
             </>
@@ -958,7 +1217,7 @@ const FormViewer = () => {
         )}
       </div>
 
-      {/* Confirmation Modal */}
+      {/* Confirmation Modal (legacy for non-clinical) */}
       <ConfirmationModal
         open={showConfirmModal}
         onOpenChange={setShowConfirmModal}
@@ -966,6 +1225,31 @@ const FormViewer = () => {
         formTitle={formTitle}
         getFilledFieldsSummary={getFilledFieldsSummary}
       />
+
+      {/* Exit protection dialog */}
+      <AlertDialog open={showExitDialog} onOpenChange={setShowExitDialog}>
+        <AlertDialogContent className="rounded-2xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-orange-400" />
+              Cambios sin guardar
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Tienes cambios sin guardar en {dirtyCount} formulario(s). ¿Qué deseas hacer?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+            <AlertDialogCancel className="rounded-xl">Cancelar</AlertDialogCancel>
+            <Button variant="destructive" className="rounded-xl" onClick={handleExitWithoutSaving}>
+              Salir sin guardar
+            </Button>
+            <Button className="rounded-xl gap-1.5" onClick={handleExitSaveAndLeave}>
+              <Save className="w-4 h-4" />
+              Guardar y salir
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
