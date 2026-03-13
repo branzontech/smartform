@@ -1127,66 +1127,77 @@ const FormViewer = () => {
               )}
               {/* Multi-form chevron tabs + add button */}
               {!showRegistro && (
-                <div className="mb-4 overflow-x-auto scrollbar-none">
-                  <div className="flex items-center gap-0 min-w-0">
-                    {isMultiForm && allFormIds.map((fId, idx) => {
-                      const entry = formsMap[fId];
-                      if (!entry) return null;
-                      const isActive = fId === activeFormId;
-                      const isFirst = idx === 0;
-                      return (
-                        <button
-                          key={fId}
-                          type="button"
-                          onClick={() => handleTabSwitch(fId)}
-                          className={`shrink-0 h-9 px-4 text-xs font-medium flex items-center gap-1.5 transition-all duration-200 ${
-                            isActive
-                              ? 'bg-primary text-primary-foreground'
-                              : 'bg-muted/50 text-muted-foreground hover:bg-muted'
-                          }`}
-                          style={{
-                            clipPath: isFirst
-                              ? 'polygon(0 0, calc(100% - 12px) 0, 100% 50%, calc(100% - 12px) 100%, 0 100%)'
-                              : 'polygon(0 0, calc(100% - 12px) 0, 100% 50%, calc(100% - 12px) 100%, 0 100%, 12px 50%)',
-                            marginLeft: isFirst ? 0 : '-4px',
-                            paddingRight: '1.25rem',
-                            paddingLeft: isFirst ? '0.75rem' : '1.25rem',
-                          }}
-                        >
-                          <span className="max-w-[160px] truncate">{entry.title}</span>
-                          {/* Dirty/saved indicator dot */}
-                          <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${
-                            entry.isDirty
-                              ? 'bg-orange-400'
-                              : entry.saved
-                                ? 'bg-green-500'
-                                : 'bg-transparent'
-                          }`} />
-                        </button>
-                      );
-                    })}
-                    {/* Add form button */}
-                    <button
-                      type="button"
-                      onClick={() => setShowAddFormDialog(true)}
-                      className="shrink-0 w-7 h-7 rounded-full bg-muted hover:bg-muted-foreground/10 flex items-center justify-center ml-2 transition-colors"
-                      title="Agregar formulario"
-                    >
-                      <Plus className="w-3.5 h-3.5 text-muted-foreground" />
-                    </button>
-
-                    {/* Save status indicator */}
-                    {saveStatus !== 'idle' && (
-                      <span className="ml-3 text-xs text-muted-foreground flex items-center gap-1 shrink-0 animate-in fade-in duration-200">
-                        {saveStatus === 'saving' && (
-                          <><Loader2 className="w-3 h-3 animate-spin" /> Guardando...</>
-                        )}
-                        {saveStatus === 'saved' && (
-                          <><Check className="w-3 h-3 text-green-500" /> Guardado</>
-                        )}
-                      </span>
-                    )}
+                <div className="mb-4">
+                  <div className="overflow-x-auto scrollbar-none">
+                    <div className="flex items-center gap-0 min-w-0">
+                      {isMultiForm && allFormIds.map((fId, idx) => {
+                        const entry = formsMap[fId];
+                        if (!entry) return null;
+                        const isActive = fId === activeFormId;
+                        const isFirst = idx === 0;
+                        return (
+                          <button
+                            key={fId}
+                            type="button"
+                            onClick={() => handleTabSwitch(fId)}
+                            className={`shrink-0 h-9 px-4 text-xs font-medium flex items-center gap-1.5 transition-all duration-200 ${
+                              isActive
+                                ? 'bg-primary text-primary-foreground'
+                                : 'bg-muted/50 text-muted-foreground hover:bg-muted'
+                            }`}
+                            style={{
+                              clipPath: isFirst
+                                ? 'polygon(0 0, calc(100% - 12px) 0, 100% 50%, calc(100% - 12px) 100%, 0 100%)'
+                                : 'polygon(0 0, calc(100% - 12px) 0, 100% 50%, calc(100% - 12px) 100%, 0 100%, 12px 50%)',
+                              marginLeft: isFirst ? 0 : '-4px',
+                              paddingRight: '1.25rem',
+                              paddingLeft: isFirst ? '0.75rem' : '1.25rem',
+                            }}
+                          >
+                            <span className="max-w-[160px] truncate">{entry.title}</span>
+                            <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+                              entry.saveError
+                                ? 'bg-red-500'
+                                : entry.isDirty
+                                  ? 'bg-orange-400'
+                                  : entry.saved
+                                    ? 'bg-green-500'
+                                    : 'bg-transparent'
+                            }`} />
+                          </button>
+                        );
+                      })}
+                      <button
+                        type="button"
+                        onClick={() => setShowAddFormDialog(true)}
+                        className="shrink-0 w-7 h-7 rounded-full bg-muted hover:bg-muted-foreground/10 flex items-center justify-center ml-2 transition-colors"
+                        title="Agregar formulario"
+                      >
+                        <Plus className="w-3.5 h-3.5 text-muted-foreground" />
+                      </button>
+                      {saveStatus !== 'idle' && (
+                        <span className="ml-3 text-xs text-muted-foreground flex items-center gap-1 shrink-0 animate-in fade-in duration-200">
+                          {saveStatus === 'saving' && (
+                            <><Loader2 className="w-3 h-3 animate-spin" /> Guardando...</>
+                          )}
+                          {saveStatus === 'saved' && (
+                            <><Check className="w-3 h-3 text-green-500" /> Guardado</>
+                          )}
+                        </span>
+                      )}
+                    </div>
                   </div>
+                  {/* Status bar */}
+                  {(() => {
+                    const st = getFormStatus(activeFormId);
+                    const StatusIcon = st.icon === 'empty' ? AlertCircle : st.icon === 'dirty' ? Clock : st.icon === 'saved' ? CheckCircle : XCircle;
+                    return (
+                      <div className="h-6 flex items-center px-4 text-xs gap-1.5 rounded-b-md" style={{ backgroundColor: 'hsl(var(--muted) / 0.5)' }}>
+                        <StatusIcon className="w-3 h-3" style={{ color: st.color }} />
+                        <span style={{ color: st.color }}>{st.label}</span>
+                      </div>
+                    );
+                  })()}
                 </div>
               )}
 
