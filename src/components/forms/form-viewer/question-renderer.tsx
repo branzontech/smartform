@@ -68,6 +68,14 @@ export const QuestionRenderer = ({ question, formData, onChange, errors }: Quest
     );
   }
 
+  // Helper: wraps field.onChange to also sync to parent formsMap
+  const syncChange = (fieldOnChange: (...event: any[]) => void, questionId: string) => {
+    return (value: any) => {
+      fieldOnChange(value);
+      onChange(questionId, value);
+    };
+  };
+
   switch (question.type) {
     case "short":
       return (
@@ -75,15 +83,21 @@ export const QuestionRenderer = ({ question, formData, onChange, errors }: Quest
           control={form.control}
           name={question.id}
           rules={{ required: question.required }}
-          render={({ field }) => (
-            <FormItem className="space-y-1">
-              <FormLabel className="text-xs text-muted-foreground">{question.title}</FormLabel>
-              <FormControl>
-                <ClinicalInput {...field} value={field.value || ""} placeholder="—" required={question.required} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
+          render={({ field }) => {
+            const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+              field.onChange(e.target.value);
+              onChange(question.id, e.target.value);
+            };
+            return (
+              <FormItem className="space-y-1">
+                <FormLabel className="text-xs text-muted-foreground">{question.title}</FormLabel>
+                <FormControl>
+                  <ClinicalInput {...field} value={field.value || ""} onChange={handleChange} placeholder="—" required={question.required} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            );
+          }}
         />
       );
 
@@ -93,15 +107,21 @@ export const QuestionRenderer = ({ question, formData, onChange, errors }: Quest
           control={form.control}
           name={question.id}
           rules={{ required: question.required }}
-          render={({ field }) => (
-            <FormItem className="space-y-1 w-full">
-              <FormLabel className="text-xs text-muted-foreground">{question.title}</FormLabel>
-              <FormControl>
-                <ClinicalTextarea {...field} value={field.value || ""} placeholder="—" rows={3} required={question.required} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
+          render={({ field }) => {
+            const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+              field.onChange(e.target.value);
+              onChange(question.id, e.target.value);
+            };
+            return (
+              <FormItem className="space-y-1 w-full">
+                <FormLabel className="text-xs text-muted-foreground">{question.title}</FormLabel>
+                <FormControl>
+                  <ClinicalTextarea {...field} value={field.value || ""} onChange={handleChange} placeholder="—" rows={3} required={question.required} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            );
+          }}
         />
       );
 
@@ -133,7 +153,7 @@ export const QuestionRenderer = ({ question, formData, onChange, errors }: Quest
                         name={question.id}
                         value={option}
                         checked={field.value === option}
-                        onChange={() => field.onChange(option)}
+                        onChange={() => syncChange(field.onChange, question.id)(option)}
                         className="accent-primary shrink-0"
                       />
                       <span className="text-sm">{option}</span>
@@ -174,6 +194,7 @@ export const QuestionRenderer = ({ question, formData, onChange, errors }: Quest
                               ? field.value.filter((v: any) => v !== option)
                               : [];
                           field.onChange(newValues);
+                          onChange(question.id, newValues);
                         }}
                         className="shrink-0"
                       />
@@ -197,7 +218,7 @@ export const QuestionRenderer = ({ question, formData, onChange, errors }: Quest
           render={({ field }) => (
             <FormItem className="space-y-1">
               <FormLabel className="text-xs text-muted-foreground">{question.title}</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
+              <Select onValueChange={syncChange(field.onChange, question.id)} defaultValue={field.value}>
                 <FormControl>
                   <SelectTrigger className="border-0 border-b border-border/60 rounded-none shadow-none focus:ring-0 focus:border-primary h-9 text-sm">
                     <SelectValue placeholder="Seleccionar" />
@@ -362,7 +383,7 @@ export const QuestionRenderer = ({ question, formData, onChange, errors }: Quest
               <FormControl>
                 <SignaturePad
                   value={field.value || ""}
-                  onChange={field.onChange}
+                  onChange={syncChange(field.onChange, question.id)}
                   readOnly={false}
                 />
               </FormControl>
