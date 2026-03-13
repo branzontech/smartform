@@ -201,6 +201,46 @@ const ValueRenderer: React.FC<{ question: any; value: any; data: Record<string, 
     case 'medication':
       return <p className="text-muted-foreground italic text-xs">Medicamentos gestionados en el módulo de prescripción</p>;
 
+    case 'scored_checkbox': {
+      if (!value || typeof value !== 'object') return empty;
+      const scoredVal = value as any;
+      const selectedIds: string[] = scoredVal.selectedOptions || [];
+      const items = question.scoredItems || [];
+      if (selectedIds.length === 0) return empty;
+      return (
+        <div className="space-y-1">
+          {selectedIds.map((optId: string) => {
+            const item = items.find((si: any) => si.id === optId);
+            return (
+              <div key={optId} className="flex items-center gap-2">
+                <div className="w-3.5 h-3.5 rounded-sm border border-primary bg-primary/10 flex items-center justify-center">
+                  <svg className="w-2.5 h-2.5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+                <span>{item ? `${item.text} (${item.score} pts)` : optId}</span>
+              </div>
+            );
+          })}
+          <p className="text-xs font-medium text-muted-foreground mt-1">Puntaje: {scoredVal.score ?? 0}</p>
+        </div>
+      );
+    }
+
+    case 'score_total': {
+      if (!value || typeof value !== 'object') {
+        if (value !== undefined && value !== null) return <p className="font-semibold">{String(value)}</p>;
+        return empty;
+      }
+      const totalVal = value as any;
+      return (
+        <div>
+          <p className="font-semibold text-lg">{totalVal.score ?? totalVal.total ?? 0} puntos</p>
+          {totalVal.label && <p className="text-xs text-muted-foreground">{totalVal.label}</p>}
+        </div>
+      );
+    }
+
     default:
       if (!value && value !== 0) return empty;
       if (Array.isArray(value)) return <p>{value.join(', ')}</p>;
