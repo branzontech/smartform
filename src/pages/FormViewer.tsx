@@ -776,36 +776,99 @@ const FormViewer = () => {
                   admisionId={consultationId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(consultationId) ? consultationId : undefined}
                />
               )}
-              {/* Multi-form tab bar */}
+              {/* Multi-form chevron tabs */}
               {isMultiForm && !showRegistro && (
-                <div className="mb-4 border-b overflow-x-auto scrollbar-none">
-                  <div className="flex gap-0 min-w-0">
-                    {allFormIds.map(fId => {
+                <div className="mb-4 overflow-x-auto scrollbar-none">
+                  <div className="flex items-center gap-0 min-w-0">
+                    {allFormIds.map((fId, idx) => {
                       const entry = formsMap[fId];
                       if (!entry) return null;
                       const isActive = fId === activeFormId;
+                      const isFirst = idx === 0;
                       return (
                         <button
                           key={fId}
                           type="button"
                           onClick={() => setActiveFormId(fId)}
-                          className={`shrink-0 px-4 py-2 text-sm whitespace-nowrap transition-colors relative ${
+                          className={`shrink-0 h-9 px-4 text-xs font-medium flex items-center gap-1.5 transition-all duration-200 ${
                             isActive
-                              ? 'font-medium text-foreground'
-                              : 'text-muted-foreground hover:text-foreground'
+                              ? 'bg-primary text-primary-foreground'
+                              : 'bg-muted/50 text-muted-foreground hover:bg-muted'
                           }`}
+                          style={{
+                            clipPath: isFirst
+                              ? 'polygon(0 0, calc(100% - 12px) 0, 100% 50%, calc(100% - 12px) 100%, 0 100%)'
+                              : 'polygon(0 0, calc(100% - 12px) 0, 100% 50%, calc(100% - 12px) 100%, 0 100%, 12px 50%)',
+                            marginLeft: isFirst ? 0 : '-4px',
+                            paddingRight: '1.25rem',
+                            paddingLeft: isFirst ? '0.75rem' : '1.25rem',
+                          }}
                         >
-                          {entry.title}
-                          {entry.saved && <Check size={12} className="inline ml-1.5 text-green-500" />}
-                          {isActive && (
-                            <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-full" />
-                          )}
+                          <span className="max-w-[160px] truncate">{entry.title}</span>
+                          {entry.saved && <Check size={12} className="shrink-0 text-green-400" />}
                         </button>
                       );
                     })}
+                    {/* Add form button */}
+                    <button
+                      type="button"
+                      onClick={() => setShowAddFormDialog(true)}
+                      className="shrink-0 w-7 h-7 rounded-full bg-muted hover:bg-muted-foreground/10 flex items-center justify-center ml-2 transition-colors"
+                      title="Agregar formulario"
+                    >
+                      <Plus className="w-3.5 h-3.5 text-muted-foreground" />
+                    </button>
                   </div>
                 </div>
               )}
+
+              {/* Add form dialog */}
+              <Dialog open={showAddFormDialog} onOpenChange={setShowAddFormDialog}>
+                <DialogContent className="max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>Agregar formulario</DialogTitle>
+                  </DialogHeader>
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Buscar por nombre..."
+                      value={addFormSearch}
+                      onChange={e => setAddFormSearch(e.target.value)}
+                      className="pl-9"
+                    />
+                  </div>
+                  <ScrollArea className="h-[280px]">
+                    {addFormLoading ? (
+                      <p className="text-sm text-muted-foreground text-center py-8">Buscando...</p>
+                    ) : addFormResults.length === 0 ? (
+                      <p className="text-sm text-muted-foreground text-center py-8">No se encontraron formularios</p>
+                    ) : (
+                      <div className="space-y-1 pr-3">
+                        {addFormResults.map(f => {
+                          const alreadyAdded = allFormIds.includes(f.id);
+                          return (
+                            <button
+                              key={f.id}
+                              type="button"
+                              disabled={alreadyAdded}
+                              onClick={() => handleAddNewForm(f.id)}
+                              className="w-full text-left px-3 py-2.5 rounded-lg hover:bg-muted transition-colors flex items-center justify-between gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              <div className="min-w-0">
+                                <p className="text-sm font-medium truncate">{f.titulo}</p>
+                                <p className="text-[11px] text-muted-foreground">{f.tipo}</p>
+                              </div>
+                              {alreadyAdded && (
+                                <Badge variant="secondary" className="text-[10px] shrink-0">Agregado</Badge>
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </ScrollArea>
+                </DialogContent>
+              </Dialog>
               <FormHeaderPreview config={headerConfig} formTitle={formTitle} />
               <FormProvider {...form}>
                 <Form {...form}>
