@@ -567,6 +567,8 @@ const FormViewer = () => {
     const entry = formsMap[fId];
     if (!entry) return false;
     return entry.questions.filter(q => q.type !== 'section' && q.type !== 'score_total').some(q => {
+      // Vitals store data as ${qId}_key
+      if (q.type === 'vitals') return vitalsHasData(entry.formData, q.id);
       const val = entry.formData[q.id];
       if (val === undefined || val === null || val === '') return false;
       if (Array.isArray(val) && val.length === 0) return false;
@@ -576,7 +578,7 @@ const FormViewer = () => {
       }
       return true;
     });
-  }, [formsMap]);
+  }, [formsMap, vitalsHasData]);
 
   // ── Helper: check if all required fields are filled ──
   const allRequiredFilled = useCallback((fId: string): boolean => {
