@@ -28,7 +28,6 @@ import { FormError } from '@/components/forms/form-viewer/form-error';
 import { FormSubmissionSuccess } from '@/components/forms/form-viewer/form-submission-success';
 import { createDynamicSchema, fetchFormById, saveFormResponse } from '@/utils/form-utils';
 import { useToast } from '@/hooks/use-toast';
-import { PatientHistoryPanel } from '@/components/patients/PatientHistoryPanel';
 import { RightPanelTabs } from '@/components/orders/RightPanelTabs';
 import { FormHeaderPreview } from '@/components/forms/FormHeaderPreview';
 import { useAuth } from '@/contexts/AuthContext';
