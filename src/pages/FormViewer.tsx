@@ -1387,6 +1387,90 @@ const FormViewer = () => {
         </AlertDialogContent>
       </AlertDialog>
 
+      {/* Validation errors dialog */}
+      <AlertDialog open={showValidationDialog} onOpenChange={setShowValidationDialog}>
+        <AlertDialogContent className="rounded-2xl max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertCircle className="w-5 h-5" style={{ color: '#ef4444' }} />
+              No se puede completar la atención
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Los siguientes formularios tienen campos obligatorios sin diligenciar:
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="space-y-2 my-2">
+            {validationIssues.map(issue => (
+              <div key={issue.formId} className="flex items-center justify-between p-3 rounded-lg border">
+                <div>
+                  <p className="text-sm font-medium">{issue.title}</p>
+                  <p className="text-xs" style={{ color: '#ef4444' }}>{issue.missingCount} campo(s) obligatorio(s) vacío(s)</p>
+                </div>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="text-xs h-7"
+                  onClick={() => {
+                    setShowValidationDialog(false);
+                    setActiveFormId(issue.formId);
+                  }}
+                >
+                  Ir al formulario
+                </Button>
+              </div>
+            ))}
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="rounded-xl">Entendido</AlertDialogCancel>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Empty form dialog */}
+      <AlertDialog open={showEmptyFormDialog} onOpenChange={setShowEmptyFormDialog}>
+        <AlertDialogContent className="rounded-2xl max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-orange-400" />
+              Formularios sin diligenciar
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {emptyFormIds.length === 1
+                ? `El formulario "${formsMap[emptyFormIds[0]]?.title}" está completamente vacío. ¿Deseas descartarlo o necesitas diligenciarlo?`
+                : `Los siguientes formularios están completamente vacíos:`}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          {emptyFormIds.length > 1 && (
+            <div className="space-y-1 my-2">
+              {emptyFormIds.map(fId => (
+                <p key={fId} className="text-sm pl-4">• {formsMap[fId]?.title || 'Formulario'}</p>
+              ))}
+            </div>
+          )}
+          <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+            <AlertDialogCancel className="rounded-xl">Cancelar</AlertDialogCancel>
+            <Button
+              variant="outline"
+              className="rounded-xl"
+              onClick={() => {
+                setShowEmptyFormDialog(false);
+                const firstEmpty = emptyFormIds[0];
+                if (firstEmpty) setActiveFormId(firstEmpty);
+              }}
+            >
+              Diligenciar
+            </Button>
+            <Button
+              variant="destructive"
+              className="rounded-xl"
+              onClick={handleDiscardEmptyForms}
+            >
+              Descartar {emptyFormIds.length > 1 ? 'formularios' : 'formulario'}
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {/* Completion success dialog */}
       <AlertDialog open={showCompletedDialog} onOpenChange={setShowCompletedDialog}>
         <AlertDialogContent className="rounded-2xl max-w-sm text-center">
