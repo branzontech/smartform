@@ -194,6 +194,7 @@ export const QuestionRenderer = ({ question, formData, onChange, errors }: Quest
                               ? field.value.filter((v: any) => v !== option)
                               : [];
                           field.onChange(newValues);
+                          onChange(question.id, newValues);
                         }}
                         className="shrink-0"
                       />
@@ -217,7 +218,7 @@ export const QuestionRenderer = ({ question, formData, onChange, errors }: Quest
           render={({ field }) => (
             <FormItem className="space-y-1">
               <FormLabel className="text-xs text-muted-foreground">{question.title}</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
+              <Select onValueChange={syncChange(field.onChange, question.id)} defaultValue={field.value}>
                 <FormControl>
                   <SelectTrigger className="border-0 border-b border-border/60 rounded-none shadow-none focus:ring-0 focus:border-primary h-9 text-sm">
                     <SelectValue placeholder="Seleccionar" />
