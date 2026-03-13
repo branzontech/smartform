@@ -1251,6 +1251,42 @@ const FormViewer = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Completion success dialog */}
+      <AlertDialog open={showCompletedDialog} onOpenChange={setShowCompletedDialog}>
+        <AlertDialogContent className="rounded-2xl max-w-sm text-center">
+          <AlertDialogHeader className="items-center">
+            <div className="w-12 h-12 rounded-full flex items-center justify-center mb-2" style={{ backgroundColor: 'rgba(34,197,94,0.12)' }}>
+              <CheckCircle className="w-6 h-6" style={{ color: '#16a34a' }} />
+            </div>
+            <AlertDialogTitle>Atención completada</AlertDialogTitle>
+            <AlertDialogDescription>
+              Todos los registros fueron guardados correctamente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex-col sm:flex-col gap-2 sm:space-x-0">
+            <Button
+              className="rounded-xl gap-1.5 w-full"
+              onClick={() => {
+                setShowCompletedDialog(false);
+                panelStateBeforeRegistroRef.current = isCollapsed;
+                setIsCollapsed(true);
+                setShowRegistro(true);
+              }}
+            >
+              <ClipboardList className="w-4 h-4" />
+              Ver registros guardados
+            </Button>
+            <Button
+              variant="outline"
+              className="rounded-xl w-full"
+              onClick={() => setShowCompletedDialog(false)}
+            >
+              Continuar en esta vista
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
