@@ -593,9 +593,14 @@ const FormViewer = () => {
               </span>
             </Button>
             <div>
-              <h1 className="text-lg font-semibold">{formTitle}</h1>
-              {formDescription && (
+              <h1 className="text-lg font-semibold">
+                {isMultiForm ? 'Consulta' : formTitle}
+              </h1>
+              {!isMultiForm && formDescription && (
                 <p className="text-xs text-muted-foreground">{formDescription}</p>
+              )}
+              {isMultiForm && (
+                <p className="text-xs text-muted-foreground">{allFormIds.length} formularios</p>
               )}
             </div>
           </div>
