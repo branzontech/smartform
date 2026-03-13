@@ -1173,15 +1173,14 @@ const FormViewer = () => {
                             }}
                           >
                             <span className="max-w-[160px] truncate">{entry.title}</span>
-                            <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${
-                              entry.saveError
-                                ? 'bg-red-500'
-                                : entry.isDirty
-                                  ? 'bg-orange-400'
-                                  : entry.saved
-                                    ? 'bg-green-500'
-                                    : 'bg-transparent'
-                            }`} />
+                            {(() => {
+                              const st = getFormStatus(fId);
+                              return (
+                                <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{
+                                  backgroundColor: st.status === 'sin_diligenciar' ? 'transparent' : st.color
+                                }} />
+                              );
+                            })()}
                           </button>
                         );
                       })}
