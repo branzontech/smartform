@@ -288,53 +288,44 @@ const FormViewer = () => {
     }));
   };
 
-  const onSubmit = async (values: z.infer<typeof dynamicSchema>) => {
-    const processedValues = { ...values };
-    
-    questions.forEach(question => {
+  const processFormValues = (qs: QuestionData[], fd: FormData, rawValues: any) => {
+    const processedValues = { ...rawValues };
+    qs.forEach(question => {
       if (question.type === "vitals") {
-        // New vitals structure: collect all enabled vital fields
         const predefined = question.predefinedVitals;
         if (predefined) {
           const vitalsData: Record<string, any> = {};
           Object.entries(predefined).forEach(([key, v]) => {
             if (v.enabled) {
-              vitalsData[key] = formData[`${question.id}_${key}`] || "";
+              vitalsData[key] = fd[`${question.id}_${key}`] || "";
             }
           });
-          // Include custom vitals
           (question.customVitals || []).forEach(cv => {
-            vitalsData[`custom_${cv.id}`] = formData[`${question.id}_custom_${cv.id}`] || "";
+            vitalsData[`custom_${cv.id}`] = fd[`${question.id}_custom_${cv.id}`] || "";
           });
           processedValues[question.id] = vitalsData;
         } else if (question.vitalType === "TA") {
-          processedValues[question.id] = {
-            sys: formData[`${question.id}_sys`],
-            dia: formData[`${question.id}_dia`]
-          };
+          processedValues[question.id] = { sys: fd[`${question.id}_sys`], dia: fd[`${question.id}_dia`] };
         } else if (question.vitalType === "IMC") {
-          processedValues[question.id] = {
-            weight: formData[`${question.id}_weight`],
-            height: formData[`${question.id}_height`],
-            bmi: formData[`${question.id}_bmi`]
-          };
+          processedValues[question.id] = { weight: fd[`${question.id}_weight`], height: fd[`${question.id}_height`], bmi: fd[`${question.id}_bmi`] };
         }
       } else if (question.type === "clinical") {
-        processedValues[question.id] = {
-          title: formData[`${question.id}_title`],
-          detail: formData[`${question.id}_detail`]
-        };
+        processedValues[question.id] = { title: fd[`${question.id}_title`], detail: fd[`${question.id}_detail`] };
       } else if (question.type === "multifield" && question.multifields) {
         const multifieldValues: Record<string, string> = {};
         question.multifields.forEach(field => {
-          multifieldValues[field.id] = formData[`${question.id}_${field.id}`] || '';
+          multifieldValues[field.id] = fd[`${question.id}_${field.id}`] || '';
         });
         processedValues[question.id] = multifieldValues;
       } else if (question.type === "scored_checkbox" || question.type === "score_total") {
-        processedValues[question.id] = formData[question.id] || { score: 0 };
+        processedValues[question.id] = fd[question.id] || { score: 0 };
       }
     });
+    return processedValues;
+  };
 
+  const onSubmit = async (values: z.infer<typeof dynamicSchema>) => {
+    const processedValues = processFormValues(questions, formData, values);
     setPendingValues(processedValues);
     setShowConfirmModal(true);
   };
@@ -343,58 +334,75 @@ const FormViewer = () => {
     if (!pendingValues) return;
     setShowConfirmModal(false);
 
-    const { _patientId, _consultationId, ...cleanData } = pendingValues;
+    const { data: { user } } = await supabase.auth.getUser();
+    const medicoId = user?.id;
 
-    if (formId && patientId) {
-      const { data: { user } } = await supabase.auth.getUser();
-      const medicoId = user?.id;
+    if (patientId && !medicoId) {
+      uiToast({ title: "Error de autenticación", description: "Debes iniciar sesión para guardar respuestas.", variant: "destructive" });
+      return;
+    }
 
-      if (!medicoId) {
-        uiToast({
-          title: "Error de autenticación",
-          description: "Debes iniciar sesión para guardar respuestas.",
-          variant: "destructive",
-        });
-        return;
+    // Collect all forms to save: active form uses pendingValues, others use their stored formData
+    const formsToSave: { fId: string; data: any }[] = [];
+
+    for (const fId of allFormIds) {
+      const entry = formsMap[fId];
+      if (!entry) continue;
+      if (fId === activeFormId) {
+        const { _patientId, _consultationId, ...cleanData } = pendingValues;
+        formsToSave.push({ fId, data: cleanData });
+      } else {
+        // Process stored data for this form
+        const processed = processFormValues(entry.questions, entry.formData, entry.formData);
+        formsToSave.push({ fId, data: processed });
       }
+    }
 
-      const { error: insertError } = await supabase
-        .from("respuestas_formularios" as any)
-        .insert({
-          formulario_id: formId,
-          paciente_id: patientId,
-          admision_id: consultationId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(consultationId) ? consultationId : null,
-          medico_id: medicoId,
-          datos_respuesta: cleanData,
-        });
-
-      if (insertError) {
-        uiToast({
-          title: "Error al guardar",
-          description: insertError.message,
-          variant: "destructive",
-        });
-        return;
+    let hadError = false;
+    for (const { fId, data } of formsToSave) {
+      if (patientId && medicoId) {
+        const { error: insertError } = await supabase
+          .from("respuestas_formularios" as any)
+          .insert({
+            formulario_id: fId,
+            paciente_id: patientId,
+            admision_id: consultationId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(consultationId) ? consultationId : null,
+            medico_id: medicoId,
+            datos_respuesta: data,
+          });
+        if (insertError) {
+          uiToast({ title: "Error al guardar", description: `${formsMap[fId]?.title}: ${insertError.message}`, variant: "destructive" });
+          hadError = true;
+          continue;
+        }
+      } else {
+        saveFormResponse(fId, { ...data, _patientId: patientId, _consultationId: consultationId });
       }
-    } else if (formId) {
-      pendingValues._patientId = patientId || undefined;
-      pendingValues._consultationId = consultationId || undefined;
-      saveFormResponse(formId, pendingValues);
+      // Clear draft for this form
+      const dk = `kerhub-draft-${fId}${patientId ? `-${patientId}` : ''}${consultationId ? `-${consultationId}` : ''}`;
+      localStorage.removeItem(dk);
+
+      // Mark as saved
+      setFormsMap(prev => ({
+        ...prev,
+        [fId]: { ...prev[fId], saved: true },
+      }));
     }
 
     if (isEmbedded && formId) {
-      window.parent.postMessage({
-        type: 'formCompleted',
-        formId: formId
-      }, '*');
+      window.parent.postMessage({ type: 'formCompleted', formId }, '*');
     }
 
-    uiToast({
-      title: "✅ Formulario guardado exitosamente",
-      description: `${formTitle} — ${format(new Date(), "d 'de' MMMM 'de' yyyy, HH:mm", { locale: es })}`,
-    });
+    if (!hadError) {
+      const savedCount = formsToSave.length;
+      uiToast({
+        title: "✅ Formulario guardado exitosamente",
+        description: savedCount > 1
+          ? `${savedCount} formularios guardados — ${format(new Date(), "d 'de' MMMM 'de' yyyy, HH:mm", { locale: es })}`
+          : `${formTitle} — ${format(new Date(), "d 'de' MMMM 'de' yyyy, HH:mm", { locale: es })}`,
+      });
+    }
 
-    clearDraft();
     setPendingValues(null);
   };
 
