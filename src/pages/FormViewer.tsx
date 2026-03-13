@@ -115,6 +115,8 @@ const FormViewer = () => {
   const [showExitDialog, setShowExitDialog] = useState(false);
   const pendingNavigationRef = useRef<string | number | null>(null);
   const [isCompletingAttention, setIsCompletingAttention] = useState(false);
+  const [isCompleted, setIsCompleted] = useState(false);
+  const [showCompletedDialog, setShowCompletedDialog] = useState(false);
 
   // Panel resize state
   const [panelWidth, setPanelWidth] = useState(() => {
@@ -580,19 +582,9 @@ const FormViewer = () => {
       window.parent.postMessage({ type: 'formCompleted', formId }, '*');
     }
 
-    uiToast({
-      title: "✅ Atención completada",
-      description: `${allFormIds.length} formulario(s) guardados — ${format(new Date(), "d 'de' MMMM 'de' yyyy, HH:mm", { locale: es })}`,
-    });
-
     setIsCompletingAttention(false);
-
-    // Navigate back
-    if (patientId) {
-      navigate(`/app/pacientes/${patientId}`);
-    } else {
-      navigate(-1);
-    }
+    setIsCompleted(true);
+    setShowCompletedDialog(true);
   };
 
   // ── Navigation with protection ──
@@ -988,9 +980,16 @@ const FormViewer = () => {
         </div>
 
         {isConsultationForm && (
-          <p className="mt-1.5 text-[10px] text-muted-foreground tracking-wide uppercase">
-            ● Consulta en curso
-          </p>
+          isCompleted ? (
+            <div className="mt-1.5 flex items-center gap-1.5 text-[10px] tracking-wide uppercase" style={{ color: '#15803d' }}>
+              <CheckCircle className="w-3 h-3" />
+              Atención completada
+            </div>
+          ) : (
+            <p className="mt-1.5 text-[10px] text-muted-foreground tracking-wide uppercase">
+              ● Consulta en curso
+            </p>
+          )
         )}
       </div>
 
@@ -1126,13 +1125,13 @@ const FormViewer = () => {
               <FormHeaderPreview config={headerConfig} formTitle={formTitle} />
               <FormProvider {...form}>
                 <Form {...form}>
-                  <form onSubmit={(e) => e.preventDefault()} className="space-y-3 max-w-none">
+                  <form onSubmit={(e) => e.preventDefault()} className={`space-y-3 max-w-none ${isCompleted ? 'pointer-events-none opacity-80' : ''}`}>
                     {questions.map(question => (
                       <QuestionRenderer
                         key={question.id}
                         question={question}
                         formData={formData}
-                        onChange={handleInputChange}
+                        onChange={isCompleted ? () => {} : handleInputChange}
                         errors={form.formState.errors}
                       />
                     ))}
@@ -1140,22 +1139,24 @@ const FormViewer = () => {
                   </form>
                 </Form>
               </FormProvider>
-              <div className="sticky bottom-4 flex justify-end pointer-events-none print:hidden">
-                <Button
-                  type="button"
-                  size="sm"
-                  onClick={handleCompleteAttention}
-                  disabled={isCompletingAttention}
-                  className="rounded-full shadow-lg pointer-events-auto gap-1.5 h-9 px-4 text-xs"
-                >
-                  {isCompletingAttention ? (
-                    <Loader2 size={14} className="animate-spin" />
-                  ) : (
-                    <CheckCircle size={14} />
-                  )}
-                  Completar atención
-                </Button>
-              </div>
+              {!isCompleted && (
+                <div className="sticky bottom-4 flex justify-end pointer-events-none print:hidden">
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={handleCompleteAttention}
+                    disabled={isCompletingAttention}
+                    className="rounded-full shadow-lg pointer-events-auto gap-1.5 h-9 px-4 text-xs"
+                  >
+                    {isCompletingAttention ? (
+                      <Loader2 size={14} className="animate-spin" />
+                    ) : (
+                      <CheckCircle size={14} />
+                    )}
+                    Completar atención
+                  </Button>
+                </div>
+              )}
             </>
           )}
         </div>
@@ -1246,6 +1247,42 @@ const FormViewer = () => {
             <Button className="rounded-xl gap-1.5" onClick={handleExitSaveAndLeave}>
               <Save className="w-4 h-4" />
               Guardar y salir
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Completion success dialog */}
+      <AlertDialog open={showCompletedDialog} onOpenChange={setShowCompletedDialog}>
+        <AlertDialogContent className="rounded-2xl max-w-sm text-center">
+          <AlertDialogHeader className="items-center">
+            <div className="w-12 h-12 rounded-full flex items-center justify-center mb-2" style={{ backgroundColor: 'rgba(34,197,94,0.12)' }}>
+              <CheckCircle className="w-6 h-6" style={{ color: '#16a34a' }} />
+            </div>
+            <AlertDialogTitle>Atención completada</AlertDialogTitle>
+            <AlertDialogDescription>
+              Todos los registros fueron guardados correctamente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex-col sm:flex-col gap-2 sm:space-x-0">
+            <Button
+              className="rounded-xl gap-1.5 w-full"
+              onClick={() => {
+                setShowCompletedDialog(false);
+                panelStateBeforeRegistroRef.current = isCollapsed;
+                setIsCollapsed(true);
+                setShowRegistro(true);
+              }}
+            >
+              <ClipboardList className="w-4 h-4" />
+              Ver registros guardados
+            </Button>
+            <Button
+              variant="outline"
+              className="rounded-xl w-full"
+              onClick={() => setShowCompletedDialog(false)}
+            >
+              Continuar en esta vista
             </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
