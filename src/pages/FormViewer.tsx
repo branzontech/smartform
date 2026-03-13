@@ -205,84 +205,64 @@ const FormViewer = () => {
   }, [panelWidth]);
 
   useEffect(() => {
-    const loadForm = async () => {
-      if (formId) {
-        setLoading(true);
-        setError("");
-        
-        try {
-          const [result, headerResult] = await Promise.all([
-            fetchFormById(formId),
-            supabase.from("configuracion_encabezado" as any).select("*").limit(1).single(),
-          ]);
+    const loadAllForms = async () => {
+      if (allFormIds.length === 0) return;
+      setLoading(true);
+      setError("");
 
-          if (headerResult.data) {
-            setHeaderConfig(headerResult.data);
-          }
-          
-          if (result.form) {
-            setQuestions(result.form.questions as QuestionData[]);
-            setFormTitle(result.form.title);
-            setFormDescription(result.form.description);
-            if (result.form.formType) {
-              setFormType(result.form.formType);
-            }
-            
-            if (result.error) {
-              setError(result.error);
-            }
-          }
-          
-          if (patientId) {
-            const savedPatients = localStorage.getItem("patients");
-            if (savedPatients) {
-              const patients = JSON.parse(savedPatients);
-              const patient = patients.find((p: any) => p.id === patientId);
-              
-              if (patient) {
-                const patientData: FormData = {};
-                questions.forEach(question => {
-                  if (question.type === "short" && question.title.includes("nombre")) {
-                    patientData[question.id] = patient.name;
-                  } else if (question.type === "short" && question.title.includes("identificación")) {
-                    patientData[question.id] = patient.documentId;
-                  } else if (question.type === "short" && question.title.includes("teléfono")) {
-                    patientData[question.id] = patient.contactNumber;
-                  } else if (question.type === "short" && question.title.includes("email")) {
-                    patientData[question.id] = patient.email;
-                  }
-                });
-                
-                setFormData(prevData => ({...prevData, ...patientData}));
-              }
-            }
-          }
-          
-          // Restore draft from localStorage if available
-          try {
-            const savedDraft = localStorage.getItem(draftKey);
-            if (savedDraft) {
-              const draftData = JSON.parse(savedDraft);
-              setFormData(prev => ({ ...prev, ...draftData }));
-              toast("Borrador restaurado", {
-                description: "Se recuperaron los datos que no habías guardado",
-                icon: <Check size={16} className="text-primary" />,
-              });
-            }
-          } catch { /* corrupt draft — ignore */ }
-          draftRestoredRef.current = true;
+      try {
+        const [headerResult, ...formResults] = await Promise.all([
+          supabase.from("configuracion_encabezado" as any).select("*").limit(1).single(),
+          ...allFormIds.map(id => fetchFormById(id)),
+        ]);
 
-        } catch (error) {
-          console.error('Error loading form:', error);
-          setError("Error al cargar el formulario");
-        } finally {
-          setLoading(false);
+        if (headerResult.data) {
+          setHeaderConfig(headerResult.data);
         }
+
+        const newFormsMap: Record<string, FormEntry> = {};
+
+        formResults.forEach((result, idx) => {
+          const fId = allFormIds[idx];
+          if (result.form) {
+            const qs = result.form.questions as QuestionData[] || [];
+            newFormsMap[fId] = {
+              id: fId,
+              questions: qs,
+              title: result.form.title,
+              description: result.form.description,
+              formType: result.form.formType || "historia_clinica",
+              formData: {},
+              saved: false,
+            };
+
+            // Restore draft
+            const dk = `kerhub-draft-${fId}${patientId ? `-${patientId}` : ''}${consultationId ? `-${consultationId}` : ''}`;
+            try {
+              const savedDraft = localStorage.getItem(dk);
+              if (savedDraft) {
+                newFormsMap[fId].formData = { ...newFormsMap[fId].formData, ...JSON.parse(savedDraft) };
+              }
+            } catch { /* ignore */ }
+          }
+          if (result.error && idx === 0) {
+            setError(result.error);
+          }
+        });
+
+        setFormsMap(newFormsMap);
+        setActiveFormId(allFormIds[0]);
+        draftRestoredRef.current = true;
+      } catch (error) {
+        console.error('Error loading forms:', error);
+        setError("Error al cargar el formulario");
+      } finally {
+        setLoading(false);
       }
     };
 
-    loadForm();
-  }, [formId, patientId]);
+    loadAllForms();
+  }, [allFormIds.join(','), patientId]);
 
   const dynamicSchema = createDynamicSchema(questions);
   
@@ -291,10 +271,20 @@ const FormViewer = () => {
     defaultValues: formData,
   });
 
+  // Reset form values when switching tabs
+  useEffect(() => {
+    if (activeEntry) {
+      form.reset(activeEntry.formData);
+    }
+  }, [activeFormId]);
+
   const handleInputChange = (id: string, value: any) => {
-    setFormData(prevData => ({
-      ...prevData,
-      [id]: value,
+    setFormsMap(prev => ({
+      ...prev,
+      [activeFormId]: {
+        ...prev[activeFormId],
+        formData: { ...prev[activeFormId]?.formData, [id]: value },
+      }
     }));
   };
 
