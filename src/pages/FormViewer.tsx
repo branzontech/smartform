@@ -19,7 +19,7 @@ import { QuestionRenderer } from '@/components/forms/form-viewer/question-render
 import { QuestionData } from '@/components/forms/question/types';
 import { FormTitle } from '@/components/ui/form-title';
 import { BackButton } from '@/App';
-import { Check, Link as LinkIcon, Printer, AlertTriangle, CalendarIcon, ClipboardList, PanelRightClose, PanelRightOpen, GripVertical, MoreHorizontal, ArrowLeft, Save, ClipboardPlus, Pill, TestTube, Scan, UserPlus, Scissors, List } from 'lucide-react';
+import { Check, Link as LinkIcon, Printer, AlertTriangle, CalendarIcon, ClipboardList, PanelRightClose, PanelRightOpen, GripVertical, MoreHorizontal, ArrowLeft, Save, ClipboardPlus, Pill, TestTube, Scan, UserPlus, Scissors, List, Plus, Search } from 'lucide-react';
 import { toast } from "sonner";
 import { Form as FormType } from './FormsPage';
 import { FormLoading } from '@/components/forms/form-viewer/form-loading';
@@ -49,6 +49,14 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { Badge } from "@/components/ui/badge";
@@ -92,6 +100,11 @@ const FormViewer = () => {
   // Multi-form state
   const [formsMap, setFormsMap] = useState<Record<string, FormEntry>>({});
   const [activeFormId, setActiveFormId] = useState<string>(formId || '');
+  const [showAddFormDialog, setShowAddFormDialog] = useState(false);
+  const [addFormSearch, setAddFormSearch] = useState('');
+  const [addFormResults, setAddFormResults] = useState<{ id: string; titulo: string; tipo: string }[]>([]);
+  const [addFormLoading, setAddFormLoading] = useState(false);
+  const [dynamicFormIds, setDynamicFormIds] = useState<string[]>([]);
 
   // Panel resize state
   const [panelWidth, setPanelWidth] = useState(() => {
@@ -113,15 +126,65 @@ const FormViewer = () => {
   const isEmbedded = queryParams.get("embedded") === "true";
   const extraFormIds = queryParams.get("forms")?.split(',').filter(Boolean) || [];
 
-  // Build ordered list of all form IDs (primary + extras, deduplicated)
+  // Build ordered list of all form IDs (primary + extras + dynamically added, deduplicated)
   const allFormIds = React.useMemo(() => {
     const ids: string[] = [];
     if (formId) ids.push(formId);
     extraFormIds.forEach(id => { if (!ids.includes(id)) ids.push(id); });
+    dynamicFormIds.forEach(id => { if (!ids.includes(id)) ids.push(id); });
     return ids;
-  }, [formId, extraFormIds.join(',')]);
+  }, [formId, extraFormIds.join(','), dynamicFormIds.join(',')]);
 
   const isMultiForm = allFormIds.length > 1;
+
+  // Search forms for add dialog
+  const searchForms = useCallback(async (query: string) => {
+    setAddFormLoading(true);
+    try {
+      let q = supabase.from('formularios').select('id, titulo, tipo').eq('estado', 'activo').limit(20);
+      if (query.trim()) {
+        q = q.ilike('titulo', `%${query.trim()}%`);
+      }
+      const { data } = await q;
+      setAddFormResults((data as any[]) || []);
+    } catch { setAddFormResults([]); }
+    setAddFormLoading(false);
+  }, []);
+
+  useEffect(() => {
+    if (showAddFormDialog) {
+      searchForms(addFormSearch);
+    }
+  }, [showAddFormDialog, addFormSearch, searchForms]);
+
+  const handleAddNewForm = async (newFormId: string) => {
+    // Check if already in tabs
+    if (allFormIds.includes(newFormId)) {
+      toast("Este formulario ya fue agregado");
+      return;
+    }
+    // Fetch the form
+    const result = await fetchFormById(newFormId);
+    if (result.form) {
+      const qs = result.form.questions as QuestionData[] || [];
+      setFormsMap(prev => ({
+        ...prev,
+        [newFormId]: {
+          id: newFormId,
+          questions: qs,
+          title: result.form!.title,
+          description: result.form!.description,
+          formType: result.form!.formType || 'historia_clinica',
+          formData: {},
+          saved: false,
+        },
+      }));
+      setDynamicFormIds(prev => [...prev, newFormId]);
+      setActiveFormId(newFormId);
+      setShowAddFormDialog(false);
+      setAddFormSearch('');
+    }
+  };
 
   // Derived state from active form
   const activeEntry = formsMap[activeFormId];
@@ -713,36 +776,99 @@ const FormViewer = () => {
                   admisionId={consultationId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(consultationId) ? consultationId : undefined}
                />
               )}
-              {/* Multi-form tab bar */}
-              {isMultiForm && !showRegistro && (
-                <div className="mb-4 border-b overflow-x-auto scrollbar-none">
-                  <div className="flex gap-0 min-w-0">
-                    {allFormIds.map(fId => {
+              {/* Multi-form chevron tabs + add button */}
+              {!showRegistro && (
+                <div className="mb-4 overflow-x-auto scrollbar-none">
+                  <div className="flex items-center gap-0 min-w-0">
+                    {isMultiForm && allFormIds.map((fId, idx) => {
                       const entry = formsMap[fId];
                       if (!entry) return null;
                       const isActive = fId === activeFormId;
+                      const isFirst = idx === 0;
                       return (
                         <button
                           key={fId}
                           type="button"
                           onClick={() => setActiveFormId(fId)}
-                          className={`shrink-0 px-4 py-2 text-sm whitespace-nowrap transition-colors relative ${
+                          className={`shrink-0 h-9 px-4 text-xs font-medium flex items-center gap-1.5 transition-all duration-200 ${
                             isActive
-                              ? 'font-medium text-foreground'
-                              : 'text-muted-foreground hover:text-foreground'
+                              ? 'bg-primary text-primary-foreground'
+                              : 'bg-muted/50 text-muted-foreground hover:bg-muted'
                           }`}
+                          style={{
+                            clipPath: isFirst
+                              ? 'polygon(0 0, calc(100% - 12px) 0, 100% 50%, calc(100% - 12px) 100%, 0 100%)'
+                              : 'polygon(0 0, calc(100% - 12px) 0, 100% 50%, calc(100% - 12px) 100%, 0 100%, 12px 50%)',
+                            marginLeft: isFirst ? 0 : '-4px',
+                            paddingRight: '1.25rem',
+                            paddingLeft: isFirst ? '0.75rem' : '1.25rem',
+                          }}
                         >
-                          {entry.title}
-                          {entry.saved && <Check size={12} className="inline ml-1.5 text-green-500" />}
-                          {isActive && (
-                            <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-full" />
-                          )}
+                          <span className="max-w-[160px] truncate">{entry.title}</span>
+                          {entry.saved && <Check size={12} className="shrink-0 text-green-400" />}
                         </button>
                       );
                     })}
+                    {/* Add form button */}
+                    <button
+                      type="button"
+                      onClick={() => setShowAddFormDialog(true)}
+                      className="shrink-0 w-7 h-7 rounded-full bg-muted hover:bg-muted-foreground/10 flex items-center justify-center ml-2 transition-colors"
+                      title="Agregar formulario"
+                    >
+                      <Plus className="w-3.5 h-3.5 text-muted-foreground" />
+                    </button>
                   </div>
                 </div>
               )}
+
+              {/* Add form dialog */}
+              <Dialog open={showAddFormDialog} onOpenChange={setShowAddFormDialog}>
+                <DialogContent className="max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>Agregar formulario</DialogTitle>
+                  </DialogHeader>
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Buscar por nombre..."
+                      value={addFormSearch}
+                      onChange={e => setAddFormSearch(e.target.value)}
+                      className="pl-9"
+                    />
+                  </div>
+                  <ScrollArea className="h-[280px]">
+                    {addFormLoading ? (
+                      <p className="text-sm text-muted-foreground text-center py-8">Buscando...</p>
+                    ) : addFormResults.length === 0 ? (
+                      <p className="text-sm text-muted-foreground text-center py-8">No se encontraron formularios</p>
+                    ) : (
+                      <div className="space-y-1 pr-3">
+                        {addFormResults.map(f => {
+                          const alreadyAdded = allFormIds.includes(f.id);
+                          return (
+                            <button
+                              key={f.id}
+                              type="button"
+                              disabled={alreadyAdded}
+                              onClick={() => handleAddNewForm(f.id)}
+                              className="w-full text-left px-3 py-2.5 rounded-lg hover:bg-muted transition-colors flex items-center justify-between gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              <div className="min-w-0">
+                                <p className="text-sm font-medium truncate">{f.titulo}</p>
+                                <p className="text-[11px] text-muted-foreground">{f.tipo}</p>
+                              </div>
+                              {alreadyAdded && (
+                                <Badge variant="secondary" className="text-[10px] shrink-0">Agregado</Badge>
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </ScrollArea>
+                </DialogContent>
+              </Dialog>
               <FormHeaderPreview config={headerConfig} formTitle={formTitle} />
               <FormProvider {...form}>
                 <Form {...form}>
