@@ -126,15 +126,65 @@ const FormViewer = () => {
   const isEmbedded = queryParams.get("embedded") === "true";
   const extraFormIds = queryParams.get("forms")?.split(',').filter(Boolean) || [];
 
-  // Build ordered list of all form IDs (primary + extras, deduplicated)
+  // Build ordered list of all form IDs (primary + extras + dynamically added, deduplicated)
   const allFormIds = React.useMemo(() => {
     const ids: string[] = [];
     if (formId) ids.push(formId);
     extraFormIds.forEach(id => { if (!ids.includes(id)) ids.push(id); });
+    dynamicFormIds.forEach(id => { if (!ids.includes(id)) ids.push(id); });
     return ids;
-  }, [formId, extraFormIds.join(',')]);
+  }, [formId, extraFormIds.join(','), dynamicFormIds.join(',')]);
 
   const isMultiForm = allFormIds.length > 1;
+
+  // Search forms for add dialog
+  const searchForms = useCallback(async (query: string) => {
+    setAddFormLoading(true);
+    try {
+      let q = supabase.from('formularios').select('id, titulo, tipo').eq('estado', 'activo').limit(20);
+      if (query.trim()) {
+        q = q.ilike('titulo', `%${query.trim()}%`);
+      }
+      const { data } = await q;
+      setAddFormResults((data as any[]) || []);
+    } catch { setAddFormResults([]); }
+    setAddFormLoading(false);
+  }, []);
+
+  useEffect(() => {
+    if (showAddFormDialog) {
+      searchForms(addFormSearch);
+    }
+  }, [showAddFormDialog, addFormSearch, searchForms]);
+
+  const handleAddNewForm = async (newFormId: string) => {
+    // Check if already in tabs
+    if (allFormIds.includes(newFormId)) {
+      toast("Este formulario ya fue agregado");
+      return;
+    }
+    // Fetch the form
+    const result = await fetchFormById(newFormId);
+    if (result.form) {
+      const qs = result.form.questions as QuestionData[] || [];
+      setFormsMap(prev => ({
+        ...prev,
+        [newFormId]: {
+          id: newFormId,
+          questions: qs,
+          title: result.form!.title,
+          description: result.form!.description,
+          formType: result.form!.formType || 'historia_clinica',
+          formData: {},
+          saved: false,
+        },
+      }));
+      setDynamicFormIds(prev => [...prev, newFormId]);
+      setActiveFormId(newFormId);
+      setShowAddFormDialog(false);
+      setAddFormSearch('');
+    }
+  };
 
   // Derived state from active form
   const activeEntry = formsMap[activeFormId];
