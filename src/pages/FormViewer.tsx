@@ -100,6 +100,11 @@ const FormViewer = () => {
   // Multi-form state
   const [formsMap, setFormsMap] = useState<Record<string, FormEntry>>({});
   const [activeFormId, setActiveFormId] = useState<string>(formId || '');
+  const [showAddFormDialog, setShowAddFormDialog] = useState(false);
+  const [addFormSearch, setAddFormSearch] = useState('');
+  const [addFormResults, setAddFormResults] = useState<{ id: string; titulo: string; tipo: string }[]>([]);
+  const [addFormLoading, setAddFormLoading] = useState(false);
+  const [dynamicFormIds, setDynamicFormIds] = useState<string[]>([]);
 
   // Panel resize state
   const [panelWidth, setPanelWidth] = useState(() => {
