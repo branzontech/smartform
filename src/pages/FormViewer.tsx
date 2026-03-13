@@ -57,6 +57,16 @@ interface FormData {
   [key: string]: any;
 }
 
+interface FormEntry {
+  id: string;
+  questions: QuestionData[];
+  title: string;
+  description: string;
+  formType: string;
+  formData: FormData;
+  saved: boolean;
+}
+
 const PANEL_WIDTH_KEY = 'kerhub-antecedentes-panel-width';
 const PANEL_COLLAPSED_KEY = 'kerhub-antecedentes-panel-collapsed';
 const DEFAULT_PANEL_WIDTH = 380;
@@ -67,12 +77,7 @@ const FormViewer = () => {
   const { id: formId } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
-  const [formData, setFormData] = useState<FormData>({});
   const draftRestoredRef = useRef(false);
-  const [questions, setQuestions] = useState<QuestionData[]>([]);
-  const [formTitle, setFormTitle] = useState("Formulario");
-  const [formDescription, setFormDescription] = useState("");
-  const [formType, setFormType] = useState<string>("historia_clinica");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [submitted, setSubmitted] = useState(false);
@@ -83,6 +88,10 @@ const FormViewer = () => {
   const { hasRole } = useAuth();
   const canCreateOrders = hasRole('doctor') || hasRole('admin');
   const { toast: uiToast } = useToast();
+
+  // Multi-form state
+  const [formsMap, setFormsMap] = useState<Record<string, FormEntry>>({});
+  const [activeFormId, setActiveFormId] = useState<string>(formId || '');
 
   // Panel resize state
   const [panelWidth, setPanelWidth] = useState(() => {
@@ -102,9 +111,28 @@ const FormViewer = () => {
   const patientId = queryParams.get("patientId");
   const consultationId = queryParams.get("consultationId");
   const isEmbedded = queryParams.get("embedded") === "true";
+  const extraFormIds = queryParams.get("forms")?.split(',').filter(Boolean) || [];
+
+  // Build ordered list of all form IDs (primary + extras, deduplicated)
+  const allFormIds = React.useMemo(() => {
+    const ids: string[] = [];
+    if (formId) ids.push(formId);
+    extraFormIds.forEach(id => { if (!ids.includes(id)) ids.push(id); });
+    return ids;
+  }, [formId, extraFormIds.join(',')]);
+
+  const isMultiForm = allFormIds.length > 1;
+
+  // Derived state from active form
+  const activeEntry = formsMap[activeFormId];
+  const formData = activeEntry?.formData || {};
+  const questions = activeEntry?.questions || [];
+  const formTitle = activeEntry?.title || "Formulario";
+  const formDescription = activeEntry?.description || "";
+  const formType = activeEntry?.formType || "historia_clinica";
 
   // Draft cache key — unique per form + patient + consultation
-  const draftKey = `kerhub-draft-${formId || 'unknown'}${patientId ? `-${patientId}` : ''}${consultationId ? `-${consultationId}` : ''}`;
+  const draftKey = `kerhub-draft-${activeFormId || 'unknown'}${patientId ? `-${patientId}` : ''}${consultationId ? `-${consultationId}` : ''}`;
 
   // Auto-save draft to localStorage (debounced 500ms)
   useEffect(() => {
