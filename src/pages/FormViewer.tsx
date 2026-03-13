@@ -546,13 +546,11 @@ const FormViewer = () => {
     return missing;
   }, [formsMap]);
 
-  // ── Helper: get form status for display ──
-  const getFormStatus = useCallback((fId: string): { label: string; color: string; icon: 'empty' | 'dirty' | 'saved' | 'error' } => {
+  // ── Helper: check if form has any response ──
+  const formHasAnyResponse = useCallback((fId: string): boolean => {
     const entry = formsMap[fId];
-    if (!entry) return { label: 'Sin diligenciar', color: '#ef4444', icon: 'empty' };
-    if (entry.saveError) return { label: 'Error al guardar', color: '#dc2626', icon: 'error' };
-    if (entry.saved && !entry.isDirty) return { label: `Guardado ✓ ${entry.lastSavedTime || ''}`, color: '#16a34a', icon: 'saved' };
-    const hasData = entry.questions.filter(q => q.type !== 'section').some(q => {
+    if (!entry) return false;
+    return entry.questions.filter(q => q.type !== 'section' && q.type !== 'score_total').some(q => {
       const val = entry.formData[q.id];
       if (val === undefined || val === null || val === '') return false;
       if (Array.isArray(val) && val.length === 0) return false;
@@ -562,10 +560,30 @@ const FormViewer = () => {
       }
       return true;
     });
-    if (entry.isDirty && hasData) return { label: 'En progreso - Sin guardar', color: '#f97316', icon: 'dirty' };
-    if (!hasData) return { label: 'Sin diligenciar', color: '#ef4444', icon: 'empty' };
-    return { label: 'En progreso - Sin guardar', color: '#f97316', icon: 'dirty' };
   }, [formsMap]);
+
+  // ── Helper: check if all required fields are filled ──
+  const allRequiredFilled = useCallback((fId: string): boolean => {
+    return getRequiredFieldErrors(fId).length === 0;
+  }, [getRequiredFieldErrors]);
+
+  // ── Helper: get form status for display ──
+  type FormStatusType = 'sin_diligenciar' | 'en_progreso_sin_guardar' | 'guardado_parcial' | 'completo_guardado' | 'error';
+  const getFormStatus = useCallback((fId: string): { label: string; color: string; status: FormStatusType } => {
+    const entry = formsMap[fId];
+    if (!entry) return { label: 'Sin diligenciar', color: 'hsl(var(--muted-foreground))', status: 'sin_diligenciar' };
+    if (entry.saveError) return { label: 'Error al guardar', color: '#dc2626', status: 'error' };
+
+    const hasData = formHasAnyResponse(fId);
+    if (!hasData) return { label: 'Sin diligenciar', color: 'hsl(var(--muted-foreground))', status: 'sin_diligenciar' };
+
+    const reqFilled = allRequiredFilled(fId);
+
+    if (entry.isDirty) return { label: 'En progreso - Sin guardar', color: '#f97316', status: 'en_progreso_sin_guardar' };
+    if (entry.saved && reqFilled) return { label: `Completo - Guardado ✓ ${entry.lastSavedTime || ''}`, color: '#16a34a', status: 'completo_guardado' };
+    if (entry.saved && !reqFilled) return { label: `En progreso - Guardado parcial ✓ ${entry.lastSavedTime || ''}`, color: '#f97316', status: 'guardado_parcial' };
+    return { label: 'En progreso - Sin guardar', color: '#f97316', status: 'en_progreso_sin_guardar' };
+  }, [formsMap, formHasAnyResponse, allRequiredFilled]);
 
   const processFormValues = (qs: QuestionData[], fd: FormData, rawValues: any) => {
     const processedValues = { ...rawValues };
