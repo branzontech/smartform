@@ -400,10 +400,9 @@ const FormViewer = () => {
     if (!draftRestoredRef.current) return;
 
     const interval = setInterval(async () => {
-      // Save ALL dirty forms silently
       for (const fId of allFormIds) {
         const entry = formsMap[fId];
-        if (entry?.isDirty) {
+        if (entry?.isDirty && !isFormEmpty(fId)) {
           setSaveStatus('saving');
           await saveFormToDb(fId);
           setSaveStatus('saved');
@@ -414,7 +413,7 @@ const FormViewer = () => {
     }, AUTOSAVE_INTERVAL);
 
     return () => clearInterval(interval);
-  }, [allFormIds, formsMap, saveFormToDb]);
+  }, [allFormIds, formsMap, saveFormToDb, isFormEmpty]);
 
   // ── Load all forms ──
   useEffect(() => {
