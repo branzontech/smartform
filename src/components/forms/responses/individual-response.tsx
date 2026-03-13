@@ -131,6 +131,8 @@ export const IndividualResponse = ({ response, index, formData, onPrint }: Indiv
 
       default:
         return Array.isArray(answer) ? answer.join(", ") : String(answer);
+    }
+  };
 
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6 animate-scale-in">
