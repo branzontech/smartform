@@ -498,9 +498,74 @@ const FormViewer = () => {
         ...prev[activeFormId],
         formData: { ...prev[activeFormId]?.formData, [id]: value },
         isDirty: true,
+        saveError: false,
       }
     }));
+    setValidationErrorsByForm(prev => {
+      const errors = prev[activeFormId];
+      if (!errors) return prev;
+      const updated = errors.filter(e => e !== id);
+      if (updated.length === errors.length) return prev;
+      return { ...prev, [activeFormId]: updated };
+    });
   };
+
+  // ── Helper: check if form has no responses ──
+  const isFormEmpty = useCallback((fId: string): boolean => {
+    const entry = formsMap[fId];
+    if (!entry) return true;
+    return entry.questions.filter(q => q.type !== 'section' && q.type !== 'score_total').every(q => {
+      const val = entry.formData[q.id];
+      if (val === undefined || val === null || val === '') return true;
+      if (Array.isArray(val) && val.length === 0) return true;
+      if (typeof val === 'object' && !Array.isArray(val)) {
+        if (val.score !== undefined && val.selectedOptions) return !val.selectedOptions?.length;
+        return Object.values(val).every((v: any) => !v && v !== 0);
+      }
+      return false;
+    });
+  }, [formsMap]);
+
+  // ── Helper: get missing required fields ──
+  const getRequiredFieldErrors = useCallback((fId: string): string[] => {
+    const entry = formsMap[fId];
+    if (!entry) return [];
+    const missing: string[] = [];
+    entry.questions.forEach(q => {
+      if (!q.required || q.type === 'section' || q.type === 'score_total') return;
+      const val = entry.formData[q.id];
+      let isEmpty = false;
+      if (val === undefined || val === null || val === '') isEmpty = true;
+      else if (Array.isArray(val) && val.length === 0) isEmpty = true;
+      else if (typeof val === 'object' && !Array.isArray(val)) {
+        if (val.score !== undefined && val.selectedOptions) isEmpty = !val.selectedOptions?.length;
+        else isEmpty = Object.values(val).every((v: any) => !v && v !== 0);
+      }
+      if (isEmpty) missing.push(q.id);
+    });
+    return missing;
+  }, [formsMap]);
+
+  // ── Helper: get form status for display ──
+  const getFormStatus = useCallback((fId: string): { label: string; color: string; icon: 'empty' | 'dirty' | 'saved' | 'error' } => {
+    const entry = formsMap[fId];
+    if (!entry) return { label: 'Sin diligenciar', color: '#ef4444', icon: 'empty' };
+    if (entry.saveError) return { label: 'Error al guardar', color: '#dc2626', icon: 'error' };
+    if (entry.saved && !entry.isDirty) return { label: `Guardado ✓ ${entry.lastSavedTime || ''}`, color: '#16a34a', icon: 'saved' };
+    const hasData = entry.questions.filter(q => q.type !== 'section').some(q => {
+      const val = entry.formData[q.id];
+      if (val === undefined || val === null || val === '') return false;
+      if (Array.isArray(val) && val.length === 0) return false;
+      if (typeof val === 'object' && !Array.isArray(val)) {
+        if (val.score !== undefined) return !!val.selectedOptions?.length;
+        return Object.values(val).some((v: any) => !!v || v === 0);
+      }
+      return true;
+    });
+    if (entry.isDirty && hasData) return { label: 'En progreso - Sin guardar', color: '#f97316', icon: 'dirty' };
+    if (!hasData) return { label: 'Sin diligenciar', color: '#ef4444', icon: 'empty' };
+    return { label: 'En progreso - Sin guardar', color: '#f97316', icon: 'dirty' };
+  }, [formsMap]);
 
   const processFormValues = (qs: QuestionData[], fd: FormData, rawValues: any) => {
     const processedValues = { ...rawValues };
