@@ -19,7 +19,7 @@ import { QuestionRenderer } from '@/components/forms/form-viewer/question-render
 import { QuestionData } from '@/components/forms/question/types';
 import { FormTitle } from '@/components/ui/form-title';
 import { BackButton } from '@/App';
-import { Check, Link as LinkIcon, Printer, AlertTriangle, CalendarIcon, ClipboardList, PanelRightClose, PanelRightOpen, GripVertical, MoreHorizontal, ArrowLeft, Save, ClipboardPlus, Pill, TestTube, Scan, UserPlus, Scissors, List, Plus, Search, CheckCircle, Loader2, AlertCircle, Clock, XCircle, Circle } from 'lucide-react';
+import { Check, Link as LinkIcon, Printer, AlertTriangle, CalendarIcon, ClipboardList, PanelRightClose, PanelRightOpen, GripVertical, MoreHorizontal, ArrowLeft, Save, Plus, Search, CheckCircle, Loader2, AlertCircle, Clock, XCircle, Circle } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { toast } from "sonner";
 import { Form as FormType } from './FormsPage';
@@ -28,11 +28,10 @@ import { FormError } from '@/components/forms/form-viewer/form-error';
 import { FormSubmissionSuccess } from '@/components/forms/form-viewer/form-submission-success';
 import { createDynamicSchema, fetchFormById, saveFormResponse } from '@/utils/form-utils';
 import { useToast } from '@/hooks/use-toast';
-import { PatientHistoryPanel } from '@/components/patients/PatientHistoryPanel';
-import { OrdersPanel } from '@/components/orders/OrdersPanel';
+import { RightPanelTabs } from '@/components/orders/RightPanelTabs';
 import { FormHeaderPreview } from '@/components/forms/FormHeaderPreview';
 import { useAuth } from '@/contexts/AuthContext';
-import { DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
+
 import { PatientHeaderBanner } from '@/components/forms/PatientHeaderBanner';
 import { RegistroAtenciones } from '@/components/forms/RegistroAtenciones';
 import {
@@ -101,7 +100,6 @@ const FormViewer = () => {
   const [pendingValues, setPendingValues] = useState<any>(null);
   const [showRegistro, setShowRegistro] = useState(false);
   const { hasRole } = useAuth();
-  const canCreateOrders = hasRole('doctor') || hasRole('admin');
   const { toast: uiToast } = useToast();
 
   // Multi-form state
@@ -127,9 +125,8 @@ const FormViewer = () => {
   const [emptyFormIds, setEmptyFormIds] = useState<string[]>([]);
   const [validationErrorsByForm, setValidationErrorsByForm] = useState<Record<string, string[]>>({});
 
-  // Right panel tabs
-  const [rightPanelTab, setRightPanelTab] = useState<'antecedentes' | 'ordenes'>('antecedentes');
-  const [selectedOrderType, setSelectedOrderType] = useState<string | null>(null);
+
+  // Panel resize state
 
   // Panel resize state
   const [panelWidth, setPanelWidth] = useState(() => {
@@ -1078,43 +1075,6 @@ const FormViewer = () => {
                 <ClipboardList className="w-4 h-4" />
               </Button>
             )}
-            {canCreateOrders && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="gap-1.5 h-8 text-xs">
-                    <ClipboardPlus className="w-3.5 h-3.5" />
-                    Órdenes
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-52">
-                  <DropdownMenuItem onClick={() => { setRightPanelTab('ordenes'); setSelectedOrderType('medicamento'); if (isCollapsed) { setIsCollapsed(false); setPanelWidth(previousWidthRef.current || DEFAULT_PANEL_WIDTH); } }} className="flex items-center gap-2 text-sm">
-                    <Pill className="w-4 h-4 text-muted-foreground" />
-                    Medicamentos
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => { setRightPanelTab('ordenes'); setSelectedOrderType('laboratorio'); if (isCollapsed) { setIsCollapsed(false); setPanelWidth(previousWidthRef.current || DEFAULT_PANEL_WIDTH); } }} className="flex items-center gap-2 text-sm">
-                    <TestTube className="w-4 h-4 text-muted-foreground" />
-                    Laboratorio
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => { setRightPanelTab('ordenes'); setSelectedOrderType('imagenologia'); if (isCollapsed) { setIsCollapsed(false); setPanelWidth(previousWidthRef.current || DEFAULT_PANEL_WIDTH); } }} className="flex items-center gap-2 text-sm">
-                    <Scan className="w-4 h-4 text-muted-foreground" />
-                    Imagenología
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => { setRightPanelTab('ordenes'); setSelectedOrderType('interconsulta'); if (isCollapsed) { setIsCollapsed(false); setPanelWidth(previousWidthRef.current || DEFAULT_PANEL_WIDTH); } }} className="flex items-center gap-2 text-sm">
-                    <UserPlus className="w-4 h-4 text-muted-foreground" />
-                    Interconsulta
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => { setRightPanelTab('ordenes'); setSelectedOrderType('procedimiento'); if (isCollapsed) { setIsCollapsed(false); setPanelWidth(previousWidthRef.current || DEFAULT_PANEL_WIDTH); } }} className="flex items-center gap-2 text-sm">
-                    <Scissors className="w-4 h-4 text-muted-foreground" />
-                    Procedimientos
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => { setRightPanelTab('ordenes'); setSelectedOrderType(null); if (isCollapsed) { setIsCollapsed(false); setPanelWidth(previousWidthRef.current || DEFAULT_PANEL_WIDTH); } }} className="flex items-center gap-2 text-sm">
-                    <List className="w-4 h-4 text-muted-foreground" />
-                    Ver órdenes del paciente
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
@@ -1382,52 +1342,11 @@ const FormViewer = () => {
               className="shrink-0 overflow-hidden flex flex-col bg-muted/20 border-l print:hidden"
               style={{ width: `${panelWidth}px` }}
             >
-              {/* Panel header with tabs */}
-              <div className="shrink-0 border-b bg-card">
-                <div className="flex items-center h-9 px-2">
-                  <button
-                    onClick={() => setRightPanelTab('antecedentes')}
-                    className={`px-3 py-1.5 text-xs font-medium cursor-pointer transition-colors ${
-                      rightPanelTab === 'antecedentes'
-                        ? 'border-b-2 border-primary text-foreground'
-                        : 'text-muted-foreground hover:text-foreground'
-                    }`}
-                  >
-                    Antecedentes
-                  </button>
-                  <button
-                    onClick={() => { setRightPanelTab('ordenes'); setSelectedOrderType(null); }}
-                    className={`px-3 py-1.5 text-xs font-medium cursor-pointer transition-colors ${
-                      rightPanelTab === 'ordenes'
-                        ? 'border-b-2 border-primary text-foreground'
-                        : 'text-muted-foreground hover:text-foreground'
-                    }`}
-                  >
-                    Órdenes
-                  </button>
-                  <div className="flex-1" />
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={toggleCollapse}
-                    className="h-7 w-7 text-muted-foreground"
-                  >
-                    <PanelRightClose className="w-4 h-4" />
-                  </Button>
-                </div>
-              </div>
-              {/* Panel content — independent scroll */}
-              <div className="flex-1 min-h-0 overflow-y-auto" style={{ overscrollBehavior: 'contain' }}>
-                {rightPanelTab === 'antecedentes' ? (
-                  <PatientHistoryPanel patientId={patientId!} className="h-full" />
-                ) : (
-                  <OrdersPanel
-                    admisionId={consultationId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(consultationId) ? consultationId : null}
-                    selectedOrderType={selectedOrderType}
-                    onClearOrderType={() => setSelectedOrderType(null)}
-                  />
-                )}
-              </div>
+              <RightPanelTabs
+                patientId={patientId!}
+                admisionId={consultationId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(consultationId) ? consultationId : null}
+                onCollapse={toggleCollapse}
+              />
             </div>
           </>
         ) : (
