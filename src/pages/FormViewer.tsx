@@ -115,6 +115,8 @@ const FormViewer = () => {
   const [showExitDialog, setShowExitDialog] = useState(false);
   const pendingNavigationRef = useRef<string | number | null>(null);
   const [isCompletingAttention, setIsCompletingAttention] = useState(false);
+  const [isCompleted, setIsCompleted] = useState(false);
+  const [showCompletedDialog, setShowCompletedDialog] = useState(false);
 
   // Panel resize state
   const [panelWidth, setPanelWidth] = useState(() => {
