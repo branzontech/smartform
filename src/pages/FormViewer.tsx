@@ -1207,7 +1207,11 @@ const FormViewer = () => {
                   {/* Status bar */}
                   {(() => {
                     const st = getFormStatus(activeFormId);
-                    const StatusIcon = st.icon === 'empty' ? AlertCircle : st.icon === 'dirty' ? Clock : st.icon === 'saved' ? CheckCircle : XCircle;
+                    const StatusIcon = st.status === 'sin_diligenciar' ? Circle
+                      : st.status === 'en_progreso_sin_guardar' ? Clock
+                      : st.status === 'guardado_parcial' ? AlertCircle
+                      : st.status === 'completo_guardado' ? CheckCircle
+                      : XCircle;
                     return (
                       <div className="h-6 flex items-center px-4 text-xs gap-1.5 rounded-b-md" style={{ backgroundColor: 'hsl(var(--muted) / 0.5)' }}>
                         <StatusIcon className="w-3 h-3" style={{ color: st.color }} />
