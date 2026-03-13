@@ -526,7 +526,7 @@ const FormViewer = () => {
     });
   };
 
-  // (isFormEmpty moved above handleTabSwitch)
+  
 
   // ── Helper: get missing required fields ──
   const getRequiredFieldErrors = useCallback((fId: string): string[] => {
