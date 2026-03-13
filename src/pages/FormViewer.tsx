@@ -1382,21 +1382,51 @@ const FormViewer = () => {
               className="shrink-0 overflow-hidden flex flex-col bg-muted/20 border-l print:hidden"
               style={{ width: `${panelWidth}px` }}
             >
-              {/* Panel header */}
-              <div className="shrink-0 px-4 py-3 border-b flex items-center justify-between bg-card">
-                <h3 className="font-semibold text-sm">Antecedentes del Paciente</h3>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={toggleCollapse}
-                  className="h-7 w-7 text-muted-foreground"
-                >
-                  <PanelRightClose className="w-4 h-4" />
-                </Button>
+              {/* Panel header with tabs */}
+              <div className="shrink-0 border-b bg-card">
+                <div className="flex items-center h-9 px-2">
+                  <button
+                    onClick={() => setRightPanelTab('antecedentes')}
+                    className={`px-3 py-1.5 text-xs font-medium cursor-pointer transition-colors ${
+                      rightPanelTab === 'antecedentes'
+                        ? 'border-b-2 border-primary text-foreground'
+                        : 'text-muted-foreground hover:text-foreground'
+                    }`}
+                  >
+                    Antecedentes
+                  </button>
+                  <button
+                    onClick={() => { setRightPanelTab('ordenes'); setSelectedOrderType(null); }}
+                    className={`px-3 py-1.5 text-xs font-medium cursor-pointer transition-colors ${
+                      rightPanelTab === 'ordenes'
+                        ? 'border-b-2 border-primary text-foreground'
+                        : 'text-muted-foreground hover:text-foreground'
+                    }`}
+                  >
+                    Órdenes
+                  </button>
+                  <div className="flex-1" />
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={toggleCollapse}
+                    className="h-7 w-7 text-muted-foreground"
+                  >
+                    <PanelRightClose className="w-4 h-4" />
+                  </Button>
+                </div>
               </div>
               {/* Panel content — independent scroll */}
               <div className="flex-1 min-h-0 overflow-y-auto" style={{ overscrollBehavior: 'contain' }}>
-                <PatientHistoryPanel patientId={patientId!} className="h-full" />
+                {rightPanelTab === 'antecedentes' ? (
+                  <PatientHistoryPanel patientId={patientId!} className="h-full" />
+                ) : (
+                  <OrdersPanel
+                    admisionId={consultationId || null}
+                    selectedOrderType={selectedOrderType}
+                    onClearOrderType={() => setSelectedOrderType(null)}
+                  />
+                )}
               </div>
             </div>
           </>
