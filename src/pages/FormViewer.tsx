@@ -706,7 +706,37 @@ const FormViewer = () => {
                 <PatientHeaderBanner
                   pacienteId={patientId}
                   admisionId={consultationId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(consultationId) ? consultationId : undefined}
-                />
+               />
+              )}
+              {/* Multi-form tab bar */}
+              {isMultiForm && !showRegistro && (
+                <div className="mb-4 border-b overflow-x-auto scrollbar-none">
+                  <div className="flex gap-0 min-w-0">
+                    {allFormIds.map(fId => {
+                      const entry = formsMap[fId];
+                      if (!entry) return null;
+                      const isActive = fId === activeFormId;
+                      return (
+                        <button
+                          key={fId}
+                          type="button"
+                          onClick={() => setActiveFormId(fId)}
+                          className={`shrink-0 px-4 py-2 text-sm whitespace-nowrap transition-colors relative ${
+                            isActive
+                              ? 'font-medium text-foreground'
+                              : 'text-muted-foreground hover:text-foreground'
+                          }`}
+                        >
+                          {entry.title}
+                          {entry.saved && <Check size={12} className="inline ml-1.5 text-green-500" />}
+                          {isActive && (
+                            <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-full" />
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
               )}
               <FormHeaderPreview config={headerConfig} formTitle={formTitle} />
               <FormProvider {...form}>
