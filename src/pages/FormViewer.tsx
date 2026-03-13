@@ -605,32 +605,77 @@ const FormViewer = () => {
 
   // ── "Completar atención" handler ──
   const handleCompleteAttention = async () => {
-    setIsCompletingAttention(true);
-    const failedForms: string[] = [];
-
-    // Save all dirty forms
-    for (const fId of allFormIds) {
-      const entry = formsMap[fId];
-      if (!entry) continue;
-      if (entry.isDirty) {
-        const success = await saveFormToDb(fId, true);
-        if (!success) {
-          failedForms.push(entry.title);
-        }
-      }
+    // Phase 1: Check for completely empty forms
+    const emptyForms = allFormIds.filter(fId => formsMap[fId] && isFormEmpty(fId));
+    if (emptyForms.length > 0) {
+      setEmptyFormIds(emptyForms);
+      setShowEmptyFormDialog(true);
+      return;
     }
 
-    if (failedForms.length > 0) {
-      uiToast({
-        title: "Error al completar",
-        description: `No se pudieron guardar: ${failedForms.join(', ')}`,
-        variant: "destructive",
-      });
+    // Phase 2: Validate required fields
+    const issues: {formId: string; title: string; missingCount: number}[] = [];
+    const errMap: Record<string, string[]> = {};
+    for (const fId of allFormIds) {
+      if (!formsMap[fId]) continue;
+      const errors = getRequiredFieldErrors(fId);
+      if (errors.length > 0) {
+        issues.push({ formId: fId, title: formsMap[fId]?.title || 'Formulario', missingCount: errors.length });
+        errMap[fId] = errors;
+      }
+    }
+    if (issues.length > 0) {
+      setValidationIssues(issues);
+      setValidationErrorsByForm(errMap);
+      setShowValidationDialog(true);
+      return;
+    }
+
+    // Phase 3: All good, proceed
+    await doCompleteAttention();
+  };
+
+  const handleDiscardEmptyForms = useCallback(() => {
+    setShowEmptyFormDialog(false);
+    setDynamicFormIds(prev => prev.filter(id => !emptyFormIds.includes(id)));
+    setFormsMap(prev => {
+      const next = { ...prev };
+      emptyFormIds.forEach(id => delete next[id]);
+      return next;
+    });
+    if (emptyFormIds.includes(activeFormId)) {
+      const remaining = allFormIds.filter(id => !emptyFormIds.includes(id) && formsMap[id]);
+      if (remaining.length > 0) setActiveFormId(remaining[0]);
+    }
+    setEmptyFormIds([]);
+  }, [emptyFormIds, activeFormId, allFormIds, formsMap]);
+
+  const doCompleteAttention = async () => {
+    setIsCompletingAttention(true);
+    const failedForms: string[] = [];
+    const formsToSave = allFormIds.filter(fId => formsMap[fId] && !isFormEmpty(fId));
+
+    if (formsToSave.length === 0) {
+      uiToast({ title: "Sin datos para guardar", description: "Debes diligenciar al menos un formulario.", variant: "destructive" });
       setIsCompletingAttention(false);
       return;
     }
 
-    // Update admission status if valid UUID
+    for (const fId of formsToSave) {
+      const entry = formsMap[fId];
+      if (!entry) continue;
+      if (entry.isDirty || !entry.saved) {
+        const success = await saveFormToDb(fId, true);
+        if (!success) failedForms.push(entry.title);
+      }
+    }
+
+    if (failedForms.length > 0) {
+      uiToast({ title: "Error al completar", description: `No se pudieron guardar: ${failedForms.join(', ')}`, variant: "destructive" });
+      setIsCompletingAttention(false);
+      return;
+    }
+
     if (consultationId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(consultationId)) {
       const { error: admError } = await supabase
         .from("admisiones" as any)
@@ -643,7 +688,6 @@ const FormViewer = () => {
       }
     }
 
-    // Clear all drafts
     for (const fId of allFormIds) {
       const dk = `kerhub-draft-${fId}${patientId ? `-${patientId}` : ''}${consultationId ? `-${consultationId}` : ''}`;
       localStorage.removeItem(dk);
