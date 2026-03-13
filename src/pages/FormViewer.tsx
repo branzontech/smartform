@@ -57,6 +57,16 @@ interface FormData {
   [key: string]: any;
 }
 
+interface FormEntry {
+  id: string;
+  questions: QuestionData[];
+  title: string;
+  description: string;
+  formType: string;
+  formData: FormData;
+  saved: boolean;
+}
+
 const PANEL_WIDTH_KEY = 'kerhub-antecedentes-panel-width';
 const PANEL_COLLAPSED_KEY = 'kerhub-antecedentes-panel-collapsed';
 const DEFAULT_PANEL_WIDTH = 380;
@@ -67,12 +77,7 @@ const FormViewer = () => {
   const { id: formId } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
-  const [formData, setFormData] = useState<FormData>({});
   const draftRestoredRef = useRef(false);
-  const [questions, setQuestions] = useState<QuestionData[]>([]);
-  const [formTitle, setFormTitle] = useState("Formulario");
-  const [formDescription, setFormDescription] = useState("");
-  const [formType, setFormType] = useState<string>("historia_clinica");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [submitted, setSubmitted] = useState(false);
@@ -83,6 +88,10 @@ const FormViewer = () => {
   const { hasRole } = useAuth();
   const canCreateOrders = hasRole('doctor') || hasRole('admin');
   const { toast: uiToast } = useToast();
+
+  // Multi-form state
+  const [formsMap, setFormsMap] = useState<Record<string, FormEntry>>({});
+  const [activeFormId, setActiveFormId] = useState<string>(formId || '');
 
   // Panel resize state
   const [panelWidth, setPanelWidth] = useState(() => {
@@ -102,9 +111,28 @@ const FormViewer = () => {
   const patientId = queryParams.get("patientId");
   const consultationId = queryParams.get("consultationId");
   const isEmbedded = queryParams.get("embedded") === "true";
+  const extraFormIds = queryParams.get("forms")?.split(',').filter(Boolean) || [];
+
+  // Build ordered list of all form IDs (primary + extras, deduplicated)
+  const allFormIds = React.useMemo(() => {
+    const ids: string[] = [];
+    if (formId) ids.push(formId);
+    extraFormIds.forEach(id => { if (!ids.includes(id)) ids.push(id); });
+    return ids;
+  }, [formId, extraFormIds.join(',')]);
+
+  const isMultiForm = allFormIds.length > 1;
+
+  // Derived state from active form
+  const activeEntry = formsMap[activeFormId];
+  const formData = activeEntry?.formData || {};
+  const questions = activeEntry?.questions || [];
+  const formTitle = activeEntry?.title || "Formulario";
+  const formDescription = activeEntry?.description || "";
+  const formType = activeEntry?.formType || "historia_clinica";
 
   // Draft cache key — unique per form + patient + consultation
-  const draftKey = `kerhub-draft-${formId || 'unknown'}${patientId ? `-${patientId}` : ''}${consultationId ? `-${consultationId}` : ''}`;
+  const draftKey = `kerhub-draft-${activeFormId || 'unknown'}${patientId ? `-${patientId}` : ''}${consultationId ? `-${consultationId}` : ''}`;
 
   // Auto-save draft to localStorage (debounced 500ms)
   useEffect(() => {
@@ -177,84 +205,64 @@ const FormViewer = () => {
   }, [panelWidth]);
 
   useEffect(() => {
-    const loadForm = async () => {
-      if (formId) {
-        setLoading(true);
-        setError("");
-        
-        try {
-          const [result, headerResult] = await Promise.all([
-            fetchFormById(formId),
-            supabase.from("configuracion_encabezado" as any).select("*").limit(1).single(),
-          ]);
+    const loadAllForms = async () => {
+      if (allFormIds.length === 0) return;
+      setLoading(true);
+      setError("");
 
-          if (headerResult.data) {
-            setHeaderConfig(headerResult.data);
-          }
-          
-          if (result.form) {
-            setQuestions(result.form.questions as QuestionData[]);
-            setFormTitle(result.form.title);
-            setFormDescription(result.form.description);
-            if (result.form.formType) {
-              setFormType(result.form.formType);
-            }
-            
-            if (result.error) {
-              setError(result.error);
-            }
-          }
-          
-          if (patientId) {
-            const savedPatients = localStorage.getItem("patients");
-            if (savedPatients) {
-              const patients = JSON.parse(savedPatients);
-              const patient = patients.find((p: any) => p.id === patientId);
-              
-              if (patient) {
-                const patientData: FormData = {};
-                questions.forEach(question => {
-                  if (question.type === "short" && question.title.includes("nombre")) {
-                    patientData[question.id] = patient.name;
-                  } else if (question.type === "short" && question.title.includes("identificación")) {
-                    patientData[question.id] = patient.documentId;
-                  } else if (question.type === "short" && question.title.includes("teléfono")) {
-                    patientData[question.id] = patient.contactNumber;
-                  } else if (question.type === "short" && question.title.includes("email")) {
-                    patientData[question.id] = patient.email;
-                  }
-                });
-                
-                setFormData(prevData => ({...prevData, ...patientData}));
-              }
-            }
-          }
-          
-          // Restore draft from localStorage if available
-          try {
-            const savedDraft = localStorage.getItem(draftKey);
-            if (savedDraft) {
-              const draftData = JSON.parse(savedDraft);
-              setFormData(prev => ({ ...prev, ...draftData }));
-              toast("Borrador restaurado", {
-                description: "Se recuperaron los datos que no habías guardado",
-                icon: <Check size={16} className="text-primary" />,
-              });
-            }
-          } catch { /* corrupt draft — ignore */ }
-          draftRestoredRef.current = true;
+      try {
+        const [headerResult, ...formResults] = await Promise.all([
+          supabase.from("configuracion_encabezado" as any).select("*").limit(1).single(),
+          ...allFormIds.map(id => fetchFormById(id)),
+        ]);
 
-        } catch (error) {
-          console.error('Error loading form:', error);
-          setError("Error al cargar el formulario");
-        } finally {
-          setLoading(false);
+        if (headerResult.data) {
+          setHeaderConfig(headerResult.data);
         }
+
+        const newFormsMap: Record<string, FormEntry> = {};
+
+        formResults.forEach((result, idx) => {
+          const fId = allFormIds[idx];
+          if (result.form) {
+            const qs = result.form.questions as QuestionData[] || [];
+            newFormsMap[fId] = {
+              id: fId,
+              questions: qs,
+              title: result.form.title,
+              description: result.form.description,
+              formType: result.form.formType || "historia_clinica",
+              formData: {},
+              saved: false,
+            };
+
+            // Restore draft
+            const dk = `kerhub-draft-${fId}${patientId ? `-${patientId}` : ''}${consultationId ? `-${consultationId}` : ''}`;
+            try {
+              const savedDraft = localStorage.getItem(dk);
+              if (savedDraft) {
+                newFormsMap[fId].formData = { ...newFormsMap[fId].formData, ...JSON.parse(savedDraft) };
+              }
+            } catch { /* ignore */ }
+          }
+          if (result.error && idx === 0) {
+            setError(result.error);
+          }
+        });
+
+        setFormsMap(newFormsMap);
+        setActiveFormId(allFormIds[0]);
+        draftRestoredRef.current = true;
+      } catch (error) {
+        console.error('Error loading forms:', error);
+        setError("Error al cargar el formulario");
+      } finally {
+        setLoading(false);
       }
     };
 
-    loadForm();
-  }, [formId, patientId]);
+    loadAllForms();
+  }, [allFormIds.join(','), patientId]);
 
   const dynamicSchema = createDynamicSchema(questions);
   
@@ -263,60 +271,61 @@ const FormViewer = () => {
     defaultValues: formData,
   });
 
+  // Reset form values when switching tabs
+  useEffect(() => {
+    if (activeEntry) {
+      form.reset(activeEntry.formData);
+    }
+  }, [activeFormId]);
+
   const handleInputChange = (id: string, value: any) => {
-    setFormData(prevData => ({
-      ...prevData,
-      [id]: value,
+    setFormsMap(prev => ({
+      ...prev,
+      [activeFormId]: {
+        ...prev[activeFormId],
+        formData: { ...prev[activeFormId]?.formData, [id]: value },
+      }
     }));
   };
 
-  const onSubmit = async (values: z.infer<typeof dynamicSchema>) => {
-    const processedValues = { ...values };
-    
-    questions.forEach(question => {
+  const processFormValues = (qs: QuestionData[], fd: FormData, rawValues: any) => {
+    const processedValues = { ...rawValues };
+    qs.forEach(question => {
       if (question.type === "vitals") {
-        // New vitals structure: collect all enabled vital fields
         const predefined = question.predefinedVitals;
         if (predefined) {
           const vitalsData: Record<string, any> = {};
           Object.entries(predefined).forEach(([key, v]) => {
             if (v.enabled) {
-              vitalsData[key] = formData[`${question.id}_${key}`] || "";
+              vitalsData[key] = fd[`${question.id}_${key}`] || "";
             }
           });
-          // Include custom vitals
           (question.customVitals || []).forEach(cv => {
-            vitalsData[`custom_${cv.id}`] = formData[`${question.id}_custom_${cv.id}`] || "";
+            vitalsData[`custom_${cv.id}`] = fd[`${question.id}_custom_${cv.id}`] || "";
           });
           processedValues[question.id] = vitalsData;
         } else if (question.vitalType === "TA") {
-          processedValues[question.id] = {
-            sys: formData[`${question.id}_sys`],
-            dia: formData[`${question.id}_dia`]
-          };
+          processedValues[question.id] = { sys: fd[`${question.id}_sys`], dia: fd[`${question.id}_dia`] };
         } else if (question.vitalType === "IMC") {
-          processedValues[question.id] = {
-            weight: formData[`${question.id}_weight`],
-            height: formData[`${question.id}_height`],
-            bmi: formData[`${question.id}_bmi`]
-          };
+          processedValues[question.id] = { weight: fd[`${question.id}_weight`], height: fd[`${question.id}_height`], bmi: fd[`${question.id}_bmi`] };
         }
       } else if (question.type === "clinical") {
-        processedValues[question.id] = {
-          title: formData[`${question.id}_title`],
-          detail: formData[`${question.id}_detail`]
-        };
+        processedValues[question.id] = { title: fd[`${question.id}_title`], detail: fd[`${question.id}_detail`] };
       } else if (question.type === "multifield" && question.multifields) {
         const multifieldValues: Record<string, string> = {};
         question.multifields.forEach(field => {
-          multifieldValues[field.id] = formData[`${question.id}_${field.id}`] || '';
+          multifieldValues[field.id] = fd[`${question.id}_${field.id}`] || '';
         });
         processedValues[question.id] = multifieldValues;
       } else if (question.type === "scored_checkbox" || question.type === "score_total") {
-        processedValues[question.id] = formData[question.id] || { score: 0 };
+        processedValues[question.id] = fd[question.id] || { score: 0 };
       }
     });
+    return processedValues;
+  };
 
+  const onSubmit = async (values: z.infer<typeof dynamicSchema>) => {
+    const processedValues = processFormValues(questions, formData, values);
     setPendingValues(processedValues);
     setShowConfirmModal(true);
   };
@@ -325,58 +334,75 @@ const FormViewer = () => {
     if (!pendingValues) return;
     setShowConfirmModal(false);
 
-    const { _patientId, _consultationId, ...cleanData } = pendingValues;
+    const { data: { user } } = await supabase.auth.getUser();
+    const medicoId = user?.id;
 
-    if (formId && patientId) {
-      const { data: { user } } = await supabase.auth.getUser();
-      const medicoId = user?.id;
+    if (patientId && !medicoId) {
+      uiToast({ title: "Error de autenticación", description: "Debes iniciar sesión para guardar respuestas.", variant: "destructive" });
+      return;
+    }
 
-      if (!medicoId) {
-        uiToast({
-          title: "Error de autenticación",
-          description: "Debes iniciar sesión para guardar respuestas.",
-          variant: "destructive",
-        });
-        return;
+    // Collect all forms to save: active form uses pendingValues, others use their stored formData
+    const formsToSave: { fId: string; data: any }[] = [];
+
+    for (const fId of allFormIds) {
+      const entry = formsMap[fId];
+      if (!entry) continue;
+      if (fId === activeFormId) {
+        const { _patientId, _consultationId, ...cleanData } = pendingValues;
+        formsToSave.push({ fId, data: cleanData });
+      } else {
+        // Process stored data for this form
+        const processed = processFormValues(entry.questions, entry.formData, entry.formData);
+        formsToSave.push({ fId, data: processed });
       }
+    }
 
-      const { error: insertError } = await supabase
-        .from("respuestas_formularios" as any)
-        .insert({
-          formulario_id: formId,
-          paciente_id: patientId,
-          admision_id: consultationId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(consultationId) ? consultationId : null,
-          medico_id: medicoId,
-          datos_respuesta: cleanData,
-        });
-
-      if (insertError) {
-        uiToast({
-          title: "Error al guardar",
-          description: insertError.message,
-          variant: "destructive",
-        });
-        return;
+    let hadError = false;
+    for (const { fId, data } of formsToSave) {
+      if (patientId && medicoId) {
+        const { error: insertError } = await supabase
+          .from("respuestas_formularios" as any)
+          .insert({
+            formulario_id: fId,
+            paciente_id: patientId,
+            admision_id: consultationId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(consultationId) ? consultationId : null,
+            medico_id: medicoId,
+            datos_respuesta: data,
+          });
+        if (insertError) {
+          uiToast({ title: "Error al guardar", description: `${formsMap[fId]?.title}: ${insertError.message}`, variant: "destructive" });
+          hadError = true;
+          continue;
+        }
+      } else {
+        saveFormResponse(fId, { ...data, _patientId: patientId, _consultationId: consultationId });
       }
-    } else if (formId) {
-      pendingValues._patientId = patientId || undefined;
-      pendingValues._consultationId = consultationId || undefined;
-      saveFormResponse(formId, pendingValues);
+      // Clear draft for this form
+      const dk = `kerhub-draft-${fId}${patientId ? `-${patientId}` : ''}${consultationId ? `-${consultationId}` : ''}`;
+      localStorage.removeItem(dk);
+
+      // Mark as saved
+      setFormsMap(prev => ({
+        ...prev,
+        [fId]: { ...prev[fId], saved: true },
+      }));
     }
 
     if (isEmbedded && formId) {
-      window.parent.postMessage({
-        type: 'formCompleted',
-        formId: formId
-      }, '*');
+      window.parent.postMessage({ type: 'formCompleted', formId }, '*');
     }
 
-    uiToast({
-      title: "✅ Formulario guardado exitosamente",
-      description: `${formTitle} — ${format(new Date(), "d 'de' MMMM 'de' yyyy, HH:mm", { locale: es })}`,
-    });
+    if (!hadError) {
+      const savedCount = formsToSave.length;
+      uiToast({
+        title: "✅ Formulario guardado exitosamente",
+        description: savedCount > 1
+          ? `${savedCount} formularios guardados — ${format(new Date(), "d 'de' MMMM 'de' yyyy, HH:mm", { locale: es })}`
+          : `${formTitle} — ${format(new Date(), "d 'de' MMMM 'de' yyyy, HH:mm", { locale: es })}`,
+      });
+    }
 
-    clearDraft();
     setPendingValues(null);
   };
 
@@ -567,9 +593,14 @@ const FormViewer = () => {
               </span>
             </Button>
             <div>
-              <h1 className="text-lg font-semibold">{formTitle}</h1>
-              {formDescription && (
+              <h1 className="text-lg font-semibold">
+                {isMultiForm ? 'Consulta' : formTitle}
+              </h1>
+              {!isMultiForm && formDescription && (
                 <p className="text-xs text-muted-foreground">{formDescription}</p>
+              )}
+              {isMultiForm && (
+                <p className="text-xs text-muted-foreground">{allFormIds.length} formularios</p>
               )}
             </div>
           </div>
@@ -680,7 +711,37 @@ const FormViewer = () => {
                 <PatientHeaderBanner
                   pacienteId={patientId}
                   admisionId={consultationId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(consultationId) ? consultationId : undefined}
-                />
+               />
+              )}
+              {/* Multi-form tab bar */}
+              {isMultiForm && !showRegistro && (
+                <div className="mb-4 border-b overflow-x-auto scrollbar-none">
+                  <div className="flex gap-0 min-w-0">
+                    {allFormIds.map(fId => {
+                      const entry = formsMap[fId];
+                      if (!entry) return null;
+                      const isActive = fId === activeFormId;
+                      return (
+                        <button
+                          key={fId}
+                          type="button"
+                          onClick={() => setActiveFormId(fId)}
+                          className={`shrink-0 px-4 py-2 text-sm whitespace-nowrap transition-colors relative ${
+                            isActive
+                              ? 'font-medium text-foreground'
+                              : 'text-muted-foreground hover:text-foreground'
+                          }`}
+                        >
+                          {entry.title}
+                          {entry.saved && <Check size={12} className="inline ml-1.5 text-green-500" />}
+                          {isActive && (
+                            <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-full" />
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
               )}
               <FormHeaderPreview config={headerConfig} formTitle={formTitle} />
               <FormProvider {...form}>
