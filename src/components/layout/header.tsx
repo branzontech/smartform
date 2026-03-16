@@ -350,50 +350,10 @@ export const Header = ({ showCreate = true }: HeaderProps) => {
         </div>
       </header>
 
-      <CommandDialog 
-        open={searchOpen} 
-        onOpenChange={setSearchOpen}
-      >
-        <CommandInput 
-          placeholder="Buscar en toda la navegación..." 
-          className="border-none focus:ring-2 focus:ring-primary/20"
-        />
-        <CommandList>
-          <CommandEmpty>No se encontraron resultados.</CommandEmpty>
-          {mainNavItems.map((section) => (
-            section.items ? (
-              <CommandGroup key={section.title} heading={section.title}>
-                {section.items.map((item) => (
-                  <CommandItem
-                    key={item.path}
-                    value={`${section.title} ${item.title}`}
-                    onSelect={() => handleSelect(item.path)}
-                    className="cursor-pointer transition-colors duration-200"
-                  >
-                    <div className="flex items-center gap-3">
-                      <item.icon className="h-4 w-4 text-primary" />
-                      <span>{item.title}</span>
-                    </div>
-                  </CommandItem>
-                ))}
-              </CommandGroup>
-            ) : (
-              <CommandGroup key={section.title}>
-                <CommandItem
-                  value={section.title}
-                  onSelect={() => handleSelect(section.path)}
-                  className="cursor-pointer transition-colors duration-200"
-                >
-                  <div className="flex items-center gap-3">
-                    <section.icon className="h-4 w-4 text-primary" />
-                    <span>{section.title}</span>
-                  </div>
-                </CommandItem>
-              </CommandGroup>
-            )
-          ))}
-        </CommandList>
-      </CommandDialog>
+      <SearchModal 
+        isOpen={searchOpen} 
+        onClose={() => setSearchOpen(false)} 
+      />
 
       {/* App Launcher Modal */}
       <AppLauncherModal 
