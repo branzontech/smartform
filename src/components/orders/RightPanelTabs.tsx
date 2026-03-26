@@ -45,13 +45,11 @@ export const RightPanelTabs: React.FC<RightPanelTabsProps> = ({
 
   const handleOrdenesClick = () => {
     if (ordenesExpanded) {
-      // Collapse and go back to antecedentes
       setOrdenesExpanded(false);
       setActiveTab('antecedentes');
     } else {
-      // Expand and select first order type
       setOrdenesExpanded(true);
-      setActiveTab('ordenes-medicamento');
+      setActiveTab('ordenes-historial');
     }
   };
 
