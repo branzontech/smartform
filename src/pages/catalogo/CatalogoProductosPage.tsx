@@ -424,11 +424,11 @@ const CatalogoProductosPage = () => {
                     <TableCell>
                       <span className={cn(
                         "inline-flex items-center gap-1 text-[10px]",
-                        p.activo ? "text-emerald-600" : "text-muted-foreground"
+                        p.activo ? "text-primary" : "text-muted-foreground"
                       )}>
                         <span className={cn(
                           "h-1.5 w-1.5 rounded-full",
-                          p.activo ? "bg-emerald-500" : "bg-muted-foreground/40"
+                          p.activo ? "bg-primary" : "bg-muted-foreground/40"
                         )} />
                         {p.activo ? "Activo" : "Inactivo"}
                       </span>
