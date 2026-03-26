@@ -61,6 +61,14 @@ const quickActions = [
     accent: "group-hover:text-primary",
     bgAccent: "group-hover:bg-primary/10",
   },
+  {
+    icon: Package,
+    label: "Inventario",
+    description: "Gestiona stock, lotes y movimientos",
+    route: "/app/inventario",
+    accent: "group-hover:text-primary",
+    bgAccent: "group-hover:bg-primary/10",
+  },
 ];
 
 const containerVariants = {
