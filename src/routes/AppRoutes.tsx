@@ -51,6 +51,7 @@ import ShiftModification from "@/pages/shifts/ShiftModification";
 import WorkflowPage from "@/pages/workflow/WorkflowPage";
 import ZonesPage from "@/pages/zones/ZonesPage";
 import CotizacionesPage from "@/pages/cotizaciones/CotizacionesPage";
+import CatalogoProductosPage from "@/pages/catalogo/CatalogoProductosPage";
 
 const AppRoutes = () => {
   return (
