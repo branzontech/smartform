@@ -4,7 +4,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Pill, TestTube, Scan, UserPlus, Scissors, ClipboardList, Loader2, Clock, User, Eye, ChevronRight } from 'lucide-react';
+import { Pill, TestTube, Scan, UserPlus, Scissors, ClipboardList, Loader2, Clock, User, ChevronRight, Printer, Mail, MessageCircle } from 'lucide-react';
+import { printOrder, shareOrderWhatsApp, shareOrderEmail } from '@/utils/order-print-utils';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -182,6 +183,34 @@ export const OrdersListPanel: React.FC<OrdersListPanelProps> = ({ admisionId }) 
                       <p className="text-xs text-muted-foreground">{order.indicaciones}</p>
                     </div>
                   )}
+
+                  {/* Action buttons */}
+                  <div className="flex items-center gap-1.5 pt-1 border-t border-dashed">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 px-2 text-[11px] gap-1"
+                      onClick={(e) => { e.stopPropagation(); printOrder(order); }}
+                    >
+                      <Printer className="w-3 h-3" /> Imprimir
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 px-2 text-[11px] gap-1"
+                      onClick={(e) => { e.stopPropagation(); shareOrderEmail(order); }}
+                    >
+                      <Mail className="w-3 h-3" /> Email
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 px-2 text-[11px] gap-1 text-emerald-600"
+                      onClick={(e) => { e.stopPropagation(); shareOrderWhatsApp(order); }}
+                    >
+                      <MessageCircle className="w-3 h-3" /> WhatsApp
+                    </Button>
+                  </div>
                 </div>
               )}
             </Card>
