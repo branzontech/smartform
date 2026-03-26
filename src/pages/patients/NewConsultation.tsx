@@ -69,6 +69,35 @@ const NewConsultation = () => {
   
   const [selectedFormIds, setSelectedFormIds] = useState<string[]>(preselectedFormIds);
   const [selectedForms, setSelectedForms] = useState<FormType[]>([]);
+  const [recentPatients, setRecentPatients] = useState<any[]>([]);
+
+  // Load recent patients from localStorage
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('recent-patients');
+      if (stored) setRecentPatients(JSON.parse(stored));
+    } catch { /* ignore */ }
+  }, []);
+
+  // Save patient to recents
+  const saveToRecents = useCallback((patient: any) => {
+    try {
+      const stored = localStorage.getItem('recent-patients');
+      let recents: any[] = stored ? JSON.parse(stored) : [];
+      recents = recents.filter((p: any) => p.id !== patient.id);
+      recents.unshift({
+        id: patient.id,
+        nombres: patient.nombres,
+        apellidos: patient.apellidos,
+        numero_documento: patient.numero_documento,
+        telefono_principal: patient.telefono_principal,
+        timestamp: Date.now(),
+      });
+      recents = recents.slice(0, 5);
+      localStorage.setItem('recent-patients', JSON.stringify(recents));
+      setRecentPatients(recents);
+    } catch { /* ignore */ }
+  }, []);
 
   const goToStep = (step: WorkflowStep) => {
     setDirection(step > currentStep ? 1 : -1);
