@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Calendar as CalendarIcon, FileText, ArrowRight, ArrowLeft, User, ClipboardList, Check, Stethoscope, Search, Loader2, Phone, Mail, MapPin, Shield, Briefcase, CreditCard, Hash, Heart } from "lucide-react";
+import { Calendar as CalendarIcon, FileText, ArrowRight, ArrowLeft, User, ClipboardList, Check, Stethoscope, Search, Loader2, Phone, Mail, MapPin, Shield, Briefcase, CreditCard, Hash, Heart, Clock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { format } from "date-fns";
@@ -69,6 +69,35 @@ const NewConsultation = () => {
   
   const [selectedFormIds, setSelectedFormIds] = useState<string[]>(preselectedFormIds);
   const [selectedForms, setSelectedForms] = useState<FormType[]>([]);
+  const [recentPatients, setRecentPatients] = useState<any[]>([]);
+
+  // Load recent patients from localStorage
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('recent-patients');
+      if (stored) setRecentPatients(JSON.parse(stored));
+    } catch { /* ignore */ }
+  }, []);
+
+  // Save patient to recents
+  const saveToRecents = useCallback((patient: any) => {
+    try {
+      const stored = localStorage.getItem('recent-patients');
+      let recents: any[] = stored ? JSON.parse(stored) : [];
+      recents = recents.filter((p: any) => p.id !== patient.id);
+      recents.unshift({
+        id: patient.id,
+        nombres: patient.nombres,
+        apellidos: patient.apellidos,
+        numero_documento: patient.numero_documento,
+        telefono_principal: patient.telefono_principal,
+        timestamp: Date.now(),
+      });
+      recents = recents.slice(0, 5);
+      localStorage.setItem('recent-patients', JSON.stringify(recents));
+      setRecentPatients(recents);
+    } catch { /* ignore */ }
+  }, []);
 
   const goToStep = (step: WorkflowStep) => {
     setDirection(step > currentStep ? 1 : -1);
@@ -166,7 +195,7 @@ const NewConsultation = () => {
     setSelectedPatientData(dbPatient);
     setPatientSearchTerm("");
     setSearchResults([]);
-    // Load admissions
+    saveToRecents(dbPatient);
     const { data } = await supabase
       .from("admisiones")
       .select("*")
@@ -573,14 +602,73 @@ const NewConsultation = () => {
                               <motion.div
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: 1 }}
-                                className="flex items-center justify-center gap-4 py-4"
+                                className="space-y-4"
                               >
-                                <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center shrink-0">
-                                  <Sparkles className="w-5 h-5 text-primary" />
-                                </div>
-                                <p className="text-sm text-muted-foreground">
-                                  Escribe el nombre o documento del paciente
-                                </p>
+                                {recentPatients.length > 0 ? (
+                                  <>
+                                    <div className="flex items-center gap-2">
+                                      <Clock className="w-4 h-4 text-muted-foreground" />
+                                      <p className="text-sm font-medium text-muted-foreground">Pacientes recientes</p>
+                                    </div>
+                                    <div className="space-y-2">
+                                      {recentPatients.map((patient, index) => (
+                                        <motion.div
+                                          key={patient.id}
+                                          initial={{ opacity: 0, x: -10 }}
+                                          animate={{ opacity: 1, x: 0 }}
+                                          transition={{ delay: index * 0.05 }}
+                                        >
+                                          <div
+                                            className={cn(
+                                              "flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all duration-200",
+                                              "border border-border/30 hover:bg-primary/5 hover:border-primary/30 hover:shadow-sm",
+                                              "active:scale-[0.99]"
+                                            )}
+                                            onClick={async () => {
+                                              const { data } = await supabase
+                                                .from("pacientes")
+                                                .select("*")
+                                                .eq("id", patient.id)
+                                                .single();
+                                              if (data) handleSelectPatient(data);
+                                            }}
+                                          >
+                                            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center text-primary font-semibold text-sm">
+                                              {patient.nombres?.charAt(0)}{patient.apellidos?.charAt(0)}
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                              <p className="font-medium text-sm truncate">
+                                                {patient.nombres} {patient.apellidos}
+                                              </p>
+                                              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                                <span>{patient.numero_documento}</span>
+                                                {patient.telefono_principal && (
+                                                  <>
+                                                    <span>•</span>
+                                                    <span className="flex items-center gap-1">
+                                                      <Phone className="w-3 h-3" />
+                                                      {patient.telefono_principal}
+                                                    </span>
+                                                  </>
+                                                )}
+                                              </div>
+                                            </div>
+                                            <ArrowRight className="w-4 h-4 text-muted-foreground" />
+                                          </div>
+                                        </motion.div>
+                                      ))}
+                                    </div>
+                                  </>
+                                ) : (
+                                  <div className="flex items-center justify-center gap-4 py-4">
+                                    <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center shrink-0">
+                                      <Sparkles className="w-5 h-5 text-primary" />
+                                    </div>
+                                    <p className="text-sm text-muted-foreground">
+                                      Escribe el nombre o documento del paciente
+                                    </p>
+                                  </div>
+                                )}
                               </motion.div>
                             )}
                           </CardContent>
