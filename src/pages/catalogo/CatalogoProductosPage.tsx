@@ -536,7 +536,7 @@ const CatalogoProductosPage = () => {
                       render={({ field }) => (
                         <label className="flex items-center gap-2 text-xs cursor-pointer">
                           <Switch checked={field.value} onCheckedChange={field.onChange} className="scale-75" />
-                          <Snowflake className="h-3 w-3 text-blue-500" /> Cadena de frío
+                          <Snowflake className="h-3 w-3 text-primary" /> Cadena de frío
                         </label>
                       )}
                     />
