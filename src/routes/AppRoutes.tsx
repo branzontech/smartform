@@ -52,6 +52,7 @@ import WorkflowPage from "@/pages/workflow/WorkflowPage";
 import ZonesPage from "@/pages/zones/ZonesPage";
 import CotizacionesPage from "@/pages/cotizaciones/CotizacionesPage";
 import CatalogoProductosPage from "@/pages/catalogo/CatalogoProductosPage";
+import InventarioPage from "@/pages/inventario/InventarioPage";
 
 const AppRoutes = () => {
   return (
