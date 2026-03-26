@@ -1369,7 +1369,7 @@ const FormViewer = () => {
             >
               <RightPanelTabs
                 patientId={patientId!}
-                admisionId={consultationId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(consultationId) ? consultationId : null}
+                admisionId={resolvedAdmisionId}
                 onCollapse={toggleCollapse}
               />
             </div>
