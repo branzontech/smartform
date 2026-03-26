@@ -21,6 +21,8 @@ export interface Order {
   diagnostico_descripcion: string | null;
   indicaciones: string | null;
   items: any;
+  alcance: string;
+  fhir_extensions: any;
 }
 
 interface OrdersListPanelProps {
