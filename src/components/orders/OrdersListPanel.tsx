@@ -183,6 +183,34 @@ export const OrdersListPanel: React.FC<OrdersListPanelProps> = ({ admisionId }) 
                       <p className="text-xs text-muted-foreground">{order.indicaciones}</p>
                     </div>
                   )}
+
+                  {/* Action buttons */}
+                  <div className="flex items-center gap-1.5 pt-1 border-t border-dashed">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 px-2 text-[11px] gap-1"
+                      onClick={(e) => { e.stopPropagation(); printOrder(order); }}
+                    >
+                      <Printer className="w-3 h-3" /> Imprimir
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 px-2 text-[11px] gap-1"
+                      onClick={(e) => { e.stopPropagation(); shareOrderEmail(order); }}
+                    >
+                      <Mail className="w-3 h-3" /> Email
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 px-2 text-[11px] gap-1 text-emerald-600"
+                      onClick={(e) => { e.stopPropagation(); shareOrderWhatsApp(order); }}
+                    >
+                      <MessageCircle className="w-3 h-3" /> WhatsApp
+                    </Button>
+                  </div>
                 </div>
               )}
             </Card>
