@@ -481,11 +481,7 @@ const InventarioPage: React.FC = () => {
         </TabsContent>
 
         <TabsContent value="catalogo" className="mt-4">
-          <div className="flex flex-col items-center justify-center py-16 text-center">
-            <Package className="w-10 h-10 text-muted-foreground/30 mb-3" />
-            <p className="text-sm font-medium text-muted-foreground">Catálogo de productos</p>
-            <p className="text-xs text-muted-foreground/60 mt-0.5">Próximamente</p>
-          </div>
+          <CatalogoTab onEdit={(id) => { setEditProductId(id); setShowNewProduct(true); }} />
         </TabsContent>
         <TabsContent value="lotes" className="mt-4">
           <div className="flex flex-col items-center justify-center py-16 text-center">
