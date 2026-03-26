@@ -195,7 +195,7 @@ const NewConsultation = () => {
     setSelectedPatientData(dbPatient);
     setPatientSearchTerm("");
     setSearchResults([]);
-    // Load admissions
+    saveToRecents(dbPatient);
     const { data } = await supabase
       .from("admisiones")
       .select("*")
