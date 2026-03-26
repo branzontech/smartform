@@ -275,6 +275,7 @@ const InventarioPage: React.FC = () => {
   const [sedeFilter, setSedeFilter] = useState('all');
   const [tipoFilter, setTipoFilter] = useState('all');
   const [showNewProduct, setShowNewProduct] = useState(false);
+  const [editProductId, setEditProductId] = useState<string | null>(null);
   const [showMovement, setShowMovement] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
