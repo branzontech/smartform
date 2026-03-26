@@ -156,8 +156,8 @@ export const MedicationOrderForm: React.FC<MedicationOrderFormProps> = ({
         dosis: m.dosis,
         unidad: m.unidad,
         via: m.via,
-        frecuencia: m.frecuencia,
-        duracion: m.duracion,
+        frecuencia: `c/${m.frecuenciaValor} ${m.frecuenciaUnidad}`,
+        duracion: `${m.duracionValor} ${m.duracionUnidad}`,
         indicaciones: m.indicaciones,
       }));
 
