@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -10,13 +10,23 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { Loader2, Plus, Trash2 } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { DatePicker } from '@/components/ui/date-picker';
+import { Loader2, Plus, Trash2, ChevronDown, Package } from 'lucide-react';
 import { toast } from 'sonner';
 import { nanoid } from 'nanoid';
+import { cn } from '@/lib/utils';
 
 const FORMAS = ['tableta','cápsula','jarabe','ampolla','crema','gel','solución','suspensión','polvo','parche','dispositivo','unidad','caja','paquete','bolsa','frasco'] as const;
 const UNIDADES = ['mg','ml','g','L','unidad','pieza','caja'] as const;
 const VIAS = ['oral','IV','IM','tópica','SC','inhalada','rectal','oftálmica','ótica','nasal','N/A'] as const;
+
+const loteInicialSchema = z.object({
+  sede_id: z.string().min(1, 'Sede requerida'),
+  numero_lote: z.string().min(1, 'Número de lote requerido'),
+  fecha_vencimiento: z.date({ required_error: 'Fecha requerida' }),
+  cantidad_inicial: z.number().min(1, 'Mínimo 1'),
+}).optional().nullable();
 
 const presentacionSchema = z.object({
   id: z.string().optional(),
@@ -26,6 +36,12 @@ const presentacionSchema = z.object({
   via_administracion: z.string().optional().or(z.literal('')),
   presentacion_comercial: z.string().optional().or(z.literal('')),
   _deleted: z.boolean().optional(),
+  lote_inicial: z.object({
+    sede_id: z.string(),
+    numero_lote: z.string(),
+    fecha_vencimiento: z.date().nullable(),
+    cantidad_inicial: z.number().nullable(),
+  }).optional().nullable(),
 });
 
 const schema = z.object({
@@ -60,11 +76,13 @@ const emptyPresentacion = () => ({
   unidad_medida: '',
   via_administracion: '',
   presentacion_comercial: '',
+  lote_inicial: null as FormValues['presentaciones'][0]['lote_inicial'],
 });
 
 export const ProductoDialog: React.FC<Props> = ({ open, onOpenChange, editProductId }) => {
   const queryClient = useQueryClient();
   const isEdit = !!editProductId;
+  const [openLotes, setOpenLotes] = useState<Record<number, boolean>>({});
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -84,6 +102,15 @@ export const ProductoDialog: React.FC<Props> = ({ open, onOpenChange, editProduc
   const { fields, append, remove } = useFieldArray({ control: form.control, name: 'presentaciones' });
   const tipoProducto = form.watch('tipo_producto');
   const isMed = tipoProducto === 'medicamento';
+
+  // Load sedes
+  const { data: sedes = [] } = useQuery({
+    queryKey: ['sedes-select'],
+    queryFn: async () => {
+      const { data } = await supabase.from('sedes').select('id, nombre').eq('activo', true).order('nombre');
+      return data || [];
+    },
+  });
 
   // Load product data for edit mode
   const { data: editData } = useQuery({
@@ -118,9 +145,11 @@ export const ProductoDialog: React.FC<Props> = ({ open, onOpenChange, editProduc
               unidad_medida: pr.unidad_medida,
               via_administracion: pr.via_administracion || '',
               presentacion_comercial: pr.presentacion_comercial || '',
+              lote_inicial: null,
             }))
           : [emptyPresentacion()],
       });
+      setOpenLotes({});
     }
   }, [editData, open]);
 
@@ -131,11 +160,30 @@ export const ProductoDialog: React.FC<Props> = ({ open, onOpenChange, editProduc
         principio_activo: '', codigo_atc: '', fabricante: '',
         requiere_cadena_frio: false, controlado: false, presentaciones: [emptyPresentacion()],
       });
+      setOpenLotes({});
     }
   }, [open]);
 
+  const toggleLote = (idx: number) => {
+    const isOpen = !!openLotes[idx];
+    setOpenLotes(prev => ({ ...prev, [idx]: !isOpen }));
+    if (isOpen) {
+      form.setValue(`presentaciones.${idx}.lote_inicial`, null);
+    } else {
+      form.setValue(`presentaciones.${idx}.lote_inicial`, {
+        sede_id: '',
+        numero_lote: '',
+        fecha_vencimiento: null,
+        cantidad_inicial: null,
+      });
+    }
+  };
+
   const mutation = useMutation({
     mutationFn: async (values: FormValues) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('No autenticado');
+
       if (isEdit) {
         // Update product
         const { error: prodErr } = await supabase.from('catalogo_productos').update({
@@ -151,7 +199,6 @@ export const ProductoDialog: React.FC<Props> = ({ open, onOpenChange, editProduc
         }).eq('id', editProductId!);
         if (prodErr) throw prodErr;
 
-        // Handle presentations: delete removed, update existing, insert new
         const existingIds = values.presentaciones.filter(p => p.id).map(p => p.id!);
         const originalIds = (editData?.pres || []).map(p => p.id);
         const toDelete = originalIds.filter(id => !existingIds.includes(id));
@@ -183,6 +230,8 @@ export const ProductoDialog: React.FC<Props> = ({ open, onOpenChange, editProduc
             if (error) throw error;
           }
         }
+
+        return { nombre: values.nombre_generico, loteInfo: null };
       } else {
         // Create product
         const codigo = `${values.tipo_producto === 'medicamento' ? 'MED' : values.tipo_producto === 'insumo' ? 'INS' : 'DIS'}-${nanoid(6).toUpperCase()}`;
@@ -201,25 +250,98 @@ export const ProductoDialog: React.FC<Props> = ({ open, onOpenChange, editProduc
         }).select('id').single();
         if (prodErr) throw prodErr;
 
-        // Insert presentations
-        const presRows = values.presentaciones.map(p => ({
-          producto_id: prod.id,
-          forma_farmaceutica: p.forma_farmaceutica,
-          concentracion: p.concentracion || null,
-          unidad_medida: p.unidad_medida,
-          via_administracion: p.via_administracion || null,
-          presentacion_comercial: p.presentacion_comercial || null,
-        }));
-        const { error: presErr } = await supabase.from('presentaciones_producto').insert(presRows);
-        if (presErr) throw presErr;
+        // Insert presentations and optionally create lots
+        let loteInfo: { numero: string; cantidad: number; sede: string } | null = null;
+
+        for (const p of values.presentaciones) {
+          const { data: presData, error: presErr } = await supabase.from('presentaciones_producto').insert({
+            producto_id: prod.id,
+            forma_farmaceutica: p.forma_farmaceutica,
+            concentracion: p.concentracion || null,
+            unidad_medida: p.unidad_medida,
+            via_administracion: p.via_administracion || null,
+            presentacion_comercial: p.presentacion_comercial || null,
+          }).select('id').single();
+          if (presErr) throw presErr;
+
+          // Handle optional initial lot
+          const lote = p.lote_inicial;
+          if (lote && lote.sede_id && lote.numero_lote && lote.fecha_vencimiento && lote.cantidad_inicial && lote.cantidad_inicial > 0) {
+            // Find or create stock record
+            let { data: stock } = await supabase
+              .from('inventario_stock')
+              .select('id')
+              .eq('presentacion_id', presData.id)
+              .eq('sede_id', lote.sede_id)
+              .eq('producto_id', prod.id)
+              .maybeSingle();
+
+            if (!stock) {
+              const { data: newStock, error: stockErr } = await supabase
+                .from('inventario_stock')
+                .insert({
+                  producto_id: prod.id,
+                  presentacion_id: presData.id,
+                  sede_id: lote.sede_id,
+                  cantidad_disponible: 0,
+                })
+                .select('id')
+                .single();
+              if (stockErr) throw stockErr;
+              stock = newStock;
+            }
+
+            // Create lot
+            const { data: loteData, error: loteErr } = await supabase
+              .from('inventario_lotes')
+              .insert({
+                stock_id: stock!.id,
+                numero_lote: lote.numero_lote,
+                fecha_vencimiento: lote.fecha_vencimiento.toISOString().split('T')[0],
+                cantidad: 0,
+              })
+              .select('id')
+              .single();
+            if (loteErr) throw loteErr;
+
+            // Create movement (trigger updates stock + lote quantities)
+            const { error: movErr } = await supabase
+              .from('inventario_movimientos')
+              .insert({
+                stock_id: stock!.id,
+                lote_id: loteData.id,
+                tipo_movimiento: 'entrada',
+                cantidad: lote.cantidad_inicial,
+                usuario_id: user.id,
+                motivo: 'Lote inicial al crear producto',
+              });
+            if (movErr) throw movErr;
+
+            const sedeNombre = sedes.find(s => s.id === lote.sede_id)?.nombre || '';
+            loteInfo = { numero: lote.numero_lote, cantidad: lote.cantidad_inicial, sede: sedeNombre };
+          }
+        }
+
+        return { nombre: values.nombre_generico, loteInfo };
       }
     },
-    onSuccess: () => {
-      toast.success(isEdit ? 'Producto actualizado' : 'Producto creado exitosamente');
+    onSuccess: (result) => {
+      if (isEdit) {
+        toast.success('Producto actualizado');
+      } else if (result?.loteInfo) {
+        toast.success(`Producto creado: ${result.nombre} — Lote ${result.loteInfo.numero} registrado con ${result.loteInfo.cantidad} unidades en ${result.loteInfo.sede}`);
+      } else {
+        toast.success(`Producto creado: ${result?.nombre}`);
+      }
       queryClient.invalidateQueries({ queryKey: ['inv-total-products'] });
+      queryClient.invalidateQueries({ queryKey: ['inv-total-stock'] });
+      queryClient.invalidateQueries({ queryKey: ['inv-low-stock'] });
+      queryClient.invalidateQueries({ queryKey: ['inv-expiring'] });
       queryClient.invalidateQueries({ queryKey: ['inventario-stock-table'] });
       queryClient.invalidateQueries({ queryKey: ['catalogo-productos'] });
       queryClient.invalidateQueries({ queryKey: ['edit-product'] });
+      queryClient.invalidateQueries({ queryKey: ['inventario-lotes'] });
+      queryClient.invalidateQueries({ queryKey: ['inventario-movimientos'] });
       onOpenChange(false);
     },
     onError: (err: any) => {
@@ -272,30 +394,35 @@ export const ProductoDialog: React.FC<Props> = ({ open, onOpenChange, editProduc
                   <Label className="text-[11px] text-muted-foreground">Fabricante</Label>
                   <Input {...form.register('fabricante')} placeholder="Ej: Pfizer" className="h-8 text-xs mt-1" />
                 </div>
-                {isMed && (
-                  <>
-                    <div>
-                      <Label className="text-[11px] text-muted-foreground">Principio activo</Label>
-                      <Input {...form.register('principio_activo')} placeholder="Ej: Paracetamol" className="h-8 text-xs mt-1" />
-                    </div>
-                    <div>
-                      <Label className="text-[11px] text-muted-foreground">Código ATC</Label>
-                      <Input {...form.register('codigo_atc')} placeholder="Ej: N02BE01" className="h-8 text-xs mt-1" />
-                    </div>
-                  </>
-                )}
+
+                {/* Conditional medication fields with animation */}
+                <div className={cn(
+                  "transition-all duration-300 ease-in-out overflow-hidden",
+                  isMed ? "max-h-20 opacity-100" : "max-h-0 opacity-0"
+                )}>
+                  <Label className="text-[11px] text-muted-foreground">Principio activo</Label>
+                  <Input {...form.register('principio_activo')} placeholder="Ej: Paracetamol" className="h-8 text-xs mt-1" />
+                </div>
+                <div className={cn(
+                  "transition-all duration-300 ease-in-out overflow-hidden",
+                  isMed ? "max-h-20 opacity-100" : "max-h-0 opacity-0"
+                )}>
+                  <Label className="text-[11px] text-muted-foreground">Código ATC</Label>
+                  <Input {...form.register('codigo_atc')} placeholder="Ej: N02BE01" className="h-8 text-xs mt-1" />
+                </div>
               </div>
               <div className="flex flex-wrap gap-6 mt-3">
                 <div className="flex items-center gap-2">
                   <Switch checked={form.watch('requiere_cadena_frio')} onCheckedChange={(v) => form.setValue('requiere_cadena_frio', v)} />
                   <Label className="text-xs">Requiere cadena de frío</Label>
                 </div>
-                {isMed && (
-                  <div className="flex items-center gap-2">
-                    <Switch checked={form.watch('controlado')} onCheckedChange={(v) => form.setValue('controlado', v)} />
-                    <Label className="text-xs">Sustancia controlada</Label>
-                  </div>
-                )}
+                <div className={cn(
+                  "flex items-center gap-2 transition-all duration-300 ease-in-out",
+                  isMed ? "opacity-100 max-w-xs" : "opacity-0 max-w-0 overflow-hidden"
+                )}>
+                  <Switch checked={form.watch('controlado')} onCheckedChange={(v) => form.setValue('controlado', v)} />
+                  <Label className="text-xs whitespace-nowrap">Sustancia controlada</Label>
+                </div>
               </div>
             </div>
 
@@ -328,60 +455,125 @@ export const ProductoDialog: React.FC<Props> = ({ open, onOpenChange, editProduc
                     </thead>
                     <tbody>
                       {fields.map((field, idx) => (
-                        <tr key={field.id} className="border-b border-border/20">
-                          <td className="px-2 py-1.5">
-                            <Select
-                              value={form.watch(`presentaciones.${idx}.forma_farmaceutica`)}
-                              onValueChange={(v) => form.setValue(`presentaciones.${idx}.forma_farmaceutica`, v, { shouldValidate: true })}
-                            >
-                              <SelectTrigger className="h-7 text-xs min-w-[110px]">
-                                <SelectValue placeholder="Forma" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {FORMAS.map(f => <SelectItem key={f} value={f} className="text-xs">{f}</SelectItem>)}
-                              </SelectContent>
-                            </Select>
-                          </td>
-                          <td className="px-2 py-1.5">
-                            <Input {...form.register(`presentaciones.${idx}.concentracion`)} placeholder="500mg" className="h-7 text-xs min-w-[80px]" />
-                          </td>
-                          <td className="px-2 py-1.5">
-                            <Select
-                              value={form.watch(`presentaciones.${idx}.unidad_medida`)}
-                              onValueChange={(v) => form.setValue(`presentaciones.${idx}.unidad_medida`, v, { shouldValidate: true })}
-                            >
-                              <SelectTrigger className="h-7 text-xs min-w-[80px]">
-                                <SelectValue placeholder="Unidad" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {UNIDADES.map(u => <SelectItem key={u} value={u} className="text-xs">{u}</SelectItem>)}
-                              </SelectContent>
-                            </Select>
-                          </td>
-                          <td className="px-2 py-1.5">
-                            <Select
-                              value={form.watch(`presentaciones.${idx}.via_administracion`) || ''}
-                              onValueChange={(v) => form.setValue(`presentaciones.${idx}.via_administracion`, v)}
-                            >
-                              <SelectTrigger className="h-7 text-xs min-w-[90px]">
-                                <SelectValue placeholder="Vía" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {VIAS.map(v => <SelectItem key={v} value={v} className="text-xs">{v}</SelectItem>)}
-                              </SelectContent>
-                            </Select>
-                          </td>
-                          <td className="px-2 py-1.5">
-                            <Input {...form.register(`presentaciones.${idx}.presentacion_comercial`)} placeholder="Caja x 30" className="h-7 text-xs min-w-[120px]" />
-                          </td>
-                          <td className="px-2 py-1.5">
-                            {fields.length > 1 && (
-                              <Button type="button" variant="ghost" size="icon" className="h-7 w-7" onClick={() => remove(idx)}>
-                                <Trash2 className="w-3 h-3 text-muted-foreground hover:text-destructive" />
-                              </Button>
-                            )}
-                          </td>
-                        </tr>
+                        <React.Fragment key={field.id}>
+                          <tr className="border-b border-border/20">
+                            <td className="px-2 py-1.5">
+                              <Select
+                                value={form.watch(`presentaciones.${idx}.forma_farmaceutica`)}
+                                onValueChange={(v) => form.setValue(`presentaciones.${idx}.forma_farmaceutica`, v, { shouldValidate: true })}
+                              >
+                                <SelectTrigger className="h-7 text-xs min-w-[110px]">
+                                  <SelectValue placeholder="Forma" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {FORMAS.map(f => <SelectItem key={f} value={f} className="text-xs">{f}</SelectItem>)}
+                                </SelectContent>
+                              </Select>
+                            </td>
+                            <td className="px-2 py-1.5">
+                              <Input {...form.register(`presentaciones.${idx}.concentracion`)} placeholder="500mg" className="h-7 text-xs min-w-[80px]" />
+                            </td>
+                            <td className="px-2 py-1.5">
+                              <Select
+                                value={form.watch(`presentaciones.${idx}.unidad_medida`)}
+                                onValueChange={(v) => form.setValue(`presentaciones.${idx}.unidad_medida`, v, { shouldValidate: true })}
+                              >
+                                <SelectTrigger className="h-7 text-xs min-w-[80px]">
+                                  <SelectValue placeholder="Unidad" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {UNIDADES.map(u => <SelectItem key={u} value={u} className="text-xs">{u}</SelectItem>)}
+                                </SelectContent>
+                              </Select>
+                            </td>
+                            <td className="px-2 py-1.5">
+                              <Select
+                                value={form.watch(`presentaciones.${idx}.via_administracion`) || ''}
+                                onValueChange={(v) => form.setValue(`presentaciones.${idx}.via_administracion`, v)}
+                              >
+                                <SelectTrigger className="h-7 text-xs min-w-[90px]">
+                                  <SelectValue placeholder="Vía" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {VIAS.map(v => <SelectItem key={v} value={v} className="text-xs">{v}</SelectItem>)}
+                                </SelectContent>
+                              </Select>
+                            </td>
+                            <td className="px-2 py-1.5">
+                              <Input {...form.register(`presentaciones.${idx}.presentacion_comercial`)} placeholder="Caja x 30" className="h-7 text-xs min-w-[120px]" />
+                            </td>
+                            <td className="px-2 py-1.5">
+                              {fields.length > 1 && (
+                                <Button type="button" variant="ghost" size="icon" className="h-7 w-7" onClick={() => { remove(idx); setOpenLotes(prev => { const n = { ...prev }; delete n[idx]; return n; }); }}>
+                                  <Trash2 className="w-3 h-3 text-muted-foreground hover:text-destructive" />
+                                </Button>
+                              )}
+                            </td>
+                          </tr>
+                          {/* Collapsible initial lot row - only for new products */}
+                          {!isEdit && (
+                            <tr className="border-b border-border/20">
+                              <td colSpan={6} className="px-2 py-0">
+                                <Collapsible open={!!openLotes[idx]} onOpenChange={() => toggleLote(idx)}>
+                                  <CollapsibleTrigger asChild>
+                                    <button type="button" className="flex items-center gap-1.5 py-1.5 text-[11px] text-primary/70 hover:text-primary transition-colors">
+                                      <Package className="w-3 h-3" />
+                                      <span>{openLotes[idx] ? 'Ocultar lote inicial' : '+ Agregar lote inicial (opcional)'}</span>
+                                      <ChevronDown className={cn("w-3 h-3 transition-transform duration-200", openLotes[idx] && "rotate-180")} />
+                                    </button>
+                                  </CollapsibleTrigger>
+                                  <CollapsibleContent>
+                                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pb-2.5 pt-1">
+                                      <div>
+                                        <Label className="text-[10px] text-muted-foreground">Sede *</Label>
+                                        <Select
+                                          value={form.watch(`presentaciones.${idx}.lote_inicial.sede_id`) || ''}
+                                          onValueChange={(v) => form.setValue(`presentaciones.${idx}.lote_inicial.sede_id`, v)}
+                                        >
+                                          <SelectTrigger className="h-7 text-xs mt-0.5">
+                                            <SelectValue placeholder="Seleccionar sede" />
+                                          </SelectTrigger>
+                                          <SelectContent>
+                                            {sedes.map(s => <SelectItem key={s.id} value={s.id} className="text-xs">{s.nombre}</SelectItem>)}
+                                          </SelectContent>
+                                        </Select>
+                                      </div>
+                                      <div>
+                                        <Label className="text-[10px] text-muted-foreground">N° Lote *</Label>
+                                        <Input
+                                          value={form.watch(`presentaciones.${idx}.lote_inicial.numero_lote`) || ''}
+                                          onChange={(e) => form.setValue(`presentaciones.${idx}.lote_inicial.numero_lote`, e.target.value)}
+                                          placeholder="LOT-001"
+                                          className="h-7 text-xs mt-0.5"
+                                        />
+                                      </div>
+                                      <div>
+                                        <Label className="text-[10px] text-muted-foreground">Vencimiento *</Label>
+                                        <DatePicker
+                                          value={form.watch(`presentaciones.${idx}.lote_inicial.fecha_vencimiento`) as Date}
+                                          onChange={(d) => form.setValue(`presentaciones.${idx}.lote_inicial.fecha_vencimiento`, d || null)}
+                                          placeholder="Fecha"
+                                          className="h-7 text-xs mt-0.5"
+                                        />
+                                      </div>
+                                      <div>
+                                        <Label className="text-[10px] text-muted-foreground">Cantidad *</Label>
+                                        <Input
+                                          type="number"
+                                          min={1}
+                                          value={form.watch(`presentaciones.${idx}.lote_inicial.cantidad_inicial`) ?? ''}
+                                          onChange={(e) => form.setValue(`presentaciones.${idx}.lote_inicial.cantidad_inicial`, e.target.value ? parseInt(e.target.value) : null)}
+                                          placeholder="10"
+                                          className="h-7 text-xs mt-0.5"
+                                        />
+                                      </div>
+                                    </div>
+                                  </CollapsibleContent>
+                                </Collapsible>
+                              </td>
+                            </tr>
+                          )}
+                        </React.Fragment>
                       ))}
                     </tbody>
                   </table>
