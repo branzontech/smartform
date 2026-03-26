@@ -154,25 +154,26 @@ export const RightPanelTabs: React.FC<RightPanelTabsProps> = ({
                 <span className="hidden sm:inline">Historial</span>
               </button>
               {ORDER_TYPES.map(ot => {
-            const Icon = ot.icon;
-            return (
-              <button
-                key={ot.type}
-                onClick={() => handleOrderTypClick(ot.type)}
-                className={cn(
-                  'shrink-0 px-2 py-1.5 text-xs font-medium cursor-pointer transition-colors whitespace-nowrap flex items-center gap-1',
-                  isOrderTypeActive(ot.type)
-                    ? 'border-b-2 border-primary text-foreground'
-                    : 'text-muted-foreground hover:text-foreground'
-                )}
-              >
-                <Icon className="w-3 h-3" />
-                <span className="hidden sm:inline">{ot.label}</span>
-              </button>
-            );
-          })}
+                const Icon = ot.icon;
+                return (
+                  <button
+                    key={ot.type}
+                    onClick={() => handleOrderTypClick(ot.type)}
+                    className={cn(
+                      'shrink-0 px-2 py-1.5 text-xs font-medium cursor-pointer transition-colors whitespace-nowrap flex items-center gap-1',
+                      isOrderTypeActive(ot.type)
+                        ? 'border-b-2 border-primary text-foreground'
+                        : 'text-muted-foreground hover:text-foreground'
+                    )}
+                  >
+                    <Icon className="w-3 h-3" />
+                    <span className="hidden sm:inline">{ot.label}</span>
+                  </button>
+                );
+              })}
+            </>
+          )}
 
-          {/* Spacer + collapse */}
           <div className="flex-1" />
           <Button
             variant="ghost"
