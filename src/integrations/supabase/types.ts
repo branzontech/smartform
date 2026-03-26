@@ -1024,6 +1024,59 @@ export type Database = {
         }
         Relationships: []
       }
+      presentaciones_producto: {
+        Row: {
+          activo: boolean | null
+          codigo_barras: string | null
+          concentracion: string | null
+          created_at: string | null
+          fhir_extensions: Json | null
+          forma_farmaceutica: string
+          id: string
+          presentacion_comercial: string | null
+          producto_id: string
+          unidad_medida: string
+          updated_at: string | null
+          via_administracion: string | null
+        }
+        Insert: {
+          activo?: boolean | null
+          codigo_barras?: string | null
+          concentracion?: string | null
+          created_at?: string | null
+          fhir_extensions?: Json | null
+          forma_farmaceutica: string
+          id?: string
+          presentacion_comercial?: string | null
+          producto_id: string
+          unidad_medida: string
+          updated_at?: string | null
+          via_administracion?: string | null
+        }
+        Update: {
+          activo?: boolean | null
+          codigo_barras?: string | null
+          concentracion?: string | null
+          created_at?: string | null
+          fhir_extensions?: Json | null
+          forma_farmaceutica?: string
+          id?: string
+          presentacion_comercial?: string | null
+          producto_id?: string
+          unidad_medida?: string
+          updated_at?: string | null
+          via_administracion?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "presentaciones_producto_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "catalogo_productos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
