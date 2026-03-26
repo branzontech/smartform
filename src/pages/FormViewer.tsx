@@ -148,6 +148,31 @@ const FormViewer = () => {
   const isEmbedded = queryParams.get("embedded") === "true";
   const extraFormIds = queryParams.get("forms")?.split(',').filter(Boolean) || [];
 
+  // Resolve real DB admission UUID (consultationId might be a nanoid from localStorage)
+  const isConsultationUUID = consultationId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(consultationId);
+  const [resolvedAdmisionId, setResolvedAdmisionId] = useState<string | null>(isConsultationUUID ? consultationId : null);
+
+  useEffect(() => {
+    if (isConsultationUUID) {
+      setResolvedAdmisionId(consultationId);
+      return;
+    }
+    if (!patientId) return;
+    const fetchActiveAdmission = async () => {
+      const { data } = await supabase
+        .from('admisiones')
+        .select('id')
+        .eq('paciente_id', patientId)
+        .in('estado', ['en_curso', 'planificada'])
+        .order('fecha_inicio', { ascending: false })
+        .limit(1);
+      if (data && data.length > 0) {
+        setResolvedAdmisionId(data[0].id);
+      }
+    };
+    fetchActiveAdmission();
+  }, [patientId, consultationId, isConsultationUUID]);
+
   // Build ordered list of all form IDs
   const allFormIds = React.useMemo(() => {
     const ids: string[] = [];
