@@ -139,6 +139,63 @@ export type Database = {
         }
         Relationships: []
       }
+      catalogo_productos: {
+        Row: {
+          activo: boolean | null
+          codigo: string
+          codigo_atc: string | null
+          codigo_snomed: string | null
+          controlado: boolean | null
+          created_at: string | null
+          fabricante: string | null
+          fhir_extensions: Json | null
+          fhir_resource_type: string
+          id: string
+          nombre_comercial: string | null
+          nombre_generico: string
+          principio_activo: string | null
+          requiere_cadena_frio: boolean | null
+          tipo_producto: string
+          updated_at: string | null
+        }
+        Insert: {
+          activo?: boolean | null
+          codigo: string
+          codigo_atc?: string | null
+          codigo_snomed?: string | null
+          controlado?: boolean | null
+          created_at?: string | null
+          fabricante?: string | null
+          fhir_extensions?: Json | null
+          fhir_resource_type?: string
+          id?: string
+          nombre_comercial?: string | null
+          nombre_generico: string
+          principio_activo?: string | null
+          requiere_cadena_frio?: boolean | null
+          tipo_producto: string
+          updated_at?: string | null
+        }
+        Update: {
+          activo?: boolean | null
+          codigo?: string
+          codigo_atc?: string | null
+          codigo_snomed?: string | null
+          controlado?: boolean | null
+          created_at?: string | null
+          fabricante?: string | null
+          fhir_extensions?: Json | null
+          fhir_resource_type?: string
+          id?: string
+          nombre_comercial?: string | null
+          nombre_generico?: string
+          principio_activo?: string | null
+          requiere_cadena_frio?: boolean | null
+          tipo_producto?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       clientes_cotizacion: {
         Row: {
           ciudad: string | null
