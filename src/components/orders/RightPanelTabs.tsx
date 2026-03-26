@@ -138,8 +138,22 @@ export const RightPanelTabs: React.FC<RightPanelTabsProps> = ({
             )}
           </button>
 
-          {/* Order type sub-tabs (visible when expanded) */}
-          {ordenesExpanded && ORDER_TYPES.map(ot => {
+          {/* Order sub-tabs (visible when expanded) */}
+          {ordenesExpanded && (
+            <>
+              <button
+                onClick={() => setActiveTab('ordenes-historial')}
+                className={cn(
+                  'shrink-0 px-2 py-1.5 text-xs font-medium cursor-pointer transition-colors whitespace-nowrap flex items-center gap-1',
+                  activeTab === 'ordenes-historial'
+                    ? 'border-b-2 border-primary text-foreground'
+                    : 'text-muted-foreground hover:text-foreground'
+                )}
+              >
+                <ClipboardList className="w-3 h-3" />
+                <span className="hidden sm:inline">Historial</span>
+              </button>
+              {ORDER_TYPES.map(ot => {
             const Icon = ot.icon;
             return (
               <button
