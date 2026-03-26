@@ -266,4 +266,9 @@
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
   }
+
+  /* Input bottom-border only style */
+  .input-bottom {
+    @apply border-0 border-b rounded-none bg-transparent shadow-none focus-visible:ring-0 focus-visible:border-primary;
+  }
 }

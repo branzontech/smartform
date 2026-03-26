@@ -51,6 +51,7 @@ import ShiftModification from "@/pages/shifts/ShiftModification";
 import WorkflowPage from "@/pages/workflow/WorkflowPage";
 import ZonesPage from "@/pages/zones/ZonesPage";
 import CotizacionesPage from "@/pages/cotizaciones/CotizacionesPage";
+import CatalogoProductosPage from "@/pages/catalogo/CatalogoProductosPage";
 
 const AppRoutes = () => {
   return (
@@ -112,6 +113,7 @@ const AppRoutes = () => {
         <Route path="notificaciones/centro" element={<NotificationCenter />} />
         <Route path="zonas" element={<ZonesPage />} />
         <Route path="cotizaciones" element={<CotizacionesPage />} />
+        <Route path="configuracion/catalogo-productos" element={<CatalogoProductosPage />} />
         <Route path="precios" element={<PricingPage />} />
         <Route path="portal-usuario" element={<UserPortalPage />} />
       </Routes>
