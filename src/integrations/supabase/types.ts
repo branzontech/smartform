@@ -1224,6 +1224,78 @@ export type Database = {
           },
         ]
       }
+      sedes: {
+        Row: {
+          activo: boolean | null
+          ciudad: string | null
+          codigo: string
+          codigo_postal: string | null
+          created_at: string | null
+          datos_regulatorios: Json | null
+          departamento_estado: string | null
+          direccion: string | null
+          email: string | null
+          fhir_extensions: Json | null
+          id: string
+          latitud: number | null
+          longitud: number | null
+          nombre: string
+          pais: string
+          responsable_id: string | null
+          responsable_nombre: string | null
+          sede_principal: boolean | null
+          telefono: string | null
+          tipo: string
+          updated_at: string | null
+        }
+        Insert: {
+          activo?: boolean | null
+          ciudad?: string | null
+          codigo: string
+          codigo_postal?: string | null
+          created_at?: string | null
+          datos_regulatorios?: Json | null
+          departamento_estado?: string | null
+          direccion?: string | null
+          email?: string | null
+          fhir_extensions?: Json | null
+          id?: string
+          latitud?: number | null
+          longitud?: number | null
+          nombre: string
+          pais?: string
+          responsable_id?: string | null
+          responsable_nombre?: string | null
+          sede_principal?: boolean | null
+          telefono?: string | null
+          tipo?: string
+          updated_at?: string | null
+        }
+        Update: {
+          activo?: boolean | null
+          ciudad?: string | null
+          codigo?: string
+          codigo_postal?: string | null
+          created_at?: string | null
+          datos_regulatorios?: Json | null
+          departamento_estado?: string | null
+          direccion?: string | null
+          email?: string | null
+          fhir_extensions?: Json | null
+          id?: string
+          latitud?: number | null
+          longitud?: number | null
+          nombre?: string
+          pais?: string
+          responsable_id?: string | null
+          responsable_nombre?: string | null
+          sede_principal?: boolean | null
+          telefono?: string | null
+          tipo?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       tarifarios_maestros: {
         Row: {
           created_at: string
