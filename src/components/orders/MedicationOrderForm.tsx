@@ -196,6 +196,47 @@ export const MedicationOrderForm: React.FC<MedicationOrderFormProps> = ({
   return (
     <div className="flex flex-col h-full">
       <div className="flex-1 overflow-y-auto p-3 space-y-3" style={{ overscrollBehavior: 'contain' }}>
+        {/* Alcance: Interna / Externa */}
+        <div>
+          <Label className="text-[11px] text-muted-foreground mb-1.5 block">Alcance de la orden</Label>
+          <RadioGroup
+            value={alcance}
+            onValueChange={(v) => setAlcance(v as 'interna' | 'externa')}
+            className="flex gap-2"
+          >
+            <label className={cn(
+              "flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer transition-all text-xs",
+              alcance === 'interna' ? "border-primary bg-primary/5 text-foreground" : "border-border/50 text-muted-foreground hover:border-primary/30"
+            )}>
+              <RadioGroupItem value="interna" className="sr-only" />
+              <Building className="w-3.5 h-3.5" />
+              Interna
+            </label>
+            <label className={cn(
+              "flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer transition-all text-xs",
+              alcance === 'externa' ? "border-primary bg-primary/5 text-foreground" : "border-border/50 text-muted-foreground hover:border-primary/30"
+            )}>
+              <RadioGroupItem value="externa" className="sr-only" />
+              <Building2 className="w-3.5 h-3.5" />
+              Externa
+            </label>
+          </RadioGroup>
+        </div>
+
+        {/* Institución destino (solo externa) */}
+        <div className={cn(
+          "transition-all duration-300 ease-in-out overflow-hidden",
+          alcance === 'externa' ? "max-h-20 opacity-100" : "max-h-0 opacity-0"
+        )}>
+          <Label className="text-[11px] text-muted-foreground mb-1 block">Institución destino</Label>
+          <Input
+            value={institucionDestino}
+            onChange={(e) => setInstitucionDestino(e.target.value)}
+            placeholder="Nombre del laboratorio o institución externa..."
+            className="h-7 text-xs"
+          />
+        </div>
+
         {/* Diagnosis */}
         <div className="relative">
           <Label className="text-[11px] text-muted-foreground mb-1 block">Diagnóstico asociado (CIE-10)</Label>
