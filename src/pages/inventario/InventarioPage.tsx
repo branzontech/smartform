@@ -1,8 +1,8 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Package, AlertTriangle, TrendingDown, Clock, Search, Filter, X, PackagePlus, Plus } from 'lucide-react';
-import { NuevoProductoSheet } from '@/components/inventario/NuevoProductoSheet';
+import { Package, AlertTriangle, TrendingDown, Clock, Search, Filter, X, PackagePlus, Plus, Pencil } from 'lucide-react';
+import { ProductoDialog } from '@/components/inventario/ProductoDialog';
 import { RegistrarMovimientoDialog } from '@/components/inventario/RegistrarMovimientoDialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
@@ -267,6 +267,93 @@ function StockDot({ cantidad, minima }: { cantidad: number; minima: number }) {
   return <span className={cn("inline-block w-2 h-2 rounded-full shrink-0", color)} />;
 }
 
+// ─── Catálogo Tab ──────────────────────────────────────────
+
+function CatalogoTab({ onEdit }: { onEdit: (id: string) => void }) {
+  const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleSearch = useCallback((val: string) => {
+    setSearch(val);
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => setDebouncedSearch(val), 300);
+  }, []);
+
+  const { data, isLoading } = useQuery({
+    queryKey: ['catalogo-productos', debouncedSearch],
+    staleTime: 30_000,
+    queryFn: async () => {
+      let q = supabase.from('catalogo_productos').select('id, codigo, nombre_generico, nombre_comercial, tipo_producto, principio_activo, fabricante, activo, controlado, requiere_cadena_frio').eq('activo', true).order('nombre_generico').limit(200);
+      if (debouncedSearch) {
+        q = q.or(`nombre_generico.ilike.%${debouncedSearch}%,nombre_comercial.ilike.%${debouncedSearch}%,codigo.ilike.%${debouncedSearch}%`);
+      }
+      const { data } = await q;
+      return data || [];
+    },
+  });
+
+  return (
+    <div className="space-y-3">
+      <div className="relative max-w-sm">
+        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+        <Input value={search} onChange={e => handleSearch(e.target.value)} placeholder="Buscar en catálogo..." className="h-8 text-xs pl-8" />
+      </div>
+      <div className="rounded-2xl border border-border/40 bg-card/80 backdrop-blur-sm overflow-hidden shadow-sm">
+        <div className="overflow-x-auto">
+          <table className="w-full text-xs">
+            <thead>
+              <tr className="border-b border-border/40 bg-muted/30">
+                <th className="text-left font-medium text-muted-foreground px-3 py-2.5">Código</th>
+                <th className="text-left font-medium text-muted-foreground px-3 py-2.5">Nombre genérico</th>
+                <th className="text-left font-medium text-muted-foreground px-3 py-2.5">Comercial</th>
+                <th className="text-left font-medium text-muted-foreground px-3 py-2.5">Tipo</th>
+                <th className="text-left font-medium text-muted-foreground px-3 py-2.5">Principio activo</th>
+                <th className="text-left font-medium text-muted-foreground px-3 py-2.5">Fabricante</th>
+                <th className="w-8"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {isLoading ? (
+                Array.from({ length: 5 }).map((_, i) => (
+                  <tr key={i} className="border-b border-border/20">
+                    {Array.from({ length: 7 }).map((_, j) => (
+                      <td key={j} className="px-3 py-2.5"><div className="h-4 bg-muted animate-pulse rounded w-20" /></td>
+                    ))}
+                  </tr>
+                ))
+              ) : (data || []).length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="text-center py-12 text-muted-foreground">
+                    <Package className="w-8 h-8 mx-auto mb-2 opacity-30" />
+                    <p className="text-sm">No hay productos en el catálogo</p>
+                  </td>
+                </tr>
+              ) : (data || []).map(row => (
+                <tr key={row.id} className="border-b border-border/20 hover:bg-muted/20 transition-colors cursor-pointer" onClick={() => onEdit(row.id)}>
+                  <td className="px-3 py-2.5 font-mono text-muted-foreground">{row.codigo}</td>
+                  <td className="px-3 py-2.5 font-medium text-foreground">{row.nombre_generico}</td>
+                  <td className="px-3 py-2.5 text-muted-foreground">{row.nombre_comercial || '—'}</td>
+                  <td className="px-3 py-2.5">
+                    <span className={cn("inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium", tipoBadgeClass[row.tipo_producto] || 'bg-muted text-muted-foreground')}>
+                      {tipoLabel[row.tipo_producto] || row.tipo_producto}
+                    </span>
+                  </td>
+                  <td className="px-3 py-2.5 text-muted-foreground">{row.principio_activo || '—'}</td>
+                  <td className="px-3 py-2.5 text-muted-foreground">{row.fabricante || '—'}</td>
+                  <td className="px-3 py-2.5">
+                    <Pencil className="w-3 h-3 text-muted-foreground/50" />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Main Page ──────────────────────────────────────────────
 
 const InventarioPage: React.FC = () => {
@@ -275,6 +362,7 @@ const InventarioPage: React.FC = () => {
   const [sedeFilter, setSedeFilter] = useState('all');
   const [tipoFilter, setTipoFilter] = useState('all');
   const [showNewProduct, setShowNewProduct] = useState(false);
+  const [editProductId, setEditProductId] = useState<string | null>(null);
   const [showMovement, setShowMovement] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -480,11 +568,7 @@ const InventarioPage: React.FC = () => {
         </TabsContent>
 
         <TabsContent value="catalogo" className="mt-4">
-          <div className="flex flex-col items-center justify-center py-16 text-center">
-            <Package className="w-10 h-10 text-muted-foreground/30 mb-3" />
-            <p className="text-sm font-medium text-muted-foreground">Catálogo de productos</p>
-            <p className="text-xs text-muted-foreground/60 mt-0.5">Próximamente</p>
-          </div>
+          <CatalogoTab onEdit={(id) => { setEditProductId(id); setShowNewProduct(true); }} />
         </TabsContent>
         <TabsContent value="lotes" className="mt-4">
           <div className="flex flex-col items-center justify-center py-16 text-center">
@@ -503,7 +587,11 @@ const InventarioPage: React.FC = () => {
       </Tabs>
 
       {/* Modals */}
-      <NuevoProductoSheet open={showNewProduct} onOpenChange={setShowNewProduct} />
+      <ProductoDialog
+        open={showNewProduct}
+        onOpenChange={(v) => { setShowNewProduct(v); if (!v) setEditProductId(null); }}
+        editProductId={editProductId}
+      />
       <RegistrarMovimientoDialog open={showMovement} onOpenChange={setShowMovement} />
     </div>
   );
