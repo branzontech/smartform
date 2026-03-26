@@ -15,8 +15,10 @@ interface MedicationBlock {
   dosis: string;
   unidad: string;
   via: string;
-  frecuencia: string;
-  duracion: string;
+  frecuenciaValor: string;
+  frecuenciaUnidad: string;
+  duracionValor: string;
+  duracionUnidad: string;
   indicaciones: string;
   showIndicaciones: boolean;
 }
@@ -34,14 +36,40 @@ const emptyMed = (): MedicationBlock => ({
   dosis: '',
   unidad: 'mg',
   via: 'oral',
-  frecuencia: '',
-  duracion: '',
+  frecuenciaValor: '',
+  frecuenciaUnidad: 'horas',
+  duracionValor: '',
+  duracionUnidad: 'días',
   indicaciones: '',
   showIndicaciones: false,
 });
 
 const UNIDADES = ['mg', 'ml', 'g', 'mcg', 'UI', 'gotas', 'tabletas', 'cápsulas'];
 const VIAS = ['oral', 'IV', 'IM', 'SC', 'tópica', 'inhalatoria', 'rectal', 'sublingual', 'oftálmica', 'ótica'];
+const FREQ_UNIDADES = ['horas', 'días'];
+const DUR_UNIDADES = ['días', 'semanas', 'meses'];
+
+function calcDosis(med: MedicationBlock): string | null {
+  const dosis = parseFloat(med.dosis);
+  const freq = parseFloat(med.frecuenciaValor);
+  const dur = parseFloat(med.duracionValor);
+  if (!dosis || !freq || !dur || freq <= 0) return null;
+
+  // Convert duration to hours
+  let durHours = dur;
+  if (med.duracionUnidad === 'días') durHours = dur * 24;
+  else if (med.duracionUnidad === 'semanas') durHours = dur * 24 * 7;
+  else if (med.duracionUnidad === 'meses') durHours = dur * 24 * 30;
+
+  // Convert frequency to hours
+  let freqHours = freq;
+  if (med.frecuenciaUnidad === 'días') freqHours = freq * 24;
+
+  const totalDosis = Math.ceil(durHours / freqHours);
+  const totalAmount = dosis * totalDosis;
+
+  return `${dosis} ${med.unidad} c/${freq} ${med.frecuenciaUnidad} × ${dur} ${med.duracionUnidad} = ${totalDosis} dosis (${totalAmount} ${med.unidad} total)`;
+}
 
 export const MedicationOrderForm: React.FC<MedicationOrderFormProps> = ({
   admisionId,
