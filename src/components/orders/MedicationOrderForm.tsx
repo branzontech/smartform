@@ -89,6 +89,8 @@ export const MedicationOrderForm: React.FC<MedicationOrderFormProps> = ({
   const [medications, setMedications] = useState<MedicationBlock[]>([emptyMed()]);
   const [indicacionesGenerales, setIndicacionesGenerales] = useState('');
   const [saving, setSaving] = useState(false);
+  const [alcance, setAlcance] = useState<'interna' | 'externa'>('interna');
+  const [institucionDestino, setInstitucionDestino] = useState('');
 
   // Diagnosis search
   const searchDiagnosis = useCallback(async (term: string) => {
