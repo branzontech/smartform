@@ -63,7 +63,7 @@ export const OrdersListPanel: React.FC<OrdersListPanelProps> = ({ admisionId }) 
     setLoading(true);
     const { data } = await supabase
       .from('ordenes_medicas')
-      .select('id, tipo, numero_orden, estado, fecha_orden, prioridad, medico_nombre, diagnostico_descripcion, indicaciones, items')
+      .select('id, tipo, numero_orden, estado, fecha_orden, prioridad, medico_nombre, diagnostico_descripcion, indicaciones, items, alcance, fhir_extensions')
       .eq('admision_id', admisionId)
       .order('fecha_orden', { ascending: false });
     setOrders((data as Order[]) || []);
