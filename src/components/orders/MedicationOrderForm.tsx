@@ -139,7 +139,7 @@ export const MedicationOrderForm: React.FC<MedicationOrderFormProps> = ({
         admision_id: admisionId,
         medico_id: user.id,
         medico_nombre: profile?.full_name || 'Médico',
-        numero_orden: 'TEMP', // trigger will generate
+        numero_orden: '',
         items: items as any,
         indicaciones: indicacionesGenerales || null,
         diagnostico_codigo: diagnosticoCodigo || null,
