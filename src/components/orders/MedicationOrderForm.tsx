@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -76,11 +76,13 @@ export const MedicationOrderForm: React.FC<MedicationOrderFormProps> = ({
     setDiagOpen(true);
   }, []);
 
+  const diagTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const handleDiagSearch = (val: string) => {
     setDiagnosticoSearch(val);
+    if (diagTimerRef.current) clearTimeout(diagTimerRef.current);
     if (val.length >= 2) {
-      const timer = setTimeout(() => searchDiagnosis(val), 300);
-      return () => clearTimeout(timer);
+      diagTimerRef.current = setTimeout(() => searchDiagnosis(val), 300);
     } else {
       setDiagResults([]);
       setDiagOpen(false);
