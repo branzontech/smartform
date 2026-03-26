@@ -276,27 +276,62 @@ export const MedicationOrderForm: React.FC<MedicationOrderFormProps> = ({
               </div>
             </div>
 
-            {/* Row 2: Frecuencia + Duración */}
+            {/* Row 2: Frecuencia (valor + unidad) + Duración (valor + unidad) */}
             <div className="grid grid-cols-2 gap-1.5">
               <div>
-                <Label className="text-[10px] text-muted-foreground">Frecuencia</Label>
-                <Input
-                  value={med.frecuencia}
-                  onChange={(e) => updateMed(med.id, 'frecuencia', e.target.value)}
-                  placeholder="Cada 8 horas"
-                  className="h-7 text-xs"
-                />
+                <Label className="text-[10px] text-muted-foreground">Frecuencia (cada)</Label>
+                <div className="flex gap-1">
+                  <Input
+                    type="number"
+                    min="1"
+                    value={med.frecuenciaValor}
+                    onChange={(e) => updateMed(med.id, 'frecuenciaValor', e.target.value)}
+                    placeholder="8"
+                    className="h-7 text-xs flex-1"
+                  />
+                  <Select value={med.frecuenciaUnidad} onValueChange={(v) => updateMed(med.id, 'frecuenciaUnidad', v)}>
+                    <SelectTrigger className="h-7 text-xs w-[80px]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {FREQ_UNIDADES.map(u => <SelectItem key={u} value={u} className="text-xs">{u}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
               <div>
                 <Label className="text-[10px] text-muted-foreground">Duración</Label>
-                <Input
-                  value={med.duracion}
-                  onChange={(e) => updateMed(med.id, 'duracion', e.target.value)}
-                  placeholder="7 días"
-                  className="h-7 text-xs"
-                />
+                <div className="flex gap-1">
+                  <Input
+                    type="number"
+                    min="1"
+                    value={med.duracionValor}
+                    onChange={(e) => updateMed(med.id, 'duracionValor', e.target.value)}
+                    placeholder="7"
+                    className="h-7 text-xs flex-1"
+                  />
+                  <Select value={med.duracionUnidad} onValueChange={(v) => updateMed(med.id, 'duracionUnidad', v)}>
+                    <SelectTrigger className="h-7 text-xs w-[90px]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {DUR_UNIDADES.map(u => <SelectItem key={u} value={u} className="text-xs">{u}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             </div>
+
+            {/* Calculated summary */}
+            {(() => {
+              const summary = calcDosis(med);
+              return summary ? (
+                <div className="bg-muted/50 rounded px-2 py-1.5">
+                  <p className="text-[10px] font-medium text-muted-foreground">Resumen posología</p>
+                  <p className="text-xs font-medium text-foreground">{summary}</p>
+                </div>
+              ) : null;
+            })()}
 
             {/* Indicaciones toggle */}
             {!med.showIndicaciones ? (
