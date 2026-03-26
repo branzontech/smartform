@@ -1053,6 +1053,7 @@ export type Database = {
       ordenes_medicas: {
         Row: {
           admision_id: string | null
+          alcance: string
           created_at: string | null
           diagnostico_codigo: string | null
           diagnostico_descripcion: string | null
@@ -1074,6 +1075,7 @@ export type Database = {
         }
         Insert: {
           admision_id?: string | null
+          alcance?: string
           created_at?: string | null
           diagnostico_codigo?: string | null
           diagnostico_descripcion?: string | null
@@ -1095,6 +1097,7 @@ export type Database = {
         }
         Update: {
           admision_id?: string | null
+          alcance?: string
           created_at?: string | null
           diagnostico_codigo?: string | null
           diagnostico_descripcion?: string | null

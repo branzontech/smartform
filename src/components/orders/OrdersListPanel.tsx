@@ -21,6 +21,8 @@ export interface Order {
   diagnostico_descripcion: string | null;
   indicaciones: string | null;
   items: any;
+  alcance: string;
+  fhir_extensions: any;
 }
 
 interface OrdersListPanelProps {
@@ -61,7 +63,7 @@ export const OrdersListPanel: React.FC<OrdersListPanelProps> = ({ admisionId }) 
     setLoading(true);
     const { data } = await supabase
       .from('ordenes_medicas')
-      .select('id, tipo, numero_orden, estado, fecha_orden, prioridad, medico_nombre, diagnostico_descripcion, indicaciones, items')
+      .select('id, tipo, numero_orden, estado, fecha_orden, prioridad, medico_nombre, diagnostico_descripcion, indicaciones, items, alcance, fhir_extensions')
       .eq('admision_id', admisionId)
       .order('fecha_orden', { ascending: false });
     setOrders((data as Order[]) || []);
@@ -134,6 +136,12 @@ export const OrdersListPanel: React.FC<OrdersListPanelProps> = ({ admisionId }) 
                     <Badge variant={statusVariant(order.estado)} className="text-[9px] h-4 px-1.5 shrink-0">
                       {order.estado}
                     </Badge>
+                    <Badge variant="outline" className={cn(
+                      "text-[9px] h-4 px-1.5 shrink-0",
+                      order.alcance === 'externa' ? "border-amber-500/50 text-amber-600 dark:text-amber-400" : "border-border"
+                    )}>
+                      {order.alcance === 'externa' ? 'Externa' : 'Interna'}
+                    </Badge>
                     {order.prioridad && order.prioridad !== 'routine' && (
                       <Badge variant="warning" className="text-[9px] h-4 px-1.5 shrink-0">
                         {prioridadLabel[order.prioridad] || order.prioridad}
@@ -172,6 +180,13 @@ export const OrdersListPanel: React.FC<OrdersListPanelProps> = ({ admisionId }) 
                     <div>
                       <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Diagnóstico</p>
                       <p className="text-xs">{order.diagnostico_descripcion}</p>
+                    </div>
+                   )}
+
+                  {order.alcance === 'externa' && order.fhir_extensions?.institucion_destino && (
+                    <div>
+                      <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Institución destino</p>
+                      <p className="text-xs">{order.fhir_extensions.institucion_destino}</p>
                     </div>
                   )}
 
