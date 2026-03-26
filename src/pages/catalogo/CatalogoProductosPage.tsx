@@ -546,7 +546,7 @@ const CatalogoProductosPage = () => {
                       render={({ field }) => (
                         <label className="flex items-center gap-2 text-xs cursor-pointer">
                           <Switch checked={field.value} onCheckedChange={field.onChange} className="scale-75" />
-                          <ShieldAlert className="h-3 w-3 text-amber-500" /> Controlado
+                          <ShieldAlert className="h-3 w-3 text-destructive" /> Controlado
                         </label>
                       )}
                     />
