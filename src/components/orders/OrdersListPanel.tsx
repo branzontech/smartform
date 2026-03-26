@@ -181,6 +181,13 @@ export const OrdersListPanel: React.FC<OrdersListPanelProps> = ({ admisionId }) 
                       <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Diagnóstico</p>
                       <p className="text-xs">{order.diagnostico_descripcion}</p>
                     </div>
+                   )}
+
+                  {order.alcance === 'externa' && order.fhir_extensions?.institucion_destino && (
+                    <div>
+                      <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Institución destino</p>
+                      <p className="text-xs">{order.fhir_extensions.institucion_destino}</p>
+                    </div>
                   )}
 
                   {renderItems(order.items)}
