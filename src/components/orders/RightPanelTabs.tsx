@@ -64,6 +64,7 @@ export const RightPanelTabs: React.FC<RightPanelTabsProps> = ({
 
   const handleOrderSaved = () => {
     setRefreshKey(k => k + 1);
+    setActiveTab('ordenes-historial');
   };
 
   const isOrderTypeActive = (type: string) => activeTab === `ordenes-${type}`;
