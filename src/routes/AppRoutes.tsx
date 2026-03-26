@@ -113,6 +113,7 @@ const AppRoutes = () => {
         <Route path="notificaciones/centro" element={<NotificationCenter />} />
         <Route path="zonas" element={<ZonesPage />} />
         <Route path="cotizaciones" element={<CotizacionesPage />} />
+        <Route path="configuracion/catalogo-productos" element={<CatalogoProductosPage />} />
         <Route path="precios" element={<PricingPage />} />
         <Route path="portal-usuario" element={<UserPortalPage />} />
       </Routes>
