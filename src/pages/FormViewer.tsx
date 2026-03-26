@@ -850,7 +850,7 @@ const FormViewer = () => {
           .insert({
             formulario_id: fId,
             paciente_id: patientId,
-            admision_id: consultationId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(consultationId) ? consultationId : null,
+            admision_id: resolvedAdmisionId,
             medico_id: medicoId,
             datos_respuesta: data,
           });
