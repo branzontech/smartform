@@ -739,7 +739,7 @@ const FormViewer = () => {
       return;
     }
 
-    if (consultationId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(consultationId)) {
+    if (resolvedAdmisionId) {
       const { error: admError } = await supabase
         .from("admisiones" as any)
         .update({ estado: 'completada', fecha_fin: new Date().toISOString() })
