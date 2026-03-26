@@ -743,7 +743,7 @@ const FormViewer = () => {
       const { error: admError } = await supabase
         .from("admisiones" as any)
         .update({ estado: 'completada', fecha_fin: new Date().toISOString() })
-        .eq('id', consultationId);
+        .eq('id', resolvedAdmisionId);
       if (admError) {
         uiToast({ title: "Error al completar admisión", description: admError.message, variant: "destructive" });
         setIsCompletingAttention(false);
