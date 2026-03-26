@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Calendar as CalendarIcon, FileText, ArrowRight, ArrowLeft, User, ClipboardList, Check, Stethoscope, Search, Loader2, Phone, Mail, MapPin, Shield, Briefcase, CreditCard, Hash, Heart } from "lucide-react";
+import { Calendar as CalendarIcon, FileText, ArrowRight, ArrowLeft, User, ClipboardList, Check, Stethoscope, Search, Loader2, Phone, Mail, MapPin, Shield, Briefcase, CreditCard, Hash, Heart, Clock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { format } from "date-fns";
