@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { Users, Calendar, Stethoscope, ClipboardCheck, BarChart3, FileText, ArrowRight, Sparkles } from "lucide-react";
+import { Users, Calendar, Stethoscope, ClipboardCheck, BarChart3, FileText, ArrowRight, Sparkles, Package } from "lucide-react";
 
 const quickActions = [
   {
