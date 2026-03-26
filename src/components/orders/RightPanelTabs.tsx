@@ -73,6 +73,10 @@ export const RightPanelTabs: React.FC<RightPanelTabsProps> = ({
       return <PatientHistoryPanel patientId={patientId} className="h-full" />;
     }
 
+    if (activeTab === 'ordenes-historial') {
+      return <OrdersListPanel key={refreshKey} admisionId={admisionId} />;
+    }
+
     const activeType = ORDER_TYPES.find(t => activeTab === `ordenes-${t.type}`);
     if (!activeType) return null;
 
