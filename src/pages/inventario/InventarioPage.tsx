@@ -274,6 +274,8 @@ const InventarioPage: React.FC = () => {
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [sedeFilter, setSedeFilter] = useState('all');
   const [tipoFilter, setTipoFilter] = useState('all');
+  const [showNewProduct, setShowNewProduct] = useState(false);
+  const [showMovement, setShowMovement] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleSearch = useCallback((val: string) => {
