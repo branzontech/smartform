@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { Users, Calendar, Stethoscope, ClipboardCheck, BarChart3, FileText, ArrowRight, Sparkles } from "lucide-react";
+import { Users, Calendar, Stethoscope, ClipboardCheck, BarChart3, FileText, ArrowRight, Sparkles, Package } from "lucide-react";
 
 const quickActions = [
   {
@@ -58,6 +58,14 @@ const quickActions = [
     label: "Cotizar Servicios",
     description: "Crea y gestiona cotizaciones de servicios",
     route: "/app/cotizaciones",
+    accent: "group-hover:text-primary",
+    bgAccent: "group-hover:bg-primary/10",
+  },
+  {
+    icon: Package,
+    label: "Inventario",
+    description: "Gestiona stock, lotes y movimientos",
+    route: "/app/inventario",
     accent: "group-hover:text-primary",
     bgAccent: "group-hover:bg-primary/10",
   },
