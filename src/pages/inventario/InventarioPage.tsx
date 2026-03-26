@@ -1,7 +1,9 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Package, AlertTriangle, TrendingDown, Clock, Search, Filter, X } from 'lucide-react';
+import { Package, AlertTriangle, TrendingDown, Clock, Search, Filter, X, PackagePlus, Plus } from 'lucide-react';
+import { NuevoProductoSheet } from '@/components/inventario/NuevoProductoSheet';
+import { RegistrarMovimientoDialog } from '@/components/inventario/RegistrarMovimientoDialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -272,6 +274,8 @@ const InventarioPage: React.FC = () => {
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [sedeFilter, setSedeFilter] = useState('all');
   const [tipoFilter, setTipoFilter] = useState('all');
+  const [showNewProduct, setShowNewProduct] = useState(false);
+  const [showMovement, setShowMovement] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleSearch = useCallback((val: string) => {
@@ -308,9 +312,21 @@ const InventarioPage: React.FC = () => {
   return (
     <div className="space-y-5 p-4 md:p-6 max-w-[1400px] mx-auto">
       {/* Header */}
-      <div>
-        <h1 className="text-xl font-bold text-foreground">Inventario</h1>
-        <p className="text-xs text-muted-foreground mt-0.5">Gestión de stock, lotes y movimientos</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-xl font-bold text-foreground">Inventario</h1>
+          <p className="text-xs text-muted-foreground mt-0.5">Gestión de stock, lotes y movimientos</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" className="h-8 text-xs gap-1.5" onClick={() => setShowMovement(true)}>
+            <PackagePlus className="w-3.5 h-3.5" />
+            Registrar movimiento
+          </Button>
+          <Button size="sm" className="h-8 text-xs gap-1.5" onClick={() => setShowNewProduct(true)}>
+            <Plus className="w-3.5 h-3.5" />
+            Nuevo producto
+          </Button>
+        </div>
       </div>
 
       {/* Metric Cards */}
@@ -485,6 +501,10 @@ const InventarioPage: React.FC = () => {
           </div>
         </TabsContent>
       </Tabs>
+
+      {/* Modals */}
+      <NuevoProductoSheet open={showNewProduct} onOpenChange={setShowNewProduct} />
+      <RegistrarMovimientoDialog open={showMovement} onOpenChange={setShowMovement} />
     </div>
   );
 };
