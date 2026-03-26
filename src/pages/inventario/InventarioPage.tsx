@@ -312,9 +312,21 @@ const InventarioPage: React.FC = () => {
   return (
     <div className="space-y-5 p-4 md:p-6 max-w-[1400px] mx-auto">
       {/* Header */}
-      <div>
-        <h1 className="text-xl font-bold text-foreground">Inventario</h1>
-        <p className="text-xs text-muted-foreground mt-0.5">Gestión de stock, lotes y movimientos</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-xl font-bold text-foreground">Inventario</h1>
+          <p className="text-xs text-muted-foreground mt-0.5">Gestión de stock, lotes y movimientos</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" className="h-8 text-xs gap-1.5" onClick={() => setShowMovement(true)}>
+            <PackagePlus className="w-3.5 h-3.5" />
+            Registrar movimiento
+          </Button>
+          <Button size="sm" className="h-8 text-xs gap-1.5" onClick={() => setShowNewProduct(true)}>
+            <Plus className="w-3.5 h-3.5" />
+            Nuevo producto
+          </Button>
+        </div>
       </div>
 
       {/* Metric Cards */}
