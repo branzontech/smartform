@@ -1148,7 +1148,7 @@ const FormViewer = () => {
               {patientId && (
                 <PatientHeaderBanner
                   pacienteId={patientId}
-                  admisionId={consultationId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(consultationId) ? consultationId : undefined}
+                  admisionId={resolvedAdmisionId || undefined}
                />
               )}
               {/* Multi-form chevron tabs + add button */}
