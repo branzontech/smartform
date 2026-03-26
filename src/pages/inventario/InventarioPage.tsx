@@ -501,6 +501,10 @@ const InventarioPage: React.FC = () => {
           </div>
         </TabsContent>
       </Tabs>
+
+      {/* Modals */}
+      <NuevoProductoSheet open={showNewProduct} onOpenChange={setShowNewProduct} />
+      <RegistrarMovimientoDialog open={showMovement} onOpenChange={setShowMovement} />
     </div>
   );
 };
