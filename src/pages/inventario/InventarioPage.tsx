@@ -1,7 +1,9 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Package, AlertTriangle, TrendingDown, Clock, Search, Filter, X } from 'lucide-react';
+import { Package, AlertTriangle, TrendingDown, Clock, Search, Filter, X, PackagePlus, Plus } from 'lucide-react';
+import { NuevoProductoSheet } from '@/components/inventario/NuevoProductoSheet';
+import { RegistrarMovimientoDialog } from '@/components/inventario/RegistrarMovimientoDialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
