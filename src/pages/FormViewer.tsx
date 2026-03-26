@@ -148,6 +148,31 @@ const FormViewer = () => {
   const isEmbedded = queryParams.get("embedded") === "true";
   const extraFormIds = queryParams.get("forms")?.split(',').filter(Boolean) || [];
 
+  // Resolve real DB admission UUID (consultationId might be a nanoid from localStorage)
+  const isConsultationUUID = consultationId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(consultationId);
+  const [resolvedAdmisionId, setResolvedAdmisionId] = useState<string | null>(isConsultationUUID ? consultationId : null);
+
+  useEffect(() => {
+    if (isConsultationUUID) {
+      setResolvedAdmisionId(consultationId);
+      return;
+    }
+    if (!patientId) return;
+    const fetchActiveAdmission = async () => {
+      const { data } = await supabase
+        .from('admisiones')
+        .select('id')
+        .eq('paciente_id', patientId)
+        .in('estado', ['en_curso', 'planificada'])
+        .order('fecha_inicio', { ascending: false })
+        .limit(1);
+      if (data && data.length > 0) {
+        setResolvedAdmisionId(data[0].id);
+      }
+    };
+    fetchActiveAdmission();
+  }, [patientId, consultationId, isConsultationUUID]);
+
   // Build ordered list of all form IDs
   const allFormIds = React.useMemo(() => {
     const ids: string[] = [];
@@ -326,7 +351,7 @@ const FormViewer = () => {
     const processed = processFormValues(entry.questions, entry.formData, entry.formData);
 
     if (patientId && medicoId) {
-      const admisionId = consultationId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(consultationId) ? consultationId : null;
+      const admisionId = resolvedAdmisionId;
 
       if (entry.responseId) {
         const { error: updateError } = await supabase
@@ -714,11 +739,11 @@ const FormViewer = () => {
       return;
     }
 
-    if (consultationId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(consultationId)) {
+    if (resolvedAdmisionId) {
       const { error: admError } = await supabase
         .from("admisiones" as any)
         .update({ estado: 'completada', fecha_fin: new Date().toISOString() })
-        .eq('id', consultationId);
+        .eq('id', resolvedAdmisionId);
       if (admError) {
         uiToast({ title: "Error al completar admisión", description: admError.message, variant: "destructive" });
         setIsCompletingAttention(false);
@@ -825,7 +850,7 @@ const FormViewer = () => {
           .insert({
             formulario_id: fId,
             paciente_id: patientId,
-            admision_id: consultationId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(consultationId) ? consultationId : null,
+            admision_id: resolvedAdmisionId,
             medico_id: medicoId,
             datos_respuesta: data,
           });
@@ -1123,7 +1148,7 @@ const FormViewer = () => {
               {patientId && (
                 <PatientHeaderBanner
                   pacienteId={patientId}
-                  admisionId={consultationId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(consultationId) ? consultationId : undefined}
+                  admisionId={resolvedAdmisionId || undefined}
                />
               )}
               {/* Multi-form chevron tabs + add button */}
@@ -1344,7 +1369,7 @@ const FormViewer = () => {
             >
               <RightPanelTabs
                 patientId={patientId!}
-                admisionId={consultationId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(consultationId) ? consultationId : null}
+                admisionId={resolvedAdmisionId}
                 onCollapse={toggleCollapse}
               />
             </div>
