@@ -136,6 +136,12 @@ export const OrdersListPanel: React.FC<OrdersListPanelProps> = ({ admisionId }) 
                     <Badge variant={statusVariant(order.estado)} className="text-[9px] h-4 px-1.5 shrink-0">
                       {order.estado}
                     </Badge>
+                    <Badge variant="outline" className={cn(
+                      "text-[9px] h-4 px-1.5 shrink-0",
+                      order.alcance === 'externa' ? "border-amber-500/50 text-amber-600 dark:text-amber-400" : "border-border"
+                    )}>
+                      {order.alcance === 'externa' ? 'Externa' : 'Interna'}
+                    </Badge>
                     {order.prioridad && order.prioridad !== 'routine' && (
                       <Badge variant="warning" className="text-[9px] h-4 px-1.5 shrink-0">
                         {prioridadLabel[order.prioridad] || order.prioridad}
