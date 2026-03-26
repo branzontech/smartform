@@ -177,6 +177,10 @@ export const MedicationOrderForm: React.FC<MedicationOrderFormProps> = ({
         diagnostico_codigo: diagnosticoCodigo || null,
         diagnostico_descripcion: diagnosticoDescripcion || null,
         diagnostico_sistema: diagnosticoCodigo ? 'CIE-10' : null,
+        alcance,
+        fhir_extensions: alcance === 'externa' && institucionDestino
+          ? { institucion_destino: institucionDestino }
+          : {},
       });
 
       if (error) throw error;
