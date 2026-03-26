@@ -876,6 +876,180 @@ export type Database = {
           },
         ]
       }
+      inventario_lotes: {
+        Row: {
+          cantidad: number
+          created_at: string | null
+          estado: string | null
+          fecha_fabricacion: string | null
+          fecha_vencimiento: string
+          fhir_extensions: Json | null
+          id: string
+          numero_lote: string
+          numero_serie: string | null
+          stock_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          cantidad?: number
+          created_at?: string | null
+          estado?: string | null
+          fecha_fabricacion?: string | null
+          fecha_vencimiento: string
+          fhir_extensions?: Json | null
+          id?: string
+          numero_lote: string
+          numero_serie?: string | null
+          stock_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          cantidad?: number
+          created_at?: string | null
+          estado?: string | null
+          fecha_fabricacion?: string | null
+          fecha_vencimiento?: string
+          fhir_extensions?: Json | null
+          id?: string
+          numero_lote?: string
+          numero_serie?: string | null
+          stock_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventario_lotes_stock_id_fkey"
+            columns: ["stock_id"]
+            isOneToOne: false
+            referencedRelation: "inventario_stock"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inventario_movimientos: {
+        Row: {
+          cantidad: number
+          created_at: string | null
+          fecha_movimiento: string | null
+          fhir_extensions: Json | null
+          id: string
+          lote_id: string | null
+          motivo: string | null
+          referencia_id: string | null
+          referencia_tipo: string | null
+          stock_id: string
+          tipo_movimiento: string
+          usuario_id: string
+        }
+        Insert: {
+          cantidad: number
+          created_at?: string | null
+          fecha_movimiento?: string | null
+          fhir_extensions?: Json | null
+          id?: string
+          lote_id?: string | null
+          motivo?: string | null
+          referencia_id?: string | null
+          referencia_tipo?: string | null
+          stock_id: string
+          tipo_movimiento: string
+          usuario_id: string
+        }
+        Update: {
+          cantidad?: number
+          created_at?: string | null
+          fecha_movimiento?: string | null
+          fhir_extensions?: Json | null
+          id?: string
+          lote_id?: string | null
+          motivo?: string | null
+          referencia_id?: string | null
+          referencia_tipo?: string | null
+          stock_id?: string
+          tipo_movimiento?: string
+          usuario_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventario_movimientos_lote_id_fkey"
+            columns: ["lote_id"]
+            isOneToOne: false
+            referencedRelation: "inventario_lotes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventario_movimientos_stock_id_fkey"
+            columns: ["stock_id"]
+            isOneToOne: false
+            referencedRelation: "inventario_stock"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inventario_stock: {
+        Row: {
+          cantidad_disponible: number
+          cantidad_maxima: number | null
+          cantidad_minima: number | null
+          created_at: string | null
+          fhir_extensions: Json | null
+          id: string
+          presentacion_id: string
+          producto_id: string
+          sede_id: string
+          ubicacion_almacen: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          cantidad_disponible?: number
+          cantidad_maxima?: number | null
+          cantidad_minima?: number | null
+          created_at?: string | null
+          fhir_extensions?: Json | null
+          id?: string
+          presentacion_id: string
+          producto_id: string
+          sede_id: string
+          ubicacion_almacen?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          cantidad_disponible?: number
+          cantidad_maxima?: number | null
+          cantidad_minima?: number | null
+          created_at?: string | null
+          fhir_extensions?: Json | null
+          id?: string
+          presentacion_id?: string
+          producto_id?: string
+          sede_id?: string
+          ubicacion_almacen?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventario_stock_presentacion_id_fkey"
+            columns: ["presentacion_id"]
+            isOneToOne: false
+            referencedRelation: "presentaciones_producto"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventario_stock_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "catalogo_productos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventario_stock_sede_id_fkey"
+            columns: ["sede_id"]
+            isOneToOne: false
+            referencedRelation: "sedes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ordenes_medicas: {
         Row: {
           admision_id: string | null
