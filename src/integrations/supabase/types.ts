@@ -196,6 +196,56 @@ export type Database = {
         }
         Relationships: []
       }
+      catalogo_productos_regulatorio: {
+        Row: {
+          activo: boolean | null
+          created_at: string | null
+          datos_regulatorios: Json | null
+          entidad_regulatoria: string | null
+          estado_registro: string | null
+          fecha_vencimiento_registro: string | null
+          id: string
+          pais: string
+          producto_id: string
+          registro_sanitario: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          activo?: boolean | null
+          created_at?: string | null
+          datos_regulatorios?: Json | null
+          entidad_regulatoria?: string | null
+          estado_registro?: string | null
+          fecha_vencimiento_registro?: string | null
+          id?: string
+          pais: string
+          producto_id: string
+          registro_sanitario?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          activo?: boolean | null
+          created_at?: string | null
+          datos_regulatorios?: Json | null
+          entidad_regulatoria?: string | null
+          estado_registro?: string | null
+          fecha_vencimiento_registro?: string | null
+          id?: string
+          pais?: string
+          producto_id?: string
+          registro_sanitario?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "catalogo_productos_regulatorio_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "catalogo_productos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clientes_cotizacion: {
         Row: {
           ciudad: string | null
