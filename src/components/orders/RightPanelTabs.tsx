@@ -1,27 +1,18 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { PanelRightClose, Plus, X, Pill, TestTube, Scan, UserPlus, Scissors } from 'lucide-react';
+import { PanelRightClose, Pill, TestTube, Scan, UserPlus, Scissors, ChevronRight, ChevronDown } from 'lucide-react';
 import { PatientHistoryPanel } from '@/components/patients/PatientHistoryPanel';
 import { OrdersListPanel } from './OrdersListPanel';
 import { MedicationOrderForm } from './MedicationOrderForm';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
 
-export interface OrderTab {
-  id: string;
-  type: string;
-  label: string;
-  icon: React.ReactNode;
-  isDirty?: boolean;
-}
-
 const ORDER_TYPES = [
-  { type: 'medicamento', label: 'Medicamentos', icon: <Pill className="w-3.5 h-3.5" /> },
-  { type: 'laboratorio', label: 'Laboratorio', icon: <TestTube className="w-3.5 h-3.5" /> },
-  { type: 'imagenologia', label: 'Imagenología', icon: <Scan className="w-3.5 h-3.5" /> },
-  { type: 'interconsulta', label: 'Interconsulta', icon: <UserPlus className="w-3.5 h-3.5" /> },
-  { type: 'procedimiento', label: 'Procedimientos', icon: <Scissors className="w-3.5 h-3.5" /> },
+  { type: 'medicamento', label: 'Medicamentos', icon: Pill },
+  { type: 'laboratorio', label: 'Laboratorio', icon: TestTube },
+  { type: 'imagenologia', label: 'Imagenología', icon: Scan },
+  { type: 'interconsulta', label: 'Interconsulta', icon: UserPlus },
+  { type: 'procedimiento', label: 'Procedimientos', icon: Scissors },
 ];
 
 interface RightPanelTabsProps {
@@ -35,13 +26,12 @@ export const RightPanelTabs: React.FC<RightPanelTabsProps> = ({
   admisionId,
   onCollapse,
 }) => {
+  // 'antecedentes' | 'ordenes-medicamento' | 'ordenes-laboratorio' | etc.
   const [activeTab, setActiveTab] = useState<string>('antecedentes');
-  const [orderTabs, setOrderTabs] = useState<OrderTab[]>([]);
+  const [ordenesExpanded, setOrdenesExpanded] = useState(false);
   const [ordersCount, setOrdersCount] = useState(0);
-  const [addMenuOpen, setAddMenuOpen] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
 
-  // Fetch orders count
   const fetchCount = useCallback(async () => {
     if (!admisionId) { setOrdersCount(0); return; }
     const { count } = await supabase
@@ -53,58 +43,57 @@ export const RightPanelTabs: React.FC<RightPanelTabsProps> = ({
 
   useEffect(() => { fetchCount(); }, [fetchCount, refreshKey]);
 
-  const addOrderTab = (type: string) => {
-    const def = ORDER_TYPES.find(t => t.type === type);
-    if (!def) return;
-    const newTab: OrderTab = {
-      id: `order-${type}-${Date.now()}`,
-      type,
-      label: def.label,
-      icon: def.icon,
-    };
-    setOrderTabs(prev => [...prev, newTab]);
-    setActiveTab(newTab.id);
-    setAddMenuOpen(false);
+  const handleOrdenesClick = () => {
+    if (ordenesExpanded) {
+      // Collapse and go back to antecedentes
+      setOrdenesExpanded(false);
+      setActiveTab('antecedentes');
+    } else {
+      // Expand and select first order type
+      setOrdenesExpanded(true);
+      setActiveTab('ordenes-medicamento');
+    }
   };
 
-  const closeOrderTab = (tabId: string, e?: React.MouseEvent) => {
-    e?.stopPropagation();
-    setOrderTabs(prev => prev.filter(t => t.id !== tabId));
-    if (activeTab === tabId) setActiveTab('ordenes');
+  const handleAntecedentesClick = () => {
+    setActiveTab('antecedentes');
+    setOrdenesExpanded(false);
   };
 
-  const handleOrderSaved = (tabId: string) => {
-    closeOrderTab(tabId);
+  const handleOrderTypClick = (type: string) => {
+    setActiveTab(`ordenes-${type}`);
+  };
+
+  const handleOrderSaved = () => {
     setRefreshKey(k => k + 1);
   };
 
-  const renderTabContent = () => {
+  const isOrderTypeActive = (type: string) => activeTab === `ordenes-${type}`;
+
+  const renderContent = () => {
     if (activeTab === 'antecedentes') {
       return <PatientHistoryPanel patientId={patientId} className="h-full" />;
     }
-    if (activeTab === 'ordenes') {
-      return <OrdersListPanel key={refreshKey} admisionId={admisionId} />;
-    }
-    // Dynamic order tab
-    const tab = orderTabs.find(t => t.id === activeTab);
-    if (!tab) return null;
 
-    if (tab.type === 'medicamento') {
+    const activeType = ORDER_TYPES.find(t => activeTab === `ordenes-${t.type}`);
+    if (!activeType) return null;
+
+    if (activeType.type === 'medicamento') {
       return (
         <MedicationOrderForm
           admisionId={admisionId}
           pacienteId={patientId}
-          onSaved={() => handleOrderSaved(tab.id)}
-          onCancel={() => closeOrderTab(tab.id)}
+          onSaved={handleOrderSaved}
+          onCancel={() => handleAntecedentesClick()}
         />
       );
     }
 
-    // Placeholder for other types
+    const Icon = activeType.icon;
     return (
       <div className="flex flex-col items-center justify-center p-8 text-center h-full">
-        <div className="mb-3">{tab.icon}</div>
-        <p className="text-sm font-medium mb-1">{tab.label}</p>
+        <Icon className="w-10 h-10 text-muted-foreground/40 mb-3" />
+        <p className="text-sm font-medium mb-1">{activeType.label}</p>
         <p className="text-xs text-muted-foreground">Próximamente</p>
       </div>
     );
@@ -115,9 +104,9 @@ export const RightPanelTabs: React.FC<RightPanelTabsProps> = ({
       {/* Tabs row */}
       <div className="shrink-0 border-b bg-card">
         <div className="flex items-center h-9 overflow-x-auto scrollbar-none">
-          {/* Fixed: Antecedentes */}
+          {/* Antecedentes */}
           <button
-            onClick={() => setActiveTab('antecedentes')}
+            onClick={handleAntecedentesClick}
             className={cn(
               'shrink-0 px-3 py-1.5 text-xs font-medium cursor-pointer transition-colors whitespace-nowrap',
               activeTab === 'antecedentes'
@@ -128,16 +117,17 @@ export const RightPanelTabs: React.FC<RightPanelTabsProps> = ({
             Antecedentes
           </button>
 
-          {/* Fixed: Órdenes */}
+          {/* Órdenes toggle */}
           <button
-            onClick={() => setActiveTab('ordenes')}
+            onClick={handleOrdenesClick}
             className={cn(
               'shrink-0 px-3 py-1.5 text-xs font-medium cursor-pointer transition-colors whitespace-nowrap flex items-center gap-1',
-              activeTab === 'ordenes'
+              ordenesExpanded
                 ? 'border-b-2 border-primary text-foreground'
                 : 'text-muted-foreground hover:text-foreground'
             )}
           >
+            {ordenesExpanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
             Órdenes
             {ordersCount > 0 && (
               <span className="inline-flex items-center justify-center h-4 min-w-[16px] px-1 rounded-full bg-primary/10 text-primary text-[10px] font-semibold">
@@ -146,51 +136,27 @@ export const RightPanelTabs: React.FC<RightPanelTabsProps> = ({
             )}
           </button>
 
-          {/* Dynamic order tabs */}
-          {orderTabs.map(tab => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={cn(
-                'shrink-0 px-2 py-1.5 text-xs font-medium cursor-pointer transition-colors whitespace-nowrap flex items-center gap-1 max-w-[140px] group',
-                activeTab === tab.id
-                  ? 'border-b-2 border-primary text-foreground'
-                  : 'text-muted-foreground hover:text-foreground'
-              )}
-            >
-              <span className="shrink-0">{tab.icon}</span>
-              <span className="truncate">{tab.label}</span>
+          {/* Order type sub-tabs (visible when expanded) */}
+          {ordenesExpanded && ORDER_TYPES.map(ot => {
+            const Icon = ot.icon;
+            return (
               <button
-                onClick={(e) => closeOrderTab(tab.id, e)}
-                className="shrink-0 ml-0.5 p-0.5 rounded hover:bg-muted opacity-0 group-hover:opacity-100 transition-opacity"
+                key={ot.type}
+                onClick={() => handleOrderTypClick(ot.type)}
+                className={cn(
+                  'shrink-0 px-2 py-1.5 text-xs font-medium cursor-pointer transition-colors whitespace-nowrap flex items-center gap-1',
+                  isOrderTypeActive(ot.type)
+                    ? 'border-b-2 border-primary text-foreground'
+                    : 'text-muted-foreground hover:text-foreground'
+                )}
               >
-                <X className="w-2.5 h-2.5" />
+                <Icon className="w-3 h-3" />
+                <span className="hidden sm:inline">{ot.label}</span>
               </button>
-            </button>
-          ))}
+            );
+          })}
 
-          {/* Add button */}
-          <Popover open={addMenuOpen} onOpenChange={setAddMenuOpen}>
-            <PopoverTrigger asChild>
-              <button className="shrink-0 mx-1 p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors">
-                <Plus className="w-3.5 h-3.5" />
-              </button>
-            </PopoverTrigger>
-            <PopoverContent align="start" className="w-44 p-1" sideOffset={4}>
-              {ORDER_TYPES.map(ot => (
-                <button
-                  key={ot.type}
-                  onClick={() => addOrderTab(ot.type)}
-                  className="w-full flex items-center gap-2 px-2.5 py-1.5 text-xs rounded hover:bg-accent transition-colors text-left"
-                >
-                  {ot.icon}
-                  {ot.label}
-                </button>
-              ))}
-            </PopoverContent>
-          </Popover>
-
-          {/* Spacer + collapse button */}
+          {/* Spacer + collapse */}
           <div className="flex-1" />
           <Button
             variant="ghost"
@@ -205,7 +171,7 @@ export const RightPanelTabs: React.FC<RightPanelTabsProps> = ({
 
       {/* Content */}
       <div className="flex-1 min-h-0 overflow-y-auto" style={{ overscrollBehavior: 'contain' }}>
-        {renderTabContent()}
+        {renderContent()}
       </div>
     </div>
   );
