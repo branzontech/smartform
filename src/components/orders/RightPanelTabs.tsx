@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
-import { PanelRightClose, Pill, TestTube, Scan, UserPlus, Scissors, ChevronRight, ChevronDown } from 'lucide-react';
+import { PanelRightClose, Pill, TestTube, Scan, UserPlus, Scissors, ChevronRight, ChevronDown, ClipboardList } from 'lucide-react';
 import { PatientHistoryPanel } from '@/components/patients/PatientHistoryPanel';
 import { OrdersListPanel } from './OrdersListPanel';
 import { MedicationOrderForm } from './MedicationOrderForm';
