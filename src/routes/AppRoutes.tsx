@@ -52,6 +52,7 @@ import WorkflowPage from "@/pages/workflow/WorkflowPage";
 import ZonesPage from "@/pages/zones/ZonesPage";
 import CotizacionesPage from "@/pages/cotizaciones/CotizacionesPage";
 import CatalogoProductosPage from "@/pages/catalogo/CatalogoProductosPage";
+import InventarioPage from "@/pages/inventario/InventarioPage";
 
 const AppRoutes = () => {
   return (
@@ -92,6 +93,7 @@ const AppRoutes = () => {
         <Route path="especialidades/psicologo" element={<PsicologoPage />} />
         <Route path="especialidades/nutricionista" element={<NutricionistaPage />} />
         <Route path="especialidades/terapias" element={<TerapiasPage />} />
+        <Route path="inventario" element={<InventarioPage />} />
         <Route path="inventario/articulos" element={<InventoryList />} />
         <Route path="inventario/nuevo" element={<InventoryForm />} />
         <Route path="inventario/editar/:id" element={<InventoryForm />} />

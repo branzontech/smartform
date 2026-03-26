@@ -173,7 +173,7 @@ export const mainNavItems: SubmenuItem[] = [
       },
       {
         title: "Inventario",
-        path: "/app/inventario/articulos",
+        path: "/app/inventario",
         icon: PackageOpen,
       },
       {
