@@ -876,6 +876,78 @@ export type Database = {
           },
         ]
       }
+      incapacidades: {
+        Row: {
+          admision_id: string | null
+          created_at: string
+          diagnostico_codigo: string | null
+          diagnostico_descripcion: string | null
+          dias: number
+          estado: string
+          fecha_fin: string
+          fecha_inicio: string
+          fhir_extensions: Json | null
+          id: string
+          medico_id: string
+          medico_nombre: string
+          observaciones: string | null
+          paciente_id: string
+          tipo: string
+          updated_at: string
+        }
+        Insert: {
+          admision_id?: string | null
+          created_at?: string
+          diagnostico_codigo?: string | null
+          diagnostico_descripcion?: string | null
+          dias?: number
+          estado?: string
+          fecha_fin: string
+          fecha_inicio: string
+          fhir_extensions?: Json | null
+          id?: string
+          medico_id: string
+          medico_nombre: string
+          observaciones?: string | null
+          paciente_id: string
+          tipo?: string
+          updated_at?: string
+        }
+        Update: {
+          admision_id?: string | null
+          created_at?: string
+          diagnostico_codigo?: string | null
+          diagnostico_descripcion?: string | null
+          dias?: number
+          estado?: string
+          fecha_fin?: string
+          fecha_inicio?: string
+          fhir_extensions?: Json | null
+          id?: string
+          medico_id?: string
+          medico_nombre?: string
+          observaciones?: string | null
+          paciente_id?: string
+          tipo?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "incapacidades_admision_id_fkey"
+            columns: ["admision_id"]
+            isOneToOne: false
+            referencedRelation: "admisiones"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "incapacidades_paciente_id_fkey"
+            columns: ["paciente_id"]
+            isOneToOne: false
+            referencedRelation: "pacientes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       inventario_lotes: {
         Row: {
           cantidad: number
