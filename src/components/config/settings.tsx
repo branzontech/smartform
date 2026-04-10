@@ -188,7 +188,7 @@ export const SettingsPage = () => {
         {/* ===== SIDEBAR ===== */}
         <TooltipProvider delayDuration={0}>
           <aside
-            className="shrink-0 flex flex-col border-r border-border bg-muted/30 backdrop-blur-sm transition-[width] duration-200 ease-in-out overflow-hidden"
+            className="shrink-0 h-full flex flex-col border-r border-border bg-muted/30 backdrop-blur-sm transition-[width] duration-200 ease-in-out overflow-hidden"
             style={{ width: sidebarWidth }}
           >
             {/* Top: back + collapse toggle */}
@@ -272,10 +272,10 @@ export const SettingsPage = () => {
                           key={item.id}
                           onClick={() => setActiveCategory(item.id)}
                           className={cn(
-                            "w-full flex items-center gap-2.5 rounded-md text-left text-[13px] transition-all duration-150",
+                            "w-full flex items-center gap-2.5 rounded-md text-left text-[13px] transition-all duration-150 relative",
                             collapsed ? "justify-center px-0 py-2" : "px-2.5 py-[7px]",
                             isActive
-                              ? "bg-background shadow-sm border border-border/60 font-medium text-foreground"
+                              ? "bg-primary/10 font-medium text-primary border-l-2 border-primary"
                               : "text-muted-foreground hover:bg-secondary/50 hover:text-foreground"
                           )}
                         >
