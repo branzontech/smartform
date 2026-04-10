@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { Header } from "@/components/layout/header";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { ArrowLeft, FileText, Palette, Bell, Save, User, Shield, Plus, Cog, HelpCircle, Trash2, SlidersHorizontal, ClipboardList, Loader2, Eye, Edit, BarChart, Building2, UserCog } from "lucide-react";
+import { ArrowLeft, FileText, Palette, Bell, Save, User, Shield, Plus, Cog, HelpCircle, Trash2, SlidersHorizontal, ClipboardList, Loader2, Eye, Edit, BarChart, Building2, UserCog, Stethoscope } from "lucide-react";
+import { ServiciosClinicosConfig } from "@/components/config/ServiciosClinicosConfig";
 import { InstitutionHeaderConfig } from "@/components/config/InstitutionHeaderConfig";
 import { supabase } from "@/integrations/supabase/client";
 import { PatientFieldsConfig } from "@/components/config/PatientFieldsConfig";
@@ -27,6 +28,7 @@ const categories = [
   { id: "header", label: "Encabezado", icon: <Building2 size={18} /> },
   { id: "patient-header", label: "Encabezado paciente", icon: <UserCog size={18} /> },
   { id: "forms", label: "Formularios", icon: <FileText size={18} /> },
+  { id: "servicios", label: "Servicios", icon: <Stethoscope size={18} /> },
   { id: "customization", label: "Personalización", icon: <SlidersHorizontal size={18} /> },
   { id: "appearance", label: "Apariencia", icon: <Palette size={18} /> },
   { id: "notifications", label: "Notificaciones", icon: <Bell size={18} /> },
@@ -319,6 +321,11 @@ export const SettingsPage = () => {
                   </TabsContent>
                 </Tabs>
               </div>
+            )}
+
+            {/* Servicios Clínicos */}
+            {activeCategory === "servicios" && (
+              <ServiciosClinicosConfig />
             )}
               
             {/* Notifications Settings */}
