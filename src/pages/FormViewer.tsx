@@ -34,6 +34,10 @@ import { useAuth } from '@/contexts/AuthContext';
 
 import { PatientHeaderBanner } from '@/components/forms/PatientHeaderBanner';
 import { RegistroAtenciones } from '@/components/forms/RegistroAtenciones';
+import { IncapacidadDialog } from '@/components/incapacidades/IncapacidadDialog';
+import { useIncapacidadesByAdmision } from '@/hooks/useIncapacidades';
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
 import {
   AlertDialog,
   AlertDialogAction,
