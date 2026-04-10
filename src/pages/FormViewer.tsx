@@ -1486,6 +1486,18 @@ const FormViewer = () => {
         getFilledFieldsSummary={getFilledFieldsSummary}
       />
 
+      {/* Incapacidad Dialog */}
+      {patientId && resolvedAdmisionId && (
+        <IncapacidadDialog
+          open={showIncapacidadDialog}
+          onOpenChange={setShowIncapacidadDialog}
+          pacienteId={patientId}
+          admisionId={resolvedAdmisionId}
+          medicoNombre={user?.user_metadata?.full_name || "Médico"}
+          medicoId={user?.id || ""}
+        />
+      )}
+
       {/* Exit protection dialog */}
       <AlertDialog open={showExitDialog} onOpenChange={setShowExitDialog}>
         <AlertDialogContent className="rounded-2xl">
