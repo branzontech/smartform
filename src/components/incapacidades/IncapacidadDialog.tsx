@@ -287,7 +287,7 @@ export const IncapacidadDialog: React.FC<Props> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col p-0 gap-0 rounded-2xl overflow-hidden">
+      <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col p-0 gap-0 rounded-2xl overflow-hidden" aria-describedby={undefined}>
         {/* Header */}
         <DialogHeader className="px-6 pt-5 pb-3 border-b border-dashed">
           <DialogTitle className="flex items-center gap-2 text-base">
@@ -300,7 +300,7 @@ export const IncapacidadDialog: React.FC<Props> = ({
         </DialogHeader>
 
         {/* Body */}
-        <ScrollArea className="flex-1 min-h-0" style={{ maxHeight: "calc(90vh - 130px)" }}>
+        <div className="flex-1 min-h-0 overflow-y-auto">
           <form onSubmit={form.handleSubmit(handleSubmit)} className="px-6 py-5 space-y-6">
             {/* Days counter */}
             <div className="flex items-center gap-4 p-3 rounded-lg bg-primary/5 border border-primary/10">
@@ -574,7 +574,7 @@ export const IncapacidadDialog: React.FC<Props> = ({
               </Button>
             </div>
           </form>
-        </ScrollArea>
+        </div>
       </DialogContent>
     </Dialog>
   );
