@@ -1213,6 +1213,60 @@ export type Database = {
           },
         ]
       }
+      orden_procedimiento_items: {
+        Row: {
+          cantidad: number
+          codigo_procedimiento: string
+          created_at: string | null
+          descripcion_procedimiento: string
+          dias: number
+          fhir_extensions: Json | null
+          id: string
+          notas: string | null
+          orden_id: string
+          procedimiento_id: string
+        }
+        Insert: {
+          cantidad?: number
+          codigo_procedimiento: string
+          created_at?: string | null
+          descripcion_procedimiento: string
+          dias?: number
+          fhir_extensions?: Json | null
+          id?: string
+          notas?: string | null
+          orden_id: string
+          procedimiento_id: string
+        }
+        Update: {
+          cantidad?: number
+          codigo_procedimiento?: string
+          created_at?: string | null
+          descripcion_procedimiento?: string
+          dias?: number
+          fhir_extensions?: Json | null
+          id?: string
+          notas?: string | null
+          orden_id?: string
+          procedimiento_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orden_procedimiento_items_orden_id_fkey"
+            columns: ["orden_id"]
+            isOneToOne: false
+            referencedRelation: "ordenes_medicas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orden_procedimiento_items_procedimiento_id_fkey"
+            columns: ["procedimiento_id"]
+            isOneToOne: false
+            referencedRelation: "catalogo_procedimientos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ordenes_medicas: {
         Row: {
           admision_id: string | null
@@ -1233,6 +1287,7 @@ export type Database = {
           numero_orden: string
           paciente_id: string
           prioridad: string | null
+          servicio_id: string | null
           tipo: string
           updated_at: string | null
         }
@@ -1255,6 +1310,7 @@ export type Database = {
           numero_orden: string
           paciente_id: string
           prioridad?: string | null
+          servicio_id?: string | null
           tipo: string
           updated_at?: string | null
         }
@@ -1277,6 +1333,7 @@ export type Database = {
           numero_orden?: string
           paciente_id?: string
           prioridad?: string | null
+          servicio_id?: string | null
           tipo?: string
           updated_at?: string | null
         }
@@ -1293,6 +1350,13 @@ export type Database = {
             columns: ["paciente_id"]
             isOneToOne: false
             referencedRelation: "pacientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ordenes_medicas_servicio_id_fkey"
+            columns: ["servicio_id"]
+            isOneToOne: false
+            referencedRelation: "servicios_clinicos"
             referencedColumns: ["id"]
           },
         ]
