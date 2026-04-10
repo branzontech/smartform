@@ -300,7 +300,7 @@ export const IncapacidadDialog: React.FC<Props> = ({
         </DialogHeader>
 
         {/* Body */}
-        <ScrollArea className="flex-1 min-h-0" style={{ maxHeight: "calc(90vh - 130px)" }}>
+        <div className="flex-1 min-h-0 overflow-y-auto">
           <form onSubmit={form.handleSubmit(handleSubmit)} className="px-6 py-5 space-y-6">
             {/* Days counter */}
             <div className="flex items-center gap-4 p-3 rounded-lg bg-primary/5 border border-primary/10">
