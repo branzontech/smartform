@@ -55,14 +55,13 @@ import { toast } from "sonner";
 
 const incapacidadSchema = z.object({
   fecha_inicio: z.date({ required_error: "Fecha inicio requerida" }),
-  fecha_fin: z.date({ required_error: "Fecha fin requerida" }),
-  tipo: z.string().min(1, "Seleccione un tipo"),
-  diagnostico_descripcion: z.string().optional(),
-  diagnostico_codigo: z.string().optional(),
+  duracion_dias: z.number().min(1, "Mínimo 1 día"),
+  tipo_incapacidad: z.string().min(1, "Seleccione un tipo"),
+  grupo_servicios: z.string().min(1, "Seleccione grupo de servicios"),
+  modalidad_prestacion: z.string().min(1, "Seleccione modalidad"),
+  presunto_origen: z.string().min(1, "Seleccione origen"),
+  diagnostico_principal: z.string().min(1, "Diagnóstico requerido"),
   observaciones: z.string().optional(),
-}).refine(data => data.fecha_fin >= data.fecha_inicio, {
-  message: "La fecha fin debe ser posterior o igual a la fecha inicio",
-  path: ["fecha_fin"],
 });
 
 type IncapacidadFormValues = z.infer<typeof incapacidadSchema>;
@@ -76,16 +75,38 @@ interface IncapacidadDialogProps {
 }
 
 const TIPO_OPTIONS = [
-  { value: "general", label: "General", color: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300" },
-  { value: "laboral", label: "Laboral", color: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300" },
-  { value: "maternidad", label: "Maternidad", color: "bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-300" },
-  { value: "paternidad", label: "Paternidad", color: "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300" },
-  { value: "accidente", label: "Accidente", color: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300" },
+  { value: "enfermedad_general", label: "Enfermedad General", color: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300" },
+  { value: "accidente_trabajo", label: "Accidente de Trabajo", color: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300" },
+  { value: "enfermedad_laboral", label: "Enfermedad Laboral", color: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300" },
+  { value: "licencia_maternidad", label: "Licencia Maternidad", color: "bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-300" },
+  { value: "licencia_paternidad", label: "Licencia Paternidad", color: "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300" },
+];
+
+const GRUPO_SERVICIOS_OPTIONS = [
+  { value: "consulta_externa", label: "Consulta Externa" },
+  { value: "urgencias", label: "Urgencias" },
+  { value: "hospitalizacion", label: "Hospitalización" },
+  { value: "cirugia", label: "Cirugía" },
+];
+
+const MODALIDAD_OPTIONS = [
+  { value: "presencial", label: "Presencial" },
+  { value: "extramural_domiciliaria", label: "Extramural Domiciliaria" },
+  { value: "telemedicina_interactiva", label: "Telemedicina Interactiva" },
+  { value: "telemedicina_no_interactiva", label: "Telemedicina No Interactiva" },
+  { value: "telemedicina_telexperticia", label: "Telexperticia" },
+  { value: "telemedicina_telemonitoreo", label: "Telemonitoreo" },
+];
+
+const ORIGEN_OPTIONS = [
+  { value: "comun", label: "Común" },
+  { value: "laboral", label: "Laboral" },
 ];
 
 const ESTADO_BADGE: Record<string, { label: string; icon: React.ElementType; className: string }> = {
   activa: { label: "Activa", icon: CheckCircle, className: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300" },
   anulada: { label: "Anulada", icon: XCircle, className: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300" },
+  cerrada: { label: "Cerrada", icon: AlertCircle, className: "bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-300" },
 };
 
 type View = "list" | "create" | "detail";
