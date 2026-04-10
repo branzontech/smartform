@@ -878,58 +878,97 @@ export type Database = {
       }
       incapacidades: {
         Row: {
-          admision_id: string | null
-          created_at: string
-          diagnostico_codigo: string | null
-          diagnostico_descripcion: string | null
-          dias: number
-          estado: string
-          fecha_fin: string
+          admision_id: string
+          causa_atencion: string | null
+          causa_retroactividad: string | null
+          created_at: string | null
+          datos_regulatorios: Json | null
+          diagnostico_principal: string
+          diagnostico_rel_1: string | null
+          diagnostico_rel_2: string | null
+          diagnostico_rel_3: string | null
+          duracion_dias: number
+          es_prorroga: boolean | null
+          es_retroactiva: boolean | null
+          estado: string | null
+          fecha_fin: string | null
           fecha_inicio: string
           fhir_extensions: Json | null
+          grupo_servicios: string
           id: string
+          incapacidad_origen_id: string | null
           medico_id: string
           medico_nombre: string
+          modalidad_prestacion: string
+          numero_incapacidad: string | null
           observaciones: string | null
           paciente_id: string
-          tipo: string
-          updated_at: string
+          presunto_origen: string
+          prorroga_tipo: string | null
+          tipo_incapacidad: string
+          updated_at: string | null
         }
         Insert: {
-          admision_id?: string | null
-          created_at?: string
-          diagnostico_codigo?: string | null
-          diagnostico_descripcion?: string | null
-          dias?: number
-          estado?: string
-          fecha_fin: string
+          admision_id: string
+          causa_atencion?: string | null
+          causa_retroactividad?: string | null
+          created_at?: string | null
+          datos_regulatorios?: Json | null
+          diagnostico_principal: string
+          diagnostico_rel_1?: string | null
+          diagnostico_rel_2?: string | null
+          diagnostico_rel_3?: string | null
+          duracion_dias: number
+          es_prorroga?: boolean | null
+          es_retroactiva?: boolean | null
+          estado?: string | null
+          fecha_fin?: string | null
           fecha_inicio: string
           fhir_extensions?: Json | null
+          grupo_servicios: string
           id?: string
+          incapacidad_origen_id?: string | null
           medico_id: string
           medico_nombre: string
+          modalidad_prestacion: string
+          numero_incapacidad?: string | null
           observaciones?: string | null
           paciente_id: string
-          tipo?: string
-          updated_at?: string
+          presunto_origen: string
+          prorroga_tipo?: string | null
+          tipo_incapacidad: string
+          updated_at?: string | null
         }
         Update: {
-          admision_id?: string | null
-          created_at?: string
-          diagnostico_codigo?: string | null
-          diagnostico_descripcion?: string | null
-          dias?: number
-          estado?: string
-          fecha_fin?: string
+          admision_id?: string
+          causa_atencion?: string | null
+          causa_retroactividad?: string | null
+          created_at?: string | null
+          datos_regulatorios?: Json | null
+          diagnostico_principal?: string
+          diagnostico_rel_1?: string | null
+          diagnostico_rel_2?: string | null
+          diagnostico_rel_3?: string | null
+          duracion_dias?: number
+          es_prorroga?: boolean | null
+          es_retroactiva?: boolean | null
+          estado?: string | null
+          fecha_fin?: string | null
           fecha_inicio?: string
           fhir_extensions?: Json | null
+          grupo_servicios?: string
           id?: string
+          incapacidad_origen_id?: string | null
           medico_id?: string
           medico_nombre?: string
+          modalidad_prestacion?: string
+          numero_incapacidad?: string | null
           observaciones?: string | null
           paciente_id?: string
-          tipo?: string
-          updated_at?: string
+          presunto_origen?: string
+          prorroga_tipo?: string | null
+          tipo_incapacidad?: string
+          updated_at?: string | null
         }
         Relationships: [
           {
@@ -937,6 +976,13 @@ export type Database = {
             columns: ["admision_id"]
             isOneToOne: false
             referencedRelation: "admisiones"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "incapacidades_incapacidad_origen_id_fkey"
+            columns: ["incapacidad_origen_id"]
+            isOneToOne: false
+            referencedRelation: "incapacidades"
             referencedColumns: ["id"]
           },
           {
