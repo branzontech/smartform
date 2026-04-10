@@ -103,6 +103,7 @@ const FormViewer = () => {
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [pendingValues, setPendingValues] = useState<any>(null);
   const [showRegistro, setShowRegistro] = useState(false);
+  const [showIncapacidadDialog, setShowIncapacidadDialog] = useState(false);
   const { hasRole } = useAuth();
   const { toast: uiToast } = useToast();
 
