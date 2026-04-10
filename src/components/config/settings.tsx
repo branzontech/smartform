@@ -28,7 +28,7 @@ const categories = [
   { id: "header", label: "Encabezado", icon: <Building2 size={18} /> },
   { id: "patient-header", label: "Encabezado paciente", icon: <UserCog size={18} /> },
   { id: "forms", label: "Formularios", icon: <FileText size={18} /> },
-  { id: "servicios", label: "Servicios", icon: <Stethoscope size={18} /> },
+  { id: "servicios-clinicos", label: "Servicios Clínicos", icon: <Stethoscope size={18} /> },
   { id: "customization", label: "Personalización", icon: <SlidersHorizontal size={18} /> },
   { id: "appearance", label: "Apariencia", icon: <Palette size={18} /> },
   { id: "notifications", label: "Notificaciones", icon: <Bell size={18} /> },
@@ -324,7 +324,7 @@ export const SettingsPage = () => {
             )}
 
             {/* Servicios Clínicos */}
-            {activeCategory === "servicios" && (
+            {activeCategory === "servicios-clinicos" && (
               <ServiciosClinicosConfig />
             )}
               
