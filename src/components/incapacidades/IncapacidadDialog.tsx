@@ -287,7 +287,7 @@ export const IncapacidadDialog: React.FC<Props> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col p-0 gap-0 rounded-2xl overflow-hidden">
+      <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col p-0 gap-0 rounded-2xl overflow-hidden" aria-describedby={undefined}>
         {/* Header */}
         <DialogHeader className="px-6 pt-5 pb-3 border-b border-dashed">
           <DialogTitle className="flex items-center gap-2 text-base">
