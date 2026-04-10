@@ -7,14 +7,17 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   User, CreditCard, Calendar, Phone, Mail, FileText, Shield, Heart,
   MapPin, Building, Briefcase, IdCard, ChevronDown, ChevronUp, Users,
-  Clock, Hash, CalendarDays,
+  Clock, Hash, CalendarDays, Plus, Eye,
 } from "lucide-react";
 import { differenceInYears, format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { IncapacidadDialog } from "@/components/incapacidades/IncapacidadDialog";
+import { useIncapacidadesByAdmision } from "@/hooks/useIncapacidades";
 
 const ICON_MAP: Record<string, React.ElementType> = {
   User, CreditCard, Calendar, Phone, Mail, FileText, Shield, Heart,
