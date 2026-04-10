@@ -139,6 +139,51 @@ export type Database = {
         }
         Relationships: []
       }
+      catalogo_procedimientos: {
+        Row: {
+          activo: boolean | null
+          capitulo: string | null
+          codigo: string
+          created_at: string | null
+          datos_regulatorios: Json | null
+          descripcion: string
+          fhir_extensions: Json | null
+          fhir_system_uri: string
+          id: string
+          sistema_codificacion: string
+          tipo: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          activo?: boolean | null
+          capitulo?: string | null
+          codigo: string
+          created_at?: string | null
+          datos_regulatorios?: Json | null
+          descripcion: string
+          fhir_extensions?: Json | null
+          fhir_system_uri?: string
+          id?: string
+          sistema_codificacion?: string
+          tipo?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          activo?: boolean | null
+          capitulo?: string | null
+          codigo?: string
+          created_at?: string | null
+          datos_regulatorios?: Json | null
+          descripcion?: string
+          fhir_extensions?: Json | null
+          fhir_system_uri?: string
+          id?: string
+          sistema_codificacion?: string
+          tipo?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       catalogo_productos: {
         Row: {
           activo: boolean | null
@@ -1586,6 +1631,93 @@ export type Database = {
           responsable_nombre?: string | null
           sede_principal?: boolean | null
           telefono?: string | null
+          tipo?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      servicio_procedimientos: {
+        Row: {
+          activo: boolean | null
+          created_at: string | null
+          es_predeterminado: boolean | null
+          id: string
+          orden_visualizacion: number | null
+          procedimiento_id: string
+          servicio_id: string
+        }
+        Insert: {
+          activo?: boolean | null
+          created_at?: string | null
+          es_predeterminado?: boolean | null
+          id?: string
+          orden_visualizacion?: number | null
+          procedimiento_id: string
+          servicio_id: string
+        }
+        Update: {
+          activo?: boolean | null
+          created_at?: string | null
+          es_predeterminado?: boolean | null
+          id?: string
+          orden_visualizacion?: number | null
+          procedimiento_id?: string
+          servicio_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "servicio_procedimientos_procedimiento_id_fkey"
+            columns: ["procedimiento_id"]
+            isOneToOne: false
+            referencedRelation: "catalogo_procedimientos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "servicio_procedimientos_servicio_id_fkey"
+            columns: ["servicio_id"]
+            isOneToOne: false
+            referencedRelation: "servicios_clinicos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      servicios_clinicos: {
+        Row: {
+          activo: boolean | null
+          centro_costo: string | null
+          codigo: string
+          created_at: string | null
+          datos_regulatorios: Json | null
+          descripcion: string | null
+          fhir_extensions: Json | null
+          id: string
+          nombre: string
+          tipo: string
+          updated_at: string | null
+        }
+        Insert: {
+          activo?: boolean | null
+          centro_costo?: string | null
+          codigo: string
+          created_at?: string | null
+          datos_regulatorios?: Json | null
+          descripcion?: string | null
+          fhir_extensions?: Json | null
+          id?: string
+          nombre: string
+          tipo: string
+          updated_at?: string | null
+        }
+        Update: {
+          activo?: boolean | null
+          centro_costo?: string | null
+          codigo?: string
+          created_at?: string | null
+          datos_regulatorios?: Json | null
+          descripcion?: string | null
+          fhir_extensions?: Json | null
+          id?: string
+          nombre?: string
           tipo?: string
           updated_at?: string | null
         }
