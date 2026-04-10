@@ -1,11 +1,18 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
-import { PanelRightClose, Pill, TestTube, Scan, UserPlus, Scissors, ChevronRight, ChevronDown } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Separator } from '@/components/ui/separator';
+import { PanelRightClose, Pill, TestTube, Scan, UserPlus, Scissors, ChevronRight, ChevronDown, Plus, Eye, Loader2 } from 'lucide-react';
 import { PatientHistoryPanel } from '@/components/patients/PatientHistoryPanel';
-
 import { MedicationOrderForm } from './MedicationOrderForm';
+import OrdenProcedimientoDialog from '@/components/ordenes/OrdenProcedimientoDialog';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/contexts/AuthContext';
+import { useOrdenesProcedimientosByAdmision, useOrdenProcedimientoDetail } from '@/hooks/useOrdenesProcedimientos';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
 
 const ORDER_TYPES = [
   { type: 'medicamento', label: 'Medicamentos', icon: Pill },
@@ -15,6 +22,173 @@ const ORDER_TYPES = [
   { type: 'procedimiento', label: 'Procedimientos', icon: Scissors },
 ];
 
+/* ─── Procedimientos Tab Content ─── */
+const ProcedimientosTabContent: React.FC<{
+  admisionId: string | null;
+  patientId: string;
+  onOrderSaved: () => void;
+}> = ({ admisionId, patientId, onOrderSaved }) => {
+  const { user: authUser } = useAuth();
+  const [showDialog, setShowDialog] = useState(false);
+  const [detailOrdenId, setDetailOrdenId] = useState<string | null>(null);
+
+  const { data: ordenes = [], isLoading } = useOrdenesProcedimientosByAdmision(admisionId);
+  const { data: ordenDetail } = useOrdenProcedimientoDetail(detailOrdenId);
+
+  const medicoNombre = authUser?.user_metadata?.full_name || 'Médico';
+  const medicoId = authUser?.id || '';
+
+  const handleSuccess = () => {
+    onOrderSaved();
+  };
+
+  return (
+    <div className="flex flex-col h-full">
+      {/* New order button */}
+      <div className="px-3 pt-3 pb-2 shrink-0">
+        <Button
+          size="sm"
+          className="w-full gap-1.5 h-8 text-xs"
+          onClick={() => setShowDialog(true)}
+          disabled={!admisionId}
+        >
+          <Plus className="w-3 h-3" /> Nueva Orden
+        </Button>
+      </div>
+
+      {/* Orders list */}
+      <div className="flex-1 min-h-0 overflow-y-auto px-3 pb-3">
+        {isLoading ? (
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+          </div>
+        ) : ordenes.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-10 text-center">
+            <Scissors className="w-8 h-8 text-muted-foreground/30 mb-2" />
+            <p className="text-xs font-medium text-muted-foreground">No hay órdenes de procedimientos</p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {ordenes.map(orden => (
+              <button
+                key={orden.id}
+                onClick={() => setDetailOrdenId(orden.id)}
+                className="w-full text-left p-2.5 rounded-lg border border-border/50 hover:border-primary/30 hover:bg-muted/30 transition-all"
+              >
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs font-mono font-semibold text-primary">{orden.numero_orden}</span>
+                  <Badge
+                    variant={orden.estado === 'activa' ? 'default' : 'secondary'}
+                    className="text-[9px] px-1.5 py-0 h-4"
+                  >
+                    {orden.estado}
+                  </Badge>
+                </div>
+                <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+                  <span>{orden.fecha_orden ? format(new Date(orden.fecha_orden), 'dd MMM yyyy', { locale: es }) : '—'}</span>
+                  <span>•</span>
+                  <span>{orden.items_detalle?.length || 0} items</span>
+                </div>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Create dialog */}
+      {admisionId && (
+        <OrdenProcedimientoDialog
+          open={showDialog}
+          onOpenChange={setShowDialog}
+          admisionId={admisionId}
+          pacienteId={patientId}
+          medicoNombre={medicoNombre}
+          medicoId={medicoId}
+          onSuccess={handleSuccess}
+        />
+      )}
+
+      {/* Detail dialog */}
+      <Dialog open={!!detailOrdenId} onOpenChange={open => !open && setDetailOrdenId(null)}>
+        <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col p-0 gap-0" aria-describedby={undefined}>
+          <DialogHeader className="px-5 pt-4 pb-3 shrink-0">
+            <DialogTitle className="flex items-center gap-2 text-sm font-bold">
+              <Scissors className="w-4 h-4 text-primary" />
+              {ordenDetail?.numero_orden || 'Cargando...'}
+            </DialogTitle>
+          </DialogHeader>
+
+          {ordenDetail && (
+            <div className="flex-1 min-h-0 overflow-y-auto">
+              {/* Header info */}
+              <div className="px-5 py-3 bg-muted/30 border-y border-border/40">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+                  <div>
+                    <span className="text-[10px] uppercase text-muted-foreground font-semibold">Médico</span>
+                    <p className="font-medium">{ordenDetail.medico_nombre}</p>
+                  </div>
+                  <div>
+                    <span className="text-[10px] uppercase text-muted-foreground font-semibold">Fecha</span>
+                    <p>{ordenDetail.fecha_orden ? format(new Date(ordenDetail.fecha_orden), 'dd/MM/yyyy HH:mm', { locale: es }) : '—'}</p>
+                  </div>
+                  <div>
+                    <span className="text-[10px] uppercase text-muted-foreground font-semibold">Estado</span>
+                    <p><Badge variant="secondary" className="text-[9px]">{ordenDetail.estado}</Badge></p>
+                  </div>
+                  <div>
+                    <span className="text-[10px] uppercase text-muted-foreground font-semibold">Servicio</span>
+                    <p>{ordenDetail.servicio?.nombre || '—'}</p>
+                  </div>
+                </div>
+                {ordenDetail.indicaciones && (
+                  <div className="mt-2">
+                    <span className="text-[10px] uppercase text-muted-foreground font-semibold">Indicaciones</span>
+                    <p className="text-xs">{ordenDetail.indicaciones}</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Items table */}
+              <div className="px-5 py-3">
+                <p className="text-[10px] uppercase font-semibold text-muted-foreground mb-2">Procedimientos</p>
+                {ordenDetail.items_detalle && ordenDetail.items_detalle.length > 0 ? (
+                  <div className="border border-border/40 rounded-lg overflow-hidden">
+                    <table className="w-full text-xs">
+                      <thead>
+                        <tr className="bg-muted/40 text-muted-foreground">
+                          <th className="text-left px-3 py-1.5 font-semibold">Código</th>
+                          <th className="text-left px-3 py-1.5 font-semibold">Descripción</th>
+                          <th className="text-center px-2 py-1.5 font-semibold w-14">Cant.</th>
+                          <th className="text-center px-2 py-1.5 font-semibold w-14">Días</th>
+                          <th className="text-left px-2 py-1.5 font-semibold">Notas</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {ordenDetail.items_detalle.map(item => (
+                          <tr key={item.id} className="border-t border-border/30">
+                            <td className="px-3 py-1.5 font-mono font-semibold text-primary">{item.codigo_procedimiento}</td>
+                            <td className="px-3 py-1.5">{item.descripcion_procedimiento}</td>
+                            <td className="text-center px-2 py-1.5">{item.cantidad}</td>
+                            <td className="text-center px-2 py-1.5">{item.dias}</td>
+                            <td className="px-2 py-1.5 text-muted-foreground">{item.notas || '—'}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <p className="text-xs text-muted-foreground">Sin items detallados</p>
+                )}
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+};
+
+/* ─── Main Component ─── */
 interface RightPanelTabsProps {
   patientId: string;
   admisionId: string | null;
@@ -26,7 +200,6 @@ export const RightPanelTabs: React.FC<RightPanelTabsProps> = ({
   admisionId,
   onCollapse,
 }) => {
-  // 'antecedentes' | 'ordenes-medicamento' | 'ordenes-laboratorio' | etc.
   const [activeTab, setActiveTab] = useState<string>('antecedentes');
   const [ordenesExpanded, setOrdenesExpanded] = useState(false);
   const [ordersCount, setOrdersCount] = useState(0);
@@ -73,7 +246,6 @@ export const RightPanelTabs: React.FC<RightPanelTabsProps> = ({
       return <PatientHistoryPanel patientId={patientId} className="h-full" />;
     }
 
-
     const activeType = ORDER_TYPES.find(t => activeTab === `ordenes-${t.type}`);
     if (!activeType) return null;
 
@@ -84,6 +256,16 @@ export const RightPanelTabs: React.FC<RightPanelTabsProps> = ({
           pacienteId={patientId}
           onSaved={handleOrderSaved}
           onCancel={() => handleAntecedentesClick()}
+        />
+      );
+    }
+
+    if (activeType.type === 'procedimiento') {
+      return (
+        <ProcedimientosTabContent
+          admisionId={admisionId}
+          patientId={patientId}
+          onOrderSaved={handleOrderSaved}
         />
       );
     }
@@ -103,7 +285,6 @@ export const RightPanelTabs: React.FC<RightPanelTabsProps> = ({
       {/* Tabs row */}
       <div className="shrink-0 border-b bg-card">
         <div className="flex items-center h-9 overflow-x-auto scrollbar-none">
-          {/* Antecedentes */}
           <button
             onClick={handleAntecedentesClick}
             className={cn(
@@ -116,7 +297,6 @@ export const RightPanelTabs: React.FC<RightPanelTabsProps> = ({
             Antecedentes
           </button>
 
-          {/* Órdenes toggle */}
           <button
             onClick={handleOrdenesClick}
             className={cn(
@@ -135,7 +315,6 @@ export const RightPanelTabs: React.FC<RightPanelTabsProps> = ({
             )}
           </button>
 
-          {/* Order sub-tabs (visible when expanded) */}
           {ordenesExpanded && (
             <>
               {ORDER_TYPES.map(ot => {
