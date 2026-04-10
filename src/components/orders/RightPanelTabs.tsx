@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
-import { PanelRightClose, Pill, TestTube, Scan, UserPlus, Scissors, ChevronRight, ChevronDown, ClipboardList } from 'lucide-react';
+import { PanelRightClose, Pill, TestTube, Scan, UserPlus, Scissors, ChevronRight, ChevronDown } from 'lucide-react';
 import { PatientHistoryPanel } from '@/components/patients/PatientHistoryPanel';
-import { OrdersListPanel } from './OrdersListPanel';
+
 import { MedicationOrderForm } from './MedicationOrderForm';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
@@ -49,7 +49,7 @@ export const RightPanelTabs: React.FC<RightPanelTabsProps> = ({
       setActiveTab('antecedentes');
     } else {
       setOrdenesExpanded(true);
-      setActiveTab('ordenes-historial');
+      setActiveTab(`ordenes-${ORDER_TYPES[0].type}`);
     }
   };
 
@@ -64,7 +64,6 @@ export const RightPanelTabs: React.FC<RightPanelTabsProps> = ({
 
   const handleOrderSaved = () => {
     setRefreshKey(k => k + 1);
-    setActiveTab('ordenes-historial');
   };
 
   const isOrderTypeActive = (type: string) => activeTab === `ordenes-${type}`;
@@ -74,9 +73,6 @@ export const RightPanelTabs: React.FC<RightPanelTabsProps> = ({
       return <PatientHistoryPanel patientId={patientId} className="h-full" />;
     }
 
-    if (activeTab === 'ordenes-historial') {
-      return <OrdersListPanel key={refreshKey} admisionId={admisionId} />;
-    }
 
     const activeType = ORDER_TYPES.find(t => activeTab === `ordenes-${t.type}`);
     if (!activeType) return null;
@@ -142,18 +138,6 @@ export const RightPanelTabs: React.FC<RightPanelTabsProps> = ({
           {/* Order sub-tabs (visible when expanded) */}
           {ordenesExpanded && (
             <>
-              <button
-                onClick={() => setActiveTab('ordenes-historial')}
-                className={cn(
-                  'shrink-0 px-2 py-1.5 text-xs font-medium cursor-pointer transition-colors whitespace-nowrap flex items-center gap-1',
-                  activeTab === 'ordenes-historial'
-                    ? 'border-b-2 border-primary text-foreground'
-                    : 'text-muted-foreground hover:text-foreground'
-                )}
-              >
-                <ClipboardList className="w-3 h-3" />
-                <span className="hidden sm:inline">Historial</span>
-              </button>
               {ORDER_TYPES.map(ot => {
                 const Icon = ot.icon;
                 return (
