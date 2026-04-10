@@ -178,6 +178,10 @@ const FormViewer = () => {
     fetchActiveAdmission();
   }, [patientId, consultationId, isConsultationUUID]);
 
+  // Incapacidades for this admission
+  const { data: incapacidadesList = [] } = useIncapacidadesByAdmision(resolvedAdmisionId);
+  const incapacidadCount = incapacidadesList.filter(i => i.estado === "activa").length;
+
   // Build ordered list of all form IDs
   const allFormIds = React.useMemo(() => {
     const ids: string[] = [];
