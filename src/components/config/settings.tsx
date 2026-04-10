@@ -188,7 +188,7 @@ export const SettingsPage = () => {
         {/* ===== SIDEBAR ===== */}
         <TooltipProvider delayDuration={0}>
           <aside
-            className="shrink-0 flex flex-col border-r border-border bg-muted/30 backdrop-blur-sm transition-[width] duration-200 ease-in-out overflow-hidden"
+            className="shrink-0 h-full flex flex-col border-r border-border bg-muted/30 backdrop-blur-sm transition-[width] duration-200 ease-in-out overflow-hidden"
             style={{ width: sidebarWidth }}
           >
             {/* Top: back + collapse toggle */}
