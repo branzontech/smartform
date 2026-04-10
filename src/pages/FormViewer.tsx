@@ -130,6 +130,9 @@ const FormViewer = () => {
   const [emptyFormIds, setEmptyFormIds] = useState<string[]>([]);
   const [validationErrorsByForm, setValidationErrorsByForm] = useState<Record<string, string[]>>({});
 
+  // Incapacidades for this admission
+  const { data: incapacidadesList = [] } = useIncapacidadesByAdmision(resolvedAdmisionId);
+  const incapacidadCount = incapacidadesList.filter(i => i.estado === "activa").length;
 
   // Panel resize state
 
