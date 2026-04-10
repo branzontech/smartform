@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
-import { PanelRightClose, Pill, TestTube, Scan, UserPlus, Scissors, ChevronRight, ChevronDown, ClipboardList } from 'lucide-react';
+import { PanelRightClose, Pill, TestTube, Scan, UserPlus, Scissors, ChevronRight, ChevronDown } from 'lucide-react';
 import { PatientHistoryPanel } from '@/components/patients/PatientHistoryPanel';
 import { OrdersListPanel } from './OrdersListPanel';
 import { MedicationOrderForm } from './MedicationOrderForm';
@@ -49,7 +49,7 @@ export const RightPanelTabs: React.FC<RightPanelTabsProps> = ({
       setActiveTab('antecedentes');
     } else {
       setOrdenesExpanded(true);
-      setActiveTab('ordenes-historial');
+      setActiveTab(`ordenes-${ORDER_TYPES[0].type}`);
     }
   };
 
@@ -64,7 +64,6 @@ export const RightPanelTabs: React.FC<RightPanelTabsProps> = ({
 
   const handleOrderSaved = () => {
     setRefreshKey(k => k + 1);
-    setActiveTab('ordenes-historial');
   };
 
   const isOrderTypeActive = (type: string) => activeTab === `ordenes-${type}`;
