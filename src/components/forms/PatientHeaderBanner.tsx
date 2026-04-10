@@ -76,20 +76,9 @@ export const PatientHeaderBanner: React.FC<PatientHeaderBannerProps> = ({
     enabled: !admisionData && !!admisionId,
   });
 
-  // Count active incapacidades
-  const { data: incapacidadCount = 0 } = useQuery({
-    queryKey: ["incapacidades-count", pacienteId],
-    queryFn: async () => {
-      const { count, error } = await supabase
-        .from("incapacidades")
-        .select("*", { count: "exact", head: true })
-        .eq("paciente_id", pacienteId)
-        .eq("estado", "activa");
-      if (error) return 0;
-      return count || 0;
-    },
-    enabled: !!pacienteId,
-  });
+  // Fetch incapacidades for this admission
+  const { data: incapacidadesList = [] } = useIncapacidadesByAdmision(admisionId || null);
+  const incapacidadCount = incapacidadesList.filter(i => i.estado === "activa").length;
 
   const p = pacienteData || patient;
   const a = admisionData || admision;
