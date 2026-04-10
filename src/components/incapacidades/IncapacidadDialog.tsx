@@ -574,7 +574,7 @@ export const IncapacidadDialog: React.FC<Props> = ({
               </Button>
             </div>
           </form>
-        </ScrollArea>
+        </div>
       </DialogContent>
     </Dialog>
   );
