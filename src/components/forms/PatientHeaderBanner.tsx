@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -42,6 +43,7 @@ export const PatientHeaderBanner: React.FC<PatientHeaderBannerProps> = ({
 }) => {
   const [expanded, setExpanded] = useState(false);
   const [showIncapacidad, setShowIncapacidad] = useState(false);
+  const { user } = useAuth();
 
   const { data: patient, isLoading: patientLoading } = useQuery({
     queryKey: ["paciente", pacienteId],
@@ -256,13 +258,16 @@ export const PatientHeaderBanner: React.FC<PatientHeaderBannerProps> = ({
       </div>
 
       {/* Incapacidad Dialog */}
-      <IncapacidadDialog
-        open={showIncapacidad}
-        onOpenChange={setShowIncapacidad}
-        pacienteId={pacienteId}
-        admisionId={admisionId}
-        pacienteNombre={fullName}
-      />
+      {admisionId && (
+        <IncapacidadDialog
+          open={showIncapacidad}
+          onOpenChange={setShowIncapacidad}
+          pacienteId={pacienteId}
+          admisionId={admisionId}
+          medicoNombre={a?.profesional_nombre || "Médico"}
+          medicoId={user?.id || ""}
+        />
+      )}
     </>
   );
 };
