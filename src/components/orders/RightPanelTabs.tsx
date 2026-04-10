@@ -2,14 +2,12 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Separator } from '@/components/ui/separator';
-import { PanelRightClose, Pill, TestTube, Scan, UserPlus, Scissors, ChevronRight, ChevronDown, Plus, Eye, Loader2 } from 'lucide-react';
+import { PanelRightClose, Pill, TestTube, Scan, UserPlus, Scissors, ChevronRight, ChevronDown, Plus, Loader2 } from 'lucide-react';
 import { PatientHistoryPanel } from '@/components/patients/PatientHistoryPanel';
 import { MedicationOrderForm } from './MedicationOrderForm';
-import OrdenProcedimientoDialog from '@/components/ordenes/OrdenProcedimientoDialog';
+import { ProcedureOrderForm } from './ProcedureOrderForm';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
-import { useAuth } from '@/contexts/AuthContext';
 import { useOrdenesProcedimientosByAdmision, useOrdenProcedimientoDetail } from '@/hooks/useOrdenesProcedimientos';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -28,30 +26,29 @@ const ProcedimientosTabContent: React.FC<{
   patientId: string;
   onOrderSaved: () => void;
 }> = ({ admisionId, patientId, onOrderSaved }) => {
-  const { user: authUser } = useAuth();
-  const [showDialog, setShowDialog] = useState(false);
+  const [showForm, setShowForm] = useState(false);
   const [detailOrdenId, setDetailOrdenId] = useState<string | null>(null);
 
   const { data: ordenes = [], isLoading } = useOrdenesProcedimientosByAdmision(admisionId);
   const { data: ordenDetail } = useOrdenProcedimientoDetail(detailOrdenId);
 
-  const medicoNombre = authUser?.user_metadata?.full_name || 'Médico';
-  const medicoId = authUser?.id || '';
-
-  const handleSuccess = () => {
-    onOrderSaved();
-  };
+  if (showForm) {
+    return (
+      <ProcedureOrderForm
+        admisionId={admisionId}
+        pacienteId={patientId}
+        onSaved={() => { setShowForm(false); onOrderSaved(); }}
+        onCancel={() => setShowForm(false)}
+      />
+    );
+  }
 
   return (
     <div className="flex flex-col h-full">
       {/* New order button */}
       <div className="px-3 pt-3 pb-2 shrink-0">
-        <Button
-          size="sm"
-          className="w-full gap-1.5 h-8 text-xs"
-          onClick={() => setShowDialog(true)}
-          disabled={!admisionId}
-        >
+        <Button size="sm" className="w-full gap-1.5 h-8 text-xs"
+          onClick={() => setShowForm(true)} disabled={!admisionId}>
           <Plus className="w-3 h-3" /> Nueva Orden
         </Button>
       </div>
@@ -70,22 +67,15 @@ const ProcedimientosTabContent: React.FC<{
         ) : (
           <div className="space-y-2">
             {ordenes.map(orden => (
-              <button
-                key={orden.id}
-                onClick={() => setDetailOrdenId(orden.id)}
-                className="w-full text-left p-2.5 rounded-lg border border-border/50 hover:border-primary/30 hover:bg-muted/30 transition-all"
-              >
+              <button key={orden.id} onClick={() => setDetailOrdenId(orden.id)}
+                className="w-full text-left p-2.5 rounded-lg border border-border/50 hover:border-primary/30 hover:bg-muted/30 transition-all">
                 <div className="flex items-center justify-between mb-1">
                   <span className="text-xs font-mono font-semibold text-primary">{orden.numero_orden}</span>
-                  <Badge
-                    variant={orden.estado === 'activa' ? 'default' : 'secondary'}
-                    className="text-[9px] px-1.5 py-0 h-4"
-                  >
-                    {orden.estado}
-                  </Badge>
+                  <Badge variant={orden.estado === 'activa' ? 'default' : 'secondary'}
+                    className="text-[9px] px-1.5 py-0 h-4">{orden.estado}</Badge>
                 </div>
                 <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
-                  <span>{orden.fecha_orden ? format(new Date(orden.fecha_orden), 'dd MMM yyyy', { locale: es }) : '—'}</span>
+                  <span>{orden.fecha_orden ? format(new Date(orden.fecha_orden), 'dd/MM/yyyy') : '—'}</span>
                   <span>•</span>
                   <span>{orden.items_detalle?.length || 0} items</span>
                 </div>
@@ -94,19 +84,6 @@ const ProcedimientosTabContent: React.FC<{
           </div>
         )}
       </div>
-
-      {/* Create dialog */}
-      {admisionId && (
-        <OrdenProcedimientoDialog
-          open={showDialog}
-          onOpenChange={setShowDialog}
-          admisionId={admisionId}
-          pacienteId={patientId}
-          medicoNombre={medicoNombre}
-          medicoId={medicoId}
-          onSuccess={handleSuccess}
-        />
-      )}
 
       {/* Detail dialog */}
       <Dialog open={!!detailOrdenId} onOpenChange={open => !open && setDetailOrdenId(null)}>
@@ -117,19 +94,17 @@ const ProcedimientosTabContent: React.FC<{
               {ordenDetail?.numero_orden || 'Cargando...'}
             </DialogTitle>
           </DialogHeader>
-
           {ordenDetail && (
             <div className="flex-1 min-h-0 overflow-y-auto">
-              {/* Header info */}
               <div className="px-5 py-3 bg-muted/30 border-y border-border/40">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+                <div className="grid grid-cols-2 gap-3 text-xs">
                   <div>
                     <span className="text-[10px] uppercase text-muted-foreground font-semibold">Médico</span>
                     <p className="font-medium">{ordenDetail.medico_nombre}</p>
                   </div>
                   <div>
                     <span className="text-[10px] uppercase text-muted-foreground font-semibold">Fecha</span>
-                    <p>{ordenDetail.fecha_orden ? format(new Date(ordenDetail.fecha_orden), 'dd/MM/yyyy HH:mm', { locale: es }) : '—'}</p>
+                    <p>{ordenDetail.fecha_orden ? format(new Date(ordenDetail.fecha_orden), 'dd/MM/yyyy HH:mm') : '—'}</p>
                   </div>
                   <div>
                     <span className="text-[10px] uppercase text-muted-foreground font-semibold">Estado</span>
@@ -147,8 +122,6 @@ const ProcedimientosTabContent: React.FC<{
                   </div>
                 )}
               </div>
-
-              {/* Items table */}
               <div className="px-5 py-3">
                 <p className="text-[10px] uppercase font-semibold text-muted-foreground mb-2">Procedimientos</p>
                 {ordenDetail.items_detalle && ordenDetail.items_detalle.length > 0 ? (
@@ -177,7 +150,7 @@ const ProcedimientosTabContent: React.FC<{
                     </table>
                   </div>
                 ) : (
-                  <p className="text-xs text-muted-foreground">Sin items detallados</p>
+                  <p className="text-xs text-muted-foreground">Sin items</p>
                 )}
               </div>
             </div>
@@ -187,7 +160,6 @@ const ProcedimientosTabContent: React.FC<{
     </div>
   );
 };
-
 /* ─── Main Component ─── */
 interface RightPanelTabsProps {
   patientId: string;
