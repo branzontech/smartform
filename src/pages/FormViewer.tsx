@@ -104,7 +104,7 @@ const FormViewer = () => {
   const [pendingValues, setPendingValues] = useState<any>(null);
   const [showRegistro, setShowRegistro] = useState(false);
   const [showIncapacidadDialog, setShowIncapacidadDialog] = useState(false);
-  const { hasRole } = useAuth();
+  const { hasRole, user: authUser } = useAuth();
   const { toast: uiToast } = useToast();
 
   // Multi-form state
