@@ -12,6 +12,7 @@ import {
 import { differenceInYears, format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
