@@ -1493,8 +1493,8 @@ const FormViewer = () => {
           onOpenChange={setShowIncapacidadDialog}
           pacienteId={patientId}
           admisionId={resolvedAdmisionId}
-          medicoNombre={user?.user_metadata?.full_name || "Médico"}
-          medicoId={user?.id || ""}
+          medicoNombre={authUser?.user_metadata?.full_name || "Médico"}
+          medicoId={authUser?.id || ""}
         />
       )}
 
