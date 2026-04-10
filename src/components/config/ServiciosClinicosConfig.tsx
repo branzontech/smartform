@@ -537,13 +537,18 @@ function CatalogoProcedimientosTab() {
 }
 
 // ========== COMPONENTE PRINCIPAL ==========
-export function ServiciosClinicosConfig() {
+export function ServiciosClinicosConfig({ defaultTab }: { defaultTab?: "servicios" | "catalogo" }) {
+  // If a specific tab is requested, render only that tab directly (no internal tabs)
+  if (defaultTab === "servicios") {
+    return <ServiciosTab />;
+  }
+  if (defaultTab === "catalogo") {
+    return <CatalogoProcedimientosTab />;
+  }
+
+  // Fallback: show both tabs (backward compat)
   return (
     <div>
-      <h2 className="text-base font-semibold mb-1">Servicios y Procedimientos</h2>
-      <p className="text-xs text-muted-foreground mb-4">
-        Administre los servicios clínicos y el catálogo de procedimientos.
-      </p>
       <Tabs defaultValue="servicios" className="w-full">
         <TabsList className="grid w-full grid-cols-2 mb-4 h-9">
           <TabsTrigger value="servicios" className="gap-1.5 text-xs">
