@@ -35,7 +35,9 @@ import { useAuth } from '@/contexts/AuthContext';
 import { PatientHeaderBanner } from '@/components/forms/PatientHeaderBanner';
 import { RegistroAtenciones } from '@/components/forms/RegistroAtenciones';
 import { IncapacidadDialog } from '@/components/incapacidades/IncapacidadDialog';
+import { IncapacidadPreviewDialog } from '@/components/incapacidades/IncapacidadPreviewDialog';
 import { useIncapacidadesByAdmision } from '@/hooks/useIncapacidades';
+import type { IncapacidadLike } from '@/utils/incapacidades/incapacidad-document';
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import {
@@ -104,6 +106,7 @@ const FormViewer = () => {
   const [pendingValues, setPendingValues] = useState<any>(null);
   const [showRegistro, setShowRegistro] = useState(false);
   const [showIncapacidadDialog, setShowIncapacidadDialog] = useState(false);
+  const [previewIncapacidad, setPreviewIncapacidad] = useState<IncapacidadLike | null>(null);
   const { hasRole, user: authUser } = useAuth();
   const { toast: uiToast } = useToast();
 
@@ -1159,7 +1162,7 @@ const FormViewer = () => {
                             <div
                               key={inc.id}
                               className="flex items-center gap-2 px-3 py-2 hover:bg-muted/40 cursor-pointer"
-                              onClick={() => setShowIncapacidadDialog(true)}
+                              onClick={() => setPreviewIncapacidad(inc as unknown as IncapacidadLike)}
                             >
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-1.5">
@@ -1489,7 +1492,7 @@ const FormViewer = () => {
         getFilledFieldsSummary={getFilledFieldsSummary}
       />
 
-      {/* Incapacidad Dialog */}
+      {/* Incapacidad Dialog (create) */}
       {patientId && resolvedAdmisionId && (
         <IncapacidadDialog
           open={showIncapacidadDialog}
@@ -1500,6 +1503,13 @@ const FormViewer = () => {
           medicoId={authUser?.id || ""}
         />
       )}
+
+      {/* Incapacidad Preview (print/share) */}
+      <IncapacidadPreviewDialog
+        incapacidad={previewIncapacidad}
+        open={!!previewIncapacidad}
+        onOpenChange={(o) => { if (!o) setPreviewIncapacidad(null); }}
+      />
 
       {/* Exit protection dialog */}
       <AlertDialog open={showExitDialog} onOpenChange={setShowExitDialog}>
