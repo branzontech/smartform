@@ -2,10 +2,12 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { PanelRightClose, Pill, TestTube, Scan, UserPlus, Scissors, ChevronRight, ChevronDown, Plus, Loader2 } from 'lucide-react';
+import { PanelRightClose, Pill, TestTube, Scan, UserPlus, Scissors, ChevronRight, ChevronDown, Plus, Loader2, Eye, Mail, MessageCircle } from 'lucide-react';
 import { PatientHistoryPanel } from '@/components/patients/PatientHistoryPanel';
 import { MedicationOrderForm } from './MedicationOrderForm';
 import { ProcedureOrderForm } from './ProcedureOrderForm';
+import { OrderPreviewDialog } from './OrderPreviewDialog';
+import { shareOrderEmail, shareOrderWhatsApp } from '@/utils/orders/order-actions';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
 import { useOrdenesProcedimientosByAdmision, useOrdenProcedimientoDetail } from '@/hooks/useOrdenesProcedimientos';
@@ -28,6 +30,7 @@ const ProcedimientosTabContent: React.FC<{
 }> = ({ admisionId, patientId, onOrderSaved }) => {
   const [showForm, setShowForm] = useState(false);
   const [detailOrdenId, setDetailOrdenId] = useState<string | null>(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   const { data: ordenes = [], isLoading } = useOrdenesProcedimientosByAdmision(admisionId);
   const { data: ordenDetail } = useOrdenProcedimientoDetail(detailOrdenId);
