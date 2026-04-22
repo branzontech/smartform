@@ -953,7 +953,9 @@ const FormViewer = () => {
   if (isEmbedded) {
     return (
       <div className="p-4 bg-background">
-        <FormHeaderPreview config={headerConfig} formTitle={formTitle} />
+        <div className="hidden print:block">
+          <FormHeaderPreview config={headerConfig} formTitle={formTitle} />
+        </div>
         <div className="mb-4">
           <h2 className="text-lg font-semibold">{formTitle}</h2>
           {formDescription && (
@@ -1015,7 +1017,9 @@ const FormViewer = () => {
         </div>
         
         <div className="bg-card p-6 rounded-lg shadow-sm border border-border/50 print:shadow-none print:border-none">
-          <FormHeaderPreview config={headerConfig} formTitle={formTitle} />
+          <div className="hidden print:block">
+            <FormHeaderPreview config={headerConfig} formTitle={formTitle} />
+          </div>
           <FormProvider {...form}>
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3">
@@ -1361,7 +1365,9 @@ const FormViewer = () => {
                   </ScrollArea>
                 </DialogContent>
               </Dialog>
-              <FormHeaderPreview config={headerConfig} formTitle={formTitle} />
+              <div className="hidden print:block">
+                <FormHeaderPreview config={headerConfig} formTitle={formTitle} />
+              </div>
               <FormProvider {...form}>
                 <Form {...form}>
                   <form onSubmit={(e) => e.preventDefault()} className={`space-y-3 max-w-none ${isCompleted ? 'pointer-events-none opacity-80' : ''}`}>
