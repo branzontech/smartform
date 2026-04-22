@@ -1539,6 +1539,7 @@ export type Database = {
           id: string
           license_number: string | null
           phone: string | null
+          signature_url: string | null
           specialty: string | null
           updated_at: string
           user_id: string
@@ -1550,6 +1551,7 @@ export type Database = {
           id?: string
           license_number?: string | null
           phone?: string | null
+          signature_url?: string | null
           specialty?: string | null
           updated_at?: string
           user_id: string
@@ -1561,6 +1563,7 @@ export type Database = {
           id?: string
           license_number?: string | null
           phone?: string | null
+          signature_url?: string | null
           specialty?: string | null
           updated_at?: string
           user_id?: string
