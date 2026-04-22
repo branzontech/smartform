@@ -239,6 +239,38 @@ const FormViewer = () => {
     }
   }, [showAddFormDialog, addFormSearch, searchForms]);
 
+  const handleRemoveForm = useCallback((targetId: string) => {
+    // Do not allow removing the primary form (the one in the route)
+    if (targetId === formId) {
+      toast("No se puede quitar el formulario principal");
+      return;
+    }
+    // Remove from dynamic and extra (URL) lists
+    setDynamicFormIds(prev => prev.filter(id => id !== targetId));
+    if (extraFormIds.includes(targetId)) {
+      const remainingExtras = extraFormIds.filter(id => id !== targetId);
+      const params = new URLSearchParams(location.search);
+      if (remainingExtras.length > 0) {
+        params.set('forms', remainingExtras.join(','));
+      } else {
+        params.delete('forms');
+      }
+      navigate(`${location.pathname}${params.toString() ? `?${params.toString()}` : ''}`, { replace: true });
+    }
+    // Drop from formsMap
+    setFormsMap(prev => {
+      const next = { ...prev };
+      delete next[targetId];
+      return next;
+    });
+    // If active tab is being removed, switch to another available form
+    if (activeFormId === targetId) {
+      const remaining = allFormIds.filter(id => id !== targetId);
+      if (remaining.length > 0) setActiveFormId(remaining[0]);
+    }
+    toast.success("Formulario quitado de la consulta");
+  }, [formId, extraFormIds, location.pathname, location.search, navigate, activeFormId, allFormIds]);
+
   const handleAddNewForm = async (newFormId: string) => {
     if (allFormIds.includes(newFormId)) {
       toast("Este formulario ya fue agregado");
@@ -1249,12 +1281,11 @@ const FormViewer = () => {
                         if (!entry) return null;
                         const isActive = fId === activeFormId;
                         const isFirst = idx === 0;
+                        const canRemove = fId !== formId;
                         return (
-                          <button
+                          <div
                             key={fId}
-                            type="button"
-                            onClick={() => handleTabSwitch(fId)}
-                            className={`shrink-0 h-9 px-4 text-xs font-medium flex items-center gap-1.5 transition-all duration-200 ${
+                            className={`shrink-0 h-9 flex items-center transition-all duration-200 group ${
                               isActive
                                 ? 'bg-primary text-primary-foreground'
                                 : 'bg-muted/50 text-muted-foreground hover:bg-muted'
@@ -1268,16 +1299,40 @@ const FormViewer = () => {
                               paddingLeft: isFirst ? '0.75rem' : '1.25rem',
                             }}
                           >
-                            <span className="max-w-[160px] truncate">{entry.title}</span>
-                            {(() => {
-                              const st = getFormStatus(fId);
-                              return (
-                                <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{
-                                  backgroundColor: st.status === 'sin_diligenciar' ? 'transparent' : st.color
-                                }} />
-                              );
-                            })()}
-                          </button>
+                            <button
+                              type="button"
+                              onClick={() => handleTabSwitch(fId)}
+                              className="h-full flex items-center gap-1.5 text-xs font-medium"
+                            >
+                              <span className="max-w-[160px] truncate">{entry.title}</span>
+                              {(() => {
+                                const st = getFormStatus(fId);
+                                return (
+                                  <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{
+                                    backgroundColor: st.status === 'sin_diligenciar' ? 'transparent' : st.color
+                                  }} />
+                                );
+                              })()}
+                            </button>
+                            {canRemove && (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleRemoveForm(fId);
+                                }}
+                                className={`ml-1.5 w-4 h-4 rounded-full flex items-center justify-center transition-opacity ${
+                                  isActive
+                                    ? 'opacity-80 hover:opacity-100 hover:bg-primary-foreground/20'
+                                    : 'opacity-0 group-hover:opacity-70 hover:!opacity-100 hover:bg-foreground/10'
+                                }`}
+                                title="Quitar formulario"
+                                aria-label="Quitar formulario"
+                              >
+                                <XCircle className="w-3 h-3" />
+                              </button>
+                            )}
+                          </div>
                         );
                       })}
                       <button
