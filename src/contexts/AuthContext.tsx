@@ -14,6 +14,7 @@ interface AuthContextType {
   resetPassword: (email: string) => Promise<{ error: Error | null }>;
   updatePassword: (password: string) => Promise<{ error: Error | null }>;
   hasRole: (role: string) => boolean;
+  refreshProfile: () => Promise<void>;
 }
 
 interface Profile {
@@ -40,6 +41,7 @@ const defaultAuthContext: AuthContextType = {
   resetPassword: async () => ({ error: new Error("AuthProvider not mounted") }),
   updatePassword: async () => ({ error: new Error("AuthProvider not mounted") }),
   hasRole: () => false,
+  refreshProfile: async () => {},
 };
 
 export const useAuth = () => {
@@ -145,11 +147,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const hasRole = (role: string) => roles.includes(role);
 
+  const refreshProfile = async () => {
+    if (user?.id) await fetchProfile(user.id);
+  };
+
   return (
     <AuthContext.Provider
       value={{
         user, session, profile, roles, isLoading,
         signUp, signIn, signOut, resetPassword, updatePassword, hasRole,
+        refreshProfile,
       }}
     >
       {children}
