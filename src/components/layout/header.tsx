@@ -23,7 +23,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { UserAvatar } from "@/components/ui/user-avatar";
 import { toast } from "@/hooks/use-toast";
 
 interface HeaderProps {
@@ -33,7 +33,7 @@ interface HeaderProps {
 export const Header = ({ showCreate = true }: HeaderProps) => {
   const isMobile = useIsMobile();
   const navigate = useNavigate();
-  const { profile, signOut } = useAuth();
+  const { profile, user, signOut } = useAuth();
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -278,11 +278,14 @@ export const Header = ({ showCreate = true }: HeaderProps) => {
                   variant="ghost"
                   className="p-1 hover:bg-white/10 text-white group flex items-center gap-2 rounded-full shrink-0"
                 >
-                  <Avatar className="h-8 w-8 bg-white/20 shrink-0">
-                    <AvatarFallback className="text-sm text-white">
-                      {userInitials}
-                    </AvatarFallback>
-                  </Avatar>
+                  <UserAvatar
+                    seed={user?.id || user?.email || userName}
+                    src={profile?.avatar_url}
+                    initials={userInitials}
+                    alt={userName}
+                    className="h-8 w-8 bg-white/20 shrink-0"
+                    fallbackClassName="text-sm text-white bg-transparent"
+                  />
                   <span className="hidden md:block text-sm font-medium text-white whitespace-nowrap">{userName}</span>
                 </Button>
               </DropdownMenuTrigger>

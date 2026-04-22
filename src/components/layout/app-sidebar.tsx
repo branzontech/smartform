@@ -22,7 +22,8 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { UserAvatar } from "@/components/ui/user-avatar";
+import { useAuth } from "@/contexts/AuthContext";
 import { mainNavItems } from "@/config/navigation";
 import { Button } from "@/components/ui/button";
 import {
@@ -49,10 +50,16 @@ export function AppSidebar() {
     );
   };
 
+  const { user: authUser, profile } = useAuth();
+  const userName = profile?.full_name || authUser?.email?.split("@")[0] || "Usuario";
+  const userEmail = authUser?.email || "";
+  const userInitials = userName.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase();
   const user = {
-    name: "Dr. Martínez",
-    initials: "DM",
-    email: "dr.martinez@smartdoctor.com"
+    name: userName,
+    initials: userInitials,
+    email: userEmail,
+    seed: authUser?.id || authUser?.email || userName,
+    avatarUrl: profile?.avatar_url,
   };
 
   const handleLogout = () => {
@@ -178,11 +185,14 @@ export function AppSidebar() {
                 state === "collapsed" ? "px-2" : ""
               }`}
             >
-              <Avatar className="h-10 w-10 bg-white/20 border-2 border-white/30 rounded-full">
-                <AvatarFallback className="text-sm font-bold text-white bg-transparent">
-                  {user.initials}
-                </AvatarFallback>
-              </Avatar>
+              <UserAvatar
+                seed={user.seed}
+                src={user.avatarUrl}
+                initials={user.initials}
+                alt={user.name}
+                className="h-10 w-10 bg-white/20 border-2 border-white/30 rounded-full"
+                fallbackClassName="text-sm font-bold text-white bg-transparent"
+              />
               {state !== "collapsed" && (
                 <div className="flex flex-col items-start">
                   <span className="text-sm font-medium text-white">{user.name}</span>
