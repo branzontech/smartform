@@ -8,6 +8,7 @@
         "@hookform/resolvers": "^3.9.0",
         "@lottiefiles/dotlottie-react": "^0.13.3",
         "@lottiefiles/react-lottie-player": "^3.5.3",
+        "@multiavatar/multiavatar": "^1.0.7",
         "@radix-ui/react-accordion": "^1.2.0",
         "@radix-ui/react-alert-dialog": "^1.1.1",
         "@radix-ui/react-aspect-ratio": "^1.1.0",
@@ -199,6 +200,8 @@
     "@lottiefiles/dotlottie-web": ["@lottiefiles/dotlottie-web@0.42.0", "", {}, "sha512-Zr2LCaOAoPCsdAQgeLyCSiQ1+xrAJtRCyuEYDj0qR5heUwpc+Pxbb88JyTVumcXFfKOBMOMmrlsTScLz2mrvQQ=="],
 
     "@lottiefiles/react-lottie-player": ["@lottiefiles/react-lottie-player@3.5.3", "", { "dependencies": { "lottie-web": "^5.10.2" }, "peerDependencies": { "react": "16 - 18" } }, "sha512-6pGbiTMjGnPddR1ur8M/TIDCiogZMc1aKIUbMEKXKAuNeYwZ2hvqwBJ+w5KRm88ccdcU88C2cGyLVsboFlSdVQ=="],
+
+    "@multiavatar/multiavatar": ["@multiavatar/multiavatar@1.0.7", "https://europe-west1-npm.pkg.dev/lovable-core-prod/sandbox-npm-cache/@multiavatar/multiavatar/-/multiavatar-1.0.7.tgz", {}, "sha512-Yg9Uw57bmlErsWL0CSv4d6D4ZqVBE00OZmYr9MRgygoXZdboNtsEI6FbBRw1AY8l88Sm1ARcyojtlm2uwUn0Zg=="],
 
     "@nodelib/fs.scandir": ["@nodelib/fs.scandir@2.1.5", "", { "dependencies": { "@nodelib/fs.stat": "2.0.5", "run-parallel": "^1.1.9" } }, "sha512-vq24Bq3ym5HEQm2NKCr3yXDwjc7vTsEThRDnkp2DK9p1uqLR+DHurm/NOTo0KG7HYHU7eppKZj3MyqYuMBf62g=="],
 
