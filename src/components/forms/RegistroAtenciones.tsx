@@ -196,6 +196,77 @@ export const RegistroAtenciones: React.FC<RegistroAtencionesProps> = ({
     });
   }, [admisiones, filterMedico, filterDateFrom, filterDateTo]);
 
+  // ── Flattened rows for the grid (one row per folio, grouped by admission) ──
+  type FlatRow = {
+    folio: RespuestaFormulario;
+    admision: Admision | null;
+    isFirstOfAdmision: boolean;
+    admisionLabel: string;
+  };
+
+  const flatRows = useMemo<FlatRow[]>(() => {
+    const rows: FlatRow[] = [];
+    const search = searchText.trim().toLowerCase();
+
+    const matchesSearch = (folio: RespuestaFormulario, admision: Admision | null) => {
+      if (!search) return true;
+      const haystack = [
+        folio.formularios?.titulo,
+        admision?.profesional_nombre,
+        admision?.diagnostico_principal,
+        admision?.motivo,
+        admision?.numero_ingreso,
+        JSON.stringify(folio.datos_respuesta),
+      ].filter(Boolean).join(' ').toLowerCase();
+      return haystack.includes(search);
+    };
+
+    filteredAdmisiones.forEach(adm => {
+      const folios = registrosByAdmision[adm.id] || [];
+      let firstAdded = true;
+      folios.forEach(folio => {
+        if (!matchesSearch(folio, adm)) return;
+        rows.push({
+          folio,
+          admision: adm,
+          isFirstOfAdmision: firstAdded,
+          admisionLabel: `Ingreso #${adm.numero_ingreso || '—'}`,
+        });
+        firstAdded = false;
+      });
+    });
+
+    if (filterMedico === 'all') {
+      const unlinked = registrosByAdmision['__unlinked'] || [];
+      let firstAdded = true;
+      unlinked.forEach(folio => {
+        if (!matchesSearch(folio, null)) return;
+        rows.push({
+          folio,
+          admision: null,
+          isFirstOfAdmision: firstAdded,
+          admisionLabel: 'Sin ingreso vinculado',
+        });
+        firstAdded = false;
+      });
+    }
+    return rows;
+  }, [filteredAdmisiones, registrosByAdmision, filterMedico, searchText]);
+
+  // Auto-select first row when list changes
+  React.useEffect(() => {
+    if (flatRows.length > 0 && !flatRows.find(r => r.folio.id === selectedFolioId)) {
+      setSelectedFolioId(flatRows[0].folio.id);
+    } else if (flatRows.length === 0) {
+      setSelectedFolioId(null);
+    }
+  }, [flatRows, selectedFolioId]);
+
+  const selectedRow = useMemo(
+    () => flatRows.find(r => r.folio.id === selectedFolioId) || null,
+    [flatRows, selectedFolioId]
+  );
+
   // ── Mutation ───────────────────────────────────────────
   const createCorrection = useMutation({
     mutationFn: async (data: z.infer<typeof correccionSchema> & { respuestaId: string; admisionId: string; valorAnterior: any }) => {
