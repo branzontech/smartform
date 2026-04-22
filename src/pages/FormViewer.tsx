@@ -138,9 +138,8 @@ const FormViewer = () => {
     const saved = localStorage.getItem(PANEL_WIDTH_KEY);
     return saved ? parseInt(saved, 10) : DEFAULT_PANEL_WIDTH;
   });
-  const [isCollapsed, setIsCollapsed] = useState(() => {
-    return localStorage.getItem(PANEL_COLLAPSED_KEY) === 'true';
-  });
+  // Always start expanded when entering an attention; user may collapse during the session
+  const [isCollapsed, setIsCollapsed] = useState(false);
   const previousWidthRef = useRef(panelWidth);
   const isDraggingRef = useRef(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -302,9 +301,7 @@ const FormViewer = () => {
   useEffect(() => {
     localStorage.setItem(PANEL_WIDTH_KEY, String(panelWidth));
   }, [panelWidth]);
-  useEffect(() => {
-    localStorage.setItem(PANEL_COLLAPSED_KEY, String(isCollapsed));
-  }, [isCollapsed]);
+  // Collapsed state intentionally NOT persisted — panel always opens expanded by default
 
   const toggleCollapse = useCallback(() => {
     if (!isCollapsed) {
