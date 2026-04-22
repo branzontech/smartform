@@ -9,6 +9,7 @@ import {
 import { Header } from "@/components/layout/header";
 import { ServiciosClinicosConfig } from "@/components/config/ServiciosClinicosConfig";
 import { InstitutionHeaderConfig } from "@/components/config/InstitutionHeaderConfig";
+import { SignatureUploader } from "@/components/profile/SignatureUploader";
 import { PatientFieldsConfig } from "@/components/config/PatientFieldsConfig";
 import { AdmissionFieldsConfig } from "@/components/config/AdmissionFieldsConfig";
 import { PatientHeaderConfig } from "@/components/config/PatientHeaderConfig";
@@ -505,18 +506,24 @@ export const SettingsPage = () => {
             )}
 
             {activeCategory === "account" && (
-              <div className="rounded-xl border border-border bg-card/50 backdrop-blur-sm p-4 space-y-3">
-                <div className="space-y-1.5">
-                  <Label htmlFor="username" className="text-sm">Nombre de usuario</Label>
-                  <Input id="username" placeholder="Tu nombre de usuario" />
+              <div className="space-y-6">
+                <div className="rounded-xl border border-border bg-card/50 backdrop-blur-sm p-4 space-y-3">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="username" className="text-sm">Nombre de usuario</Label>
+                    <Input id="username" placeholder="Tu nombre de usuario" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="email" className="text-sm">Email</Label>
+                    <Input id="email" type="email" placeholder="tu@email.com" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="bio" className="text-sm">Biografía</Label>
+                    <Textarea id="bio" placeholder="Cuéntanos sobre ti..." />
+                  </div>
                 </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="email" className="text-sm">Email</Label>
-                  <Input id="email" type="email" placeholder="tu@email.com" />
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="bio" className="text-sm">Biografía</Label>
-                  <Textarea id="bio" placeholder="Cuéntanos sobre ti..." />
+
+                <div className="rounded-xl border border-border bg-card/50 backdrop-blur-sm p-5">
+                  <SignatureUploader />
                 </div>
               </div>
             )}

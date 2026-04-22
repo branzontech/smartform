@@ -4,8 +4,9 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Pill, TestTube, Scan, UserPlus, Scissors, ClipboardList, Loader2, Clock, User, ChevronRight, Printer, Mail, MessageCircle } from 'lucide-react';
-import { printOrder, shareOrderWhatsApp, shareOrderEmail } from '@/utils/order-print-utils';
+import { Pill, TestTube, Scan, UserPlus, Scissors, ClipboardList, Loader2, Clock, User, ChevronRight, Eye, Mail, MessageCircle } from 'lucide-react';
+import { shareOrderWhatsApp, shareOrderEmail } from '@/utils/orders/order-actions';
+import { OrderPreviewDialog } from './OrderPreviewDialog';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -17,8 +18,12 @@ export interface Order {
   estado: string;
   fecha_orden: string | null;
   prioridad: string | null;
+  medico_id?: string;
   medico_nombre: string;
+  paciente_id?: string;
+  diagnostico_codigo?: string | null;
   diagnostico_descripcion: string | null;
+  diagnostico_sistema?: string | null;
   indicaciones: string | null;
   items: any;
   alcance: string;
@@ -57,13 +62,14 @@ export const OrdersListPanel: React.FC<OrdersListPanelProps> = ({ admisionId }) 
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [previewOrder, setPreviewOrder] = useState<Order | null>(null);
 
   const fetchOrders = useCallback(async () => {
     if (!admisionId) { setLoading(false); return; }
     setLoading(true);
     const { data } = await supabase
       .from('ordenes_medicas')
-      .select('id, tipo, numero_orden, estado, fecha_orden, prioridad, medico_nombre, diagnostico_descripcion, indicaciones, items, alcance, fhir_extensions')
+      .select('id, tipo, numero_orden, estado, fecha_orden, prioridad, medico_id, medico_nombre, paciente_id, diagnostico_codigo, diagnostico_descripcion, diagnostico_sistema, indicaciones, items, alcance, fhir_extensions')
       .eq('admision_id', admisionId)
       .order('fecha_orden', { ascending: false });
     setOrders((data as Order[]) || []);
@@ -205,9 +211,9 @@ export const OrdersListPanel: React.FC<OrdersListPanelProps> = ({ admisionId }) 
                       variant="ghost"
                       size="sm"
                       className="h-7 px-2 text-[11px] gap-1"
-                      onClick={(e) => { e.stopPropagation(); printOrder(order); }}
+                      onClick={(e) => { e.stopPropagation(); setPreviewOrder(order); }}
                     >
-                      <Printer className="w-3 h-3" /> Imprimir
+                      <Eye className="w-3 h-3" /> Ver / Imprimir
                     </Button>
                     <Button
                       variant="ghost"
@@ -232,6 +238,12 @@ export const OrdersListPanel: React.FC<OrdersListPanelProps> = ({ admisionId }) 
           );
         })}
       </div>
+
+      <OrderPreviewDialog
+        order={previewOrder}
+        open={!!previewOrder}
+        onOpenChange={(open) => { if (!open) setPreviewOrder(null); }}
+      />
     </ScrollArea>
   );
 };
