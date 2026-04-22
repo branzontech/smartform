@@ -21,7 +21,7 @@ const minimalInput =
   "h-9 rounded-none border-0 border-b border-border bg-transparent px-0 text-sm shadow-none focus-visible:ring-0 focus-visible:border-primary placeholder:text-muted-foreground/60";
 
 const MyProfilePage: React.FC = () => {
-  const { user, profile, refreshProfile } = useAuth();
+  const { user, profile } = useAuth();
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -77,7 +77,6 @@ const MyProfilePage: React.FC = () => {
         })
         .eq("user_id", user.id);
       if (error) throw error;
-      await refreshProfile?.();
       toast({ title: "Perfil actualizado", description: "Tus datos se guardaron correctamente." });
     } catch (err: any) {
       toast({

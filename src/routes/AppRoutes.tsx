@@ -53,6 +53,7 @@ import ZonesPage from "@/pages/zones/ZonesPage";
 import CotizacionesPage from "@/pages/cotizaciones/CotizacionesPage";
 import CatalogoProductosPage from "@/pages/catalogo/CatalogoProductosPage";
 import InventarioPage from "@/pages/inventario/InventarioPage";
+import MyProfilePage from "@/pages/profile/MyProfilePage";
 
 const AppRoutes = () => {
   return (
@@ -118,6 +119,7 @@ const AppRoutes = () => {
         <Route path="configuracion/catalogo-productos" element={<CatalogoProductosPage />} />
         <Route path="precios" element={<PricingPage />} />
         <Route path="portal-usuario" element={<UserPortalPage />} />
+        <Route path="perfil" element={<MyProfilePage />} />
       </Routes>
       <AIAssistant />
     </>
