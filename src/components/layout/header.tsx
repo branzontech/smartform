@@ -287,7 +287,10 @@ export const Header = ({ showCreate = true }: HeaderProps) => {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56" sideOffset={8}>
-                <DropdownMenuItem className="flex items-center gap-2">
+                <DropdownMenuItem
+                  className="flex items-center gap-2"
+                  onClick={() => navigate("/app/perfil")}
+                >
                   <UserCircle className="h-4 w-4" />
                   <span>Mi perfil</span>
                 </DropdownMenuItem>

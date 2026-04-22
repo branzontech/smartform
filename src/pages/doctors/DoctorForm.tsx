@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Stethoscope, Save } from "lucide-react";
+import { Stethoscope, Save, Info } from "lucide-react";
 import { addDoctor } from "@/utils/doctor-utils";
 import { Doctor } from "@/types/patient-types";
 import { useToast } from "@/hooks/use-toast";
@@ -160,15 +160,36 @@ const DoctorForm = () => {
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="licenseNumber">Número de Licencia</Label>
+                  <Label htmlFor="licenseNumber">Número de Licencia / Registro Médico</Label>
                   <Input
                     id="licenseNumber"
                     name="licenseNumber"
                     value={doctor.licenseNumber}
                     onChange={handleChange}
-                    placeholder="MED-12345"
+                    placeholder="RM-12345"
                     required
                   />
+                  <p className="text-[11px] text-muted-foreground flex items-start gap-1.5 mt-1">
+                    <Info className="w-3 h-3 mt-0.5 shrink-0" />
+                    Este número aparecerá impreso debajo de la firma del profesional en órdenes, recetas e incapacidades.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="md:col-span-2 border-dashed">
+              <CardContent className="py-4">
+                <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                    <Info className="w-4 h-4" />
+                  </div>
+                  <div className="text-xs text-muted-foreground space-y-1">
+                    <p className="font-medium text-foreground">Firma digital del profesional</p>
+                    <p>
+                      La firma digital se gestiona desde <span className="font-medium text-foreground">Mi perfil</span> con la cuenta personal del médico una vez tenga acceso al sistema.
+                      Esto garantiza que solo el profesional autorizado pueda subir o reemplazar su propia firma, cumpliendo con los lineamientos de auditoría clínica.
+                    </p>
+                  </div>
                 </div>
               </CardContent>
             </Card>
