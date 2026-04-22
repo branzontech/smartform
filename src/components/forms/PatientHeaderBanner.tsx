@@ -219,17 +219,6 @@ export const PatientHeaderBanner: React.FC<PatientHeaderBannerProps> = ({
         )}
       </div>
 
-      {/* Incapacidad Dialog */}
-      {admisionId && (
-        <IncapacidadDialog
-          open={showIncapacidad}
-          onOpenChange={setShowIncapacidad}
-          pacienteId={pacienteId}
-          admisionId={admisionId}
-          medicoNombre={a?.profesional_nombre || "Médico"}
-          medicoId={user?.id || ""}
-        />
-      )}
     </>
   );
 };
