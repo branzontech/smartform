@@ -6,8 +6,8 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { z } from 'zod';
 import {
-  Printer, PenLine, ChevronDown, ChevronRight, AlertTriangle,
-  Filter, Calendar as CalendarIcon,
+  Printer, PenLine, AlertTriangle, Filter, Calendar as CalendarIcon,
+  Search, FileText, User, Stethoscope, ClipboardList, X, Inbox,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -17,12 +17,12 @@ import {
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose,
 } from '@/components/ui/dialog';
-import {
-  Collapsible, CollapsibleContent, CollapsibleTrigger,
-} from '@/components/ui/collapsible';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 import { ReadOnlyFormView } from './registro/ReadOnlyFormView';
 
 // ── Types ────────────────────────────────────────────────
