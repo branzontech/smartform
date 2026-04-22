@@ -7,7 +7,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   User, CreditCard, Calendar, Phone, Mail, FileText, Shield, Heart,
   MapPin, Building, Briefcase, IdCard, ChevronDown, ChevronUp, Users,
-  Clock, Hash, CalendarDays, Plus, Eye,
+  Clock, Hash,
 } from "lucide-react";
 import { differenceInYears, format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
@@ -15,10 +15,6 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { IncapacidadDialog } from "@/components/incapacidades/IncapacidadDialog";
-import { useIncapacidadesByAdmision } from "@/hooks/useIncapacidades";
 
 const ICON_MAP: Record<string, React.ElementType> = {
   User, CreditCard, Calendar, Phone, Mail, FileText, Shield, Heart,
@@ -46,8 +42,6 @@ export const PatientHeaderBanner: React.FC<PatientHeaderBannerProps> = ({
   admisionData,
 }) => {
   const [expanded, setExpanded] = useState(false);
-  const [showIncapacidad, setShowIncapacidad] = useState(false);
-  const { user } = useAuth();
 
   const { data: patient, isLoading: patientLoading } = useQuery({
     queryKey: ["paciente", pacienteId],
@@ -77,9 +71,7 @@ export const PatientHeaderBanner: React.FC<PatientHeaderBannerProps> = ({
     enabled: !admisionData && !!admisionId,
   });
 
-  // Fetch incapacidades for this admission
-  const { data: incapacidadesList = [] } = useIncapacidadesByAdmision(admisionId || null);
-  const incapacidadCount = incapacidadesList.filter(i => i.estado === "activa").length;
+
 
   const p = pacienteData || patient;
   const a = admisionData || admision;
@@ -180,78 +172,7 @@ export const PatientHeaderBanner: React.FC<PatientHeaderBannerProps> = ({
 
           <div className="flex-1" />
 
-          {/* Incapacidad button */}
-          {/* Incapacidad popover + button */}
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="shrink-0 h-7 gap-1.5 px-2 text-muted-foreground hover:text-primary"
-              >
-                <CalendarDays className="w-4 h-4" />
-                <span className="text-xs hidden sm:inline">Incapacidad</span>
-                {incapacidadCount > 0 && (
-                  <Badge variant="secondary" className="h-4 min-w-[16px] px-1 text-[10px] rounded-full">
-                    {incapacidadCount}
-                  </Badge>
-                )}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent align="end" className="w-80 p-0">
-              <div className="flex items-center justify-between px-3 py-2 border-b border-border/40">
-                <span className="text-xs font-semibold text-foreground">Incapacidades</span>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-6 gap-1 px-2 text-xs text-primary"
-                  onClick={() => setShowIncapacidad(true)}
-                >
-                  <Plus className="w-3 h-3" />
-                  Nueva
-                </Button>
-              </div>
-              {incapacidadesList.length === 0 ? (
-                <div className="px-3 py-4 text-center text-xs text-muted-foreground">
-                  Sin incapacidades registradas
-                </div>
-              ) : (
-                <ScrollArea className="max-h-48">
-                  <div className="divide-y divide-border/30">
-                    {incapacidadesList.map((inc) => {
-                      const estadoBadge = inc.estado === "activa"
-                        ? "bg-green-500/10 text-green-700 border-green-500/20"
-                        : inc.estado === "anulada"
-                        ? "bg-red-500/10 text-red-700 border-red-500/20"
-                        : "bg-muted text-muted-foreground";
-                      return (
-                        <div
-                          key={inc.id}
-                          className="flex items-center gap-2 px-3 py-2 hover:bg-muted/40 cursor-pointer"
-                          onClick={() => setShowIncapacidad(true)}
-                        >
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-1.5">
-                              <span className="text-xs font-medium text-foreground truncate">
-                                {inc.numero_incapacidad || "—"}
-                              </span>
-                              <span className={cn("text-[10px] px-1.5 py-0.5 rounded-full border", estadoBadge)}>
-                                {inc.estado}
-                              </span>
-                            </div>
-                            <div className="text-[11px] text-muted-foreground mt-0.5">
-                              {inc.fecha_inicio} · {inc.duracion_dias} días · {inc.diagnostico_principal}
-                            </div>
-                          </div>
-                          <Eye className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-                        </div>
-                      );
-                    })}
-                  </div>
-                </ScrollArea>
-              )}
-            </PopoverContent>
-          </Popover>
+          {/* Incapacidad popover removed — duplicated in atención header */}
 
           {hasExpandableContent && (
             <Button
@@ -298,17 +219,6 @@ export const PatientHeaderBanner: React.FC<PatientHeaderBannerProps> = ({
         )}
       </div>
 
-      {/* Incapacidad Dialog */}
-      {admisionId && (
-        <IncapacidadDialog
-          open={showIncapacidad}
-          onOpenChange={setShowIncapacidad}
-          pacienteId={pacienteId}
-          admisionId={admisionId}
-          medicoNombre={a?.profesional_nombre || "Médico"}
-          medicoId={user?.id || ""}
-        />
-      )}
     </>
   );
 };
