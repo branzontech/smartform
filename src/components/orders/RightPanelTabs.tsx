@@ -91,11 +91,27 @@ const ProcedimientosTabContent: React.FC<{
       {/* Detail dialog */}
       <Dialog open={!!detailOrdenId} onOpenChange={open => !open && setDetailOrdenId(null)}>
         <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col p-0 gap-0" aria-describedby={undefined}>
-          <DialogHeader className="px-5 pt-4 pb-3 shrink-0">
+          <DialogHeader className="px-5 pt-4 pb-3 shrink-0 flex-row items-center justify-between space-y-0">
             <DialogTitle className="flex items-center gap-2 text-sm font-bold">
               <Scissors className="w-4 h-4 text-primary" />
               {ordenDetail?.numero_orden || 'Cargando...'}
             </DialogTitle>
+            {ordenDetail && (
+              <div className="flex items-center gap-1 mr-6">
+                <Button variant="ghost" size="sm" className="h-7 px-2 text-[11px] gap-1"
+                  onClick={() => setPreviewOpen(true)}>
+                  <Eye className="w-3 h-3" /> Ver / Imprimir
+                </Button>
+                <Button variant="ghost" size="sm" className="h-7 px-2 text-[11px] gap-1"
+                  onClick={() => shareOrderEmail(ordenDetail as any)}>
+                  <Mail className="w-3 h-3" /> Email
+                </Button>
+                <Button variant="ghost" size="sm" className="h-7 px-2 text-[11px] gap-1 text-emerald-600"
+                  onClick={() => shareOrderWhatsApp(ordenDetail as any)}>
+                  <MessageCircle className="w-3 h-3" /> WhatsApp
+                </Button>
+              </div>
+            )}
           </DialogHeader>
           {ordenDetail && (
             <div className="flex-1 min-h-0 overflow-y-auto">
@@ -160,6 +176,12 @@ const ProcedimientosTabContent: React.FC<{
           )}
         </DialogContent>
       </Dialog>
+
+      <OrderPreviewDialog
+        order={ordenDetail ? (ordenDetail as any) : null}
+        open={previewOpen}
+        onOpenChange={setPreviewOpen}
+      />
     </div>
   );
 };
