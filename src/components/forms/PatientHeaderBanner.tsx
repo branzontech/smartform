@@ -7,7 +7,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   User, CreditCard, Calendar, Phone, Mail, FileText, Shield, Heart,
   MapPin, Building, Briefcase, IdCard, ChevronDown, ChevronUp, Users,
-  Clock, Hash, CalendarDays, Plus, Eye,
+  Clock, Hash,
 } from "lucide-react";
 import { differenceInYears, format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
@@ -15,10 +15,6 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { IncapacidadDialog } from "@/components/incapacidades/IncapacidadDialog";
-import { useIncapacidadesByAdmision } from "@/hooks/useIncapacidades";
 
 const ICON_MAP: Record<string, React.ElementType> = {
   User, CreditCard, Calendar, Phone, Mail, FileText, Shield, Heart,
@@ -46,8 +42,6 @@ export const PatientHeaderBanner: React.FC<PatientHeaderBannerProps> = ({
   admisionData,
 }) => {
   const [expanded, setExpanded] = useState(false);
-  const [showIncapacidad, setShowIncapacidad] = useState(false);
-  const { user } = useAuth();
 
   const { data: patient, isLoading: patientLoading } = useQuery({
     queryKey: ["paciente", pacienteId],
@@ -77,9 +71,7 @@ export const PatientHeaderBanner: React.FC<PatientHeaderBannerProps> = ({
     enabled: !admisionData && !!admisionId,
   });
 
-  // Fetch incapacidades for this admission
-  const { data: incapacidadesList = [] } = useIncapacidadesByAdmision(admisionId || null);
-  const incapacidadCount = incapacidadesList.filter(i => i.estado === "activa").length;
+
 
   const p = pacienteData || patient;
   const a = admisionData || admision;
