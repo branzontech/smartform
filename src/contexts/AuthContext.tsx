@@ -14,6 +14,7 @@ interface AuthContextType {
   resetPassword: (email: string) => Promise<{ error: Error | null }>;
   updatePassword: (password: string) => Promise<{ error: Error | null }>;
   hasRole: (role: string) => boolean;
+  refreshProfile: () => Promise<void>;
 }
 
 interface Profile {
