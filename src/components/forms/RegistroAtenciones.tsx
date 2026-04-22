@@ -397,20 +397,41 @@ export const RegistroAtenciones: React.FC<RegistroAtencionesProps> = ({
     );
   }
 
-  // ── List view (no detail sub-view — folios expand inline) ──
+  // ── Master-detail grid view ──────────────────────────────
+  const totalRecords = flatRows.length;
+  const hasActiveFilters = filterMedico !== 'all' || filterDateFrom || filterDateTo || searchText;
 
-  // ── List view ──────────────────────────────────────────
   return (
-    <div className="registro-atenciones">
-      {/* Filter bar */}
-      <div className="flex flex-wrap items-center gap-3 mb-6 pb-4 border-b border-dashed print:hidden">
+    <div className="registro-atenciones flex flex-col h-full">
+      {/* Toolbar */}
+      <div className="flex flex-wrap items-center gap-2 pb-3 mb-3 border-b border-border/60 print:hidden">
+        <div className="relative flex-1 min-w-[200px] max-w-md">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+          <Input
+            placeholder="Buscar en formularios, diagnósticos, contenido…"
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
+            className="h-8 pl-8 pr-8 text-xs"
+          />
+          {searchText && (
+            <button
+              type="button"
+              onClick={() => setSearchText('')}
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              aria-label="Limpiar búsqueda"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
+
         <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
           <Filter className="w-3.5 h-3.5" />
-          <span>Filtrar:</span>
         </div>
+
         <Select value={filterMedico} onValueChange={setFilterMedico}>
-          <SelectTrigger className="w-[200px] h-8 text-xs">
-            <SelectValue placeholder="Todos los profesionales" />
+          <SelectTrigger className="w-[180px] h-8 text-xs">
+            <SelectValue placeholder="Profesional" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todos los profesionales</SelectItem>
@@ -419,101 +440,116 @@ export const RegistroAtenciones: React.FC<RegistroAtencionesProps> = ({
             ))}
           </SelectContent>
         </Select>
+
         <div className="flex items-center gap-1.5">
           <CalendarIcon className="w-3.5 h-3.5 text-muted-foreground" />
           <Input
             type="date"
             value={filterDateFrom}
             onChange={e => setFilterDateFrom(e.target.value)}
-            className="h-8 w-[140px] text-xs"
-            placeholder="Desde"
+            className="h-8 w-[130px] text-xs"
           />
           <span className="text-xs text-muted-foreground">—</span>
           <Input
             type="date"
             value={filterDateTo}
             onChange={e => setFilterDateTo(e.target.value)}
-            className="h-8 w-[140px] text-xs"
-            placeholder="Hasta"
+            className="h-8 w-[130px] text-xs"
           />
         </div>
-        <Button variant="outline" size="sm" onClick={printAll} className="ml-auto gap-1.5 h-8 text-xs">
+
+        {hasActiveFilters && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              setFilterMedico('all');
+              setFilterDateFrom('');
+              setFilterDateTo('');
+              setSearchText('');
+            }}
+            className="h-8 text-xs gap-1 text-muted-foreground"
+          >
+            <X className="w-3 h-3" />
+            Limpiar
+          </Button>
+        )}
+
+        <Badge variant="outline" className="ml-auto text-xs h-7 font-normal">
+          {totalRecords} {totalRecords === 1 ? 'registro' : 'registros'}
+        </Badge>
+
+        <Button variant="outline" size="sm" onClick={printAll} className="gap-1.5 h-8 text-xs">
           <Printer className="w-3.5 h-3.5" />
           Imprimir todo
         </Button>
       </div>
 
-      {/* Empty state */}
-      {filteredAdmisiones.length === 0 && unlinkedRegistros.length === 0 && (
-        <p className="text-sm text-muted-foreground text-center py-8">
-          No se encontraron registros clínicos para este paciente.
-        </p>
-      )}
+      {/* Master-Detail Grid */}
+      {totalRecords === 0 ? (
+        <div className="flex-1 flex flex-col items-center justify-center py-16 text-center">
+          <div className="w-12 h-12 rounded-full bg-muted/50 flex items-center justify-center mb-3">
+            <Inbox className="w-6 h-6 text-muted-foreground" />
+          </div>
+          <p className="text-sm font-medium text-foreground">Sin registros clínicos</p>
+          <p className="text-xs text-muted-foreground mt-1">
+            {hasActiveFilters
+              ? 'No se encontraron registros con los filtros aplicados.'
+              : 'Este paciente aún no tiene atenciones registradas.'}
+          </p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-[minmax(420px,42%)_1fr] gap-3 flex-1 min-h-0">
+          {/* LEFT: Grid */}
+          <div className="border border-border/60 rounded-lg overflow-hidden bg-card flex flex-col min-h-0">
+            {/* Grid header */}
+            <div className="grid grid-cols-[1fr_auto] gap-2 px-3 py-2 bg-muted/40 border-b border-border/60 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground shrink-0">
+              <div>Formulario / Profesional</div>
+              <div className="text-right">Fecha</div>
+            </div>
 
-      {/* Admissions list */}
-      <div className="space-y-0 print:space-y-0">
-        {filteredAdmisiones.map((admision, admIdx) => {
-          const folios = registrosByAdmision[admision.id] || [];
-          return (
-            <AdmisionSection
-              key={admision.id}
-              admision={admision}
-              folios={folios}
-              defaultOpen={admIdx === 0}
-              correccionesByRespuesta={correccionesByRespuesta}
-              canCorrect={canCorrect}
-              headerConfig={headerConfig}
-              onCorrect={(resp) => {
-                setCorrectionTarget({ respuesta: resp, admisionId: admision.id });
-                setCorrForm({ campo_corregido: '', valor_nuevo: '', motivo: '', tipo_correccion: 'amendment' });
-                setCorrErrors({});
-              }}
-              onPrintFolio={(resp) => printFolio(resp, admision)}
-            />
-          );
-        })}
-
-        {/* Unlinked records */}
-        {unlinkedRegistros.length > 0 && filterMedico === 'all' && (
-          <Collapsible defaultOpen={filteredAdmisiones.length === 0}>
-            <CollapsibleTrigger className="w-full text-left group">
-              <div className="flex items-start gap-2 py-3 hover:bg-muted/30 -mx-2 px-2 rounded transition-colors">
-                <ChevronDown className="w-4 h-4 mt-0.5 text-muted-foreground shrink-0 group-data-[state=closed]:hidden" />
-                <ChevronRight className="w-4 h-4 mt-0.5 text-muted-foreground shrink-0 group-data-[state=open]:hidden" />
-                <div className="flex-1 min-w-0">
-                  <span className="font-semibold text-sm uppercase tracking-wide">
-                    Registros sin ingreso vinculado
-                  </span>
-                  <span className="text-xs text-muted-foreground ml-2">
-                    ({unlinkedRegistros.length} {unlinkedRegistros.length === 1 ? 'registro' : 'registros'})
-                  </span>
-                </div>
-              </div>
-            </CollapsibleTrigger>
-            <CollapsibleContent>
-              <div className="pl-2 mb-6">
-                {unlinkedRegistros.map((folio, folioIdx) => (
-                  <FolioRow
-                    key={folio.id}
-                    folio={folio}
-                    admision={null}
-                    canCorrect={canCorrect}
-                    correcciones={correccionesByRespuesta[folio.id] || []}
-                    headerConfig={headerConfig}
-                    onPrint={() => printFolio(folio, null as any)}
-                    onCorrect={() => {
-                      setCorrectionTarget({ respuesta: folio, admisionId: '' });
-                      setCorrForm({ campo_corregido: '', valor_nuevo: '', motivo: '', tipo_correccion: 'amendment' });
-                      setCorrErrors({});
-                    }}
-                    isLast={folioIdx === unlinkedRegistros.length - 1}
+            {/* Grid rows */}
+            <ScrollArea className="flex-1">
+              <div className="divide-y divide-border/40">
+                {flatRows.map((row) => (
+                  <GridRow
+                    key={row.folio.id}
+                    row={row}
+                    isSelected={row.folio.id === selectedFolioId}
+                    hasCorrections={(correccionesByRespuesta[row.folio.id] || []).length > 0}
+                    onSelect={() => setSelectedFolioId(row.folio.id)}
                   />
                 ))}
               </div>
-            </CollapsibleContent>
-          </Collapsible>
-        )}
-      </div>
+            </ScrollArea>
+          </div>
+
+          {/* RIGHT: Detail panel */}
+          <div className="border border-border/60 rounded-lg overflow-hidden bg-card flex flex-col min-h-0">
+            {selectedRow ? (
+              <DetailPanel
+                row={selectedRow}
+                correcciones={correccionesByRespuesta[selectedRow.folio.id] || []}
+                canCorrect={canCorrect}
+                headerConfig={headerConfig}
+                onPrint={() => printFolio(selectedRow.folio, selectedRow.admision)}
+                onCorrect={() => {
+                  setCorrectionTarget({
+                    respuesta: selectedRow.folio,
+                    admisionId: selectedRow.admision?.id || '',
+                  });
+                  setCorrForm({ campo_corregido: '', valor_nuevo: '', motivo: '', tipo_correccion: 'amendment' });
+                  setCorrErrors({});
+                }}
+              />
+            ) : (
+              <div className="flex-1 flex items-center justify-center text-sm text-muted-foreground">
+                Selecciona un registro
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Correction Dialog */}
       <CorrectionDialog
@@ -531,79 +567,204 @@ export const RegistroAtenciones: React.FC<RegistroAtencionesProps> = ({
   );
 };
 
-// ── Collapsible Folio Row ─────────────────────────────────
-interface FolioRowProps {
-  folio: RespuestaFormulario;
-  admision: Admision | null;
-  canCorrect: boolean;
+// ── Grid Row ─────────────────────────────────────────────
+interface GridRowProps {
+  row: {
+    folio: RespuestaFormulario;
+    admision: Admision | null;
+    isFirstOfAdmision: boolean;
+    admisionLabel: string;
+  };
+  isSelected: boolean;
+  hasCorrections: boolean;
+  onSelect: () => void;
+}
+
+const GridRow: React.FC<GridRowProps> = ({ row, isSelected, hasCorrections, onSelect }) => {
+  const { folio, admision, isFirstOfAdmision, admisionLabel } = row;
+  const formularioTitulo = folio.formularios?.titulo || 'Registro';
+  const profesional = admision?.profesional_nombre || '—';
+  const diagnostico = admision?.diagnostico_principal;
+  const estado = admision?.estado;
+  const fechaAtencion = admision ? new Date(admision.fecha_inicio) : new Date(folio.created_at);
+
+  return (
+    <>
+      {/* Admission group divider */}
+      {isFirstOfAdmision && (
+        <div className="px-3 pt-2.5 pb-1 bg-muted/20 border-y border-border/40 first:border-t-0">
+          <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+            <ClipboardList className="w-3 h-3" />
+            <span>{admisionLabel}</span>
+            {admision && (
+              <>
+                <span className="text-muted-foreground/50">·</span>
+                <span className="font-normal normal-case tracking-normal">
+                  {format(new Date(admision.fecha_inicio), "dd 'de' MMM yyyy", { locale: es })}
+                </span>
+                {estado && (
+                  <Badge
+                    variant={estado === 'en_curso' ? 'default' : 'secondary'}
+                    className="h-4 text-[9px] px-1.5 font-normal ml-auto"
+                  >
+                    {estado === 'en_curso' ? 'En curso' : estado}
+                  </Badge>
+                )}
+              </>
+            )}
+          </div>
+          {diagnostico && (
+            <p className="text-[11px] text-muted-foreground mt-0.5 truncate font-normal normal-case">
+              Dx: {diagnostico}
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* Folio row */}
+      <button
+        type="button"
+        onClick={onSelect}
+        className={cn(
+          "w-full text-left grid grid-cols-[1fr_auto] gap-2 items-start px-3 py-2.5 transition-colors group",
+          isSelected
+            ? "bg-primary/10 hover:bg-primary/15 border-l-2 border-l-primary"
+            : "hover:bg-muted/40 border-l-2 border-l-transparent"
+        )}
+      >
+        <div className="min-w-0">
+          <div className="flex items-center gap-1.5 mb-0.5">
+            <FileText className={cn(
+              "w-3.5 h-3.5 shrink-0",
+              isSelected ? "text-primary" : "text-muted-foreground"
+            )} />
+            <span className={cn(
+              "text-xs font-medium truncate",
+              isSelected ? "text-foreground" : "text-foreground/90"
+            )}>
+              {formularioTitulo}
+            </span>
+            {hasCorrections && (
+              <span title="Tiene correcciones">
+                <AlertTriangle className="w-3 h-3 text-amber-500 shrink-0" />
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-1 text-[11px] text-muted-foreground pl-5">
+            <User className="w-2.5 h-2.5 shrink-0" />
+            <span className="truncate">{profesional}</span>
+          </div>
+        </div>
+        <div className="text-right shrink-0">
+          <div className="text-[11px] text-foreground/80 font-medium tabular-nums">
+            {format(fechaAtencion, "dd/MM/yy")}
+          </div>
+          <div className="text-[10px] text-muted-foreground tabular-nums">
+            {format(fechaAtencion, "HH:mm")}
+          </div>
+        </div>
+      </button>
+    </>
+  );
+};
+
+// ── Detail Panel ─────────────────────────────────────────
+interface DetailPanelProps {
+  row: {
+    folio: RespuestaFormulario;
+    admision: Admision | null;
+    admisionLabel: string;
+  };
   correcciones: Correccion[];
+  canCorrect: boolean;
   headerConfig?: any;
   onPrint: () => void;
   onCorrect: () => void;
-  isLast: boolean;
 }
 
-const FolioRow: React.FC<FolioRowProps> = ({
-  folio, admision, canCorrect, correcciones, headerConfig, onPrint, onCorrect, isLast,
+const DetailPanel: React.FC<DetailPanelProps> = ({
+  row, correcciones, canCorrect, headerConfig, onPrint, onCorrect,
 }) => {
-  const [open, setOpen] = useState(false);
+  const { folio, admision, admisionLabel } = row;
   const hasCorrections = correcciones.length > 0;
 
   return (
-    <div className={`pl-4 ml-2 border-l-2 border-muted ${!isLast ? 'border-b border-dashed' : ''}`}>
-      <div className="flex items-center justify-between py-2.5">
-        <button
-          type="button"
-          className="flex items-center gap-2 min-w-0 flex-1 text-left"
-          onClick={() => setOpen(!open)}
-        >
-          <ChevronRight className={`w-3.5 h-3.5 text-muted-foreground shrink-0 transition-transform duration-200 ${open ? 'rotate-90' : ''}`} />
-          <div className="flex flex-col gap-0.5 min-w-0 flex-1">
-            <span className="text-sm font-medium truncate">{folio.formularios?.titulo || 'Registro'}</span>
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-sm text-muted-foreground">
-                {admision ? format(new Date(admision.fecha_inicio), "dd/MM/yyyy HH:mm") : '—'}
+    <div className="flex flex-col h-full min-h-0">
+      {/* Detail header */}
+      <div className="px-4 py-3 border-b border-border/60 bg-muted/20 shrink-0">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2 mb-1">
+              <FileText className="w-4 h-4 text-primary shrink-0" />
+              <h3 className="text-sm font-semibold text-foreground truncate">
+                {folio.formularios?.titulo || 'Registro'}
+              </h3>
+              {hasCorrections && (
+                <Badge variant="outline" className="h-5 text-[10px] gap-1 border-amber-400/50 text-amber-700 dark:text-amber-400 font-normal">
+                  <AlertTriangle className="w-2.5 h-2.5" />
+                  {correcciones.length} {correcciones.length === 1 ? 'corrección' : 'correcciones'}
+                </Badge>
+              )}
+            </div>
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] text-muted-foreground">
+              <span className="flex items-center gap-1">
+                <ClipboardList className="w-3 h-3" />
+                {admisionLabel}
               </span>
-              <span className="text-muted-foreground text-xs">·</span>
-              <span className="text-sm text-muted-foreground">
+              <span className="flex items-center gap-1">
+                <User className="w-3 h-3" />
                 {admision?.profesional_nombre || '—'}
               </span>
-              <span className="text-muted-foreground text-xs">·</span>
-              <span className="text-xs text-muted-foreground">
-                Registrado: {format(new Date(folio.created_at), "dd/MM/yyyy HH:mm:ss")}
+              <span className="flex items-center gap-1">
+                <CalendarIcon className="w-3 h-3" />
+                {format(new Date(folio.created_at), "dd/MM/yyyy HH:mm")}
               </span>
-              {hasCorrections && (
-                <span title="Tiene correcciones"><AlertTriangle className="w-3 h-3 text-amber-500 shrink-0" /></span>
+              {admision?.diagnostico_principal && (
+                <span className="flex items-center gap-1">
+                  <Stethoscope className="w-3 h-3" />
+                  {admision.diagnostico_principal}
+                </span>
               )}
             </div>
           </div>
-        </button>
-        <div className="flex items-center gap-0.5 shrink-0 print:hidden">
-          <Button variant="ghost" size="sm" className="h-7 w-7 p-0" title="Imprimir folio" onClick={onPrint}>
-            <Printer className="w-3.5 h-3.5 text-muted-foreground" />
-          </Button>
-          {canCorrect && (
-            <Button variant="ghost" size="sm" className="h-7 w-7 p-0" title="Corregir" onClick={onCorrect}>
-              <PenLine className="w-3.5 h-3.5 text-muted-foreground" />
+
+          <div className="flex items-center gap-1 shrink-0 print:hidden">
+            <Button variant="outline" size="sm" className="h-7 gap-1 text-xs" onClick={onPrint}>
+              <Printer className="w-3 h-3" />
+              Imprimir
             </Button>
-          )}
+            {canCorrect && (
+              <Button variant="outline" size="sm" className="h-7 gap-1 text-xs" onClick={onCorrect}>
+                <PenLine className="w-3 h-3" />
+                Corregir
+              </Button>
+            )}
+          </div>
         </div>
       </div>
 
-      <div className={`overflow-hidden transition-all duration-200 ${open ? 'max-h-[5000px] opacity-100' : 'max-h-0 opacity-0'}`}>
-        <div className="pb-4 pt-1 pl-5">
+      {/* Detail body */}
+      <ScrollArea className="flex-1">
+        <div className="p-4">
           <ReadOnlyFormView
             questions={folio.formularios?.preguntas || []}
             data={folio.datos_respuesta}
             headerConfig={headerConfig}
             formTitle={folio.formularios?.titulo || 'Registro'}
           />
+
           {hasCorrections && (
-            <div className="mt-3 space-y-2">
+            <div className="mt-4 space-y-2">
+              <h4 className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                <AlertTriangle className="w-3 h-3 text-amber-500" />
+                Correcciones registradas
+              </h4>
               {correcciones.map(c => (
-                <div key={c.id} className="bg-amber-50/50 dark:bg-amber-950/20 border-l-2 border-amber-400 p-3 rounded-r text-xs">
+                <div
+                  key={c.id}
+                  className="bg-amber-50/50 dark:bg-amber-950/20 border-l-2 border-amber-400 p-3 rounded-r text-xs"
+                >
                   <div className="flex items-center gap-1.5 font-medium mb-1">
-                    <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />
                     <span>{TIPO_LABELS[c.tipo_correccion] || 'Corrección'}</span>
                     <span className="text-muted-foreground font-normal">
                       — {format(new Date(c.created_at), "dd/MM/yyyy HH:mm")} por {c.medico_nombre}
@@ -613,9 +774,13 @@ const FolioRow: React.FC<FolioRowProps> = ({
                   <p><span className="font-medium">Motivo:</span> "{c.motivo}"</p>
                   {c.valor_anterior != null && (
                     <p>
-                      <span className="font-medium">Antes:</span> {typeof c.valor_anterior === 'object' ? JSON.stringify(c.valor_anterior) : String(c.valor_anterior)}
+                      <span className="font-medium">Antes:</span>{' '}
+                      {typeof c.valor_anterior === 'object' ? JSON.stringify(c.valor_anterior) : String(c.valor_anterior)}
                       {c.valor_nuevo != null && (
-                        <> → <span className="font-medium">Después:</span> {typeof c.valor_nuevo === 'object' ? JSON.stringify(c.valor_nuevo) : String(c.valor_nuevo)}</>
+                        <>
+                          {' '}→ <span className="font-medium">Después:</span>{' '}
+                          {typeof c.valor_nuevo === 'object' ? JSON.stringify(c.valor_nuevo) : String(c.valor_nuevo)}
+                        </>
                       )}
                     </p>
                   )}
@@ -624,86 +789,8 @@ const FolioRow: React.FC<FolioRowProps> = ({
             </div>
           )}
         </div>
-      </div>
+      </ScrollArea>
     </div>
-  );
-};
-
-// ── Admision Section (Collapsible) ───────────────────────
-interface AdmisionSectionProps {
-  admision: Admision;
-  folios: RespuestaFormulario[];
-  defaultOpen: boolean;
-  correccionesByRespuesta: Record<string, Correccion[]>;
-  canCorrect: boolean;
-  headerConfig?: any;
-  onCorrect: (resp: RespuestaFormulario) => void;
-  onPrintFolio: (resp: RespuestaFormulario) => void;
-}
-
-const AdmisionSection: React.FC<AdmisionSectionProps> = ({
-  admision, folios, defaultOpen, correccionesByRespuesta, canCorrect,
-  headerConfig, onCorrect, onPrintFolio,
-}) => {
-  const [open, setOpen] = useState(defaultOpen);
-
-  return (
-    <Collapsible open={open} onOpenChange={setOpen} className="print:break-before-page">
-      <CollapsibleTrigger className="w-full text-left group">
-        <div className="flex items-start gap-2 py-3 hover:bg-muted/30 -mx-2 px-2 rounded transition-colors">
-          {open
-            ? <ChevronDown className="w-4 h-4 mt-0.5 text-muted-foreground shrink-0" />
-            : <ChevronRight className="w-4 h-4 mt-0.5 text-muted-foreground shrink-0" />
-          }
-          <div className="flex-1 min-w-0">
-            <div className="flex items-baseline gap-2 flex-wrap">
-              <span className="font-semibold text-sm uppercase tracking-wide">
-                Ingreso #{admision.numero_ingreso || '—'}
-              </span>
-              <span className="text-xs text-muted-foreground">
-                — {format(new Date(admision.fecha_inicio), "dd/MM/yyyy HH:mm")}
-              </span>
-              <span className={`text-xs px-1.5 py-0.5 rounded ${
-                admision.estado === 'en_curso'
-                  ? 'bg-primary/10 text-primary'
-                  : 'bg-muted text-muted-foreground'
-              }`}>
-                {admision.estado === 'en_curso' ? 'En curso' : admision.estado}
-              </span>
-              <span className="text-xs text-muted-foreground">
-                · {folios.length} {folios.length === 1 ? 'folio' : 'folios'}
-              </span>
-            </div>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              {admision.profesional_nombre || 'Sin profesional'}
-              {admision.diagnostico_principal && ` · Dx: ${admision.diagnostico_principal}`}
-            </p>
-          </div>
-        </div>
-      </CollapsibleTrigger>
-
-      <CollapsibleContent>
-        {folios.length === 0 ? (
-          <p className="text-xs text-muted-foreground pl-6 pb-4">Sin registros clínicos en este ingreso.</p>
-        ) : (
-          <div className="mb-4">
-            {folios.map((folio, folioIdx) => (
-              <FolioRow
-                key={folio.id}
-                folio={folio}
-                admision={admision}
-                canCorrect={canCorrect}
-                correcciones={correccionesByRespuesta[folio.id] || []}
-                headerConfig={headerConfig}
-                onPrint={() => onPrintFolio(folio)}
-                onCorrect={() => onCorrect(folio)}
-                isLast={folioIdx === folios.length - 1}
-              />
-            ))}
-          </div>
-        )}
-      </CollapsibleContent>
-    </Collapsible>
   );
 };
 
