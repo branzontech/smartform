@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Printer, Mail, MessageCircle, X, Loader2 } from 'lucide-react';
+import { Printer, Mail, MessageCircle, Loader2 } from 'lucide-react';
 import {
   buildOrderInnerHtml,
   ORDER_DOCUMENT_STYLES,
@@ -53,7 +53,7 @@ export const OrderPreviewDialog: React.FC<OrderPreviewDialogProps> = ({ order, o
               {order.numero_orden}
             </span>
           </div>
-          <div className="flex items-center gap-1 shrink-0">
+          <div className="flex items-center gap-1 shrink-0 mr-7">
             <Button
               variant="ghost" size="sm"
               className="h-8 px-2.5 text-xs gap-1.5"
@@ -74,13 +74,6 @@ export const OrderPreviewDialog: React.FC<OrderPreviewDialogProps> = ({ order, o
               onClick={() => printOrder({ order })}
             >
               <Printer className="w-3.5 h-3.5" /> Imprimir
-            </Button>
-            <Button
-              variant="ghost" size="icon"
-              className="h-8 w-8 ml-1"
-              onClick={() => onOpenChange(false)}
-            >
-              <X className="w-4 h-4" />
             </Button>
           </div>
         </div>
