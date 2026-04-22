@@ -239,6 +239,38 @@ const FormViewer = () => {
     }
   }, [showAddFormDialog, addFormSearch, searchForms]);
 
+  const handleRemoveForm = useCallback((targetId: string) => {
+    // Do not allow removing the primary form (the one in the route)
+    if (targetId === formId) {
+      toast("No se puede quitar el formulario principal");
+      return;
+    }
+    // Remove from dynamic and extra (URL) lists
+    setDynamicFormIds(prev => prev.filter(id => id !== targetId));
+    if (extraFormIds.includes(targetId)) {
+      const remainingExtras = extraFormIds.filter(id => id !== targetId);
+      const params = new URLSearchParams(location.search);
+      if (remainingExtras.length > 0) {
+        params.set('forms', remainingExtras.join(','));
+      } else {
+        params.delete('forms');
+      }
+      navigate(`${location.pathname}${params.toString() ? `?${params.toString()}` : ''}`, { replace: true });
+    }
+    // Drop from formsMap
+    setFormsMap(prev => {
+      const next = { ...prev };
+      delete next[targetId];
+      return next;
+    });
+    // If active tab is being removed, switch to another available form
+    if (activeFormId === targetId) {
+      const remaining = allFormIds.filter(id => id !== targetId);
+      if (remaining.length > 0) setActiveFormId(remaining[0]);
+    }
+    toast.success("Formulario quitado de la consulta");
+  }, [formId, extraFormIds, location.pathname, location.search, navigate, activeFormId, allFormIds]);
+
   const handleAddNewForm = async (newFormId: string) => {
     if (allFormIds.includes(newFormId)) {
       toast("Este formulario ya fue agregado");
