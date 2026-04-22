@@ -180,78 +180,7 @@ export const PatientHeaderBanner: React.FC<PatientHeaderBannerProps> = ({
 
           <div className="flex-1" />
 
-          {/* Incapacidad button */}
-          {/* Incapacidad popover + button */}
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="shrink-0 h-7 gap-1.5 px-2 text-muted-foreground hover:text-primary"
-              >
-                <CalendarDays className="w-4 h-4" />
-                <span className="text-xs hidden sm:inline">Incapacidad</span>
-                {incapacidadCount > 0 && (
-                  <Badge variant="secondary" className="h-4 min-w-[16px] px-1 text-[10px] rounded-full">
-                    {incapacidadCount}
-                  </Badge>
-                )}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent align="end" className="w-80 p-0">
-              <div className="flex items-center justify-between px-3 py-2 border-b border-border/40">
-                <span className="text-xs font-semibold text-foreground">Incapacidades</span>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-6 gap-1 px-2 text-xs text-primary"
-                  onClick={() => setShowIncapacidad(true)}
-                >
-                  <Plus className="w-3 h-3" />
-                  Nueva
-                </Button>
-              </div>
-              {incapacidadesList.length === 0 ? (
-                <div className="px-3 py-4 text-center text-xs text-muted-foreground">
-                  Sin incapacidades registradas
-                </div>
-              ) : (
-                <ScrollArea className="max-h-48">
-                  <div className="divide-y divide-border/30">
-                    {incapacidadesList.map((inc) => {
-                      const estadoBadge = inc.estado === "activa"
-                        ? "bg-green-500/10 text-green-700 border-green-500/20"
-                        : inc.estado === "anulada"
-                        ? "bg-red-500/10 text-red-700 border-red-500/20"
-                        : "bg-muted text-muted-foreground";
-                      return (
-                        <div
-                          key={inc.id}
-                          className="flex items-center gap-2 px-3 py-2 hover:bg-muted/40 cursor-pointer"
-                          onClick={() => setShowIncapacidad(true)}
-                        >
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-1.5">
-                              <span className="text-xs font-medium text-foreground truncate">
-                                {inc.numero_incapacidad || "—"}
-                              </span>
-                              <span className={cn("text-[10px] px-1.5 py-0.5 rounded-full border", estadoBadge)}>
-                                {inc.estado}
-                              </span>
-                            </div>
-                            <div className="text-[11px] text-muted-foreground mt-0.5">
-                              {inc.fecha_inicio} · {inc.duracion_dias} días · {inc.diagnostico_principal}
-                            </div>
-                          </div>
-                          <Eye className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-                        </div>
-                      );
-                    })}
-                  </div>
-                </ScrollArea>
-              )}
-            </PopoverContent>
-          </Popover>
+          {/* Incapacidad popover removed — duplicated in atención header */}
 
           {hasExpandableContent && (
             <Button
