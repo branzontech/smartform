@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { SignatureUploader } from "@/components/profile/SignatureUploader";
+import { AvatarUploader } from "@/components/profile/AvatarUploader";
 import { UserCircle, Loader2, Save, IdCard, Stethoscope, Mail, Phone } from "lucide-react";
 
 interface ProfileFields {
@@ -209,9 +210,14 @@ const MyProfilePage: React.FC = () => {
               </div>
             </section>
 
-            {/* DERECHA: Firma digital */}
-            <aside className="lg:col-span-2 border border-border rounded-lg bg-background p-6">
-              <SignatureUploader />
+            {/* DERECHA: Foto de perfil + Firma digital */}
+            <aside className="lg:col-span-2 space-y-6">
+              <div className="border border-border rounded-lg bg-background p-6">
+                <AvatarUploader />
+              </div>
+              <div className="border border-border rounded-lg bg-background p-6">
+                <SignatureUploader />
+              </div>
             </aside>
           </div>
         )}
