@@ -1271,11 +1271,17 @@ const FormViewer = () => {
                   <MoreHorizontal className="w-4 h-4" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-44">
+              <DropdownMenuContent align="end" className="w-48">
                 <DropdownMenuItem onClick={printForm} className="gap-2 text-sm">
                   <Printer className="w-4 h-4" />
-                  Imprimir
+                  Imprimir actual
                 </DropdownMenuItem>
+                {isMultiForm && (
+                  <DropdownMenuItem onClick={printAllForms} className="gap-2 text-sm">
+                    <Printer className="w-4 h-4" />
+                    Imprimir todo
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuItem onClick={copyFormLinkToClipboard} className="gap-2 text-sm">
                   <LinkIcon className="w-4 h-4" />
                   Compartir enlace
