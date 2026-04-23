@@ -1,22 +1,17 @@
 import React, { useState, useMemo } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { z } from 'zod';
 import {
-  Printer, PenLine, AlertTriangle, Filter, Calendar as CalendarIcon,
-  Search, FileText, User, Stethoscope, ClipboardList, X, Inbox,
+  Printer, AlertTriangle, Filter, Calendar as CalendarIcon,
+  Search, FileText, User, Stethoscope, ClipboardList, X, Inbox, History,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
-import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose,
-} from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -24,6 +19,13 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { ReadOnlyFormView } from './registro/ReadOnlyFormView';
+import {
+  CorrectionTriggerButton,
+  HistorialCorreccionesDialog,
+  DiffHighlightForm,
+  type DiffEditableField,
+} from '@/components/correcciones';
+import type { EstadoRegistro } from '@/types/correccion';
 
 // ── Types ────────────────────────────────────────────────
 interface Admision {
@@ -44,6 +46,9 @@ interface RespuestaFormulario {
   medico_id: string;
   datos_respuesta: Record<string, any>;
   created_at: string;
+  estado_registro: EstadoRegistro;
+  supersedes: string | null;
+  superseded_by: string | null;
   formularios: {
     titulo: string;
     preguntas: any[];
@@ -51,32 +56,21 @@ interface RespuestaFormulario {
   } | null;
 }
 
-interface Correccion {
+interface ProvenanceLite {
   id: string;
-  respuesta_formulario_id: string;
-  admision_id: string;
-  medico_nombre: string;
-  campo_corregido: string;
-  valor_anterior: any;
-  valor_nuevo: any;
-  motivo: string;
-  tipo_correccion: string;
-  created_at: string;
+  target_record_id: string;
+  replacement_record_id: string | null;
+  activity_type: 'entered-in-error' | 'correction' | 'amendment';
+  agent_nombre_completo: string;
+  recorded_at: string;
+  reason_text: string;
 }
 
-// ── Validation ───────────────────────────────────────────
-const correccionSchema = z.object({
-  campo_corregido: z.string().min(1, 'Selecciona un campo'),
-  valor_nuevo: z.string().optional(),
-  motivo: z.string().min(10, 'El motivo debe tener al menos 10 caracteres'),
-  tipo_correccion: z.enum(['amendment', 'addendum', 'clarification']),
-});
-
-const TIPO_LABELS: Record<string, string> = {
-  amendment: 'Corrección',
-  addendum: 'Adición',
-  clarification: 'Aclaración',
-};
+// ── Props ────────────────────────────────────────────────
+interface RegistroAtencionesProps {
+  patientId: string;
+  headerConfig?: any;
+}
 
 // ── Props ────────────────────────────────────────────────
 interface RegistroAtencionesProps {
@@ -101,18 +95,8 @@ export const RegistroAtenciones: React.FC<RegistroAtencionesProps> = ({
   // Selected folio for detail panel
   const [selectedFolioId, setSelectedFolioId] = useState<string | null>(null);
 
-  // Correction dialog
-  const [correctionTarget, setCorrectionTarget] = useState<{
-    respuesta: RespuestaFormulario;
-    admisionId: string;
-  } | null>(null);
-  const [corrForm, setCorrForm] = useState({
-    campo_corregido: '',
-    valor_nuevo: '',
-    motivo: '',
-    tipo_correccion: 'amendment' as string,
-  });
-  const [corrErrors, setCorrErrors] = useState<Record<string, string>>({});
+  // Historial dialog
+  const [historialTarget, setHistorialTarget] = useState<RespuestaFormulario | null>(null);
 
   // ── Queries ──────────────────────────────────────────
   const { data: admisiones = [], isLoading: loadingAdm } = useQuery({
@@ -133,7 +117,7 @@ export const RegistroAtenciones: React.FC<RegistroAtencionesProps> = ({
     queryFn: async () => {
       const { data, error } = await supabase
         .from('respuestas_formularios')
-        .select('id, formulario_id, admision_id, medico_id, datos_respuesta, created_at, formularios(titulo, preguntas, opciones_diseno)')
+        .select('id, formulario_id, admision_id, medico_id, datos_respuesta, created_at, estado_registro, supersedes, superseded_by, formularios(titulo, preguntas, opciones_diseno)')
         .eq('paciente_id', patientId)
         .order('created_at', { ascending: true });
       if (error) throw error;
@@ -142,20 +126,23 @@ export const RegistroAtenciones: React.FC<RegistroAtencionesProps> = ({
   });
 
   const admisionIds = useMemo(() => admisiones.map(a => a.id), [admisiones]);
+  const respuestaIds = useMemo(() => registros.map(r => r.id), [registros]);
 
-  const { data: correcciones = [] } = useQuery({
-    queryKey: ['correcciones-paciente', patientId, admisionIds],
+  // Provenance (FHIR) — reemplaza la antigua tabla correcciones_registro
+  const { data: provenanceList = [] } = useQuery({
+    queryKey: ['provenance-respuestas', patientId, respuestaIds],
     queryFn: async () => {
-      if (admisionIds.length === 0) return [];
+      if (respuestaIds.length === 0) return [];
       const { data, error } = await supabase
-        .from('correcciones_registro')
-        .select('*')
-        .in('admision_id', admisionIds)
-        .order('created_at', { ascending: true });
+        .from('provenance_clinico')
+        .select('id, target_record_id, replacement_record_id, activity_type, agent_nombre_completo, recorded_at, reason_text')
+        .eq('target_table', 'respuestas_formularios')
+        .in('target_record_id', respuestaIds)
+        .order('recorded_at', { ascending: true });
       if (error) throw error;
-      return (data || []) as unknown as Correccion[];
+      return (data || []) as unknown as ProvenanceLite[];
     },
-    enabled: admisionIds.length > 0,
+    enabled: respuestaIds.length > 0,
   });
 
   // ── Derived data ───────────────────────────────────────
@@ -177,14 +164,14 @@ export const RegistroAtenciones: React.FC<RegistroAtencionesProps> = ({
 
   const unlinkedRegistros = useMemo(() => registrosByAdmision['__unlinked'] || [], [registrosByAdmision]);
 
-  const correccionesByRespuesta = useMemo(() => {
-    const map: Record<string, Correccion[]> = {};
-    correcciones.forEach(c => {
-      if (!map[c.respuesta_formulario_id]) map[c.respuesta_formulario_id] = [];
-      map[c.respuesta_formulario_id].push(c);
+  const provenanceByRespuesta = useMemo(() => {
+    const map: Record<string, ProvenanceLite[]> = {};
+    provenanceList.forEach(p => {
+      if (!map[p.target_record_id]) map[p.target_record_id] = [];
+      map[p.target_record_id].push(p);
     });
     return map;
-  }, [correcciones]);
+  }, [provenanceList]);
 
   // ── Filtered admissions ────────────────────────────────
   const filteredAdmisiones = useMemo(() => {
@@ -267,82 +254,30 @@ export const RegistroAtenciones: React.FC<RegistroAtencionesProps> = ({
     [flatRows, selectedFolioId]
   );
 
-  // ── Mutation ───────────────────────────────────────────
-  const createCorrection = useMutation({
-    mutationFn: async (data: z.infer<typeof correccionSchema> & { respuestaId: string; admisionId: string; valorAnterior: any }) => {
-      const { error } = await supabase.from('correcciones_registro').insert({
-        respuesta_formulario_id: data.respuestaId,
-        admision_id: data.admisionId,
-        medico_id: user!.id,
-        medico_nombre: profile?.full_name || user!.email || 'Desconocido',
-        campo_corregido: data.campo_corregido,
-        valor_anterior: data.valorAnterior,
-        valor_nuevo: data.valor_nuevo ? JSON.parse(`"${data.valor_nuevo}"`) : null,
-        motivo: data.motivo,
-        tipo_correccion: data.tipo_correccion,
-        fhir_provenance_target: `QuestionnaireResponse/${data.respuestaId}`,
-      } as any);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['correcciones-paciente', patientId] });
-      toast.success('Corrección registrada exitosamente');
-      setCorrectionTarget(null);
-      setCorrForm({ campo_corregido: '', valor_nuevo: '', motivo: '', tipo_correccion: 'amendment' });
-      setCorrErrors({});
-    },
-    onError: (err: any) => {
-      toast.error('Error al guardar corrección', { description: err.message });
-    },
-  });
+  // ── Helpers para construir editableFields del DiffHighlightForm ──
+  const buildEditableFields = (respuesta: RespuestaFormulario): DiffEditableField[] => {
+    const preguntas = (respuesta.formularios?.preguntas as any[] | undefined) ?? [];
+    return preguntas
+      .filter((q: any) => q && q.id && q.type !== 'section')
+      .map((q: any) => {
+        let type: DiffEditableField['type'] = 'text';
+        if (q.type === 'paragraph' || q.type === 'textarea') type = 'textarea';
+        else if (q.type === 'number') type = 'number';
+        else if (q.type === 'date') type = 'date';
+        return {
+          key: q.id,
+          label: q.title || q.id,
+          type,
+        };
+      });
+  };
 
-  const handleSubmitCorrection = () => {
-    const result = correccionSchema.safeParse(corrForm);
-    if (!result.success) {
-      const errors: Record<string, string> = {};
-      result.error.errors.forEach(e => { errors[e.path[0] as string] = e.message; });
-      setCorrErrors(errors);
-      return;
-    }
-    if (!correctionTarget) return;
-
-    const respData = correctionTarget.respuesta.datos_respuesta as Record<string, any>;
-    const valorAnterior = respData[corrForm.campo_corregido] ?? null;
-
-    createCorrection.mutate({
-      ...result.data,
-      valor_nuevo: corrForm.valor_nuevo || undefined,
-      respuestaId: correctionTarget.respuesta.id,
-      admisionId: correctionTarget.admisionId,
-      valorAnterior,
-    });
+  const handleCorrectionSuccess = () => {
+    queryClient.invalidateQueries({ queryKey: ['registros-paciente', patientId] });
+    queryClient.invalidateQueries({ queryKey: ['provenance-respuestas', patientId] });
   };
 
   // ── Helpers ────────────────────────────────────────────
-  const getQuestionLabel = (respuesta: RespuestaFormulario, fieldKey: string): string => {
-    const preguntas = respuesta.formularios?.preguntas as any[] | undefined;
-    if (!preguntas) return fieldKey;
-    const q = preguntas.find((p: any) => p.id === fieldKey);
-    return q?.title || fieldKey;
-  };
-
-  const getQuestionsForRespuesta = (respuesta: RespuestaFormulario) => {
-    const preguntas = respuesta.formularios?.preguntas as any[] | undefined;
-    if (!preguntas) return [];
-    return preguntas.filter((q: any) => q.type !== 'section');
-  };
-
-  const formatValue = (val: any): string => {
-    if (val === null || val === undefined || val === '') return '—';
-    if (typeof val === 'object' && !Array.isArray(val)) {
-      return Object.entries(val)
-        .filter(([, v]) => v !== null && v !== undefined && v !== '')
-        .map(([k, v]) => `${k}: ${v}`)
-        .join(', ') || '—';
-    }
-    if (Array.isArray(val)) return val.join(', ') || '—';
-    return String(val);
-  };
 
   const printFolio = async (respuesta: RespuestaFormulario, admision: Admision | null) => {
     const w = window.open('', '_blank');
@@ -578,7 +513,7 @@ export const RegistroAtenciones: React.FC<RegistroAtencionesProps> = ({
                     key={row.folio.id}
                     row={row}
                     isSelected={row.folio.id === selectedFolioId}
-                    hasCorrections={(correccionesByRespuesta[row.folio.id] || []).length > 0}
+                    hasCorrections={(provenanceByRespuesta[row.folio.id] || []).length > 0}
                     onSelect={() => setSelectedFolioId(row.folio.id)}
                   />
                 ))}
@@ -591,18 +526,13 @@ export const RegistroAtenciones: React.FC<RegistroAtencionesProps> = ({
             {selectedRow ? (
               <DetailPanel
                 row={selectedRow}
-                correcciones={correccionesByRespuesta[selectedRow.folio.id] || []}
+                provenance={provenanceByRespuesta[selectedRow.folio.id] || []}
                 canCorrect={canCorrect}
                 headerConfig={headerConfig}
                 onPrint={() => printFolio(selectedRow.folio, selectedRow.admision)}
-                onCorrect={() => {
-                  setCorrectionTarget({
-                    respuesta: selectedRow.folio,
-                    admisionId: selectedRow.admision?.id || '',
-                  });
-                  setCorrForm({ campo_corregido: '', valor_nuevo: '', motivo: '', tipo_correccion: 'amendment' });
-                  setCorrErrors({});
-                }}
+                onShowHistorial={() => setHistorialTarget(selectedRow.folio)}
+                onCorrectionSuccess={handleCorrectionSuccess}
+                buildEditableFields={buildEditableFields}
               />
             ) : (
               <div className="flex-1 flex items-center justify-center text-sm text-muted-foreground">
@@ -613,18 +543,16 @@ export const RegistroAtenciones: React.FC<RegistroAtencionesProps> = ({
         </div>
       )}
 
-      {/* Correction Dialog */}
-      <CorrectionDialog
-        correctionTarget={correctionTarget}
-        setCorrectionTarget={setCorrectionTarget}
-        corrForm={corrForm}
-        setCorrForm={setCorrForm}
-        corrErrors={corrErrors}
-        handleSubmitCorrection={handleSubmitCorrection}
-        createCorrection={createCorrection}
-        getQuestionsForRespuesta={getQuestionsForRespuesta}
-        formatValue={formatValue}
-      />
+      {/* Historial de correcciones FHIR Provenance */}
+      {historialTarget && (
+        <HistorialCorreccionesDialog
+          open={!!historialTarget}
+          onOpenChange={(open) => { if (!open) setHistorialTarget(null); }}
+          targetTable="respuestas_formularios"
+          targetRecordId={historialTarget.id}
+          recordLabel={historialTarget.formularios?.titulo || 'Registro clínico'}
+        />
+      )}
     </div>
   );
 };
@@ -737,18 +665,53 @@ interface DetailPanelProps {
     admision: Admision | null;
     admisionLabel: string;
   };
-  correcciones: Correccion[];
+  provenance: ProvenanceLite[];
   canCorrect: boolean;
   headerConfig?: any;
   onPrint: () => void;
-  onCorrect: () => void;
+  onShowHistorial: () => void;
+  onCorrectionSuccess: () => void;
+  buildEditableFields: (r: RespuestaFormulario) => DiffEditableField[];
 }
 
+const ESTADO_BADGE: Record<EstadoRegistro, { label: string; cls: string }> = {
+  active: { label: '', cls: '' },
+  'entered-in-error': {
+    label: 'Anulado',
+    cls: 'border-amber-400/50 text-amber-700 dark:text-amber-400',
+  },
+  superseded: {
+    label: 'Reemplazado',
+    cls: 'border-blue-400/50 text-blue-700 dark:text-blue-400',
+  },
+};
+
 const DetailPanel: React.FC<DetailPanelProps> = ({
-  row, correcciones, canCorrect, headerConfig, onPrint, onCorrect,
+  row, provenance, canCorrect, headerConfig, onPrint, onShowHistorial,
+  onCorrectionSuccess, buildEditableFields,
 }) => {
   const { folio, admision, admisionLabel } = row;
-  const hasCorrections = correcciones.length > 0;
+  const estado = (folio.estado_registro ?? 'active') as EstadoRegistro;
+  const isActive = estado === 'active';
+  const hasProvenance = provenance.length > 0;
+  const estadoBadge = ESTADO_BADGE[estado];
+
+  // Construir previewData para el CorrectionDialog
+  const previewData = useMemo(() => {
+    const items: { label: string; value: string }[] = [
+      { label: 'Formulario', value: folio.formularios?.titulo || 'Registro' },
+      { label: 'Profesional', value: admision?.profesional_nombre || '—' },
+      { label: 'Fecha', value: format(new Date(folio.created_at), "dd/MM/yyyy HH:mm") },
+      { label: 'Ingreso', value: admisionLabel },
+    ];
+    if (admision?.diagnostico_principal) {
+      items.push({ label: 'Dx', value: admision.diagnostico_principal });
+    }
+    return items;
+  }, [folio, admision, admisionLabel]);
+
+  const editableFields = useMemo(() => buildEditableFields(folio), [folio, buildEditableFields]);
+  const originalData = (folio.datos_respuesta as Record<string, unknown>) ?? {};
 
   return (
     <div className="flex flex-col h-full min-h-0">
@@ -756,15 +719,26 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
       <div className="px-4 py-3 border-b border-border/60 bg-muted/20 shrink-0">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2 mb-1">
+            <div className="flex items-center gap-2 mb-1 flex-wrap">
               <FileText className="w-4 h-4 text-primary shrink-0" />
-              <h3 className="text-sm font-semibold text-foreground truncate">
+              <h3 className={cn(
+                "text-sm font-semibold text-foreground truncate",
+                !isActive && "line-through opacity-60"
+              )}>
                 {folio.formularios?.titulo || 'Registro'}
               </h3>
-              {hasCorrections && (
+              {estadoBadge.label && (
+                <Badge
+                  variant="outline"
+                  className={cn("h-5 text-[10px] px-1.5 font-normal", estadoBadge.cls)}
+                >
+                  {estadoBadge.label}
+                </Badge>
+              )}
+              {hasProvenance && isActive && (
                 <Badge variant="outline" className="h-5 text-[10px] gap-1 border-amber-400/50 text-amber-700 dark:text-amber-400 font-normal">
                   <AlertTriangle className="w-2.5 h-2.5" />
-                  {correcciones.length} {correcciones.length === 1 ? 'corrección' : 'correcciones'}
+                  {provenance.length} {provenance.length === 1 ? 'corrección' : 'correcciones'}
                 </Badge>
               )}
             </div>
@@ -795,11 +769,34 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
               <Printer className="w-3 h-3" />
               Imprimir
             </Button>
-            {canCorrect && (
-              <Button variant="outline" size="sm" className="h-7 gap-1 text-xs" onClick={onCorrect}>
-                <PenLine className="w-3 h-3" />
-                Corregir
+            {hasProvenance && (
+              <Button variant="outline" size="sm" className="h-7 gap-1 text-xs" onClick={onShowHistorial}>
+                <History className="w-3 h-3" />
+                Historial
               </Button>
+            )}
+            {canCorrect && isActive && (
+              <CorrectionTriggerButton
+                targetTable="respuestas_formularios"
+                targetRecordId={folio.id}
+                recordCreatedAt={folio.created_at}
+                recordEstadoRegistro={estado}
+                previewData={previewData}
+                renderReplacementForm={
+                  editableFields.length > 0
+                    ? (onChange) => (
+                        <DiffHighlightForm
+                          originalData={originalData}
+                          editableFields={editableFields}
+                          onChange={onChange}
+                        />
+                      )
+                    : undefined
+                }
+                onSuccess={onCorrectionSuccess}
+                variant="full"
+                className="h-7 text-xs"
+              />
             )}
           </div>
         </div>
@@ -807,7 +804,7 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
 
       {/* Detail body */}
       <ScrollArea className="flex-1">
-        <div className="p-4">
+        <div className={cn("p-4", !isActive && "opacity-60")}>
           <ReadOnlyFormView
             questions={folio.formularios?.preguntas || []}
             data={folio.datos_respuesta}
@@ -815,39 +812,40 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
             formTitle={folio.formularios?.titulo || 'Registro'}
           />
 
-          {hasCorrections && (
+          {hasProvenance && (
             <div className="mt-4 space-y-2">
               <h4 className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
                 <AlertTriangle className="w-3 h-3 text-amber-500" />
-                Correcciones registradas
+                Audit trail (FHIR Provenance)
               </h4>
-              {correcciones.map(c => (
-                <div
-                  key={c.id}
-                  className="bg-amber-50/50 dark:bg-amber-950/20 border-l-2 border-amber-400 p-3 rounded-r text-xs"
-                >
-                  <div className="flex items-center gap-1.5 font-medium mb-1">
-                    <span>{TIPO_LABELS[c.tipo_correccion] || 'Corrección'}</span>
-                    <span className="text-muted-foreground font-normal">
-                      — {format(new Date(c.created_at), "dd/MM/yyyy HH:mm")} por {c.medico_nombre}
-                    </span>
+              {provenance.map(p => {
+                const tipoLabel = p.activity_type === 'entered-in-error'
+                  ? 'Anulación'
+                  : p.activity_type === 'correction'
+                  ? 'Corrección'
+                  : 'Enmienda';
+                return (
+                  <div
+                    key={p.id}
+                    className="bg-amber-50/50 dark:bg-amber-950/20 border-l-2 border-amber-400 p-3 rounded-r text-xs"
+                  >
+                    <div className="flex items-center gap-1.5 font-medium mb-1">
+                      <span>{tipoLabel}</span>
+                      <span className="text-muted-foreground font-normal">
+                        — {format(new Date(p.recorded_at), "dd/MM/yyyy HH:mm")} por {p.agent_nombre_completo}
+                      </span>
+                    </div>
+                    <p className="italic text-foreground/80">"{p.reason_text}"</p>
                   </div>
-                  <p><span className="font-medium">Campo:</span> {c.campo_corregido}</p>
-                  <p><span className="font-medium">Motivo:</span> "{c.motivo}"</p>
-                  {c.valor_anterior != null && (
-                    <p>
-                      <span className="font-medium">Antes:</span>{' '}
-                      {typeof c.valor_anterior === 'object' ? JSON.stringify(c.valor_anterior) : String(c.valor_anterior)}
-                      {c.valor_nuevo != null && (
-                        <>
-                          {' '}→ <span className="font-medium">Después:</span>{' '}
-                          {typeof c.valor_nuevo === 'object' ? JSON.stringify(c.valor_nuevo) : String(c.valor_nuevo)}
-                        </>
-                      )}
-                    </p>
-                  )}
-                </div>
-              ))}
+                );
+              })}
+              <button
+                type="button"
+                onClick={onShowHistorial}
+                className="text-[11px] text-primary hover:underline"
+              >
+                Ver historial completo →
+              </button>
             </div>
           )}
         </div>
@@ -855,108 +853,5 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
     </div>
   );
 };
-
-// ── Correction Dialog ────────────────────────────────────
-interface CorrectionDialogProps {
-  correctionTarget: { respuesta: RespuestaFormulario; admisionId: string } | null;
-  setCorrectionTarget: (v: any) => void;
-  corrForm: any;
-  setCorrForm: (v: any) => void;
-  corrErrors: Record<string, string>;
-  handleSubmitCorrection: () => void;
-  createCorrection: any;
-  getQuestionsForRespuesta: (r: RespuestaFormulario) => any[];
-  formatValue: (v: any) => string;
-}
-
-const CorrectionDialog: React.FC<CorrectionDialogProps> = ({
-  correctionTarget, setCorrectionTarget, corrForm, setCorrForm,
-  corrErrors, handleSubmitCorrection, createCorrection,
-  getQuestionsForRespuesta, formatValue,
-}) => (
-  <Dialog open={!!correctionTarget} onOpenChange={(open) => { if (!open) setCorrectionTarget(null); }}>
-    <DialogContent className="max-w-lg">
-      <DialogHeader>
-        <DialogTitle className="flex items-center gap-2">
-          <PenLine className="w-4 h-4" />
-          Registrar corrección
-        </DialogTitle>
-        <DialogDescription>
-          Las correcciones son inmutables y quedan registradas como parte del expediente clínico.
-        </DialogDescription>
-      </DialogHeader>
-
-      <div className="space-y-4">
-        <div className="space-y-1.5">
-          <Label className="text-xs">Campo a corregir *</Label>
-          <Select value={corrForm.campo_corregido} onValueChange={(v: string) => setCorrForm((p: any) => ({ ...p, campo_corregido: v }))}>
-            <SelectTrigger className="text-sm">
-              <SelectValue placeholder="Seleccionar campo" />
-            </SelectTrigger>
-            <SelectContent>
-              {correctionTarget && getQuestionsForRespuesta(correctionTarget.respuesta).map((q: any) => (
-                <SelectItem key={q.id} value={q.id}>{q.title}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          {corrErrors.campo_corregido && <p className="text-xs text-destructive">{corrErrors.campo_corregido}</p>}
-        </div>
-
-        {corrForm.campo_corregido && correctionTarget && (
-          <div className="space-y-1.5">
-            <Label className="text-xs">Valor anterior</Label>
-            <div className="p-2 rounded-md bg-muted text-sm min-h-[36px]">
-              {formatValue((correctionTarget.respuesta.datos_respuesta as Record<string, any>)[corrForm.campo_corregido])}
-            </div>
-          </div>
-        )}
-
-        <div className="space-y-1.5">
-          <Label className="text-xs">Valor nuevo (opcional)</Label>
-          <Textarea
-            value={corrForm.valor_nuevo}
-            onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setCorrForm((p: any) => ({ ...p, valor_nuevo: e.target.value }))}
-            placeholder="Dejar vacío para notas aclaratorias"
-            className="text-sm min-h-[60px]"
-          />
-        </div>
-
-        <div className="space-y-1.5">
-          <Label className="text-xs">Tipo de corrección *</Label>
-          <Select value={corrForm.tipo_correccion} onValueChange={(v: string) => setCorrForm((p: any) => ({ ...p, tipo_correccion: v }))}>
-            <SelectTrigger className="text-sm">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="amendment">Corrección — Se corrige un error</SelectItem>
-              <SelectItem value="addendum">Adición — Se agrega información</SelectItem>
-              <SelectItem value="clarification">Aclaración — Se aclara sin cambiar valor</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="space-y-1.5">
-          <Label className="text-xs">Motivo * (mínimo 10 caracteres)</Label>
-          <Textarea
-            value={corrForm.motivo}
-            onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setCorrForm((p: any) => ({ ...p, motivo: e.target.value }))}
-            placeholder="Explique el motivo de la corrección..."
-            className="text-sm min-h-[80px]"
-          />
-          {corrErrors.motivo && <p className="text-xs text-destructive">{corrErrors.motivo}</p>}
-        </div>
-      </div>
-
-      <DialogFooter>
-        <DialogClose asChild>
-          <Button variant="outline" size="sm">Cancelar</Button>
-        </DialogClose>
-        <Button size="sm" onClick={handleSubmitCorrection} disabled={createCorrection.isPending}>
-          {createCorrection.isPending ? 'Guardando...' : 'Guardar corrección'}
-        </Button>
-      </DialogFooter>
-    </DialogContent>
-  </Dialog>
-);
 
 export default RegistroAtenciones;
