@@ -436,10 +436,16 @@ export const RegistroAtenciones: React.FC<RegistroAtencionesProps> = ({
       `Histórico clínico — ${rowsToPrint.length} documento(s)`,
     );
 
+    if (w.closed) return;
     w.document.open();
     w.document.write(html);
     w.document.close();
-    w.onload = () => setTimeout(() => w.print(), 600);
+    const triggerPrint = () => setTimeout(() => { try { w.focus(); w.print(); } catch {} }, 400);
+    if (w.document.readyState === 'complete') {
+      triggerPrint();
+    } else {
+      w.addEventListener('load', triggerPrint, { once: true });
+    }
   };
 
   const canCorrect = hasRole('doctor') || hasRole('admin');
