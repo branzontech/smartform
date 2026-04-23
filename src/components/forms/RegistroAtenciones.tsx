@@ -90,8 +90,8 @@ export const RegistroAtenciones: React.FC<RegistroAtencionesProps> = ({
 
   // Filters
   const [filterMedico, setFilterMedico] = useState<string>('all');
-  const [filterDateFrom, setFilterDateFrom] = useState('');
-  const [filterDateTo, setFilterDateTo] = useState('');
+  const [filterDateFrom, setFilterDateFrom] = useState<Date | undefined>(undefined);
+  const [filterDateTo, setFilterDateTo] = useState<Date | undefined>(undefined);
   const [searchText, setSearchText] = useState('');
 
   // Selected folio for detail panel
