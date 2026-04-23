@@ -962,8 +962,53 @@ const FormViewer = () => {
     });
   };
 
-  const printForm = () => {
-    window.print();
+  const printForm = async () => {
+    const entry = formsMap[activeFormId];
+    if (!entry) {
+      window.print();
+      return;
+    }
+    const { printForms } = await import('@/utils/forms/form-document');
+    await printForms(
+      {
+        forms: [{
+          id: entry.id,
+          title: entry.title,
+          description: entry.description,
+          questions: entry.questions,
+          formData: entry.formData,
+        }],
+        patientId: patientId || undefined,
+        doctorId: authUser?.id,
+        doctorFallbackName: authUser?.email || '',
+        institution: headerConfig,
+      },
+      entry.title,
+    );
+  };
+
+  const printAllForms = async () => {
+    const entries = allFormIds
+      .map(id => formsMap[id])
+      .filter(Boolean);
+    if (entries.length === 0) return;
+    const { printForms } = await import('@/utils/forms/form-document');
+    await printForms(
+      {
+        forms: entries.map(e => ({
+          id: e.id,
+          title: e.title,
+          description: e.description,
+          questions: e.questions,
+          formData: e.formData,
+        })),
+        patientId: patientId || undefined,
+        doctorId: authUser?.id,
+        doctorFallbackName: authUser?.email || '',
+        institution: headerConfig,
+      },
+      `Formularios — ${entries.length} documento(s)`,
+    );
   };
 
   if (loading) {
