@@ -51,11 +51,23 @@ function renderAnswer(question: QuestionData, answer: any): string {
         ? answer.map(a => escapeHtml(a)).join(', ')
         : escapeHtml(answer);
 
-    case 'scored_checkbox':
+    case 'scored_checkbox': {
+      const renderItem = (a: any) => {
+        if (a && typeof a === 'object') {
+          const text = a.text || a.label || a.title || '';
+          const score = a.score ?? a.value;
+          return `${escapeHtml(text)}${score !== undefined && score !== null && score !== '' ? ` <span class="muted">(${escapeHtml(score)} pts)</span>` : ''}`;
+        }
+        return escapeHtml(a);
+      };
       if (Array.isArray(answer)) {
-        return answer.map(a => escapeHtml(typeof a === 'object' ? a?.text || a?.label : a)).join(', ');
+        return answer.map(renderItem).join(', ');
+      }
+      if (typeof answer === 'object') {
+        return renderItem(answer);
       }
       return escapeHtml(answer);
+    }
 
     case 'vitals':
       if (typeof answer === 'object' && !Array.isArray(answer)) {
