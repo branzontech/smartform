@@ -537,7 +537,7 @@ export const RegistroAtenciones: React.FC<RegistroAtencionesProps> = ({
                     key={row.folio.id}
                     row={row}
                     isSelected={row.folio.id === selectedFolioId}
-                    hasCorrections={(correccionesByRespuesta[row.folio.id] || []).length > 0}
+                    hasCorrections={(provenanceByRespuesta[row.folio.id] || []).length > 0}
                     onSelect={() => setSelectedFolioId(row.folio.id)}
                   />
                 ))}
@@ -689,18 +689,53 @@ interface DetailPanelProps {
     admision: Admision | null;
     admisionLabel: string;
   };
-  correcciones: Correccion[];
+  provenance: ProvenanceLite[];
   canCorrect: boolean;
   headerConfig?: any;
   onPrint: () => void;
-  onCorrect: () => void;
+  onShowHistorial: () => void;
+  onCorrectionSuccess: () => void;
+  buildEditableFields: (r: RespuestaFormulario) => DiffEditableField[];
 }
 
+const ESTADO_BADGE: Record<EstadoRegistro, { label: string; cls: string }> = {
+  active: { label: '', cls: '' },
+  'entered-in-error': {
+    label: 'Anulado',
+    cls: 'border-amber-400/50 text-amber-700 dark:text-amber-400',
+  },
+  superseded: {
+    label: 'Reemplazado',
+    cls: 'border-blue-400/50 text-blue-700 dark:text-blue-400',
+  },
+};
+
 const DetailPanel: React.FC<DetailPanelProps> = ({
-  row, correcciones, canCorrect, headerConfig, onPrint, onCorrect,
+  row, provenance, canCorrect, headerConfig, onPrint, onShowHistorial,
+  onCorrectionSuccess, buildEditableFields,
 }) => {
   const { folio, admision, admisionLabel } = row;
-  const hasCorrections = correcciones.length > 0;
+  const estado = (folio.estado_registro ?? 'active') as EstadoRegistro;
+  const isActive = estado === 'active';
+  const hasProvenance = provenance.length > 0;
+  const estadoBadge = ESTADO_BADGE[estado];
+
+  // Construir previewData para el CorrectionDialog
+  const previewData = useMemo(() => {
+    const items: { label: string; value: string }[] = [
+      { label: 'Formulario', value: folio.formularios?.titulo || 'Registro' },
+      { label: 'Profesional', value: admision?.profesional_nombre || '—' },
+      { label: 'Fecha', value: format(new Date(folio.created_at), "dd/MM/yyyy HH:mm") },
+      { label: 'Ingreso', value: admisionLabel },
+    ];
+    if (admision?.diagnostico_principal) {
+      items.push({ label: 'Dx', value: admision.diagnostico_principal });
+    }
+    return items;
+  }, [folio, admision, admisionLabel]);
+
+  const editableFields = useMemo(() => buildEditableFields(folio), [folio, buildEditableFields]);
+  const originalData = (folio.datos_respuesta as Record<string, unknown>) ?? {};
 
   return (
     <div className="flex flex-col h-full min-h-0">
@@ -708,15 +743,26 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
       <div className="px-4 py-3 border-b border-border/60 bg-muted/20 shrink-0">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2 mb-1">
+            <div className="flex items-center gap-2 mb-1 flex-wrap">
               <FileText className="w-4 h-4 text-primary shrink-0" />
-              <h3 className="text-sm font-semibold text-foreground truncate">
+              <h3 className={cn(
+                "text-sm font-semibold text-foreground truncate",
+                !isActive && "line-through opacity-60"
+              )}>
                 {folio.formularios?.titulo || 'Registro'}
               </h3>
-              {hasCorrections && (
+              {estadoBadge.label && (
+                <Badge
+                  variant="outline"
+                  className={cn("h-5 text-[10px] px-1.5 font-normal", estadoBadge.cls)}
+                >
+                  {estadoBadge.label}
+                </Badge>
+              )}
+              {hasProvenance && isActive && (
                 <Badge variant="outline" className="h-5 text-[10px] gap-1 border-amber-400/50 text-amber-700 dark:text-amber-400 font-normal">
                   <AlertTriangle className="w-2.5 h-2.5" />
-                  {correcciones.length} {correcciones.length === 1 ? 'corrección' : 'correcciones'}
+                  {provenance.length} {provenance.length === 1 ? 'corrección' : 'correcciones'}
                 </Badge>
               )}
             </div>
@@ -747,11 +793,34 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
               <Printer className="w-3 h-3" />
               Imprimir
             </Button>
-            {canCorrect && (
-              <Button variant="outline" size="sm" className="h-7 gap-1 text-xs" onClick={onCorrect}>
-                <PenLine className="w-3 h-3" />
-                Corregir
+            {hasProvenance && (
+              <Button variant="outline" size="sm" className="h-7 gap-1 text-xs" onClick={onShowHistorial}>
+                <History className="w-3 h-3" />
+                Historial
               </Button>
+            )}
+            {canCorrect && isActive && (
+              <CorrectionTriggerButton
+                targetTable="respuestas_formularios"
+                targetRecordId={folio.id}
+                recordCreatedAt={folio.created_at}
+                recordEstadoRegistro={estado}
+                previewData={previewData}
+                renderReplacementForm={
+                  editableFields.length > 0
+                    ? (onChange) => (
+                        <DiffHighlightForm
+                          originalData={originalData}
+                          editableFields={editableFields}
+                          onChange={onChange}
+                        />
+                      )
+                    : undefined
+                }
+                onSuccess={onCorrectionSuccess}
+                variant="full"
+                className="h-7 text-xs"
+              />
             )}
           </div>
         </div>
@@ -759,7 +828,7 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
 
       {/* Detail body */}
       <ScrollArea className="flex-1">
-        <div className="p-4">
+        <div className={cn("p-4", !isActive && "opacity-60")}>
           <ReadOnlyFormView
             questions={folio.formularios?.preguntas || []}
             data={folio.datos_respuesta}
@@ -767,39 +836,40 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
             formTitle={folio.formularios?.titulo || 'Registro'}
           />
 
-          {hasCorrections && (
+          {hasProvenance && (
             <div className="mt-4 space-y-2">
               <h4 className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
                 <AlertTriangle className="w-3 h-3 text-amber-500" />
-                Correcciones registradas
+                Audit trail (FHIR Provenance)
               </h4>
-              {correcciones.map(c => (
-                <div
-                  key={c.id}
-                  className="bg-amber-50/50 dark:bg-amber-950/20 border-l-2 border-amber-400 p-3 rounded-r text-xs"
-                >
-                  <div className="flex items-center gap-1.5 font-medium mb-1">
-                    <span>{TIPO_LABELS[c.tipo_correccion] || 'Corrección'}</span>
-                    <span className="text-muted-foreground font-normal">
-                      — {format(new Date(c.created_at), "dd/MM/yyyy HH:mm")} por {c.medico_nombre}
-                    </span>
+              {provenance.map(p => {
+                const tipoLabel = p.activity_type === 'entered-in-error'
+                  ? 'Anulación'
+                  : p.activity_type === 'correction'
+                  ? 'Corrección'
+                  : 'Enmienda';
+                return (
+                  <div
+                    key={p.id}
+                    className="bg-amber-50/50 dark:bg-amber-950/20 border-l-2 border-amber-400 p-3 rounded-r text-xs"
+                  >
+                    <div className="flex items-center gap-1.5 font-medium mb-1">
+                      <span>{tipoLabel}</span>
+                      <span className="text-muted-foreground font-normal">
+                        — {format(new Date(p.recorded_at), "dd/MM/yyyy HH:mm")} por {p.agent_nombre_completo}
+                      </span>
+                    </div>
+                    <p className="italic text-foreground/80">"{p.reason_text}"</p>
                   </div>
-                  <p><span className="font-medium">Campo:</span> {c.campo_corregido}</p>
-                  <p><span className="font-medium">Motivo:</span> "{c.motivo}"</p>
-                  {c.valor_anterior != null && (
-                    <p>
-                      <span className="font-medium">Antes:</span>{' '}
-                      {typeof c.valor_anterior === 'object' ? JSON.stringify(c.valor_anterior) : String(c.valor_anterior)}
-                      {c.valor_nuevo != null && (
-                        <>
-                          {' '}→ <span className="font-medium">Después:</span>{' '}
-                          {typeof c.valor_nuevo === 'object' ? JSON.stringify(c.valor_nuevo) : String(c.valor_nuevo)}
-                        </>
-                      )}
-                    </p>
-                  )}
-                </div>
-              ))}
+                );
+              })}
+              <button
+                type="button"
+                onClick={onShowHistorial}
+                className="text-[11px] text-primary hover:underline"
+              >
+                Ver historial completo →
+              </button>
             </div>
           )}
         </div>
@@ -807,108 +877,5 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
     </div>
   );
 };
-
-// ── Correction Dialog ────────────────────────────────────
-interface CorrectionDialogProps {
-  correctionTarget: { respuesta: RespuestaFormulario; admisionId: string } | null;
-  setCorrectionTarget: (v: any) => void;
-  corrForm: any;
-  setCorrForm: (v: any) => void;
-  corrErrors: Record<string, string>;
-  handleSubmitCorrection: () => void;
-  createCorrection: any;
-  getQuestionsForRespuesta: (r: RespuestaFormulario) => any[];
-  formatValue: (v: any) => string;
-}
-
-const CorrectionDialog: React.FC<CorrectionDialogProps> = ({
-  correctionTarget, setCorrectionTarget, corrForm, setCorrForm,
-  corrErrors, handleSubmitCorrection, createCorrection,
-  getQuestionsForRespuesta, formatValue,
-}) => (
-  <Dialog open={!!correctionTarget} onOpenChange={(open) => { if (!open) setCorrectionTarget(null); }}>
-    <DialogContent className="max-w-lg">
-      <DialogHeader>
-        <DialogTitle className="flex items-center gap-2">
-          <PenLine className="w-4 h-4" />
-          Registrar corrección
-        </DialogTitle>
-        <DialogDescription>
-          Las correcciones son inmutables y quedan registradas como parte del expediente clínico.
-        </DialogDescription>
-      </DialogHeader>
-
-      <div className="space-y-4">
-        <div className="space-y-1.5">
-          <Label className="text-xs">Campo a corregir *</Label>
-          <Select value={corrForm.campo_corregido} onValueChange={(v: string) => setCorrForm((p: any) => ({ ...p, campo_corregido: v }))}>
-            <SelectTrigger className="text-sm">
-              <SelectValue placeholder="Seleccionar campo" />
-            </SelectTrigger>
-            <SelectContent>
-              {correctionTarget && getQuestionsForRespuesta(correctionTarget.respuesta).map((q: any) => (
-                <SelectItem key={q.id} value={q.id}>{q.title}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          {corrErrors.campo_corregido && <p className="text-xs text-destructive">{corrErrors.campo_corregido}</p>}
-        </div>
-
-        {corrForm.campo_corregido && correctionTarget && (
-          <div className="space-y-1.5">
-            <Label className="text-xs">Valor anterior</Label>
-            <div className="p-2 rounded-md bg-muted text-sm min-h-[36px]">
-              {formatValue((correctionTarget.respuesta.datos_respuesta as Record<string, any>)[corrForm.campo_corregido])}
-            </div>
-          </div>
-        )}
-
-        <div className="space-y-1.5">
-          <Label className="text-xs">Valor nuevo (opcional)</Label>
-          <Textarea
-            value={corrForm.valor_nuevo}
-            onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setCorrForm((p: any) => ({ ...p, valor_nuevo: e.target.value }))}
-            placeholder="Dejar vacío para notas aclaratorias"
-            className="text-sm min-h-[60px]"
-          />
-        </div>
-
-        <div className="space-y-1.5">
-          <Label className="text-xs">Tipo de corrección *</Label>
-          <Select value={corrForm.tipo_correccion} onValueChange={(v: string) => setCorrForm((p: any) => ({ ...p, tipo_correccion: v }))}>
-            <SelectTrigger className="text-sm">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="amendment">Corrección — Se corrige un error</SelectItem>
-              <SelectItem value="addendum">Adición — Se agrega información</SelectItem>
-              <SelectItem value="clarification">Aclaración — Se aclara sin cambiar valor</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="space-y-1.5">
-          <Label className="text-xs">Motivo * (mínimo 10 caracteres)</Label>
-          <Textarea
-            value={corrForm.motivo}
-            onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setCorrForm((p: any) => ({ ...p, motivo: e.target.value }))}
-            placeholder="Explique el motivo de la corrección..."
-            className="text-sm min-h-[80px]"
-          />
-          {corrErrors.motivo && <p className="text-xs text-destructive">{corrErrors.motivo}</p>}
-        </div>
-      </div>
-
-      <DialogFooter>
-        <DialogClose asChild>
-          <Button variant="outline" size="sm">Cancelar</Button>
-        </DialogClose>
-        <Button size="sm" onClick={handleSubmitCorrection} disabled={createCorrection.isPending}>
-          {createCorrection.isPending ? 'Guardando...' : 'Guardar corrección'}
-        </Button>
-      </DialogFooter>
-    </DialogContent>
-  </Dialog>
-);
 
 export default RegistroAtenciones;
