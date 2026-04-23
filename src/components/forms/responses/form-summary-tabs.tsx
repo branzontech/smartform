@@ -11,20 +11,24 @@ interface FormSummaryTabsProps {
   formData: Form;
   responses: FormResponse[];
   onPrint: (response: FormResponse, index: number) => void;
+  responsesById?: Record<string, { index: number }>;
+  onCorrectionSuccess?: () => void;
 }
 
-export const FormSummaryTabs = ({ 
-  activeTab, 
-  setActiveTab, 
-  formData, 
+export const FormSummaryTabs = ({
+  activeTab,
+  setActiveTab,
+  formData,
   responses,
-  onPrint
+  onPrint,
+  responsesById,
+  onCorrectionSuccess,
 }: FormSummaryTabsProps) => {
   return (
     <>
-      <div className="flex space-x-1 border border-gray-200 rounded-lg p-1 mb-6 bg-gray-50 w-fit">
+      <div className="flex space-x-1 border rounded-lg p-1 mb-6 bg-muted/40 w-fit">
         <button
-          className={`px-4 py-2 rounded ${activeTab === "summary" ? 'bg-white shadow-sm' : 'text-gray-600 hover:bg-gray-100'} transition-all`}
+          className={`px-4 py-2 rounded ${activeTab === "summary" ? 'bg-background shadow-sm' : 'text-muted-foreground hover:bg-muted'} transition-all`}
           onClick={() => setActiveTab("summary")}
         >
           <div className="flex items-center">
@@ -33,7 +37,7 @@ export const FormSummaryTabs = ({
           </div>
         </button>
         <button
-          className={`px-4 py-2 rounded ${activeTab === "individual" ? 'bg-white shadow-sm' : 'text-gray-600 hover:bg-gray-100'} transition-all`}
+          className={`px-4 py-2 rounded ${activeTab === "individual" ? 'bg-background shadow-sm' : 'text-muted-foreground hover:bg-muted'} transition-all`}
           onClick={() => setActiveTab("individual")}
         >
           <div className="flex items-center">
@@ -58,11 +62,13 @@ export const FormSummaryTabs = ({
         <div className="space-y-6 animate-fade-in">
           {responses.map((response, index) => (
             <IndividualResponse
-              key={index}
+              key={response.recordId ?? index}
               response={response}
               index={index}
               formData={formData}
               onPrint={onPrint}
+              responsesById={responsesById}
+              onCorrectionSuccess={onCorrectionSuccess}
             />
           ))}
         </div>

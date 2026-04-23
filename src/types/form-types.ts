@@ -6,6 +6,17 @@ export interface FormResponse {
     _patientId?: string;
     _consultationId?: string;
   };
+  // === Metadatos de auditoría / corrección clínica (FHIR Provenance) ===
+  recordId?: string;
+  estadoRegistro?: "active" | "entered-in-error" | "superseded";
+  supersedes?: string | null;
+  supersededBy?: string | null;
+  // Datos derivados del último provenance asociado (si lo hay)
+  lastCorrection?: {
+    activityType: "entered-in-error" | "correction" | "amendment";
+    agentNombreCompleto: string;
+    recordedAt: string;
+  } | null;
 }
 
 // Interface for complex value types
