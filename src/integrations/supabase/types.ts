@@ -623,6 +623,51 @@ export type Database = {
           },
         ]
       }
+      correccion_configuracion: {
+        Row: {
+          activo: boolean
+          bloquear_si_facturado: boolean
+          created_at: string | null
+          fhir_extensions: Json | null
+          id: string
+          nombre_legible: string
+          permite_anulacion_sin_reemplazo: boolean
+          permite_correccion_con_reemplazo: boolean
+          requiere_motivo: boolean
+          target_table: string
+          updated_at: string | null
+          ventana_edicion_rapida_minutos: number
+        }
+        Insert: {
+          activo?: boolean
+          bloquear_si_facturado?: boolean
+          created_at?: string | null
+          fhir_extensions?: Json | null
+          id?: string
+          nombre_legible: string
+          permite_anulacion_sin_reemplazo?: boolean
+          permite_correccion_con_reemplazo?: boolean
+          requiere_motivo?: boolean
+          target_table: string
+          updated_at?: string | null
+          ventana_edicion_rapida_minutos?: number
+        }
+        Update: {
+          activo?: boolean
+          bloquear_si_facturado?: boolean
+          created_at?: string | null
+          fhir_extensions?: Json | null
+          id?: string
+          nombre_legible?: string
+          permite_anulacion_sin_reemplazo?: boolean
+          permite_correccion_con_reemplazo?: boolean
+          requiere_motivo?: boolean
+          target_table?: string
+          updated_at?: string | null
+          ventana_edicion_rapida_minutos?: number
+        }
+        Relationships: []
+      }
       correcciones_registro: {
         Row: {
           admision_id: string
@@ -1213,6 +1258,92 @@ export type Database = {
           },
         ]
       }
+      observaciones: {
+        Row: {
+          admision_id: string | null
+          codigo: string
+          created_at: string | null
+          estado: string | null
+          estado_registro: string
+          fecha_registro: string | null
+          fhir_extensions: Json | null
+          id: string
+          medico_id: string
+          paciente_id: string
+          sistema_codificacion: string
+          superseded_by: string | null
+          supersedes: string | null
+          unidad: string | null
+          updated_at: string | null
+          valor: number | null
+        }
+        Insert: {
+          admision_id?: string | null
+          codigo: string
+          created_at?: string | null
+          estado?: string | null
+          estado_registro?: string
+          fecha_registro?: string | null
+          fhir_extensions?: Json | null
+          id?: string
+          medico_id: string
+          paciente_id: string
+          sistema_codificacion: string
+          superseded_by?: string | null
+          supersedes?: string | null
+          unidad?: string | null
+          updated_at?: string | null
+          valor?: number | null
+        }
+        Update: {
+          admision_id?: string | null
+          codigo?: string
+          created_at?: string | null
+          estado?: string | null
+          estado_registro?: string
+          fecha_registro?: string | null
+          fhir_extensions?: Json | null
+          id?: string
+          medico_id?: string
+          paciente_id?: string
+          sistema_codificacion?: string
+          superseded_by?: string | null
+          supersedes?: string | null
+          unidad?: string | null
+          updated_at?: string | null
+          valor?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "observaciones_admision_id_fkey"
+            columns: ["admision_id"]
+            isOneToOne: false
+            referencedRelation: "admisiones"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "observaciones_paciente_id_fkey"
+            columns: ["paciente_id"]
+            isOneToOne: false
+            referencedRelation: "pacientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "observaciones_superseded_by_fkey"
+            columns: ["superseded_by"]
+            isOneToOne: false
+            referencedRelation: "observaciones"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "observaciones_supersedes_fkey"
+            columns: ["supersedes"]
+            isOneToOne: false
+            referencedRelation: "observaciones"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       orden_procedimiento_items: {
         Row: {
           cantidad: number
@@ -1276,6 +1407,7 @@ export type Database = {
           diagnostico_descripcion: string | null
           diagnostico_sistema: string | null
           estado: string
+          estado_registro: string
           fecha_orden: string | null
           fecha_vigencia: string | null
           fhir_extensions: Json | null
@@ -1288,6 +1420,8 @@ export type Database = {
           paciente_id: string
           prioridad: string | null
           servicio_id: string | null
+          superseded_by: string | null
+          supersedes: string | null
           tipo: string
           updated_at: string | null
         }
@@ -1299,6 +1433,7 @@ export type Database = {
           diagnostico_descripcion?: string | null
           diagnostico_sistema?: string | null
           estado?: string
+          estado_registro?: string
           fecha_orden?: string | null
           fecha_vigencia?: string | null
           fhir_extensions?: Json | null
@@ -1311,6 +1446,8 @@ export type Database = {
           paciente_id: string
           prioridad?: string | null
           servicio_id?: string | null
+          superseded_by?: string | null
+          supersedes?: string | null
           tipo: string
           updated_at?: string | null
         }
@@ -1322,6 +1459,7 @@ export type Database = {
           diagnostico_descripcion?: string | null
           diagnostico_sistema?: string | null
           estado?: string
+          estado_registro?: string
           fecha_orden?: string | null
           fecha_vigencia?: string | null
           fhir_extensions?: Json | null
@@ -1334,6 +1472,8 @@ export type Database = {
           paciente_id?: string
           prioridad?: string | null
           servicio_id?: string | null
+          superseded_by?: string | null
+          supersedes?: string | null
           tipo?: string
           updated_at?: string | null
         }
@@ -1357,6 +1497,20 @@ export type Database = {
             columns: ["servicio_id"]
             isOneToOne: false
             referencedRelation: "servicios_clinicos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ordenes_medicas_superseded_by_fkey"
+            columns: ["superseded_by"]
+            isOneToOne: false
+            referencedRelation: "ordenes_medicas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ordenes_medicas_supersedes_fkey"
+            columns: ["supersedes"]
+            isOneToOne: false
+            referencedRelation: "ordenes_medicas"
             referencedColumns: ["id"]
           },
         ]
@@ -1570,41 +1724,119 @@ export type Database = {
         }
         Relationships: []
       }
+      provenance_clinico: {
+        Row: {
+          activity_type: string
+          agent_nombre_completo: string
+          agent_role: string
+          agent_user_id: string
+          client_ip: unknown
+          country_code: string | null
+          created_at: string | null
+          fhir_extensions: Json | null
+          id: string
+          interop_broadcast_attempts: number | null
+          interop_broadcast_status: string | null
+          interop_last_error: string | null
+          previous_snapshot: Json
+          reason_code: string | null
+          reason_text: string
+          recorded_at: string
+          replacement_record_id: string | null
+          target_record_id: string
+          target_table: string
+          user_agent: string | null
+        }
+        Insert: {
+          activity_type: string
+          agent_nombre_completo: string
+          agent_role: string
+          agent_user_id: string
+          client_ip?: unknown
+          country_code?: string | null
+          created_at?: string | null
+          fhir_extensions?: Json | null
+          id?: string
+          interop_broadcast_attempts?: number | null
+          interop_broadcast_status?: string | null
+          interop_last_error?: string | null
+          previous_snapshot: Json
+          reason_code?: string | null
+          reason_text: string
+          recorded_at?: string
+          replacement_record_id?: string | null
+          target_record_id: string
+          target_table: string
+          user_agent?: string | null
+        }
+        Update: {
+          activity_type?: string
+          agent_nombre_completo?: string
+          agent_role?: string
+          agent_user_id?: string
+          client_ip?: unknown
+          country_code?: string | null
+          created_at?: string | null
+          fhir_extensions?: Json | null
+          id?: string
+          interop_broadcast_attempts?: number | null
+          interop_broadcast_status?: string | null
+          interop_last_error?: string | null
+          previous_snapshot?: Json
+          reason_code?: string | null
+          reason_text?: string
+          recorded_at?: string
+          replacement_record_id?: string | null
+          target_record_id?: string
+          target_table?: string
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       respuestas_formularios: {
         Row: {
           admision_id: string | null
           created_at: string
           datos_respuesta: Json
+          estado_registro: string
           fecha_registro: string
           fhir_extensions: Json
           formulario_id: string
           id: string
           medico_id: string
           paciente_id: string
+          superseded_by: string | null
+          supersedes: string | null
           updated_at: string
         }
         Insert: {
           admision_id?: string | null
           created_at?: string
           datos_respuesta?: Json
+          estado_registro?: string
           fecha_registro?: string
           fhir_extensions?: Json
           formulario_id: string
           id?: string
           medico_id: string
           paciente_id: string
+          superseded_by?: string | null
+          supersedes?: string | null
           updated_at?: string
         }
         Update: {
           admision_id?: string | null
           created_at?: string
           datos_respuesta?: Json
+          estado_registro?: string
           fecha_registro?: string
           fhir_extensions?: Json
           formulario_id?: string
           id?: string
           medico_id?: string
           paciente_id?: string
+          superseded_by?: string | null
+          supersedes?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -1627,6 +1859,20 @@ export type Database = {
             columns: ["paciente_id"]
             isOneToOne: false
             referencedRelation: "pacientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "respuestas_formularios_superseded_by_fkey"
+            columns: ["superseded_by"]
+            isOneToOne: false
+            referencedRelation: "respuestas_formularios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "respuestas_formularios_supersedes_fkey"
+            columns: ["supersedes"]
+            isOneToOne: false
+            referencedRelation: "respuestas_formularios"
             referencedColumns: ["id"]
           },
         ]
