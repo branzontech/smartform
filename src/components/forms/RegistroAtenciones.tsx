@@ -344,46 +344,93 @@ export const RegistroAtenciones: React.FC<RegistroAtencionesProps> = ({
     return String(val);
   };
 
-  const printFolio = (respuesta: RespuestaFormulario, admision: Admision | null) => {
-    const printWindow = window.open('', '_blank');
-    if (!printWindow) return;
+  const printFolio = async (respuesta: RespuestaFormulario, admision: Admision | null) => {
+    const w = window.open('', '_blank');
+    if (!w) {
+      toast.error('Permite las ventanas emergentes para imprimir.');
+      return;
+    }
+    w.document.open();
+    w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Generando…</title>
+      <style>body{font-family:system-ui,sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;color:#6b7280}</style>
+      </head><body>Generando documento…</body></html>`);
+    w.document.close();
 
-    const preguntas = getQuestionsForRespuesta(respuesta);
-    const respData = respuesta.datos_respuesta as Record<string, any>;
-    const folioCorrecciones = correccionesByRespuesta[respuesta.id] || [];
+    const preguntas = (respuesta.formularios?.preguntas as any[]) || [];
+    const respData = (respuesta.datos_respuesta as Record<string, any>) || {};
 
-    const rows = preguntas.map((q: any) =>
-      `<tr><td style="font-weight:600;padding:4px 8px;vertical-align:top;border-bottom:1px solid #eee;width:30%">${q.title}</td><td style="padding:4px 8px;border-bottom:1px solid #eee">${formatValue(respData[q.id])}</td></tr>`
-    ).join('');
+    const { buildFormsFullHtml } = await import('@/utils/forms/form-document');
+    const subtitle = admision
+      ? `Ingreso #${admision.numero_ingreso || '—'} · ${format(new Date(admision.fecha_inicio), "dd/MM/yyyy HH:mm")}`
+      : 'Registro sin ingreso vinculado';
 
-    const corrHtml = folioCorrecciones.map(c =>
-      `<div style="margin-top:8px;padding:8px;border-left:3px solid #f59e0b;background:#fffbeb;">
-        <strong>${TIPO_LABELS[c.tipo_correccion]}</strong> — ${format(new Date(c.created_at), "dd/MM/yyyy HH:mm")} por ${c.medico_nombre}<br/>
-        Campo: ${c.campo_corregido} · Motivo: ${c.motivo}
-        ${c.valor_anterior != null ? `<br/>Antes: ${formatValue(c.valor_anterior)}` : ''}
-        ${c.valor_nuevo != null ? ` → Después: ${formatValue(c.valor_nuevo)}` : ''}
-      </div>`
-    ).join('');
+    const html = await buildFormsFullHtml(
+      {
+        forms: [{
+          id: respuesta.id,
+          title: respuesta.formularios?.titulo || 'Registro clínico',
+          description: `${subtitle} · Registrado el ${format(new Date(respuesta.created_at), "dd/MM/yyyy HH:mm")}`,
+          questions: preguntas,
+          formData: respData,
+        }],
+        patientId,
+        doctorId: respuesta.medico_id,
+        doctorFallbackName: admision?.profesional_nombre || '',
+        institution: headerConfig,
+      },
+      respuesta.formularios?.titulo || 'Registro clínico',
+    );
 
-    const headerHtml = admision
-      ? `<h2>Ingreso #${admision.numero_ingreso || '—'} — ${format(new Date(admision.fecha_inicio), "dd/MM/yyyy HH:mm")}</h2>
-         <p>${admision.profesional_nombre || ''} · ${admision.diagnostico_principal || ''}</p>`
-      : `<h2>Registro sin ingreso vinculado</h2>`;
-
-    printWindow.document.write(`<!DOCTYPE html><html><head><title>Folio - ${respuesta.formularios?.titulo}</title>
-      <style>body{font-family:system-ui,sans-serif;font-size:13px;padding:24px;color:#1a1a1a}table{width:100%;border-collapse:collapse}h2{margin:0 0 4px}h3{margin:16px 0 8px;border-bottom:1px solid #ccc;padding-bottom:4px}</style>
-    </head><body>
-      ${headerHtml}
-      <h3>${respuesta.formularios?.titulo || 'Registro'} — ${format(new Date(respuesta.created_at), "dd/MM/yyyy HH:mm")}</h3>
-      <table>${rows}</table>
-      ${corrHtml}
-    </body></html>`);
-    printWindow.document.close();
-    printWindow.print();
+    w.document.open();
+    w.document.write(html);
+    w.document.close();
+    w.onload = () => setTimeout(() => w.print(), 600);
   };
 
-  const printAll = () => {
-    window.print();
+  const printAll = async () => {
+    const rowsToPrint = flatRows;
+    if (rowsToPrint.length === 0) {
+      toast.info('No hay registros para imprimir.');
+      return;
+    }
+    const w = window.open('', '_blank');
+    if (!w) {
+      toast.error('Permite las ventanas emergentes para imprimir.');
+      return;
+    }
+    w.document.open();
+    w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Generando…</title>
+      <style>body{font-family:system-ui,sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;color:#6b7280}</style>
+      </head><body>Generando ${rowsToPrint.length} documento(s)…</body></html>`);
+    w.document.close();
+
+    const { buildFormsFullHtml } = await import('@/utils/forms/form-document');
+    const html = await buildFormsFullHtml(
+      {
+        forms: rowsToPrint.map(r => {
+          const preguntas = (r.folio.formularios?.preguntas as any[]) || [];
+          const respData = (r.folio.datos_respuesta as Record<string, any>) || {};
+          const subtitle = r.admision
+            ? `Ingreso #${r.admision.numero_ingreso || '—'} · ${format(new Date(r.admision.fecha_inicio), "dd/MM/yyyy HH:mm")}`
+            : 'Registro sin ingreso vinculado';
+          return {
+            id: r.folio.id,
+            title: r.folio.formularios?.titulo || 'Registro clínico',
+            description: `${subtitle} · Registrado el ${format(new Date(r.folio.created_at), "dd/MM/yyyy HH:mm")}`,
+            questions: preguntas,
+            formData: respData,
+          };
+        }),
+        patientId,
+        institution: headerConfig,
+      },
+      `Histórico clínico — ${rowsToPrint.length} documento(s)`,
+    );
+
+    w.document.open();
+    w.document.write(html);
+    w.document.close();
+    w.onload = () => setTimeout(() => w.print(), 600);
   };
 
   const canCorrect = hasRole('doctor') || hasRole('admin');
