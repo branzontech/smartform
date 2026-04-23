@@ -151,8 +151,13 @@ export const RegistroAtenciones: React.FC<RegistroAtencionesProps> = ({
   const medicosList = useMemo(() => {
     const names = new Set<string>();
     admisiones.forEach(a => { if (a.profesional_nombre) names.add(a.profesional_nombre); });
-    return Array.from(names);
-  }, [admisiones]);
+    // Incluir profesionales registrados en respuestas sin admisión vinculada
+    registros.forEach(r => {
+      const nombre = (r.datos_respuesta as any)?._profesional_nombre;
+      if (typeof nombre === 'string' && nombre.trim()) names.add(nombre.trim());
+    });
+    return Array.from(names).sort((a, b) => a.localeCompare(b));
+  }, [admisiones, registros]);
 
   const registrosByAdmision = useMemo(() => {
     const map: Record<string, RespuestaFormulario[]> = {};
@@ -175,16 +180,6 @@ export const RegistroAtenciones: React.FC<RegistroAtencionesProps> = ({
     return map;
   }, [provenanceList]);
 
-  // ── Filtered admissions ────────────────────────────────
-  const filteredAdmisiones = useMemo(() => {
-    return admisiones.filter(a => {
-      if (filterMedico !== 'all' && a.profesional_nombre !== filterMedico) return false;
-      if (filterDateFrom && a.fecha_inicio < filterDateFrom) return false;
-      if (filterDateTo && a.fecha_inicio > filterDateTo + 'T23:59:59') return false;
-      return true;
-    });
-  }, [admisiones, filterMedico, filterDateFrom, filterDateTo]);
-
   // ── Flattened rows for the grid (one row per folio, grouped by admission) ──
   type FlatRow = {
     folio: RespuestaFormulario;
@@ -196,6 +191,14 @@ export const RegistroAtenciones: React.FC<RegistroAtencionesProps> = ({
   const flatRows = useMemo<FlatRow[]>(() => {
     const rows: FlatRow[] = [];
     const search = searchText.trim().toLowerCase();
+
+    // Normalizar rango de fechas a [startMs, endMs] usando created_at del folio
+    const fromMs = filterDateFrom
+      ? new Date(filterDateFrom.getFullYear(), filterDateFrom.getMonth(), filterDateFrom.getDate(), 0, 0, 0, 0).getTime()
+      : null;
+    const toMs = filterDateTo
+      ? new Date(filterDateTo.getFullYear(), filterDateTo.getMonth(), filterDateTo.getDate(), 23, 59, 59, 999).getTime()
+      : null;
 
     const matchesSearch = (folio: RespuestaFormulario, admision: Admision | null) => {
       if (!search) return true;
@@ -210,10 +213,28 @@ export const RegistroAtenciones: React.FC<RegistroAtencionesProps> = ({
       return haystack.includes(search);
     };
 
-    filteredAdmisiones.forEach(adm => {
+    const matchesDate = (folio: RespuestaFormulario) => {
+      if (!fromMs && !toMs) return true;
+      const ts = new Date(folio.created_at).getTime();
+      if (fromMs && ts < fromMs) return false;
+      if (toMs && ts > toMs) return false;
+      return true;
+    };
+
+    const matchesMedico = (folio: RespuestaFormulario, admision: Admision | null) => {
+      if (filterMedico === 'all') return true;
+      if (admision?.profesional_nombre === filterMedico) return true;
+      const nombreFolio = (folio.datos_respuesta as any)?._profesional_nombre;
+      return typeof nombreFolio === 'string' && nombreFolio.trim() === filterMedico;
+    };
+
+    // Folios vinculados a admisiones
+    admisiones.forEach(adm => {
       const folios = registrosByAdmision[adm.id] || [];
       let firstAdded = true;
       folios.forEach(folio => {
+        if (!matchesMedico(folio, adm)) return;
+        if (!matchesDate(folio)) return;
         if (!matchesSearch(folio, adm)) return;
         rows.push({
           folio,
@@ -225,22 +246,24 @@ export const RegistroAtenciones: React.FC<RegistroAtencionesProps> = ({
       });
     });
 
-    if (filterMedico === 'all') {
-      const unlinked = registrosByAdmision['__unlinked'] || [];
-      let firstAdded = true;
-      unlinked.forEach(folio => {
-        if (!matchesSearch(folio, null)) return;
-        rows.push({
-          folio,
-          admision: null,
-          isFirstOfAdmision: firstAdded,
-          admisionLabel: 'Sin ingreso vinculado',
-        });
-        firstAdded = false;
+    // Folios sin admisión vinculada
+    const unlinked = registrosByAdmision['__unlinked'] || [];
+    let firstAdded = true;
+    unlinked.forEach(folio => {
+      if (!matchesMedico(folio, null)) return;
+      if (!matchesDate(folio)) return;
+      if (!matchesSearch(folio, null)) return;
+      rows.push({
+        folio,
+        admision: null,
+        isFirstOfAdmision: firstAdded,
+        admisionLabel: 'Sin ingreso vinculado',
       });
-    }
+      firstAdded = false;
+    });
+
     return rows;
-  }, [filteredAdmisiones, registrosByAdmision, filterMedico, searchText]);
+  }, [admisiones, registrosByAdmision, filterMedico, filterDateFrom, filterDateTo, searchText]);
 
   // Auto-select first row when list changes
   React.useEffect(() => {
