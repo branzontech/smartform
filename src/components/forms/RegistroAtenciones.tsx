@@ -464,20 +464,60 @@ export const RegistroAtenciones: React.FC<RegistroAtencionesProps> = ({
         </Select>
 
         <div className="flex items-center gap-1.5">
-          <CalendarIcon className="w-3.5 h-3.5 text-muted-foreground" />
-          <Input
-            type="date"
-            value={filterDateFrom}
-            onChange={e => setFilterDateFrom(e.target.value)}
-            className="h-8 w-[130px] text-xs"
-          />
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className={cn(
+                  "h-8 w-[140px] justify-start gap-1.5 text-xs font-normal",
+                  !filterDateFrom && "text-muted-foreground"
+                )}
+              >
+                <CalendarIcon className="w-3.5 h-3.5 shrink-0" />
+                {filterDateFrom ? format(filterDateFrom, "dd MMM yyyy", { locale: es }) : "Desde"}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="single"
+                selected={filterDateFrom}
+                onSelect={setFilterDateFrom}
+                locale={es}
+                initialFocus
+                className={cn("pointer-events-auto")}
+              />
+            </PopoverContent>
+          </Popover>
+
           <span className="text-xs text-muted-foreground">—</span>
-          <Input
-            type="date"
-            value={filterDateTo}
-            onChange={e => setFilterDateTo(e.target.value)}
-            className="h-8 w-[130px] text-xs"
-          />
+
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className={cn(
+                  "h-8 w-[140px] justify-start gap-1.5 text-xs font-normal",
+                  !filterDateTo && "text-muted-foreground"
+                )}
+              >
+                <CalendarIcon className="w-3.5 h-3.5 shrink-0" />
+                {filterDateTo ? format(filterDateTo, "dd MMM yyyy", { locale: es }) : "Hasta"}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="single"
+                selected={filterDateTo}
+                onSelect={setFilterDateTo}
+                locale={es}
+                initialFocus
+                disabled={(date) => filterDateFrom ? date < filterDateFrom : false}
+                className={cn("pointer-events-auto")}
+              />
+            </PopoverContent>
+          </Popover>
         </div>
 
         {hasActiveFilters && (
@@ -486,8 +526,8 @@ export const RegistroAtenciones: React.FC<RegistroAtencionesProps> = ({
             size="sm"
             onClick={() => {
               setFilterMedico('all');
-              setFilterDateFrom('');
-              setFilterDateTo('');
+              setFilterDateFrom(undefined);
+              setFilterDateTo(undefined);
               setSearchText('');
             }}
             className="h-8 text-xs gap-1 text-muted-foreground"
