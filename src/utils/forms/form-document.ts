@@ -313,5 +313,11 @@ export async function printForms(input: FormDocumentInput, docTitle?: string) {
   w.document.open();
   w.document.write(html);
   w.document.close();
-  w.onload = () => setTimeout(() => w.print(), 600);
+  // Use addEventListener (one-shot) to avoid double-fire from re-entrant document.write
+  const triggerPrint = () => setTimeout(() => { try { w.focus(); w.print(); } catch {} }, 400);
+  if (w.document.readyState === 'complete') {
+    triggerPrint();
+  } else {
+    w.addEventListener('load', triggerPrint, { once: true });
+  }
 }

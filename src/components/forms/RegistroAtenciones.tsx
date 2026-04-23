@@ -350,6 +350,8 @@ export const RegistroAtenciones: React.FC<RegistroAtencionesProps> = ({
       toast.error('Permite las ventanas emergentes para imprimir.');
       return;
     }
+    // Write a lightweight loading state. We'll replace the body content (not the whole document)
+    // once the HTML is ready, to avoid re-firing the load event and triggering print twice.
     w.document.open();
     w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Generando…</title>
       <style>body{font-family:system-ui,sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;color:#6b7280}</style>
@@ -381,10 +383,17 @@ export const RegistroAtenciones: React.FC<RegistroAtencionesProps> = ({
       respuesta.formularios?.titulo || 'Registro clínico',
     );
 
+    // Replace document content in-place (single load lifecycle) and trigger print once.
+    if (w.closed) return;
     w.document.open();
     w.document.write(html);
     w.document.close();
-    w.onload = () => setTimeout(() => w.print(), 600);
+    const triggerPrint = () => setTimeout(() => { try { w.focus(); w.print(); } catch {} }, 400);
+    if (w.document.readyState === 'complete') {
+      triggerPrint();
+    } else {
+      w.addEventListener('load', triggerPrint, { once: true });
+    }
   };
 
   const printAll = async () => {
@@ -427,10 +436,16 @@ export const RegistroAtenciones: React.FC<RegistroAtencionesProps> = ({
       `Histórico clínico — ${rowsToPrint.length} documento(s)`,
     );
 
+    if (w.closed) return;
     w.document.open();
     w.document.write(html);
     w.document.close();
-    w.onload = () => setTimeout(() => w.print(), 600);
+    const triggerPrint = () => setTimeout(() => { try { w.focus(); w.print(); } catch {} }, 400);
+    if (w.document.readyState === 'complete') {
+      triggerPrint();
+    } else {
+      w.addEventListener('load', triggerPrint, { once: true });
+    }
   };
 
   const canCorrect = hasRole('doctor') || hasRole('admin');
