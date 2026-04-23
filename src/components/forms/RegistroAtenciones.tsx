@@ -254,55 +254,27 @@ export const RegistroAtenciones: React.FC<RegistroAtencionesProps> = ({
     [flatRows, selectedFolioId]
   );
 
-  // ── Mutation ───────────────────────────────────────────
-  const createCorrection = useMutation({
-    mutationFn: async (data: z.infer<typeof correccionSchema> & { respuestaId: string; admisionId: string; valorAnterior: any }) => {
-      const { error } = await supabase.from('correcciones_registro').insert({
-        respuesta_formulario_id: data.respuestaId,
-        admision_id: data.admisionId,
-        medico_id: user!.id,
-        medico_nombre: profile?.full_name || user!.email || 'Desconocido',
-        campo_corregido: data.campo_corregido,
-        valor_anterior: data.valorAnterior,
-        valor_nuevo: data.valor_nuevo ? JSON.parse(`"${data.valor_nuevo}"`) : null,
-        motivo: data.motivo,
-        tipo_correccion: data.tipo_correccion,
-        fhir_provenance_target: `QuestionnaireResponse/${data.respuestaId}`,
-      } as any);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['correcciones-paciente', patientId] });
-      toast.success('Corrección registrada exitosamente');
-      setCorrectionTarget(null);
-      setCorrForm({ campo_corregido: '', valor_nuevo: '', motivo: '', tipo_correccion: 'amendment' });
-      setCorrErrors({});
-    },
-    onError: (err: any) => {
-      toast.error('Error al guardar corrección', { description: err.message });
-    },
-  });
+  // ── Helpers para construir editableFields del DiffHighlightForm ──
+  const buildEditableFields = (respuesta: RespuestaFormulario): DiffEditableField[] => {
+    const preguntas = (respuesta.formularios?.preguntas as any[] | undefined) ?? [];
+    return preguntas
+      .filter((q: any) => q && q.id && q.type !== 'section')
+      .map((q: any) => {
+        let type: DiffEditableField['type'] = 'text';
+        if (q.type === 'paragraph' || q.type === 'textarea') type = 'textarea';
+        else if (q.type === 'number') type = 'number';
+        else if (q.type === 'date') type = 'date';
+        return {
+          key: q.id,
+          label: q.title || q.id,
+          type,
+        };
+      });
+  };
 
-  const handleSubmitCorrection = () => {
-    const result = correccionSchema.safeParse(corrForm);
-    if (!result.success) {
-      const errors: Record<string, string> = {};
-      result.error.errors.forEach(e => { errors[e.path[0] as string] = e.message; });
-      setCorrErrors(errors);
-      return;
-    }
-    if (!correctionTarget) return;
-
-    const respData = correctionTarget.respuesta.datos_respuesta as Record<string, any>;
-    const valorAnterior = respData[corrForm.campo_corregido] ?? null;
-
-    createCorrection.mutate({
-      ...result.data,
-      valor_nuevo: corrForm.valor_nuevo || undefined,
-      respuestaId: correctionTarget.respuesta.id,
-      admisionId: correctionTarget.admisionId,
-      valorAnterior,
-    });
+  const handleCorrectionSuccess = () => {
+    queryClient.invalidateQueries({ queryKey: ['registros-paciente', patientId] });
+    queryClient.invalidateQueries({ queryKey: ['provenance-respuestas', patientId] });
   };
 
   // ── Helpers ────────────────────────────────────────────
@@ -578,18 +550,13 @@ export const RegistroAtenciones: React.FC<RegistroAtencionesProps> = ({
             {selectedRow ? (
               <DetailPanel
                 row={selectedRow}
-                correcciones={correccionesByRespuesta[selectedRow.folio.id] || []}
+                provenance={provenanceByRespuesta[selectedRow.folio.id] || []}
                 canCorrect={canCorrect}
                 headerConfig={headerConfig}
                 onPrint={() => printFolio(selectedRow.folio, selectedRow.admision)}
-                onCorrect={() => {
-                  setCorrectionTarget({
-                    respuesta: selectedRow.folio,
-                    admisionId: selectedRow.admision?.id || '',
-                  });
-                  setCorrForm({ campo_corregido: '', valor_nuevo: '', motivo: '', tipo_correccion: 'amendment' });
-                  setCorrErrors({});
-                }}
+                onShowHistorial={() => setHistorialTarget(selectedRow.folio)}
+                onCorrectionSuccess={handleCorrectionSuccess}
+                buildEditableFields={buildEditableFields}
               />
             ) : (
               <div className="flex-1 flex items-center justify-center text-sm text-muted-foreground">
@@ -600,18 +567,16 @@ export const RegistroAtenciones: React.FC<RegistroAtencionesProps> = ({
         </div>
       )}
 
-      {/* Correction Dialog */}
-      <CorrectionDialog
-        correctionTarget={correctionTarget}
-        setCorrectionTarget={setCorrectionTarget}
-        corrForm={corrForm}
-        setCorrForm={setCorrForm}
-        corrErrors={corrErrors}
-        handleSubmitCorrection={handleSubmitCorrection}
-        createCorrection={createCorrection}
-        getQuestionsForRespuesta={getQuestionsForRespuesta}
-        formatValue={formatValue}
-      />
+      {/* Historial de correcciones FHIR Provenance */}
+      {historialTarget && (
+        <HistorialCorreccionesDialog
+          open={!!historialTarget}
+          onOpenChange={(open) => { if (!open) setHistorialTarget(null); }}
+          targetTable="respuestas_formularios"
+          targetRecordId={historialTarget.id}
+          recordLabel={historialTarget.formularios?.titulo || 'Registro clínico'}
+        />
+      )}
     </div>
   );
 };
