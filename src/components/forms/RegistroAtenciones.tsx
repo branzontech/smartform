@@ -385,8 +385,15 @@ export const RegistroAtenciones: React.FC<RegistroAtencionesProps> = ({
 
     // Replace document content in-place (single load lifecycle) and trigger print once.
     if (w.closed) return;
-    w.document.documentElement.innerHTML = html.replace(/^[\s\S]*?<html[^>]*>/i, '').replace(/<\/html>\s*$/i, '');
-    setTimeout(() => { try { w.focus(); w.print(); } catch {} }, 400);
+    w.document.open();
+    w.document.write(html);
+    w.document.close();
+    const triggerPrint = () => setTimeout(() => { try { w.focus(); w.print(); } catch {} }, 400);
+    if (w.document.readyState === 'complete') {
+      triggerPrint();
+    } else {
+      w.addEventListener('load', triggerPrint, { once: true });
+    }
   };
 
   const printAll = async () => {
