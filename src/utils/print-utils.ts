@@ -62,8 +62,14 @@ export const printFormResponse = async (
     `${formData.title} — Respuesta ${index + 1}`,
   );
 
+  if (printWindow.closed) return;
   printWindow.document.open();
   printWindow.document.write(html);
   printWindow.document.close();
-  printWindow.onload = () => setTimeout(() => printWindow.print(), 600);
+  const triggerPrint = () => setTimeout(() => { try { printWindow.focus(); printWindow.print(); } catch {} }, 400);
+  if (printWindow.document.readyState === "complete") {
+    triggerPrint();
+  } else {
+    printWindow.addEventListener("load", triggerPrint, { once: true });
+  }
 };
