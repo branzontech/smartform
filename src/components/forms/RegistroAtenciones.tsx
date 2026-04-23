@@ -278,30 +278,6 @@ export const RegistroAtenciones: React.FC<RegistroAtencionesProps> = ({
   };
 
   // ── Helpers ────────────────────────────────────────────
-  const getQuestionLabel = (respuesta: RespuestaFormulario, fieldKey: string): string => {
-    const preguntas = respuesta.formularios?.preguntas as any[] | undefined;
-    if (!preguntas) return fieldKey;
-    const q = preguntas.find((p: any) => p.id === fieldKey);
-    return q?.title || fieldKey;
-  };
-
-  const getQuestionsForRespuesta = (respuesta: RespuestaFormulario) => {
-    const preguntas = respuesta.formularios?.preguntas as any[] | undefined;
-    if (!preguntas) return [];
-    return preguntas.filter((q: any) => q.type !== 'section');
-  };
-
-  const formatValue = (val: any): string => {
-    if (val === null || val === undefined || val === '') return '—';
-    if (typeof val === 'object' && !Array.isArray(val)) {
-      return Object.entries(val)
-        .filter(([, v]) => v !== null && v !== undefined && v !== '')
-        .map(([k, v]) => `${k}: ${v}`)
-        .join(', ') || '—';
-    }
-    if (Array.isArray(val)) return val.join(', ') || '—';
-    return String(val);
-  };
 
   const printFolio = async (respuesta: RespuestaFormulario, admision: Admision | null) => {
     const w = window.open('', '_blank');
