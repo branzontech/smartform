@@ -46,6 +46,9 @@ interface RespuestaFormulario {
   medico_id: string;
   datos_respuesta: Record<string, any>;
   created_at: string;
+  estado_registro: EstadoRegistro;
+  supersedes: string | null;
+  superseded_by: string | null;
   formularios: {
     titulo: string;
     preguntas: any[];
@@ -53,32 +56,21 @@ interface RespuestaFormulario {
   } | null;
 }
 
-interface Correccion {
+interface ProvenanceLite {
   id: string;
-  respuesta_formulario_id: string;
-  admision_id: string;
-  medico_nombre: string;
-  campo_corregido: string;
-  valor_anterior: any;
-  valor_nuevo: any;
-  motivo: string;
-  tipo_correccion: string;
-  created_at: string;
+  target_record_id: string;
+  replacement_record_id: string | null;
+  activity_type: 'entered-in-error' | 'correction' | 'amendment';
+  agent_nombre_completo: string;
+  recorded_at: string;
+  reason_text: string;
 }
 
-// ── Validation ───────────────────────────────────────────
-const correccionSchema = z.object({
-  campo_corregido: z.string().min(1, 'Selecciona un campo'),
-  valor_nuevo: z.string().optional(),
-  motivo: z.string().min(10, 'El motivo debe tener al menos 10 caracteres'),
-  tipo_correccion: z.enum(['amendment', 'addendum', 'clarification']),
-});
-
-const TIPO_LABELS: Record<string, string> = {
-  amendment: 'Corrección',
-  addendum: 'Adición',
-  clarification: 'Aclaración',
-};
+// ── Props ────────────────────────────────────────────────
+interface RegistroAtencionesProps {
+  patientId: string;
+  headerConfig?: any;
+}
 
 // ── Props ────────────────────────────────────────────────
 interface RegistroAtencionesProps {
