@@ -95,18 +95,8 @@ export const RegistroAtenciones: React.FC<RegistroAtencionesProps> = ({
   // Selected folio for detail panel
   const [selectedFolioId, setSelectedFolioId] = useState<string | null>(null);
 
-  // Correction dialog
-  const [correctionTarget, setCorrectionTarget] = useState<{
-    respuesta: RespuestaFormulario;
-    admisionId: string;
-  } | null>(null);
-  const [corrForm, setCorrForm] = useState({
-    campo_corregido: '',
-    valor_nuevo: '',
-    motivo: '',
-    tipo_correccion: 'amendment' as string,
-  });
-  const [corrErrors, setCorrErrors] = useState<Record<string, string>>({});
+  // Historial dialog
+  const [historialTarget, setHistorialTarget] = useState<RespuestaFormulario | null>(null);
 
   // ── Queries ──────────────────────────────────────────
   const { data: admisiones = [], isLoading: loadingAdm } = useQuery({
@@ -127,7 +117,7 @@ export const RegistroAtenciones: React.FC<RegistroAtencionesProps> = ({
     queryFn: async () => {
       const { data, error } = await supabase
         .from('respuestas_formularios')
-        .select('id, formulario_id, admision_id, medico_id, datos_respuesta, created_at, formularios(titulo, preguntas, opciones_diseno)')
+        .select('id, formulario_id, admision_id, medico_id, datos_respuesta, created_at, estado_registro, supersedes, superseded_by, formularios(titulo, preguntas, opciones_diseno)')
         .eq('paciente_id', patientId)
         .order('created_at', { ascending: true });
       if (error) throw error;
@@ -136,20 +126,23 @@ export const RegistroAtenciones: React.FC<RegistroAtencionesProps> = ({
   });
 
   const admisionIds = useMemo(() => admisiones.map(a => a.id), [admisiones]);
+  const respuestaIds = useMemo(() => registros.map(r => r.id), [registros]);
 
-  const { data: correcciones = [] } = useQuery({
-    queryKey: ['correcciones-paciente', patientId, admisionIds],
+  // Provenance (FHIR) — reemplaza la antigua tabla correcciones_registro
+  const { data: provenanceList = [] } = useQuery({
+    queryKey: ['provenance-respuestas', patientId, respuestaIds],
     queryFn: async () => {
-      if (admisionIds.length === 0) return [];
+      if (respuestaIds.length === 0) return [];
       const { data, error } = await supabase
-        .from('correcciones_registro')
-        .select('*')
-        .in('admision_id', admisionIds)
-        .order('created_at', { ascending: true });
+        .from('provenance_clinico')
+        .select('id, target_record_id, replacement_record_id, activity_type, agent_nombre_completo, recorded_at, reason_text')
+        .eq('target_table', 'respuestas_formularios')
+        .in('target_record_id', respuestaIds)
+        .order('recorded_at', { ascending: true });
       if (error) throw error;
-      return (data || []) as unknown as Correccion[];
+      return (data || []) as unknown as ProvenanceLite[];
     },
-    enabled: admisionIds.length > 0,
+    enabled: respuestaIds.length > 0,
   });
 
   // ── Derived data ───────────────────────────────────────
@@ -171,14 +164,14 @@ export const RegistroAtenciones: React.FC<RegistroAtencionesProps> = ({
 
   const unlinkedRegistros = useMemo(() => registrosByAdmision['__unlinked'] || [], [registrosByAdmision]);
 
-  const correccionesByRespuesta = useMemo(() => {
-    const map: Record<string, Correccion[]> = {};
-    correcciones.forEach(c => {
-      if (!map[c.respuesta_formulario_id]) map[c.respuesta_formulario_id] = [];
-      map[c.respuesta_formulario_id].push(c);
+  const provenanceByRespuesta = useMemo(() => {
+    const map: Record<string, ProvenanceLite[]> = {};
+    provenanceList.forEach(p => {
+      if (!map[p.target_record_id]) map[p.target_record_id] = [];
+      map[p.target_record_id].push(p);
     });
     return map;
-  }, [correcciones]);
+  }, [provenanceList]);
 
   // ── Filtered admissions ────────────────────────────────
   const filteredAdmisiones = useMemo(() => {
