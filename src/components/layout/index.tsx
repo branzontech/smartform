@@ -2,7 +2,7 @@
 import React from "react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "./app-sidebar";
-import { Header } from "./header";
+import { DentroDeLayout, Header } from "./header";
 import { TenantStatusBar } from "../tenant/TenantStatusBar";
 import { FloatingChatButton } from "./floating-chat-button";
 import { Button } from "@/components/ui/button";
@@ -117,7 +117,7 @@ export const Layout = ({ children }: LayoutProps) => {
           </div>
           {/* Main Content — overflow-y-auto for normal pages; FormViewer uses h-full overflow-hidden to opt out */}
           <main className="flex-1 min-h-0 overflow-y-auto px-6">
-            {children}
+            <DentroDeLayout.Provider value={true}>{children}</DentroDeLayout.Provider>
           </main>
 
         <FloatingChatButton />

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { createContext, useContext, useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ChevronDown, Menu, Stethoscope, Moon, Sun, Search, Bell, UserCircle, LogOut, LayoutGrid } from "lucide-react";
 import { AppLauncherModal } from "./AppLauncherModal";
@@ -30,7 +30,15 @@ interface HeaderProps {
   showCreate?: boolean;
 }
 
-export const Header = ({ showCreate = true }: HeaderProps) => {
+/**
+ * Marca el contenido del Layout. Varias páginas heredadas dibujan su propio <Header />
+ * dentro del Layout (que ya tiene uno): con esto no se duplica.
+ */
+export const DentroDeLayout = createContext(false);
+
+export const Header = (props: HeaderProps) => (useContext(DentroDeLayout) ? null : <HeaderBase {...props} />);
+
+const HeaderBase = ({ showCreate = true }: HeaderProps) => {
   const isMobile = useIsMobile();
   const navigate = useNavigate();
   const { profile, user, signOut } = useAuth();

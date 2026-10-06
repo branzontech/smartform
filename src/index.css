@@ -200,6 +200,19 @@
     animation: slide-in-right 0.3s ease-out forwards;
   }
 
+  /* Scroll discreto: invisible hasta pasar el cursor o enfocar (kit de tablas y pestañas). */
+  .scroll-suave { scrollbar-width: thin; scrollbar-color: transparent transparent; overscroll-behavior: contain; }
+  .scroll-suave:hover, .scroll-suave:focus-within { scrollbar-color: hsl(var(--foreground) / 0.22) transparent; }
+  .scroll-suave::-webkit-scrollbar { width: 6px; height: 6px; }
+  .scroll-suave::-webkit-scrollbar-thumb { background: transparent; border-radius: 999px; }
+  .scroll-suave:hover::-webkit-scrollbar-thumb,
+  .scroll-suave:focus-within::-webkit-scrollbar-thumb { background: hsl(var(--foreground) / 0.22); }
+
+  /* Scroll horizontal de las tablas del kit. */
+  .scroll-tabla { scrollbar-width: thin; scrollbar-color: hsl(var(--foreground) / 0.18) transparent; }
+  .scroll-tabla::-webkit-scrollbar { width: 8px; height: 8px; }
+  .scroll-tabla::-webkit-scrollbar-thumb { background: hsl(var(--foreground) / 0.18); border-radius: 999px; }
+
   /* Pantallas de acceso (mismo diseño que Magnet) */
   .textura-puntos {
     background-color: hsl(var(--muted) / 0.5);

@@ -1,0 +1,6 @@
+Origen: https://github.com/nextlevelbuilder/ui-ux-pro-max-skill (MIT)
+Commit: 477bcb28c9812b385cb51a4605ddf30d7b2266e2
+Versión: 2.13.0
+Copiado: 2026-10-06. Solo la skill principal (sin las skills extra de logos/banners/slides, sin stack/ ni su .mcp.json).
+Cambio local: en SKILL.md la ruta ${CLAUDE_PLUGIN_ROOT}/.claude/skills/... pasa a .claude/skills/... (aquí es skill de proyecto, no plugin; se ejecuta desde la raíz del repo).
+En Ker Hub manda docs/ux-ui/convenciones.md: la marca, la paleta y las convenciones del equipo tienen prioridad sobre las recomendaciones de la skill.

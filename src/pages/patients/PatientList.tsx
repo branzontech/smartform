@@ -1,521 +1,141 @@
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Header } from "@/components/layout/header";
-import { BackButton } from "@/App";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { EmptyState } from "@/components/ui/empty-state";
-import { format } from "date-fns";
-import { es } from "date-fns/locale";
-import { Search, Plus, Users, Calendar, Eye, FileText, Filter, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
-import { Patient } from "@/types/patient-types";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
+import { BarChart3, ClipboardList } from "lucide-react";
+import { EncabezadoModulo } from "@/components/kit/EncabezadoModulo";
+import { AccionesFila } from "@/components/kit/AccionesFila";
+import { BarraTabla, TablaDatos, useTablaDatos, type ColumnaTabla, type FiltroTabla, type SegmentoTabla } from "@/components/kit/tabla";
 import { baseDatos } from "@/integrations/datos/cliente";
+import { useToast } from "@/hooks/use-toast";
 
-type SortField = 'name' | 'documentId' | 'dateOfBirth' | 'lastVisitAt' | 'createdAt';
-type SortDirection = 'asc' | 'desc';
+/** Fila de public.pacientes con lo que muestra la lista. */
+interface PacienteFila {
+  id: string;
+  numero_historia: string | null;
+  nombres: string;
+  apellidos: string;
+  tipo_documento: string | null;
+  numero_documento: string;
+  fecha_nacimiento: string | null;
+  genero: string | null;
+  telefono_principal: string;
+  email: string | null;
+  regimen: string | null;
+  zona: string | null;
+  ciudad: string | null;
+  fhir_extensions: Record<string, unknown> | null;
+  created_at: string;
+}
 
-const ITEMS_PER_PAGE_OPTIONS = [10, 25, 50, 100];
+const nombreCompleto = (p: PacienteFila) => `${p.nombres} ${p.apellidos}`.trim();
 
+function edad(fecha: string | null): number | null {
+  if (!fecha) return null;
+  const n = new Date(fecha);
+  if (Number.isNaN(n.getTime())) return null;
+  const hoy = new Date();
+  let anios = hoy.getFullYear() - n.getFullYear();
+  if (hoy.getMonth() < n.getMonth() || (hoy.getMonth() === n.getMonth() && hoy.getDate() < n.getDate())) anios--;
+  return anios;
+}
+
+/** El género puede venir en la columna o en fhir_extensions (registros antiguos). */
+const genero = (p: PacienteFila) => p.genero || (p.fhir_extensions?.gender as string | undefined) || (p.fhir_extensions?.sexo as string | undefined) || null;
+
+const fechaCorta = new Intl.DateTimeFormat("es-CO", { day: "2-digit", month: "short", year: "numeric" });
+const derecha = "text-right tabular-nums";
+
+/** Una celda, un dato, una línea. Lo demás está en el detalle del paciente. */
+const COLUMNAS: ColumnaTabla<PacienteFila>[] = [
+  { id: "historia", titulo: "Historia", valor: (p) => p.numero_historia, className: "font-mono text-xs", fija: true },
+  { id: "paciente", titulo: "Paciente", valor: nombreCompleto, principal: true, className: "min-w-[220px]" },
+  { id: "documento", titulo: "Documento", valor: (p) => `${p.tipo_documento ?? ""} ${p.numero_documento}`.trim(), className: "font-mono text-xs" },
+  { id: "edad", titulo: "Edad", valor: (p) => edad(p.fecha_nacimiento), celda: (p) => edad(p.fecha_nacimiento) ?? "—", className: derecha },
+  { id: "genero", titulo: "Género", valor: genero },
+  { id: "telefono", titulo: "Teléfono", valor: (p) => p.telefono_principal, className: "tabular-nums" },
+  { id: "correo", titulo: "Correo", valor: (p) => p.email, oculta: true },
+  { id: "regimen", titulo: "Régimen", valor: (p) => p.regimen },
+  { id: "zona", titulo: "Zona", valor: (p) => p.zona, oculta: true },
+  { id: "ciudad", titulo: "Ciudad", valor: (p) => p.ciudad },
+  {
+    id: "registro", titulo: "Registrado", valor: (p) => p.created_at,
+    celda: (p) => fechaCorta.format(new Date(p.created_at)), oculta: true,
+  },
+];
+
+const FILTROS: FiltroTabla<PacienteFila>[] = [
+  { id: "genero", titulo: "Género", valor: genero },
+  { id: "regimen", titulo: "Régimen", valor: (p) => p.regimen },
+  { id: "zona", titulo: "Zona", valor: (p) => p.zona },
+  { id: "ciudad", titulo: "Ciudad", valor: (p) => p.ciudad },
+];
+
+const SEGMENTOS: SegmentoTabla<PacienteFila>[] = [
+  { id: "todos", titulo: "Todos", cumple: () => true },
+  { id: "menores", titulo: "Menores de edad", cumple: (p) => (edad(p.fecha_nacimiento) ?? 99) < 18 },
+  { id: "mayores", titulo: "Adultos mayores", cumple: (p) => (edad(p.fecha_nacimiento) ?? 0) >= 60 },
+];
+
+const claveFila = (p: PacienteFila) => p.id;
+
+/**
+ * Lista de pacientes con la convención de tablas de Ker Hub (kit de Equipo
+ * Tracker/Magnet): segmentos con conteo, Filtrar, Ordenar, Opciones (columnas y
+ * CSV), búsqueda desplegable, esqueleto de carga y acciones fijas a la derecha.
+ */
 const PatientList = () => {
-  const [patients, setPatients] = useState<Patient[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
-  const [genderFilter, setGenderFilter] = useState<string>("all");
-  const [hasVisitFilter, setHasVisitFilter] = useState<string>("all");
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(25);
-  const [sortField, setSortField] = useState<SortField>('name');
-  const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const [pacientes, setPacientes] = useState<PacienteFila[]>([]);
+  const [cargando, setCargando] = useState(true);
 
-  // Debounce search term
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearchTerm(searchTerm);
-      setCurrentPage(1);
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [searchTerm]);
-
-  // Load patients from Supabase
-  useEffect(() => {
-    const fetchPatients = async () => {
-      setLoading(true);
+    let vigente = true;
+    (async () => {
       try {
         const { data, error } = await baseDatos
           .from("pacientes")
-          .select("*")
+          .select("id, numero_historia, nombres, apellidos, tipo_documento, numero_documento, fecha_nacimiento, genero, telefono_principal, email, regimen, zona, ciudad, fhir_extensions, created_at")
           .order("created_at", { ascending: false });
-
+        if (!vigente) return;
         if (error) {
-          console.error("Error fetching patients:", error);
-          setPatients([]);
+          toast({ title: "No se pudieron cargar los pacientes", description: error.message, variant: "destructive" });
+          setPacientes([]);
         } else {
-          const mapped: Patient[] = (data || []).map((p) => {
-            // Derive gender from fhir_extensions if available
-            const ext = p.fhir_extensions as Record<string, any> | null;
-            const gender = ext?.gender || ext?.sexo || "Otro";
-
-            return {
-              id: p.id,
-              name: `${p.nombres} ${p.apellidos}`,
-              documentId: p.numero_documento,
-              dateOfBirth: p.fecha_nacimiento || "",
-              gender: gender as Patient["gender"],
-              contactNumber: p.telefono_principal,
-              email: p.email || undefined,
-              address: p.direccion || undefined,
-              createdAt: new Date(p.created_at),
-              lastVisitAt: undefined, // TODO: derive from admisiones
-            };
-          });
-          setPatients(mapped);
+          setPacientes((data ?? []) as PacienteFila[]);
         }
-      } catch (err) {
-        console.error("Error fetching patients:", err);
-        setPatients([]);
       } finally {
-        setLoading(false);
+        if (vigente) setCargando(false);
       }
-    };
+    })();
+    return () => { vigente = false; };
+  }, [toast]);
 
-    fetchPatients();
-  }, []);
+  const filtros = useMemo(() => FILTROS, []);
+  const t = useTablaDatos({ id: "pacientes.lista", filas: pacientes, columnas: COLUMNAS, claveFila, filtros, segmentos: SEGMENTOS });
 
-  // Filter and sort patients
-  const filteredAndSortedPatients = useMemo(() => {
-    const filtered = patients.filter(patient => {
-      const matchesSearch = patient.name.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
-                          patient.documentId.toLowerCase().includes(debouncedSearchTerm.toLowerCase());
-      
-      const matchesGender = genderFilter === "all" || patient.gender === genderFilter;
-      
-      const matchesVisit = hasVisitFilter === "all" || 
-                          (hasVisitFilter === "has-visit" && patient.lastVisitAt) ||
-                          (hasVisitFilter === "no-visit" && !patient.lastVisitAt);
-
-      return matchesSearch && matchesGender && matchesVisit;
-    });
-
-    // Sort the filtered results
-    filtered.sort((a, b) => {
-      let aValue: any = a[sortField];
-      let bValue: any = b[sortField];
-
-      // Handle dates
-      if (sortField === 'dateOfBirth' || sortField === 'lastVisitAt' || sortField === 'createdAt') {
-        aValue = aValue ? new Date(aValue).getTime() : 0;
-        bValue = bValue ? new Date(bValue).getTime() : 0;
-      }
-
-      // Handle strings
-      if (typeof aValue === 'string') {
-        aValue = aValue.toLowerCase();
-        bValue = bValue.toLowerCase();
-      }
-
-      if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
-      if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
-      return 0;
-    });
-
-    return filtered;
-  }, [patients, debouncedSearchTerm, genderFilter, hasVisitFilter, sortField, sortDirection]);
-
-  // Paginate the results
-  const paginatedPatients = useMemo(() => {
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    return filteredAndSortedPatients.slice(startIndex, startIndex + itemsPerPage);
-  }, [filteredAndSortedPatients, currentPage, itemsPerPage]);
-
-  const totalPages = Math.ceil(filteredAndSortedPatients.length / itemsPerPage);
-
-  // Handle sorting
-  const handleSort = (field: SortField) => {
-    if (sortField === field) {
-      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortField(field);
-      setSortDirection('asc');
-    }
-    setCurrentPage(1);
-  };
-
-  // Render sort icon
-  const renderSortIcon = (field: SortField) => {
-    if (sortField !== field) return <ArrowUpDown className="h-4 w-4" />;
-    return sortDirection === 'asc' ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />;
-  };
-
-  const handleCreateConsultation = () => {
-    navigate("/app/pacientes/nueva-consulta");
-  };
-
-  const handleViewPatient = (id: string) => {
-    navigate(`/app/pacientes/${id}`);
-  };
-
-  // Reset filters
-  const resetFilters = () => {
-    setSearchTerm("");
-    setGenderFilter("all");
-    setHasVisitFilter("all");
-    setCurrentPage(1);
-  };
-
-  // Calculate age from date of birth
-  const calculateAge = (dateOfBirth: string) => {
-    const today = new Date();
-    const birthDate = new Date(dateOfBirth);
-    let age = today.getFullYear() - birthDate.getFullYear();
-    const monthDiff = today.getMonth() - birthDate.getMonth();
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-      age--;
-    }
-    return age;
-  };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex flex-col">
-        <Header />
-        <div className="flex-1 flex items-center justify-center">
-          <div className="animate-pulse text-center">
-            <div className="h-8 w-48 bg-muted rounded mb-6 mx-auto"></div>
-            <div className="max-w-6xl mx-auto px-4">
-              <div className="h-12 bg-muted rounded mb-4"></div>
-              {[1, 2, 3, 4, 5].map((i) => (
-                <div key={i} className="h-12 bg-muted rounded mb-2"></div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const ver = (p: PacienteFila) => navigate(`/app/pacientes/${p.id}`);
 
   return (
-    <div className="h-full flex flex-col overflow-hidden">
-      <Header />
-      <main className="flex-1 overflow-y-auto container mx-auto py-8 px-4 max-w-7xl">
-        <BackButton />
-        
-        {/* Header */}
-        <div className="flex justify-between items-center mb-6">
-          <div className="flex items-center gap-4">
-            <h1 className="text-2xl font-bold flex items-center">
-              <Users className="mr-2 text-primary" />
-              Pacientes
-            </h1>
-            <Badge variant="secondary" className="text-sm">
-              {filteredAndSortedPatients.length} pacientes
-            </Badge>
-          </div>
-          <Button onClick={handleCreateConsultation} className="bg-primary hover:bg-primary/90">
-            <Plus className="mr-2" size={16} />
-            Nueva atención
-          </Button>
-        </div>
-
-        {/* Filters - Modern Windows 11 Style */}
-        <div className="mb-6 p-6 bg-card/80 backdrop-blur-xl rounded-3xl border border-border/50 shadow-lg">
-          <div className="flex items-center gap-2 mb-5">
-            <div className="p-2 rounded-xl bg-primary/10">
-              <Filter className="h-5 w-5 text-primary" />
-            </div>
-            <h2 className="text-lg font-semibold text-foreground">Filtros y búsqueda</h2>
-          </div>
-          
-          {/* Search - Modern Style */}
-          <div className="relative mb-5">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Buscar por nombre o documento..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-11 h-12 bg-muted/50 border-0 rounded-2xl text-base focus-visible:ring-2 focus-visible:ring-primary/30 placeholder:text-muted-foreground/60"
-            />
-          </div>
-          
-          {/* Filter row - Modern Style */}
-          <div className="flex flex-wrap gap-6 items-center">
-            <div className="flex items-center gap-3">
-              <label className="text-sm font-medium text-muted-foreground">Género:</label>
-              <Select value={genderFilter} onValueChange={setGenderFilter}>
-                <SelectTrigger className="w-36 h-10 bg-muted/50 border-0 rounded-xl focus:ring-2 focus:ring-primary/30">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="rounded-xl border-border/50 bg-popover/95 backdrop-blur-xl">
-                  <SelectItem value="all" className="rounded-lg">Todos</SelectItem>
-                  <SelectItem value="Masculino" className="rounded-lg">Masculino</SelectItem>
-                  <SelectItem value="Femenino" className="rounded-lg">Femenino</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <label className="text-sm font-medium text-muted-foreground">Visitas:</label>
-              <Select value={hasVisitFilter} onValueChange={setHasVisitFilter}>
-                <SelectTrigger className="w-40 h-10 bg-muted/50 border-0 rounded-xl focus:ring-2 focus:ring-primary/30">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="rounded-xl border-border/50 bg-popover/95 backdrop-blur-xl">
-                  <SelectItem value="all" className="rounded-lg">Todos</SelectItem>
-                  <SelectItem value="has-visit" className="rounded-lg">Con visitas</SelectItem>
-                  <SelectItem value="no-visit" className="rounded-lg">Sin visitas</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <label className="text-sm font-medium text-muted-foreground">Mostrar:</label>
-              <Select value={itemsPerPage.toString()} onValueChange={(value) => {
-                setItemsPerPage(Number(value));
-                setCurrentPage(1);
-              }}>
-                <SelectTrigger className="w-24 h-10 bg-muted/50 border-0 rounded-xl focus:ring-2 focus:ring-primary/30">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="rounded-xl border-border/50 bg-popover/95 backdrop-blur-xl">
-                  {ITEMS_PER_PAGE_OPTIONS.map(option => (
-                    <SelectItem key={option} value={option.toString()} className="rounded-lg">{option}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {(searchTerm || genderFilter !== "all" || hasVisitFilter !== "all") && (
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={resetFilters}
-                className="h-10 px-4 rounded-xl hover:bg-destructive/10 hover:text-destructive transition-colors"
-              >
-                Limpiar filtros
-              </Button>
-            )}
-          </div>
-        </div>
-
-        {/* Results - Modern Windows 11 Style */}
-        {filteredAndSortedPatients.length === 0 ? (
-          <div className="p-12 bg-card/80 backdrop-blur-xl rounded-3xl border border-border/50 shadow-lg text-center">
-            <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-primary/10 flex items-center justify-center">
-              <Users size={40} className="text-primary" />
-            </div>
-            <h3 className="text-xl font-semibold mb-2">No hay pacientes registrados</h3>
-            <p className="text-muted-foreground mb-6">Registra una nueva consulta para agregar pacientes.</p>
-            <Button onClick={handleCreateConsultation} className="rounded-xl h-11 px-6">
-              <Plus className="mr-2 h-4 w-4" />
-              Nueva atención
-            </Button>
-          </div>
-        ) : (
-          <div className="bg-card/80 backdrop-blur-xl rounded-3xl border border-border/50 shadow-lg overflow-hidden">
-            {/* Table */}
-            <div className="relative overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow className="hover:bg-transparent border-b border-border/50">
-                    <TableHead className="w-[200px] py-4 px-6">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-auto p-0 font-semibold text-foreground hover:text-primary gap-2"
-                        onClick={() => handleSort('name')}
-                      >
-                        Nombre
-                        {renderSortIcon('name')}
-                      </Button>
-                    </TableHead>
-                    <TableHead className="py-4">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-auto p-0 font-semibold text-foreground hover:text-primary gap-2"
-                        onClick={() => handleSort('documentId')}
-                      >
-                        Documento
-                        {renderSortIcon('documentId')}
-                      </Button>
-                    </TableHead>
-                    <TableHead className="py-4 font-semibold text-foreground">Edad</TableHead>
-                    <TableHead className="py-4 font-semibold text-foreground">Género</TableHead>
-                    <TableHead className="py-4 font-semibold text-foreground">Contacto</TableHead>
-                    <TableHead className="py-4">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-auto p-0 font-semibold text-foreground hover:text-primary gap-2"
-                        onClick={() => handleSort('lastVisitAt')}
-                      >
-                        Última visita
-                        {renderSortIcon('lastVisitAt')}
-                      </Button>
-                    </TableHead>
-                    <TableHead className="w-[150px] py-4 font-semibold text-foreground">Acciones</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {paginatedPatients.map((patient, index) => (
-                    <TableRow 
-                      key={patient.id} 
-                      className="hover:bg-primary/5 transition-colors duration-200 border-b border-border/30 last:border-0"
-                    >
-                      <TableCell className="py-4 px-6">
-                        <span className="font-medium text-foreground">{patient.name}</span>
-                      </TableCell>
-                      <TableCell className="py-4">
-                        <span className="font-mono text-sm text-muted-foreground bg-muted/50 px-2 py-1 rounded-lg">
-                          {patient.documentId}
-                        </span>
-                      </TableCell>
-                      <TableCell className="py-4 text-muted-foreground">
-                        {calculateAge(patient.dateOfBirth)} años
-                      </TableCell>
-                      <TableCell className="py-4">
-                        <Badge 
-                          variant={patient.gender === 'Masculino' ? 'default' : 'secondary'} 
-                          className="text-xs rounded-lg px-3 py-1"
-                        >
-                          {patient.gender}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="py-4">
-                        <div className="text-sm text-foreground">{patient.contactNumber}</div>
-                        {patient.email && (
-                          <div className="text-muted-foreground text-xs mt-0.5">{patient.email}</div>
-                        )}
-                      </TableCell>
-                      <TableCell className="py-4">
-                        {patient.lastVisitAt ? (
-                          <div className="text-sm">
-                            <span className="text-foreground">{format(patient.lastVisitAt, "dd/MM/yyyy", { locale: es })}</span>
-                            <div className="text-muted-foreground text-xs mt-0.5">
-                              {format(patient.lastVisitAt, "HH:mm")}
-                            </div>
-                          </div>
-                        ) : (
-                          <Badge variant="outline" className="text-xs rounded-lg border-border/50">
-                            Sin visitas
-                          </Badge>
-                        )}
-                      </TableCell>
-                      <TableCell className="py-4">
-                        <div className="flex gap-1">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleViewPatient(patient.id)}
-                            className="h-9 w-9 p-0 rounded-xl hover:bg-primary/10 hover:text-primary transition-colors"
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => navigate(`/app/pacientes/${patient.id}?tab=consultations`)}
-                            className="h-9 w-9 p-0 rounded-xl hover:bg-primary/10 hover:text-primary transition-colors"
-                          >
-                            <FileText className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-
-            {/* Pagination - Modern Style */}
-            {totalPages > 1 && (
-              <div className="flex items-center justify-between px-6 py-5 border-t border-border/50 bg-muted/20">
-                <div className="text-sm text-muted-foreground">
-                  Mostrando <span className="font-medium text-foreground">{((currentPage - 1) * itemsPerPage) + 1}</span> a{' '}
-                  <span className="font-medium text-foreground">{Math.min(currentPage * itemsPerPage, filteredAndSortedPatients.length)}</span> de{' '}
-                  <span className="font-medium text-foreground">{filteredAndSortedPatients.length}</span> pacientes
-                </div>
-                
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setCurrentPage(1)}
-                    disabled={currentPage === 1}
-                    className="h-9 w-9 p-0 rounded-xl hover:bg-primary/10 disabled:opacity-40"
-                  >
-                    <ChevronsLeft className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                    disabled={currentPage === 1}
-                    className="h-9 w-9 p-0 rounded-xl hover:bg-primary/10 disabled:opacity-40"
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                  </Button>
-                  
-                  <div className="flex items-center gap-1">
-                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                      const pageNumber = currentPage <= 3 
-                        ? i + 1 
-                        : currentPage >= totalPages - 2
-                        ? totalPages - 4 + i
-                        : currentPage - 2 + i;
-                      
-                      if (pageNumber < 1 || pageNumber > totalPages) return null;
-                      
-                      return (
-                        <Button
-                          key={pageNumber}
-                          variant={currentPage === pageNumber ? "default" : "ghost"}
-                          size="sm"
-                          onClick={() => setCurrentPage(pageNumber)}
-                          className={cn(
-                            "w-9 h-9 rounded-xl transition-all",
-                            currentPage === pageNumber 
-                              ? "bg-primary text-primary-foreground shadow-md" 
-                              : "hover:bg-primary/10"
-                          )}
-                        >
-                          {pageNumber}
-                        </Button>
-                      );
-                    })}
-                  </div>
-                  
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                    disabled={currentPage === totalPages}
-                    className="h-9 w-9 p-0 rounded-xl hover:bg-primary/10 disabled:opacity-40"
-                  >
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setCurrentPage(totalPages)}
-                    disabled={currentPage === totalPages}
-                    className="h-9 w-9 p-0 rounded-xl hover:bg-primary/10 disabled:opacity-40"
-                  >
-                    <ChevronsRight className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            )}
-          </div>
+    <div className="mx-auto max-w-7xl space-y-5 py-6">
+      <EncabezadoModulo
+        titulo="Pacientes"
+        secundarias={[{ titulo: "Estadísticas", icono: BarChart3, onClick: () => navigate("/app/pacientes/dashboard") }]}
+        primaria={{ titulo: "Nueva atención", onClick: () => navigate("/app/pacientes/nueva-consulta") }}
+      />
+      <TablaDatos
+        t={t}
+        cargando={cargando}
+        onFilaClick={ver}
+        barra={<BarraTabla t={t} nombre={["paciente", "pacientes"]} placeholder="Buscar por nombre, documento o teléfono" nombreArchivo="pacientes" />}
+        acciones={(p) => (
+          <AccionesFila
+            nombre={nombreCompleto(p)}
+            onVer={() => ver(p)}
+            menu={[{ titulo: "Ver atenciones", icono: ClipboardList, onClick: () => navigate(`/app/pacientes/${p.id}?tab=consultations`) }]}
+          />
         )}
-      </main>
+        vacio="Aún no hay pacientes. Registra uno con «Nueva atención»."
+      />
     </div>
   );
 };
