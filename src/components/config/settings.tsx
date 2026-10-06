@@ -22,7 +22,6 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { toast } from "sonner";
-import { useOnboarding } from "@/hooks/use-onboarding";
 import { cn } from "@/lib/utils";
 
 // ---------- Grouped navigation ----------
@@ -110,7 +109,6 @@ function ComingSoon({ icon: Icon, label }: { icon: React.ElementType; label: str
 // ---------- Main component ----------
 export const SettingsPage = () => {
   const navigate = useNavigate();
-  const { resetOnboarding } = useOnboarding();
 
   // Sidebar collapse
   const [collapsed, setCollapsed] = useState(() => {
@@ -158,7 +156,6 @@ export const SettingsPage = () => {
   }, [activeCategory]);
 
   const handleSave = () => toast.success("Configuración guardada con éxito");
-  const handleRestartGuide = () => { resetOnboarding(); toast.success("Guía de usuario reiniciada."); };
 
   // Filtered sections
   const q = searchQuery.toLowerCase().trim();
@@ -343,16 +340,6 @@ export const SettingsPage = () => {
                     <option value="pt">Português</option>
                     <option value="fr">Français</option>
                   </select>
-                </div>
-                <div className="flex items-center justify-between px-4 py-3">
-                  <div>
-                    <Label className="text-sm font-medium">Guía de usuario</Label>
-                    <p className="text-xs text-muted-foreground">Volver a mostrar la guía de introducción</p>
-                  </div>
-                  <Button variant="ghost" size="sm" onClick={handleRestartGuide} className="gap-1.5 text-xs">
-                    <HelpCircle size={14} />
-                    Mostrar guía
-                  </Button>
                 </div>
               </div>
             )}

@@ -9,7 +9,6 @@ import { Button } from "@/components/ui/button";
 import { TenantProvider } from "@/contexts/TenantContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
-import { OnboardingWrapper } from "@/components/onboarding/OnboardingWrapper";
 import { Layout } from "@/components/layout";
 import { HelmetProvider } from "react-helmet-async";
 
@@ -54,7 +53,6 @@ function App() {
               <TenantProvider>
                 <Toaster />
                 <Sonner />
-                <OnboardingWrapper>
                   <Routes>
                     {/* Acceso. La raíz va a la app; sin sesión, ProtectedRoute lleva al login. */}
                     <Route path="/" element={<Navigate to="/app/home" replace />} />
@@ -81,7 +79,6 @@ function App() {
                     {/* 404 */}
                     <Route path="*" element={<Navigate to="/" replace />} />
                   </Routes>
-                </OnboardingWrapper>
               </TenantProvider>
             </AuthProvider>
           </BrowserRouter>
