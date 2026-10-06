@@ -32,12 +32,40 @@ Cuando una recomendación de la skill choca con esta página, **gana esta págin
 | Cerrar sesión flotante | Dentro de la barra o el menú de usuario |
 | Textos en inglés o anglicismos innecesarios | Español claro, para personal no técnico |
 
-## 3. Tablas y listas
+## 3. Tablas, pestañas y páginas de módulo (kit obligatorio)
 
-- Una celda, un dato, una línea. Lo accesorio va en el detalle.
+Toda tabla usa el kit `src/components/kit/` (convención de Equipo Tracker, la misma de Magnet). Modelo
+completo: `src/pages/patients/PatientList.tsx`.
+
+| Pieza | Para qué |
+|---|---|
+| `EncabezadoModulo` | Título · máx. 2 secundarias · «…» con lo ocasional · engranaje · 1 primaria |
+| `PestanasCarpeta` | Vistas del módulo (listas que se consultan). Tipo carpeta, a la derecha, «Más» para fijar/desfijar |
+| `useTablaDatos` + `BarraTabla` + `TablaDatos` | Listados: segmentos con conteo, Filtrar (ventana), Ordenar, Opciones (columnas y CSV), búsqueda desplegable, esqueleto, paginación, acciones fijas |
+| `AccionesFila` | «Ver» + «Más acciones»; Eliminar solo ahí y con confirmación |
+| `CeldaEstado` | La única celda con color de fondo: la columna «Estado» |
+| `TablaSimple` | Ítems de factura/cotización/orden y comparativos: mismo aspecto, sin barra |
+| `useConfirmar` | Reemplazo de `window.confirm` |
+
+```tsx
+const t = useTablaDatos({ id: "modulo.vista", filas, columnas: COLUMNAS, claveFila, filtros: FILTROS, segmentos: SEGMENTOS });
+
+<div className="mx-auto max-w-7xl space-y-5 py-6">
+  <EncabezadoModulo titulo="Módulo" primaria={{ titulo: "Nuevo …", onClick }} />
+  <PestanasCarpeta id="modulo.pestanas" etiqueta="Vistas" pestanas={PESTANAS} activa={vista} onCambio={setVista} visiblesIniciales={[…]} />
+  <TablaDatos t={t} cargando={cargando} onFilaClick={ver}
+    barra={<BarraTabla t={t} nombre={["registro", "registros"]} placeholder="Buscar…" />}
+    acciones={(f) => <AccionesFila nombre={f.nombre} onVer={() => ver(f)} onEliminar={() => eliminar(f)} />}
+    vacio="Aún no hay registros." />
+</div>
+```
+
+Reglas:
+- Una celda, un dato, una línea. Lo accesorio va en el detalle o en columnas `oculta: true`.
+- Nada de selects ni buscadores sueltos encima de la tabla: todo vive en la barra.
 - Columna de acciones siempre visible y fija a la derecha.
-- Estado vacío explícito con una acción («Aún no hay pacientes · Registrar paciente»).
-- Paginación o virtualización a partir de ~100 filas.
+- Estado vacío explícito con una acción («Aún no hay pacientes. Registra uno con «Nueva atención»»).
+- Las páginas no dibujan su propio `<Header />` ni contenedores con scroll: el `Layout` ya los da.
 
 ## 4. Accesibilidad (prioridad 1 de la skill)
 
