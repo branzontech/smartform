@@ -24,14 +24,9 @@ export function AuthLayout({ titulo, descripcion, children, pie }: AuthLayoutPro
           decoding="async"
           className="absolute inset-0 h-full w-full object-cover object-[50%_35%]"
         />
-        <div className="absolute left-6 top-6 flex items-center gap-3 rounded-2xl bg-background/85 px-3.5 py-2.5 shadow-sm backdrop-blur">
-          <div aria-hidden="true" className="grid h-9 w-9 place-items-center rounded-xl bg-primary text-sm font-bold text-primary-foreground">
-            K
-          </div>
-          <div className="leading-tight">
-            <p className="text-sm font-bold text-foreground">Ker Hub</p>
-            <p className="text-[11px] text-muted-foreground">Gestión clínica integral</p>
-          </div>
+        {/* El logo es blanco y lima: va sobre una placa morada para leerse sobre la ilustración. */}
+        <div className="absolute left-6 top-6 rounded-2xl bg-[#3b2364]/75 px-4 py-3 shadow-sm backdrop-blur">
+          <img src="/kerhub-logo-recortado.png" alt="Ker Hub" className="h-8 w-auto sm:h-9" />
         </div>
         <p className="absolute bottom-6 left-6 hidden rounded-full bg-background/85 px-3.5 py-1.5 text-xs font-medium text-foreground shadow-sm backdrop-blur lg:block">
           Tu consulta, en un solo lugar
