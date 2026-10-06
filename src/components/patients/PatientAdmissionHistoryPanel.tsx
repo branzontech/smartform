@@ -130,19 +130,17 @@ export const PatientAdmissionHistoryPanel: React.FC<PatientAdmissionHistoryPanel
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const loadAdmissions = () => {
-      setLoading(true);
-      // Simular carga de datos
-      setTimeout(() => {
-        const patientAdmissions = mockAdmissions[patientId] || [];
-        setAdmissions(patientAdmissions);
-        setLoading(false);
-      }, 300);
-    };
+    if (!patientId) return;
 
-    if (patientId) {
-      loadAdmissions();
-    }
+    setLoading(true);
+    // Simular carga de datos
+    const timer = setTimeout(() => {
+      const patientAdmissions = mockAdmissions[patientId] || [];
+      setAdmissions(patientAdmissions);
+      setLoading(false);
+    }, 300);
+
+    return () => clearTimeout(timer);
   }, [patientId]);
 
   const getStatusColor = (status: 'A' | 'C') => {

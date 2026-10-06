@@ -15,6 +15,81 @@ interface DoctorAppointmentsProps {
   doctorId: string;
 }
 
+const renderAppointmentStatusBadge = (status: AppointmentStatus) => {
+  switch (status) {
+    case "Programada":
+      return <Badge className="bg-blue-500">Programada</Badge>;
+    case "Pendiente":
+      return <Badge variant="outline" className="text-yellow-600 border-yellow-400">Pendiente</Badge>;
+    case "Completada":
+      return <Badge className="bg-green-500">Completada</Badge>;
+    case "Cancelada":
+      return <Badge variant="destructive">Cancelada</Badge>;
+    case "Reprogramada":
+      return <Badge className="bg-purple-500">Reprogramada</Badge>;
+    default:
+      return null;
+  }
+};
+
+interface AppointmentCardProps {
+  appointment: Appointment;
+  onView: (appointmentId: string) => void;
+}
+
+const AppointmentCard = ({ appointment, onView }: AppointmentCardProps) => {
+  return (
+    <Card 
+      className="mb-2 hover:shadow-md transition-shadow cursor-pointer bg-[#F7F7FF] dark:bg-gray-800"
+      onClick={() => onView(appointment.id)}
+    >
+      <CardContent className="p-4">
+        <div className="flex justify-between items-start">
+          <div>
+            <div className="font-medium">{appointment.patientName}</div>
+            <div className="text-sm text-gray-500 flex items-center mt-1">
+              <Clock size={14} className="mr-1" />
+              {appointment.time} ({appointment.duration} min)
+            </div>
+            <div className="text-sm mt-1">{appointment.reason}</div>
+          </div>
+          <div>
+            {renderAppointmentStatusBadge(appointment.status)}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
+interface AppointmentSectionProps {
+  title: string;
+  appointments: Appointment[];
+  emptyMessage: string;
+  onView: (appointmentId: string) => void;
+}
+
+const AppointmentSection = ({ title, appointments, emptyMessage, onView }: AppointmentSectionProps) => {
+  if (appointments.length === 0) {
+    return (
+      <div className="text-center py-8">
+        <p className="text-gray-500">{emptyMessage}</p>
+      </div>
+    );
+  }
+  
+  return (
+    <div className="space-y-4">
+      <h3 className="text-lg font-medium">{title}</h3>
+      <div className="space-y-2">
+        {appointments.map((appointment) => (
+          <AppointmentCard key={appointment.id} appointment={appointment} onView={onView} />
+        ))}
+      </div>
+    </div>
+  );
+};
+
 const DoctorAppointments = ({ doctorId }: DoctorAppointmentsProps) => {
   const navigate = useNavigate();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
@@ -22,18 +97,22 @@ const DoctorAppointments = ({ doctorId }: DoctorAppointmentsProps) => {
   const [filterStatus, setFilterStatus] = useState<AppointmentStatus | "Todas">("Todas");
   
   useEffect(() => {
+    let vigente = true;
     const fetchAppointments = async () => {
       try {
         const data = await getDoctorAppointments(doctorId);
-        setAppointments(data);
+        if (vigente) setAppointments(data);
       } catch (error) {
         console.error("Error fetching appointments:", error);
       } finally {
-        setLoading(false);
+        if (vigente) setLoading(false);
       }
     };
     
     fetchAppointments();
+    return () => {
+      vigente = false;
+    };
   }, [doctorId]);
   
   const handleNewAppointment = () => {
@@ -80,73 +159,6 @@ const DoctorAppointments = ({ doctorId }: DoctorAppointmentsProps) => {
   const pastAppointments = filteredAppointments.filter(a => isPast(new Date(a.date)));
   const upcomingAppointments = filteredAppointments.filter(a => isFuture(new Date(a.date)));
   
-  const renderAppointmentStatusBadge = (status: AppointmentStatus) => {
-    switch (status) {
-      case "Programada":
-        return <Badge className="bg-blue-500">Programada</Badge>;
-      case "Pendiente":
-        return <Badge variant="outline" className="text-yellow-600 border-yellow-400">Pendiente</Badge>;
-      case "Completada":
-        return <Badge className="bg-green-500">Completada</Badge>;
-      case "Cancelada":
-        return <Badge variant="destructive">Cancelada</Badge>;
-      case "Reprogramada":
-        return <Badge className="bg-purple-500">Reprogramada</Badge>;
-      default:
-        return null;
-    }
-  };
-  
-  const AppointmentCard = ({ appointment }: { appointment: Appointment }) => {
-    return (
-      <Card 
-        className="mb-2 hover:shadow-md transition-shadow cursor-pointer bg-[#F7F7FF] dark:bg-gray-800"
-        onClick={() => handleViewAppointment(appointment.id)}
-      >
-        <CardContent className="p-4">
-          <div className="flex justify-between items-start">
-            <div>
-              <div className="font-medium">{appointment.patientName}</div>
-              <div className="text-sm text-gray-500 flex items-center mt-1">
-                <Clock size={14} className="mr-1" />
-                {appointment.time} ({appointment.duration} min)
-              </div>
-              <div className="text-sm mt-1">{appointment.reason}</div>
-            </div>
-            <div>
-              {renderAppointmentStatusBadge(appointment.status)}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  };
-  
-  const AppointmentSection = ({ title, appointments, emptyMessage }: { 
-    title: string, 
-    appointments: Appointment[], 
-    emptyMessage: string 
-  }) => {
-    if (appointments.length === 0) {
-      return (
-        <div className="text-center py-8">
-          <p className="text-gray-500">{emptyMessage}</p>
-        </div>
-      );
-    }
-    
-    return (
-      <div className="space-y-4">
-        <h3 className="text-lg font-medium">{title}</h3>
-        <div className="space-y-2">
-          {appointments.map((appointment) => (
-            <AppointmentCard key={appointment.id} appointment={appointment} />
-          ))}
-        </div>
-      </div>
-    );
-  };
-  
   if (loading) {
     return (
       <div className="animate-pulse space-y-6">
@@ -187,24 +199,28 @@ const DoctorAppointments = ({ doctorId }: DoctorAppointmentsProps) => {
           
           <TabsContent value="all" className="space-y-6">
             <AppointmentSection 
+              onView={handleViewAppointment}
               title="Hoy"
               appointments={todayAppointments}
               emptyMessage="No hay citas programadas para hoy"
             />
             
             <AppointmentSection 
+              onView={handleViewAppointment}
               title="Mañana"
               appointments={tomorrowAppointments}
               emptyMessage="No hay citas programadas para mañana"
             />
             
             <AppointmentSection 
+              onView={handleViewAppointment}
               title="Próximas citas"
               appointments={upcomingAppointments}
               emptyMessage="No hay citas programadas próximamente"
             />
             
             <AppointmentSection 
+              onView={handleViewAppointment}
               title="Citas pasadas"
               appointments={pastAppointments}
               emptyMessage="No hay citas pasadas"
@@ -213,6 +229,7 @@ const DoctorAppointments = ({ doctorId }: DoctorAppointmentsProps) => {
           
           <TabsContent value="scheduled" className="space-y-6">
             <AppointmentSection 
+              onView={handleViewAppointment}
               title="Citas programadas"
               appointments={filteredAppointments}
               emptyMessage="No hay citas programadas"
@@ -221,6 +238,7 @@ const DoctorAppointments = ({ doctorId }: DoctorAppointmentsProps) => {
           
           <TabsContent value="completed" className="space-y-6">
             <AppointmentSection 
+              onView={handleViewAppointment}
               title="Citas completadas"
               appointments={filteredAppointments}
               emptyMessage="No hay citas completadas"
@@ -229,6 +247,7 @@ const DoctorAppointments = ({ doctorId }: DoctorAppointmentsProps) => {
           
           <TabsContent value="cancelled" className="space-y-6">
             <AppointmentSection 
+              onView={handleViewAppointment}
               title="Citas canceladas"
               appointments={filteredAppointments}
               emptyMessage="No hay citas canceladas"

@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   ArrowLeft, FileText, Palette, Bell, Save, User, Shield, Plus, HelpCircle,
@@ -115,7 +115,7 @@ export const SettingsPage = () => {
     try { return localStorage.getItem("settings-sidebar-collapsed") === "true"; } catch { return false; }
   });
   useEffect(() => {
-    try { localStorage.setItem("settings-sidebar-collapsed", String(collapsed)); } catch {}
+    try { localStorage.setItem("settings-sidebar-collapsed", String(collapsed)); } catch { /* almacenamiento no disponible: se ignora la preferencia */ }
   }, [collapsed]);
 
   // Search
@@ -125,15 +125,15 @@ export const SettingsPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const tabParam = searchParams.get("tab");
   const activeCategory = allItemIds.includes(tabParam ?? "") ? tabParam! : "general";
-  const setActiveCategory = (id: string) => {
+  const setActiveCategory = useCallback((id: string) => {
     const p = new URLSearchParams(searchParams);
     if (id === "general") p.delete("tab"); else p.set("tab", id);
     setSearchParams(p, { replace: true });
-  };
+  }, [searchParams, setSearchParams]);
 
   useEffect(() => {
     if (tabParam && !allItemIds.includes(tabParam)) setActiveCategory("general");
-  }, [tabParam]);
+  }, [tabParam, setActiveCategory]);
 
   // Settings state
   const [autoSave, setAutoSave] = useState(true);
@@ -146,13 +146,21 @@ export const SettingsPage = () => {
   const [formsLoading, setFormsLoading] = useState(false);
   useEffect(() => {
     if (activeCategory !== "forms") return;
+    let vigente = true;
     const loadForms = async () => {
       setFormsLoading(true);
-      const { data } = await baseDatos.from("formularios").select("*").order("created_at", { ascending: false });
-      setForms(data || []);
-      setFormsLoading(false);
+      try {
+        const { data } = await baseDatos.from("formularios").select("*").order("created_at", { ascending: false });
+        if (vigente) setForms(data || []);
+      } finally {
+        if (vigente) setFormsLoading(false);
+      }
     };
     loadForms();
+    return () => {
+      vigente = false;
+      setFormsLoading(false);
+    };
   }, [activeCategory]);
 
   const handleSave = () => toast.success("Configuración guardada con éxito");

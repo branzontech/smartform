@@ -33,18 +33,25 @@ export const AdmissionHistorySection: React.FC<Props> = ({ patientId }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let vigente = true;
     const fetch = async () => {
       setLoading(true);
-      const { data } = await baseDatos
-        .from("admisiones")
-        .select("*, tipo_admision:tipos_admision(nombre)")
-        .eq("paciente_id", patientId)
-        .order("fecha_inicio", { ascending: false })
-        .limit(10);
-      setAdmissions((data as any[]) || []);
-      setLoading(false);
+      try {
+        const { data } = await baseDatos
+          .from("admisiones")
+          .select("*, tipo_admision:tipos_admision(nombre)")
+          .eq("paciente_id", patientId)
+          .order("fecha_inicio", { ascending: false })
+          .limit(10);
+        if (vigente) setAdmissions((data as any[]) || []);
+      } finally {
+        if (vigente) setLoading(false);
+      }
     };
     fetch();
+    return () => {
+      vigente = false;
+    };
   }, [patientId]);
 
   if (loading) {

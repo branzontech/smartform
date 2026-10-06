@@ -22,7 +22,7 @@ const VideoCall: React.FC<VideoCallProps> = ({ sessionId, onEndCall }) => {
   // En una implementación real, esto sería obtenido de una API
   useEffect(() => {
     // Simulando la carga de los datos de la sesión
-    setTimeout(() => {
+    const timer = setTimeout(() => {
       const mockSessionInfo = {
         id: sessionId,
         patientName: "María Rodríguez",
@@ -38,6 +38,7 @@ const VideoCall: React.FC<VideoCallProps> = ({ sessionId, onEndCall }) => {
         description: `Sesión con ${mockSessionInfo.doctorName} iniciada`,
       });
     }, 2000);
+    return () => clearTimeout(timer);
   }, [sessionId]);
   
   const toggleAudio = () => {

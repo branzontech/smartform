@@ -76,17 +76,21 @@ export const PatientDetailStep: React.FC<PatientDetailStepProps> = ({
 
   // Load fhir_extensions from DB for companion data
   useEffect(() => {
+    let vigente = true;
     const loadExtensions = async () => {
       const { data } = await baseDatos
         .from("pacientes")
         .select("fhir_extensions")
         .eq("id", patient.id)
         .single();
-      if (data?.fhir_extensions) {
+      if (vigente && data?.fhir_extensions) {
         setFhirExtensions(data.fhir_extensions as Record<string, any>);
       }
     };
     loadExtensions();
+    return () => {
+      vigente = false;
+    };
   }, [patient.id]);
 
   const startEditing = () => {
@@ -96,39 +100,44 @@ export const PatientDetailStep: React.FC<PatientDetailStepProps> = ({
 
   const handleSave = async () => {
     setIsSaving(true);
-    const { error } = await baseDatos
-      .from("pacientes")
-      .update({
-        nombres: editData.firstName,
-        apellidos: editData.lastName,
-        tipo_documento: editData.documentType || "CC",
-        telefono_principal: editData.contactNumber,
-        telefono_secundario: editData.secondaryPhone || null,
-        email: editData.email || null,
-        regimen: editData.regime || null,
-        zona: editData.zone || null,
-        direccion: editData.address || null,
-        ciudad: editData.city || null,
-        estado: editData.state || null,
-        ocupacion: editData.occupation || null,
-        fecha_nacimiento: editData.dateOfBirth || null,
-        numero_historia: editData.medicalRecordNumber || null,
-        carnet: editData.carnet || null,
-        tipo_afiliacion: editData.affiliationType || null,
-      })
-      .eq("id", patient.id);
+    try {
+      const { error } = await baseDatos
+        .from("pacientes")
+        .update({
+          nombres: editData.firstName,
+          apellidos: editData.lastName,
+          tipo_documento: editData.documentType || "CC",
+          telefono_principal: editData.contactNumber,
+          telefono_secundario: editData.secondaryPhone || null,
+          email: editData.email || null,
+          regimen: editData.regime || null,
+          zona: editData.zone || null,
+          direccion: editData.address || null,
+          ciudad: editData.city || null,
+          estado: editData.state || null,
+          ocupacion: editData.occupation || null,
+          fecha_nacimiento: editData.dateOfBirth || null,
+          numero_historia: editData.medicalRecordNumber || null,
+          carnet: editData.carnet || null,
+          tipo_afiliacion: editData.affiliationType || null,
+        })
+        .eq("id", patient.id);
 
-    setIsSaving(false);
+      if (error) {
+        toast.error("Error al actualizar: " + error.message);
+        return;
+      }
 
-    if (error) {
-      toast.error("Error al actualizar: " + error.message);
-      return;
+      toast.success("Datos actualizados");
+      const updated = { ...patient, ...editData } as ExtendedPatient;
+      onPatientUpdated(updated);
+      setIsEditing(false);
+    } catch (e) {
+      console.error("Error al actualizar paciente:", e);
+      toast.error("Error al actualizar los datos del paciente");
+    } finally {
+      setIsSaving(false);
     }
-
-    toast.success("Datos actualizados");
-    const updated = { ...patient, ...editData } as ExtendedPatient;
-    onPatientUpdated(updated);
-    setIsEditing(false);
   };
 
   const companion = fhirExtensions?.companion;

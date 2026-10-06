@@ -89,7 +89,7 @@ const renderChart = (chart: ChartConfig) => {
               label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
             >
               {data.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
+                <Cell key={`cell-${entry.name}`} fill={colors[index % colors.length]} />
               ))}
             </Pie>
             <ChartTooltip content={<ChartTooltipContent />} />

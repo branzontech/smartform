@@ -129,78 +129,79 @@ export const PatientSearchStep: React.FC<PatientSearchStepProps> = ({
     if (!newPatient.firstName || !newPatient.lastName || !newPatient.documentId || !newPatient.contactNumber) return;
 
     setIsSaving(true);
-
-    // Build fhir_extensions from dynamic values
-    const fhirExtensions: Record<string, any> = {};
-    if (Object.keys(dynamicValues).length > 0) {
-      fhirExtensions.custom_fields = dynamicValues;
-    }
-    if (showCompanion && companionData.name) {
-      fhirExtensions.companion = companionData;
-    }
-
-    const { data, error } = await baseDatos
-      .from("pacientes")
-      .insert({
-        nombres: newPatient.firstName,
-        apellidos: newPatient.lastName,
-        tipo_documento: newPatient.documentType || "CC",
-        numero_documento: newPatient.documentId,
-        fecha_nacimiento: newPatient.dateOfBirth || null,
-        genero: newPatient.gender || null,
-        telefono_principal: newPatient.contactNumber,
-        telefono_secundario: newPatient.secondaryPhone || null,
-        email: newPatient.email || null,
-        regimen: newPatient.regime || null,
-        zona: newPatient.zone || null,
-        direccion: newPatient.address || null,
-        ciudad: newPatient.city || null,
-        estado: newPatient.state || null,
-        ocupacion: newPatient.occupation || null,
-        numero_historia: newPatient.medicalRecordNumber || null,
-        carnet: newPatient.carnet || null,
-        tipo_afiliacion: newPatient.affiliationType || null,
-        fhir_extensions: fhirExtensions,
-      })
-      .select()
-      .single();
-
-    setIsSaving(false);
-
-    if (error) {
-      if (error.code === "23505") {
-        toast.error("Ya existe un paciente con ese número de documento");
-      } else {
-        toast.error("Error al crear paciente: " + error.message);
+    try {
+      // Build fhir_extensions from dynamic values
+      const fhirExtensions: Record<string, any> = {};
+      if (Object.keys(dynamicValues).length > 0) {
+        fhirExtensions.custom_fields = dynamicValues;
       }
-      return;
+      if (showCompanion && companionData.name) {
+        fhirExtensions.companion = companionData;
+      }
+
+      const { data, error } = await baseDatos
+        .from("pacientes")
+        .insert({
+          nombres: newPatient.firstName,
+          apellidos: newPatient.lastName,
+          tipo_documento: newPatient.documentType || "CC",
+          numero_documento: newPatient.documentId,
+          fecha_nacimiento: newPatient.dateOfBirth || null,
+          genero: newPatient.gender || null,
+          telefono_principal: newPatient.contactNumber,
+          telefono_secundario: newPatient.secondaryPhone || null,
+          email: newPatient.email || null,
+          regimen: newPatient.regime || null,
+          zona: newPatient.zone || null,
+          direccion: newPatient.address || null,
+          ciudad: newPatient.city || null,
+          estado: newPatient.state || null,
+          ocupacion: newPatient.occupation || null,
+          numero_historia: newPatient.medicalRecordNumber || null,
+          carnet: newPatient.carnet || null,
+          tipo_afiliacion: newPatient.affiliationType || null,
+          fhir_extensions: fhirExtensions,
+        })
+        .select()
+        .single();
+
+      if (error) {
+        if (error.code === "23505") {
+          toast.error("Ya existe un paciente con ese número de documento");
+        } else {
+          toast.error("Error al crear paciente: " + error.message);
+        }
+        return;
+      }
+
+      toast.success("Paciente creado exitosamente");
+
+      const created: Partial<ExtendedPatient> = {
+        id: data.id,
+        firstName: data.nombres,
+        lastName: data.apellidos,
+        documentType: (data as any).tipo_documento || "CC",
+        documentId: data.numero_documento,
+        dateOfBirth: data.fecha_nacimiento || "",
+        contactNumber: data.telefono_principal,
+        secondaryPhone: data.telefono_secundario || undefined,
+        email: data.email || undefined,
+        regime: data.regimen as any,
+        zone: data.zona as any,
+        address: data.direccion || undefined,
+        city: data.ciudad || undefined,
+        state: data.estado || undefined,
+        occupation: data.ocupacion || undefined,
+        medicalRecordNumber: (data as any).numero_historia || undefined,
+        carnet: (data as any).carnet || undefined,
+        affiliationType: (data as any).tipo_afiliacion || undefined,
+        companion: showCompanion && companionData.name ? companionData : undefined,
+      };
+
+      onCreatePatient(created);
+    } finally {
+      setIsSaving(false);
     }
-
-    toast.success("Paciente creado exitosamente");
-
-    const created: Partial<ExtendedPatient> = {
-      id: data.id,
-      firstName: data.nombres,
-      lastName: data.apellidos,
-      documentType: (data as any).tipo_documento || "CC",
-      documentId: data.numero_documento,
-      dateOfBirth: data.fecha_nacimiento || "",
-      contactNumber: data.telefono_principal,
-      secondaryPhone: data.telefono_secundario || undefined,
-      email: data.email || undefined,
-      regime: data.regimen as any,
-      zone: data.zona as any,
-      address: data.direccion || undefined,
-      city: data.ciudad || undefined,
-      state: data.estado || undefined,
-      occupation: data.ocupacion || undefined,
-      medicalRecordNumber: (data as any).numero_historia || undefined,
-      carnet: (data as any).carnet || undefined,
-      affiliationType: (data as any).tipo_afiliacion || undefined,
-      companion: showCompanion && companionData.name ? companionData : undefined,
-    };
-
-    onCreatePatient(created);
   };
 
   // Combine local mock patients + DB patients for search results

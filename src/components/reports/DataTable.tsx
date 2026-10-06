@@ -105,8 +105,8 @@ export const DataTable = ({ chart, variables }: DataTableProps) => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {data.map((row, index) => (
-                <TableRow key={index}>
+              {data.map((row) => (
+                <TableRow key={'periodo' in row ? row.periodo : row.categoria}>
                   {columns.map((column) => (
                     <TableCell key={column}>
                       {formatCellValue(row[column as keyof typeof row], column)}

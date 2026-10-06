@@ -165,8 +165,8 @@ export const MedicalHistorySection = () => {
                     Prescripciones
                   </h4>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {record.prescriptions.map((prescription, index) => (
-                      <div key={index} className="bg-purple-50 dark:bg-purple-900/20 p-3 rounded-lg border border-purple-200 dark:border-purple-700">
+                    {record.prescriptions.map((prescription) => (
+                      <div key={prescription.medication} className="bg-purple-50 dark:bg-purple-900/20 p-3 rounded-lg border border-purple-200 dark:border-purple-700">
                         <p className="font-medium text-purple-900 dark:text-purple-100">
                           {prescription.medication}
                         </p>

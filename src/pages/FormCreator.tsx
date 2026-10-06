@@ -37,7 +37,7 @@ const colorSchemes = [
 const DRAFT_KEY = "form-creator-draft";
 
 const saveDraft = (data: any) => {
-  try { sessionStorage.setItem(DRAFT_KEY, JSON.stringify(data)); } catch {}
+  try { sessionStorage.setItem(DRAFT_KEY, JSON.stringify(data)); } catch { /* sessionStorage no disponible: el borrador es opcional */ }
 };
 
 const loadDraft = () => {
@@ -48,7 +48,7 @@ const loadDraft = () => {
 };
 
 const clearDraft = () => {
-  try { sessionStorage.removeItem(DRAFT_KEY); } catch {}
+  try { sessionStorage.removeItem(DRAFT_KEY); } catch { /* sessionStorage no disponible: nada que limpiar */ }
 };
 
 const FormCreator = () => {
@@ -92,6 +92,7 @@ const FormCreator = () => {
   }, [id, title, description, formType, questions, designOptions]);
 
   useEffect(() => {
+    let vigente = true;
     if (id) {
       const loadForm = async () => {
         const { data, error } = await baseDatos
@@ -100,6 +101,7 @@ const FormCreator = () => {
           .eq("id", id)
           .single();
 
+        if (!vigente) return;
         if (data && !error) {
           setTitle(data.titulo);
           setDescription(data.descripcion || "");
@@ -119,9 +121,12 @@ const FormCreator = () => {
         }
       };
       loadForm();
-    } else if (!draft) {
+    } else if (!loadDraft()) {
       setQuestions([{ id: nanoid(), type: "short", title: "", required: false } as QuestionData]);
     }
+    return () => {
+      vigente = false;
+    };
   }, [id, navigate, toast]);
 
   const toggleQuestionExpansion = (id: string) => {

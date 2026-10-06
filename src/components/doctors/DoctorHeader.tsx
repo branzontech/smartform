@@ -95,8 +95,8 @@ const DoctorHeader = ({ doctor }: DoctorHeaderProps) => {
             
             {doctor.specialties && doctor.specialties.length > 0 && (
               <div className="mt-4 flex flex-wrap gap-2">
-                {doctor.specialties.map((specialty, index) => (
-                  <Badge key={index} variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
+                {doctor.specialties.map((specialty) => (
+                  <Badge key={specialty} variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
                     {specialty}
                   </Badge>
                 ))}

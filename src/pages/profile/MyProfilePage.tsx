@@ -39,20 +39,23 @@ const MyProfilePage: React.FC = () => {
     let cancelled = false;
     const load = async () => {
       setLoading(true);
-      const { data } = await baseDatos
-        .from("profiles")
-        .select("full_name, phone, specialty, license_number")
-        .eq("user_id", user.id)
-        .maybeSingle();
-      if (!cancelled) {
-        setForm({
-          full_name: data?.full_name || profile?.full_name || "",
-          phone: data?.phone || "",
-          specialty: data?.specialty || "",
-          license_number: data?.license_number || "",
-        });
-        setEmail(user.email || "");
-        setLoading(false);
+      try {
+        const { data } = await baseDatos
+          .from("profiles")
+          .select("full_name, phone, specialty, license_number")
+          .eq("user_id", user.id)
+          .maybeSingle();
+        if (!cancelled) {
+          setForm({
+            full_name: data?.full_name || profile?.full_name || "",
+            phone: data?.phone || "",
+            specialty: data?.specialty || "",
+            license_number: data?.license_number || "",
+          });
+          setEmail(user.email || "");
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
       }
     };
     load();

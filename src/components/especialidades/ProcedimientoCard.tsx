@@ -52,8 +52,8 @@ export function ProcedimientoCard({
             </Badge>
           )}
           
-          {tags.map((tag, index) => (
-            <Badge key={index} variant="outline">
+          {tags.map((tag) => (
+            <Badge key={tag} variant="outline">
               {tag}
             </Badge>
           ))}

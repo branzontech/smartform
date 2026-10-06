@@ -25,6 +25,7 @@ export const AdditionalFormsModal: React.FC<AdditionalFormsModalProps> = ({
     if (isOpen) {
       loadAvailableForms();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- solo se recarga al abrir el diálogo; excludeFormIds suele llegar como arreglo nuevo en cada render del padre
   }, [isOpen]);
 
   const loadAvailableForms = () => {

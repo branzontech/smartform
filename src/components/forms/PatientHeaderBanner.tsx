@@ -124,19 +124,19 @@ export const PatientHeaderBanner: React.FC<PatientHeaderBannerProps> = ({
 
   // Collapsed row items
   const collapsedItems = [
-    docDisplay,
-    ageDisplay,
-    genderDisplay,
-    numeroIngreso ? `Ingreso: ${numeroIngreso}` : "",
-  ].filter(Boolean);
+    { id: "documento", value: docDisplay },
+    { id: "edad", value: ageDisplay },
+    { id: "genero", value: genderDisplay },
+    { id: "ingreso", value: numeroIngreso ? `Ingreso: ${numeroIngreso}` : "" },
+  ].filter(item => item.value);
 
   // Expanded row 2 — contact
   const contactItems = [
-    { icon: Phone, value: p.telefono_principal },
-    { icon: MapPin, value: p.direccion },
-    { icon: Building, value: p.ciudad },
-    { icon: Shield, value: p.regimen },
-    { icon: Heart, value: p.tipo_afiliacion },
+    { id: "telefono", icon: Phone, value: p.telefono_principal },
+    { id: "direccion", icon: MapPin, value: p.direccion },
+    { id: "ciudad", icon: Building, value: p.ciudad },
+    { id: "regimen", icon: Shield, value: p.regimen },
+    { id: "afiliacion", icon: Heart, value: p.tipo_afiliacion },
   ].filter(item => item.value);
 
   // Expanded row 3 — admission
@@ -163,10 +163,10 @@ export const PatientHeaderBanner: React.FC<PatientHeaderBannerProps> = ({
             {fullName}
           </span>
 
-          {collapsedItems.map((item, i) => (
-            <React.Fragment key={i}>
+          {collapsedItems.map((item) => (
+            <React.Fragment key={item.id}>
               <span className="text-muted-foreground/40 text-xs shrink-0">·</span>
-              <span className="text-sm text-muted-foreground truncate shrink-0">{item}</span>
+              <span className="text-sm text-muted-foreground truncate shrink-0">{item.value}</span>
             </React.Fragment>
           ))}
 
@@ -192,10 +192,10 @@ export const PatientHeaderBanner: React.FC<PatientHeaderBannerProps> = ({
             {/* Row 2 — Contact */}
             {contactItems.length > 0 && (
               <div className="flex flex-wrap items-center gap-x-4 gap-y-1 pl-11">
-                {contactItems.map((item, i) => {
+                {contactItems.map((item) => {
                   const IconComp = item.icon;
                   return (
-                    <div key={i} className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <div key={item.id} className="flex items-center gap-1.5 text-xs text-muted-foreground">
                       <IconComp className="w-3.5 h-3.5 shrink-0" />
                       <span>{item.value}</span>
                     </div>
@@ -207,8 +207,8 @@ export const PatientHeaderBanner: React.FC<PatientHeaderBannerProps> = ({
             {/* Row 3 — Admission */}
             {admissionItems.length > 0 && (
               <div className="flex flex-wrap items-center gap-x-4 gap-y-1 pl-11 border-t border-dashed border-border/40 pt-2 mt-2">
-                {admissionItems.map((item, i) => (
-                  <div key={i} className="flex items-center gap-1 text-xs text-muted-foreground">
+                {admissionItems.map((item) => (
+                  <div key={item.label} className="flex items-center gap-1 text-xs text-muted-foreground">
                     <span>{item.label}:</span>
                     <span className="text-foreground">{item.value}</span>
                   </div>

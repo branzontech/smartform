@@ -46,11 +46,11 @@ export const AIAssistant = () => {
   }, [messages]);
 
   useEffect(() => {
-    if (isOpen) {
-      setTimeout(() => {
-        inputRef.current?.focus();
-      }, 300);
-    }
+    if (!isOpen) return;
+    const timer = setTimeout(() => {
+      inputRef.current?.focus();
+    }, 300);
+    return () => clearTimeout(timer);
   }, [isOpen]);
 
   const generateContextualResponse = (query: string) => {

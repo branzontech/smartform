@@ -106,8 +106,8 @@ export const CustomerQuickActions = () => {
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
-      {quickActions.map((action, index) => (
-        <Card key={index} className="overflow-hidden backdrop-blur-sm bg-white/95 dark:bg-gray-800/95 hover:shadow-md transition-all">
+      {quickActions.map((action) => (
+        <Card key={action.title} className="overflow-hidden backdrop-blur-sm bg-white/95 dark:bg-gray-800/95 hover:shadow-md transition-all">
           <CardHeader className="pb-2">
             <div className="flex justify-between items-start">
               <div className="p-2 rounded-lg bg-gray-100 dark:bg-gray-700">
@@ -122,9 +122,9 @@ export const CustomerQuickActions = () => {
           </CardHeader>
           <CardContent className="pb-2">
             <div className="flex flex-col space-y-1">
-              {action.actions.map((subAction, idx) => (
+              {action.actions.map((subAction) => (
                 <Link 
-                  key={idx} 
+                  key={subAction.path}
                   to={subAction.path} 
                   className="text-sm font-medium text-primary hover:underline flex items-center"
                 >

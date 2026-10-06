@@ -172,9 +172,9 @@ const PricingPage = () => {
                   </div>
                   
                   <ul className="space-y-2">
-                    {plan.features.map((feature, idx) => (
+                    {plan.features.map((feature) => (
                       <li 
-                        key={idx} 
+                        key={feature.name} 
                         className="flex items-start gap-2"
                       >
                         {feature.included ? (

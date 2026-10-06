@@ -109,35 +109,21 @@ const ZonesPage: React.FC = () => {
     apiKey: apiKey,
   });
 
-  // Fetch API key from edge function (for security)
+  // Fetch API key from edge function (for security). Kept in memory only, never in web storage.
   useEffect(() => {
+    let vigente = true;
     const fetchApiKey = async () => {
       try {
-        // First try localStorage (for user-entered keys)
-        const stored = localStorage.getItem('google_maps_api_key');
-        if (stored && stored.length > 10) {
-          setApiKey(stored);
-          return;
-        }
-
-        // Then try to fetch from edge function (for configured secrets)
         const response = await baseDatos.functions.invoke('get-maps-config');
-        if (response.data?.apiKey) {
+        if (vigente && response.data?.apiKey) {
           setApiKey(response.data.apiKey);
-          // Cache it in localStorage for faster subsequent loads
-          localStorage.setItem('google_maps_api_key', response.data.apiKey);
-          return;
         }
-
-        // Clear any invalid cached value
-        localStorage.removeItem('google_maps_api_key');
       } catch (error) {
         console.error('Error fetching API key:', error);
-        // Clear any invalid cached value on error
-        localStorage.removeItem('google_maps_api_key');
       }
     };
     fetchApiKey();
+    return () => { vigente = false; };
   }, []);
 
   // Load zones from database
@@ -178,7 +164,7 @@ const ZonesPage: React.FC = () => {
   useEffect(() => {
     if (!isLoaded || zones.length === 0) return;
 
-    const updatedLocations = locations.map(loc => {
+    setLocations(prevLocations => prevLocations.map(loc => {
       if (!loc.lat || !loc.lng) return loc;
 
       for (const zone of zones) {
@@ -187,9 +173,7 @@ const ZonesPage: React.FC = () => {
         }
       }
       return { ...loc, zone_id: undefined };
-    });
-
-    setLocations(updatedLocations);
+    }));
   }, [zones, isLoaded, isPointInPolygon]);
 
   const handleZoneCreated = useCallback((coordinates: LatLng[]) => {
@@ -326,7 +310,6 @@ const ZonesPage: React.FC = () => {
                 if (e.key === 'Enter') {
                   const value = (e.target as HTMLInputElement).value;
                   if (value) {
-                    localStorage.setItem('google_maps_api_key', value);
                     setApiKey(value);
                   }
                 }
@@ -337,7 +320,6 @@ const ZonesPage: React.FC = () => {
               onClick={() => {
                 const input = document.querySelector('input') as HTMLInputElement;
                 if (input?.value) {
-                  localStorage.setItem('google_maps_api_key', input.value);
                   setApiKey(input.value);
                 }
               }}

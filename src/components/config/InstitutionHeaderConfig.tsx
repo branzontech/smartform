@@ -122,20 +122,22 @@ export const InstitutionHeaderConfig = () => {
       return;
     }
     setUploading(true);
-    const ext = file.name.split(".").pop();
-    const filePath = `logos/institution-logo.${ext}`;
-    const { error: uploadError } = await baseDatos.storage
-      .from("institution-assets")
-      .upload(filePath, file, { upsert: true });
-    if (uploadError) {
-      toast({ title: "Error al subir logo", description: uploadError.message, variant: "destructive" });
+    try {
+      const ext = file.name.split(".").pop();
+      const filePath = `logos/institution-logo.${ext}`;
+      const { error: uploadError } = await baseDatos.storage
+        .from("institution-assets")
+        .upload(filePath, file, { upsert: true });
+      if (uploadError) {
+        toast({ title: "Error al subir logo", description: uploadError.message, variant: "destructive" });
+        return;
+      }
+      const { data: urlData } = baseDatos.storage.from("institution-assets").getPublicUrl(filePath);
+      setConfig((prev) => ({ ...prev, logo_url: urlData.publicUrl }));
+      toast({ title: "Logo cargado", description: "El logo se ha subido correctamente" });
+    } finally {
       setUploading(false);
-      return;
     }
-    const { data: urlData } = baseDatos.storage.from("institution-assets").getPublicUrl(filePath);
-    setConfig((prev) => ({ ...prev, logo_url: urlData.publicUrl }));
-    setUploading(false);
-    toast({ title: "Logo cargado", description: "El logo se ha subido correctamente" });
   };
 
   const removeLogo = () => setConfig((prev) => ({ ...prev, logo_url: null }));
@@ -183,28 +185,31 @@ export const InstitutionHeaderConfig = () => {
       campos_personalizados: config.campos_personalizados as any,
     };
 
-    let error;
-    if (config.id) {
-      ({ error } = await baseDatos
-        .from("configuracion_encabezado" as any)
-        .update(payload)
-        .eq("id", config.id));
-    } else {
-      const { data, error: insertError } = await baseDatos
-        .from("configuracion_encabezado" as any)
-        .insert(payload)
-        .select()
-        .single();
-      error = insertError;
-      if (data) setConfig((prev) => ({ ...prev, id: (data as any).id }));
-    }
+    try {
+      let error;
+      if (config.id) {
+        ({ error } = await baseDatos
+          .from("configuracion_encabezado" as any)
+          .update(payload)
+          .eq("id", config.id));
+      } else {
+        const { data, error: insertError } = await baseDatos
+          .from("configuracion_encabezado" as any)
+          .insert(payload)
+          .select()
+          .single();
+        error = insertError;
+        if (data) setConfig((prev) => ({ ...prev, id: (data as any).id }));
+      }
 
-    if (error) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
-    } else {
-      toast({ title: "Guardado", description: "Encabezado institucional actualizado" });
+      if (error) {
+        toast({ title: "Error", description: error.message, variant: "destructive" });
+      } else {
+        toast({ title: "Guardado", description: "Encabezado institucional actualizado" });
+      }
+    } finally {
+      setSaving(false);
     }
-    setSaving(false);
   };
 
   if (loading) {

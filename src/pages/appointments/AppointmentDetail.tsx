@@ -129,10 +129,11 @@ const AppointmentDetail = () => {
   const [googleConnected, setGoogleConnected] = useState(false);
 
   useEffect(() => {
+    let timerId: ReturnType<typeof setTimeout> | undefined;
     const fetchAppointment = () => {
       setLoading(true);
       // Simulamos una llamada a API
-      setTimeout(() => {
+      timerId = setTimeout(() => {
         const savedAppointments = localStorage.getItem("appointments");
         let appointmentsList = mockAppointments;
         
@@ -169,6 +170,10 @@ const AppointmentDetail = () => {
       fetchAppointment();
       checkGoogleConnection();
     }
+
+    return () => {
+      if (timerId) clearTimeout(timerId);
+    };
   }, [id]);
 
   const handleEditAppointment = () => {

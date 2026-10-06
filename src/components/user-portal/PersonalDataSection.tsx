@@ -293,8 +293,8 @@ export const PersonalDataSection = () => {
             <div>
               <Label>Alergias</Label>
               <div className="flex flex-wrap gap-2 mt-2">
-                {mockPersonalData.allergies.map((allergy, index) => (
-                  <Badge key={index} variant="destructive" className="flex items-center gap-1">
+                {mockPersonalData.allergies.map((allergy) => (
+                  <Badge key={allergy} variant="destructive" className="flex items-center gap-1">
                     <AlertTriangle className="h-3 w-3" />
                     {allergy}
                   </Badge>
@@ -305,8 +305,8 @@ export const PersonalDataSection = () => {
             <div>
               <Label>Condiciones Crónicas</Label>
               <div className="flex flex-wrap gap-2 mt-2">
-                {mockPersonalData.chronicConditions.map((condition, index) => (
-                  <Badge key={index} variant="warning" className="flex items-center gap-1">
+                {mockPersonalData.chronicConditions.map((condition) => (
+                  <Badge key={condition} variant="warning" className="flex items-center gap-1">
                     <Clock className="h-3 w-3" />
                     {condition}
                   </Badge>

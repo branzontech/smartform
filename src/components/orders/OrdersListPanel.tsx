@@ -67,13 +67,18 @@ export const OrdersListPanel: React.FC<OrdersListPanelProps> = ({ admisionId }) 
   const fetchOrders = useCallback(async () => {
     if (!admisionId) { setLoading(false); return; }
     setLoading(true);
-    const { data } = await baseDatos
-      .from('ordenes_medicas')
-      .select('id, tipo, numero_orden, estado, fecha_orden, prioridad, medico_id, medico_nombre, paciente_id, diagnostico_codigo, diagnostico_descripcion, diagnostico_sistema, indicaciones, items, alcance, fhir_extensions')
-      .eq('admision_id', admisionId)
-      .order('fecha_orden', { ascending: false });
-    setOrders((data as Order[]) || []);
-    setLoading(false);
+    try {
+      const { data } = await baseDatos
+        .from('ordenes_medicas')
+        .select('id, tipo, numero_orden, estado, fecha_orden, prioridad, medico_id, medico_nombre, paciente_id, diagnostico_codigo, diagnostico_descripcion, diagnostico_sistema, indicaciones, items, alcance, fhir_extensions')
+        .eq('admision_id', admisionId)
+        .order('fecha_orden', { ascending: false });
+      setOrders((data as Order[]) || []);
+    } catch (error) {
+      console.error('Error cargando órdenes:', error);
+    } finally {
+      setLoading(false);
+    }
   }, [admisionId]);
 
   useEffect(() => { fetchOrders(); }, [fetchOrders]);

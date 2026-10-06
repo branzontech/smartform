@@ -606,10 +606,11 @@ export const SchedulingStep: React.FC<SchedulingStepProps> = ({
         case "weekly":
           shouldInclude = dayOfWeek === selectedDays[0];
           break;
-        case "biweekly":
+        case "biweekly": {
           const weekDiff = Math.floor((day.getTime() - selectedDate.getTime()) / (7 * 24 * 60 * 60 * 1000));
           shouldInclude = weekDiff % 2 === 0 && dayOfWeek === selectedDays[0];
           break;
+        }
         case "monthly":
           shouldInclude = day.getDate() === selectedDate.getDate();
           break;
@@ -693,10 +694,11 @@ export const SchedulingStep: React.FC<SchedulingStepProps> = ({
           case "weekly":
             if (dayOfWeek === selectedDays[0]) count++;
             break;
-          case "biweekly":
+          case "biweekly": {
             const weekDiff = Math.floor((day.getTime() - selectedDate.getTime()) / (7 * 24 * 60 * 60 * 1000));
             if (weekDiff % 2 === 0 && dayOfWeek === selectedDays[0]) count++;
             break;
+          }
           case "monthly":
             if (day.getDate() === selectedDate.getDate()) count++;
             break;
@@ -777,11 +779,12 @@ export const SchedulingStep: React.FC<SchedulingStepProps> = ({
     switch (timeAssignmentMode) {
       case "fixed":
         return !!selectedTime;
-      case "per_day":
+      case "per_day": {
         // Check if at least one day has a time selected
         const workingDays = perDaySchedules.filter(d => d.isWorking);
         const configuredDays = workingDays.filter(d => d.selectedTime);
         return configuredDays.length > 0;
+      }
       case "first_available":
       case "time_window":
         return true; // Auto-assigned modes are always valid
@@ -1391,7 +1394,7 @@ export const SchedulingStep: React.FC<SchedulingStepProps> = ({
 
                             return (
                               <motion.button
-                                key={idx}
+                                key={day.toISOString()}
                                 onClick={() => handleSelectDate(day)}
                                 whileHover={{ scale: 1.05 }}
                                 whileTap={{ scale: 0.95 }}

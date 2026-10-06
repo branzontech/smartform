@@ -143,9 +143,9 @@ export const QuestionRenderer = ({ question, formData, onChange, errors }: Quest
                   )}
                   style={question.optionLayout === "horizontal" ? { gridTemplateColumns: `repeat(${Math.min(question.optionColumns || 2, 3)}, minmax(0, 1fr))` } : undefined}
                 >
-                  {question.options?.map((option, i) => (
+                  {question.options?.map((option) => (
                     <label
-                      key={i}
+                      key={option}
                       className="flex items-center gap-2 cursor-pointer px-1 py-1 rounded hover:bg-muted/50 transition-colors"
                     >
                       <input
@@ -183,8 +183,8 @@ export const QuestionRenderer = ({ question, formData, onChange, errors }: Quest
                   )}
                   style={question.optionLayout === "horizontal" ? { gridTemplateColumns: `repeat(${Math.min(question.optionColumns || 2, 3)}, minmax(0, 1fr))` } : undefined}
                 >
-                  {question.options?.map((option, i) => (
-                    <label key={i} className="flex items-center gap-2 cursor-pointer px-1 py-1 rounded hover:bg-muted/50 transition-colors">
+                  {question.options?.map((option) => (
+                    <label key={option} className="flex items-center gap-2 cursor-pointer px-1 py-1 rounded hover:bg-muted/50 transition-colors">
                       <Checkbox
                         checked={Array.isArray(field.value) && field.value.includes(option)}
                         onCheckedChange={(checked) => {
@@ -225,8 +225,8 @@ export const QuestionRenderer = ({ question, formData, onChange, errors }: Quest
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  {question.options?.map((option, i) => (
-                    <SelectItem key={i} value={option}>{option}</SelectItem>
+                  {question.options?.map((option) => (
+                    <SelectItem key={option} value={option}>{option}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>

@@ -138,19 +138,17 @@ export const PatientMedicationPanel: React.FC<PatientMedicationPanelProps> = ({
   const [isFullScreen, setIsFullScreen] = useState(false);
 
   useEffect(() => {
-    const loadMedications = () => {
-      setLoading(true);
-      // Simular carga de datos
-      setTimeout(() => {
-        const patientMedications = mockMedications[patientId] || [];
-        setMedications(patientMedications);
-        setLoading(false);
-      }, 300);
-    };
+    if (!patientId) return;
 
-    if (patientId) {
-      loadMedications();
-    }
+    setLoading(true);
+    // Simular carga de datos
+    const timer = setTimeout(() => {
+      const patientMedications = mockMedications[patientId] || [];
+      setMedications(patientMedications);
+      setLoading(false);
+    }, 300);
+
+    return () => clearTimeout(timer);
   }, [patientId]);
 
   const getStatusColor = (status: 'pending' | 'administered' | 'missed') => {
@@ -216,7 +214,8 @@ export const PatientMedicationPanel: React.FC<PatientMedicationPanelProps> = ({
   const pendingCount = medications.filter(med => med.status === 'pending').length;
   const administeredCount = medications.filter(med => med.status === 'administered').length;
 
-  const PanelContent = () => (
+  // Contenido del panel como elemento (no como componente anidado) para no remontarlo en cada render
+  const panelContent = (
     <Card className="h-full flex flex-col">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
@@ -366,7 +365,7 @@ export const PatientMedicationPanel: React.FC<PatientMedicationPanelProps> = ({
       <Dialog open={isFullScreen} onOpenChange={setIsFullScreen}>
         <DialogContent className="max-w-[95vw] max-h-[95vh] w-full h-full p-0">
           <div className="h-full p-6">
-            <PanelContent />
+            {panelContent}
           </div>
         </DialogContent>
       </Dialog>
@@ -375,7 +374,7 @@ export const PatientMedicationPanel: React.FC<PatientMedicationPanelProps> = ({
 
   return (
     <div className={`h-full ${className}`}>
-      <PanelContent />
+      {panelContent}
     </div>
   );
 };

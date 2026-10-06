@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import {
   AlertTriangle,
   ChevronDown,
@@ -100,9 +100,14 @@ export function CorrectionDialog({
         Object.keys(replacementData).length > 0));
 
   // Defensa: si el registro no está activo, cerrar y avisar
-  if (open && recordEstadoRegistro !== "active") {
+  const registroInactivo = open && recordEstadoRegistro !== "active";
+  useEffect(() => {
+    if (!registroInactivo) return;
     toast.error("Este registro ya fue anulado o corregido previamente");
     onOpenChange(false);
+  }, [registroInactivo, onOpenChange]);
+
+  if (registroInactivo) {
     return null;
   }
 
@@ -214,9 +219,9 @@ export function CorrectionDialog({
                   </CollapsibleTrigger>
                   <CollapsibleContent className="mt-2 rounded-md border bg-background px-3 py-2.5">
                     <dl className="space-y-1 text-xs font-mono leading-relaxed">
-                      {previewData.map((item, i) => (
+                      {previewData.map((item) => (
                         <div
-                          key={i}
+                          key={item.label}
                           className="flex gap-2 border-b border-dashed border-border/50 pb-1 last:border-0 last:pb-0"
                         >
                           <dt className="text-muted-foreground min-w-[120px]">

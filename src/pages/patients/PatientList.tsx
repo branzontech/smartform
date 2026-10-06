@@ -91,7 +91,7 @@ const PatientList = () => {
 
   // Filter and sort patients
   const filteredAndSortedPatients = useMemo(() => {
-    let filtered = patients.filter(patient => {
+    const filtered = patients.filter(patient => {
       const matchesSearch = patient.name.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
                           patient.documentId.toLowerCase().includes(debouncedSearchTerm.toLowerCase());
       

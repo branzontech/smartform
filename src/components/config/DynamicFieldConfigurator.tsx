@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Plus, Trash2, Loader2, GripVertical, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -100,24 +100,27 @@ export const DynamicFieldConfigurator: React.FC<DynamicFieldConfiguratorProps> =
   });
   const [newOption, setNewOption] = useState("");
 
-  const fetchFields = async () => {
+  const fetchFields = useCallback(async () => {
     setIsLoading(true);
-    const { data, error } = await baseDatos
-      .from(tableName)
-      .select("*")
-      .order("orden", { ascending: true });
-    if (data && !error) {
-      setFields(data.map((d: any) => ({
-        ...d,
-        opciones: Array.isArray(d.opciones) ? d.opciones : [],
-      })));
-    } else if (error) {
-      toast.error("Error al cargar campos: " + error.message);
+    try {
+      const { data, error } = await baseDatos
+        .from(tableName)
+        .select("*")
+        .order("orden", { ascending: true });
+      if (data && !error) {
+        setFields(data.map((d: any) => ({
+          ...d,
+          opciones: Array.isArray(d.opciones) ? d.opciones : [],
+        })));
+      } else if (error) {
+        toast.error("Error al cargar campos: " + error.message);
+      }
+    } finally {
+      setIsLoading(false);
     }
-    setIsLoading(false);
-  };
+  }, [tableName]);
 
-  useEffect(() => { fetchFields(); }, []);
+  useEffect(() => { fetchFields(); }, [fetchFields]);
 
   const resetForm = () => {
     setNewField({ label: "", tipo_dato: "text", es_requerido: false, placeholder: "", opciones: [], maestro: "" });
@@ -144,8 +147,12 @@ export const DynamicFieldConfigurator: React.FC<DynamicFieldConfiguratorProps> =
       maestro: newField.tipo_dato.startsWith("catalog_") ? newField.maestro || null : null,
     };
 
-    const { error } = await baseDatos.from(tableName).insert(insertData);
-    setIsSaving(false);
+    let error: { message: string } | null = null;
+    try {
+      ({ error } = await baseDatos.from(tableName).insert(insertData));
+    } finally {
+      setIsSaving(false);
+    }
     if (error) { toast.error("Error: " + error.message); return; }
 
     toast.success(`Campo "${newField.label}" creado`);
@@ -297,7 +304,7 @@ export const DynamicFieldConfigurator: React.FC<DynamicFieldConfiguratorProps> =
                       {newField.opciones.length > 0 && (
                         <div className="flex flex-wrap gap-2 mt-2">
                           {newField.opciones.map((opt, idx) => (
-                            <Badge key={idx} variant="secondary" className="rounded-lg gap-1.5 py-1.5 px-3 text-sm">
+                            <Badge key={opt} variant="secondary" className="rounded-lg gap-1.5 py-1.5 px-3 text-sm">
                               {opt}
                               <button type="button" onClick={() => removeOption(idx)} className="ml-1 hover:text-destructive">
                                 <X className="w-3 h-3" />
@@ -405,8 +412,8 @@ export const DynamicFieldConfigurator: React.FC<DynamicFieldConfiguratorProps> =
                       <TableCell>
                         {field.tipo_dato === "select" && field.opciones && field.opciones.length > 0 ? (
                           <div className="flex flex-wrap gap-1">
-                            {field.opciones.slice(0, 3).map((opt, i) => (
-                              <Badge key={i} variant="outline" className="rounded text-xs">{String(opt)}</Badge>
+                            {field.opciones.slice(0, 3).map((opt) => (
+                              <Badge key={String(opt)} variant="outline" className="rounded text-xs">{String(opt)}</Badge>
                             ))}
                             {field.opciones.length > 3 && (
                               <Badge variant="outline" className="rounded text-xs">+{field.opciones.length - 3}</Badge>

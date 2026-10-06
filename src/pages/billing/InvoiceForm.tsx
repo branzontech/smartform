@@ -50,41 +50,46 @@ const InvoiceForm = () => {
       const foundInvoice = mockInvoices.find(inv => inv.id === id);
       if (foundInvoice) {
         // Ensure all required properties are set with default values if they're missing
-        setInvoice({
-          ...invoice,
+        setInvoice(prev => ({
+          ...prev,
           ...foundInvoice,
           doctorId: foundInvoice.doctorId || "",
           doctorName: foundInvoice.doctorName || "",
           issueDate: new Date(foundInvoice.issueDate),
           dueDate: new Date(foundInvoice.dueDate),
-        });
+        }));
       }
     }
   }, [id, isEditing]);
 
-  // Calcular totales
-  const calculateTotals = () => {
-    const items = invoice.items.map(item => ({
-      ...item,
-      total: item.quantity * item.unitPrice
-    }));
-    
-    const subtotal = items.reduce((sum, item) => sum + item.total, 0);
-    const tax = subtotal * 0.16; // 16% de IVA
-    const total = subtotal + tax - (invoice.discount || 0);
-    
-    setInvoice(prev => ({
-      ...prev,
-      items,
-      subtotal,
-      tax,
-      total
-    }));
-  };
-
   // Actualizar totales cuando cambian los ítems o el descuento
   useEffect(() => {
-    calculateTotals();
+    setInvoice(prev => {
+      const items = prev.items.map(item => ({
+        ...item,
+        total: item.quantity * item.unitPrice
+      }));
+      
+      const subtotal = items.reduce((sum, item) => sum + item.total, 0);
+      const tax = subtotal * 0.16; // 16% de IVA
+      const total = subtotal + tax - (prev.discount || 0);
+      
+      // Sin cambios: se devuelve el mismo estado para no volver a disparar el efecto
+      const sinCambios =
+        subtotal === prev.subtotal &&
+        tax === prev.tax &&
+        total === prev.total &&
+        items.every((item, i) => item.total === prev.items[i].total);
+      if (sinCambios) return prev;
+      
+      return {
+        ...prev,
+        items,
+        subtotal,
+        tax,
+        total
+      };
+    });
   }, [invoice.items, invoice.discount]);
 
   // Manejar cambios en los ítems

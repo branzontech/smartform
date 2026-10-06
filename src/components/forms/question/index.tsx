@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React from "react";
 import { Trash2, GripVertical, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { QuestionType, QuestionProps } from "./types";
@@ -12,22 +12,20 @@ export const Question: React.FC<QuestionProps> = ({
   onDelete,
   readOnly = false,
 }) => {
-  const [questionTitle, setQuestionTitle] = useState(question.title);
-  const [questionType, setQuestionType] = useState(question.type);
-  const [required, setRequired] = useState(question.required);
+  // Componente controlado: el padre guarda la pregunta y la actualiza vía onUpdate
+  const questionTitle = question.title;
+  const questionType = question.type;
+  const required = question.required;
 
   const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setQuestionTitle(e.target.value);
     onUpdate(question.id, { title: e.target.value });
   };
 
   const handleTypeChange = (type: string) => {
-    setQuestionType(type);
     onUpdate(question.id, { type });
   };
 
   const toggleRequired = () => {
-    setRequired(!required);
     onUpdate(question.id, { required: !required });
   };
 

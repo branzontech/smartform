@@ -1,3 +1,4 @@
+import { escapeHtml } from "@/utils/orders/header-builder";
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { Layout } from "@/components/layout";
 import { baseDatos } from "@/integrations/datos/cliente";
@@ -177,38 +178,41 @@ const PriceLists: React.FC = () => {
   // Fetch tarifarios
   const fetchTarifarios = useCallback(async () => {
     setLoading(true);
-    const { data, error } = await baseDatos
-      .from("tarifarios_maestros" as any)
-      .select("*")
-      .order("created_at", { ascending: false });
+    try {
+      const { data, error } = await baseDatos
+        .from("tarifarios_maestros" as any)
+        .select("*")
+        .order("created_at", { ascending: false });
 
-    if (data) {
-      // Fetch service counts
-      const ids = (data as any[]).map((t: any) => t.id);
-      const counts: Record<string, number> = {};
+      if (data) {
+        // Fetch service counts
+        const ids = (data as any[]).map((t: any) => t.id);
+        const counts: Record<string, number> = {};
 
-      if (ids.length > 0) {
-        const { data: countData } = await baseDatos
-          .from("tarifarios_servicios" as any)
-          .select("tarifario_id")
-          .in("tarifario_id", ids);
+        if (ids.length > 0) {
+          const { data: countData } = await baseDatos
+            .from("tarifarios_servicios" as any)
+            .select("tarifario_id")
+            .in("tarifario_id", ids);
 
-        if (countData) {
-          (countData as any[]).forEach((s: any) => {
-            counts[s.tarifario_id] = (counts[s.tarifario_id] || 0) + 1;
-          });
+          if (countData) {
+            (countData as any[]).forEach((s: any) => {
+              counts[s.tarifario_id] = (counts[s.tarifario_id] || 0) + 1;
+            });
+          }
         }
-      }
 
-      setTarifarios(
-        (data as any[]).map((t: any) => ({
-          ...t,
-          servicios_count: counts[t.id] || 0,
-        }))
-      );
+        setTarifarios(
+          (data as any[]).map((t: any) => ({
+            ...t,
+            servicios_count: counts[t.id] || 0,
+          }))
+        );
+      }
+      if (error) toast.error("Error cargando tarifarios");
+    } finally {
+      setLoading(false);
     }
-    if (error) toast.error("Error cargando tarifarios");
-    setLoading(false);
   }, []);
 
   useEffect(() => {
@@ -218,15 +222,18 @@ const PriceLists: React.FC = () => {
   // Fetch servicios for a tarifario
   const fetchServicios = useCallback(async (tarifarioId: string) => {
     setLoadingServicios(true);
-    const { data, error } = await baseDatos
-      .from("tarifarios_servicios" as any)
-      .select("*")
-      .eq("tarifario_id", tarifarioId)
-      .order("codigo_servicio");
+    try {
+      const { data, error } = await baseDatos
+        .from("tarifarios_servicios" as any)
+        .select("*")
+        .eq("tarifario_id", tarifarioId)
+        .order("codigo_servicio");
 
-    if (data) setServicios(data as any[]);
-    if (error) toast.error("Error cargando servicios");
-    setLoadingServicios(false);
+      if (data) setServicios(data as any[]);
+      if (error) toast.error("Error cargando servicios");
+    } finally {
+      setLoadingServicios(false);
+    }
   }, []);
 
   const filteredTarifarios = tarifarios.filter((t) => {
@@ -508,17 +515,17 @@ const PriceLists: React.FC = () => {
       const meta = s.metadata_regulatoria || {};
       const metaEntries = Object.entries(meta).filter(([k]) => k !== 'pais');
       return `<tr>
-        <td>${s.sistema_codificacion}</td>
-        <td style="font-family:monospace">${s.codigo_servicio}</td>
-        <td>${s.descripcion_servicio}</td>
+        <td>${escapeHtml(s.sistema_codificacion)}</td>
+        <td style="font-family:monospace">${escapeHtml(s.codigo_servicio)}</td>
+        <td>${escapeHtml(s.descripcion_servicio)}</td>
         <td style="text-align:right">${formatCurrency(s.valor, moneda)}</td>
-        <td style="font-size:11px;color:#666">${metaEntries.map(([k,v]) => `${k}: ${v}`).join(', ') || '\u2014'}</td>
+        <td style="font-size:11px;color:#666">${metaEntries.map(([k,v]) => `${escapeHtml(k)}: ${escapeHtml(v)}`).join(', ') || '\u2014'}</td>
       </tr>`;
     }).join('');
 
     const html = [
       '<!DOCTYPE html><html><head>',
-      `<title>${tarifario.nombre}</title><meta charset="utf-8">`,
+      `<title>${escapeHtml(tarifario.nombre)}</title><meta charset="utf-8">`,
       '<style>',
       'body{font-family:system-ui,-apple-system,sans-serif;margin:0;padding:24px;color:#333;font-size:13px}',
       '.header{text-align:center;margin-bottom:16px;padding-bottom:12px;border-bottom:2px solid #333}',
@@ -537,8 +544,8 @@ const PriceLists: React.FC = () => {
       '@media print{.no-print{display:none}body{padding:12px}}',
       '</style></head><body>',
       '<div class="header">',
-      `<h1>${tarifario.nombre}</h1>`,
-      `<p>${tarifario.descripcion || 'Tarifario de servicios'}</p>`,
+      `<h1>${escapeHtml(tarifario.nombre)}</h1>`,
+      `<p>${escapeHtml(tarifario.descripcion || "Tarifario de servicios")}</p>`,
       '</div>',
       '<div class="meta">',
       `<div>Moneda: <strong>${moneda}</strong></div>`,
@@ -560,11 +567,11 @@ const PriceLists: React.FC = () => {
         '<table class="inactive"><thead><tr><th>Sistema</th><th>Código</th><th>Descripción</th><th style="text-align:right">Valor</th><th>Metadata Regulatoria</th></tr></thead>',
         '<tbody>' + renderRows(inactiveServicios) + '</tbody></table>',
       ].join('') : '',
-      `<div class="footer">Documento generado automáticamente \u00B7 ${tarifario.nombre}</div>`,
+      `<div class="footer">Documento generado automáticamente \u00B7 ${escapeHtml(tarifario.nombre)}</div>`,
       '<div class="no-print" style="text-align:center;margin-top:16px">',
       '<button onclick="window.print()" style="padding:8px 20px;background:#0099ff;color:white;border:none;border-radius:6px;cursor:pointer;font-size:13px">Imprimir</button>',
       '</div>',
-      '<script>window.onload=function(){setTimeout(function(){window.print()},500)};<\/script>',
+      '<script>window.onload=function(){setTimeout(function(){window.print()},500)};</script>',
       '</body></html>',
     ].join('\n');
 

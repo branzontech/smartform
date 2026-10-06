@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -28,31 +28,28 @@ export function ShiftVisualization({ refreshTrigger = 0 }: ShiftVisualizationPro
   const { toast } = useToast();
 
   useEffect(() => {
+    let vigente = true;
+    const loadProfessionals = async () => {
+      try {
+        const profs = await getAllProfessionals();
+        if (vigente) setProfessionals(profs.filter(p => p.isActive));
+      } catch (error) {
+        console.error("Error loading professionals:", error);
+      }
+    };
     loadProfessionals();
+    return () => {
+      vigente = false;
+    };
   }, []);
 
-  useEffect(() => {
-    if (viewMode === "month") {
-      loadMonthlyView();
-    } else {
-      loadShifts();
-    }
-  }, [selectedDate, selectedProfessional, viewMode, refreshTrigger]);
-
-  const loadProfessionals = async () => {
-    try {
-      const profs = await getAllProfessionals();
-      setProfessionals(profs.filter(p => p.isActive));
-    } catch (error) {
-      console.error("Error loading professionals:", error);
-    }
-  };
-
-  const loadShifts = async () => {
+  // esVigente permite descartar respuestas de cargas que ya fueron reemplazadas
+  const loadShifts = useCallback(async (esVigente: () => boolean = () => true) => {
     try {
       setLoading(true);
       const allShifts = await getShiftsByMonth(selectedDate.getMonth(), selectedDate.getFullYear());
-      
+      if (!esVigente()) return;
+
       if (selectedProfessional === "all") {
         setShifts(allShifts);
       } else {
@@ -60,24 +57,37 @@ export function ShiftVisualization({ refreshTrigger = 0 }: ShiftVisualizationPro
       }
     } catch (error) {
       console.error("Error loading shifts:", error);
-      setShifts([]);
+      if (esVigente()) setShifts([]);
     } finally {
-      setLoading(false);
+      if (esVigente()) setLoading(false);
     }
-  };
+  }, [selectedDate, selectedProfessional]);
 
-  const loadMonthlyView = async () => {
+  const loadMonthlyView = useCallback(async (esVigente: () => boolean = () => true) => {
     try {
       setLoading(true);
       const view = await createMonthlyShiftView(selectedDate.getMonth(), selectedDate.getFullYear());
-      setMonthlyView(view);
+      if (esVigente()) setMonthlyView(view);
     } catch (error) {
       console.error("Error loading monthly view:", error);
-      setMonthlyView(null);
+      if (esVigente()) setMonthlyView(null);
     } finally {
-      setLoading(false);
+      if (esVigente()) setLoading(false);
     }
-  };
+  }, [selectedDate]);
+
+  useEffect(() => {
+    let vigente = true;
+    const esVigente = () => vigente;
+    if (viewMode === "month") {
+      loadMonthlyView(esVigente);
+    } else {
+      loadShifts(esVigente);
+    }
+    return () => {
+      vigente = false;
+    };
+  }, [viewMode, refreshTrigger, loadMonthlyView, loadShifts]);
 
   const handleGenerateSampleData = async () => {
     try {

@@ -36,7 +36,8 @@ function escapeHtml(s: any): string {
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 }
 
 function renderAnswer(question: QuestionData, answer: any): string {
@@ -145,7 +146,7 @@ function renderAnswer(question: QuestionData, answer: any): string {
 
     case 'signature':
       if (typeof answer === 'string' && answer.startsWith('data:image')) {
-        return `<img src="${answer}" alt="Firma" class="form-signature-img" />`;
+        return `<img src="${escapeHtml(answer)}" alt="Firma" class="form-signature-img" />`;
       }
       return `<span class="answer-empty">Sin firma</span>`;
 
@@ -314,7 +315,15 @@ export async function printForms(input: FormDocumentInput, docTitle?: string) {
   w.document.write(html);
   w.document.close();
   // Use addEventListener (one-shot) to avoid double-fire from re-entrant document.write
-  const triggerPrint = () => setTimeout(() => { try { w.focus(); w.print(); } catch {} }, 400);
+  const triggerPrint = () => setTimeout(() => {
+    try {
+      w.focus();
+      w.print();
+    } catch (err) {
+      // La ventana pudo cerrarse antes de imprimir; no hay nada más que hacer
+      console.warn('No se pudo abrir el diálogo de impresión:', err);
+    }
+  }, 400);
   if (w.document.readyState === 'complete') {
     triggerPrint();
   } else {

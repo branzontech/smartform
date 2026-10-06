@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Layout } from "@/components/layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -31,14 +31,6 @@ export default function ShiftModification() {
   
   const { toast } = useToast();
 
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  useEffect(() => {
-    filterShifts();
-  }, [shifts, searchDate, searchProfessional]);
-
   // Verificar si hay parámetros en la URL
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -52,7 +44,7 @@ export default function ShiftModification() {
     }
   }, [shifts]);
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       setLoading(true);
       const [shiftData, profData] = await Promise.all([
@@ -72,9 +64,9 @@ export default function ShiftModification() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [toast]);
 
-  const filterShifts = () => {
+  const filterShifts = useCallback(() => {
     let filtered = [...shifts];
     
     if (searchDate) {
@@ -95,7 +87,15 @@ export default function ShiftModification() {
     filtered.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
     
     setFilteredShifts(filtered);
-  };
+  }, [shifts, searchDate, searchProfessional]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  useEffect(() => {
+    filterShifts();
+  }, [filterShifts]);
 
   const handleShiftSelect = (shift: Shift) => {
     setSelectedShift(shift);

@@ -37,8 +37,7 @@ export const useGoogleMaps = ({ apiKey, libraries = ['drawing', 'geometry'] }: U
         console.log('useGoogleMaps: Removing script loaded with empty key');
         existingScript.remove();
         // Clear the google object to force reload
-        // @ts-ignore
-        delete window.google;
+        delete (window as Partial<Window>).google;
       } else {
         setIsLoaded(true);
         return;
@@ -48,8 +47,11 @@ export const useGoogleMaps = ({ apiKey, libraries = ['drawing', 'geometry'] }: U
     // Check if script is already loading in DOM with correct key
     const existingScript = document.querySelector(`script[src*="maps.googleapis.com"][src*="key=${apiKey}"]`);
     if (existingScript) {
-      existingScript.addEventListener('load', () => setIsLoaded(true));
-      return;
+      const handleLoad = () => setIsLoaded(true);
+      existingScript.addEventListener('load', handleLoad);
+      return () => {
+        existingScript.removeEventListener('load', handleLoad);
+      };
     }
 
     // Remove any script with empty key

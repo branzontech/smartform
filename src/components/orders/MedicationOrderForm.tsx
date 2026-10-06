@@ -96,16 +96,22 @@ export const MedicationOrderForm: React.FC<MedicationOrderFormProps> = ({
   const searchDiagnosis = useCallback(async (term: string) => {
     if (term.length < 2) { setDiagResults([]); return; }
     setDiagLoading(true);
-    const { data } = await baseDatos
-      .from('catalogo_diagnosticos')
-      .select('codigo, descripcion, sistema, fhir_system_uri')
-      .eq('sistema', 'CIE-10')
-      .eq('activo', true)
-      .or(`codigo.ilike.%${term}%,descripcion.ilike.%${term}%`)
-      .limit(8);
-    setDiagResults(data || []);
-    setDiagLoading(false);
-    setDiagOpen(true);
+    try {
+      const { data } = await baseDatos
+        .from('catalogo_diagnosticos')
+        .select('codigo, descripcion, sistema, fhir_system_uri')
+        .eq('sistema', 'CIE-10')
+        .eq('activo', true)
+        .or(`codigo.ilike.%${term}%,descripcion.ilike.%${term}%`)
+        .limit(8);
+      setDiagResults(data || []);
+      setDiagOpen(true);
+    } catch (error) {
+      console.error('Error buscando diagnósticos:', error);
+      setDiagResults([]);
+    } finally {
+      setDiagLoading(false);
+    }
   }, []);
 
   const diagTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);

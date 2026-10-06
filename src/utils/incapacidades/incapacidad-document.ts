@@ -2,6 +2,7 @@ import {
   buildDoctorFooter,
   buildInstitutionHeader,
   buildPatientBlock,
+  escapeHtml,
   fetchDoctor,
   fetchInstitution,
   fetchPatient,
@@ -98,8 +99,8 @@ function buildMetaGrid(inc: IncapacidadLike): string {
     <section class="doc-meta">
       ${fields.map(f => `
         <div class="meta-field">
-          <span class="meta-label">${f.label}</span>
-          <span class="meta-value">${f.value}</span>
+          <span class="meta-label">${escapeHtml(f.label)}</span>
+          <span class="meta-value">${escapeHtml(f.value)}</span>
         </div>
       `).join('')}
     </section>
@@ -122,7 +123,7 @@ function buildPeriodBlock(inc: IncapacidadLike): string {
           <tr>
             <td><strong>${fmtDate(inc.fecha_inicio)}</strong></td>
             <td><strong>${fmtDate(inc.fecha_fin)}</strong></td>
-            <td class="center"><strong>${inc.duracion_dias} día(s)</strong></td>
+            <td class="center"><strong>${escapeHtml(inc.duracion_dias)} día(s)</strong></td>
           </tr>
         </tbody>
       </table>
@@ -144,8 +145,8 @@ function buildClinicalBlock(inc: IncapacidadLike): string {
       <div class="doc-meta" style="border-bottom:none; padding:6px 0 0; margin-bottom:0;">
         ${fields.map(f => `
           <div class="meta-field">
-            <span class="meta-label">${f.label}</span>
-            <span class="meta-value">${f.value}</span>
+            <span class="meta-label">${escapeHtml(f.label)}</span>
+            <span class="meta-value">${escapeHtml(f.value)}</span>
           </div>
         `).join('')}
       </div>
@@ -158,7 +159,7 @@ function renderDx(value: string | null): string {
   const [code, ...rest] = value.split(' — ');
   const description = rest.join(' — ') || code;
   return `<div class="doc-dx" style="margin-bottom:6px;">
-    <span class="dx-code">${code}</span><span>${description}</span>
+    <span class="dx-code">${escapeHtml(code)}</span><span>${escapeHtml(description)}</span>
   </div>`;
 }
 
@@ -194,13 +195,13 @@ function buildAdditionalInfo(inc: IncapacidadLike): string {
   }
   if (inc.es_retroactiva) {
     const causa = inc.causa_retroactividad ? RETRO_LABELS[inc.causa_retroactividad] || inc.causa_retroactividad : '—';
-    items.push(`<div><strong>Retroactiva:</strong> Sí — <span class="muted-text">${causa}</span></div>`);
+    items.push(`<div><strong>Retroactiva:</strong> Sí — <span class="muted-text">${escapeHtml(causa)}</span></div>`);
   }
   if (inc.causa_atencion) {
-    items.push(`<div><strong>Causa de la atención:</strong><br/>${inc.causa_atencion.replace(/\n/g, '<br/>')}</div>`);
+    items.push(`<div><strong>Causa de la atención:</strong><br/>${escapeHtml(inc.causa_atencion).replace(/\n/g, '<br/>')}</div>`);
   }
   if (inc.observaciones) {
-    items.push(`<div><strong>Observaciones:</strong><br/>${inc.observaciones.replace(/\n/g, '<br/>')}</div>`);
+    items.push(`<div><strong>Observaciones:</strong><br/>${escapeHtml(inc.observaciones).replace(/\n/g, '<br/>')}</div>`);
   }
 
   if (items.length === 0) return '';
@@ -258,7 +259,7 @@ export async function buildIncapacidadFullHtml(input: IncapacidadDocumentInput):
   const inner = await buildIncapacidadInnerHtml(input);
   return `<!DOCTYPE html><html lang="es"><head>
     <meta charset="utf-8" />
-    <title>Incapacidad ${input.incapacidad.numero_incapacidad || ''}</title>
+    <title>Incapacidad ${escapeHtml(input.incapacidad.numero_incapacidad || '')}</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">

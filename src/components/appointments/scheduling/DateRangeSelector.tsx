@@ -106,11 +106,12 @@ export const DateRangeSelector: React.FC<DateRangeSelectorProps> = ({
             // Count only once per week
             if (dayOfWeek === selectedDays[0]) count++;
             break;
-          case "biweekly":
+          case "biweekly": {
             // Count every two weeks
             const weekDiff = Math.floor((day.getTime() - startDate.getTime()) / (7 * 24 * 60 * 60 * 1000));
             if (weekDiff % 2 === 0 && dayOfWeek === selectedDays[0]) count++;
             break;
+          }
           case "monthly":
             // Count once per month
             if (day.getDate() === startDate.getDate()) count++;

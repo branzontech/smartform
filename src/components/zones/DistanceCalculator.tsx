@@ -160,7 +160,7 @@ export const DistanceCalculator: React.FC<DistanceCalculatorProps> = ({
     }
 
     // Add click listener for placing waypoints
-    clickListenerRef.current = map.addListener('click', (e: google.maps.MapMouseEvent) => {
+    const clickListener = map.addListener('click', (e: google.maps.MapMouseEvent) => {
       const currentActiveId = activeWaypointIdRef.current;
       if (!e.latLng || !currentActiveId) return;
       
@@ -202,10 +202,12 @@ export const DistanceCalculator: React.FC<DistanceCalculatorProps> = ({
         console.warn('Geocoding failed:', error);
       }
     });
+    clickListenerRef.current = clickListener;
 
     return () => {
-      if (clickListenerRef.current) {
-        google.maps.event.removeListener(clickListenerRef.current);
+      google.maps.event.removeListener(clickListener);
+      if (clickListenerRef.current === clickListener) {
+        clickListenerRef.current = null;
       }
     };
   }, [isMapLoaded]);

@@ -3,6 +3,15 @@ import { FormResponse } from "@/types/form-types";
 import { buildFormsFullHtml } from "@/utils/forms/form-document";
 import type { QuestionData } from "@/components/forms/question/types";
 
+/** Escapa un valor dinámico antes de interpolarlo en una plantilla HTML. */
+const escapeHtml = (value: unknown): string =>
+  String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+
 /**
  * Print a single form response using the professional clinical document format
  * (institutional header + patient block + questions/answers + doctor signature).
@@ -21,7 +30,7 @@ export const printFormResponse = async (
   // Show a lightweight loading state while we fetch institution + patient data
   printWindow.document.open();
   printWindow.document.write(
-    `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${formData.title}</title>
+    `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${escapeHtml(formData.title)}</title>
     <style>body{font-family:system-ui,sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;color:#6b7280}</style>
     </head><body>Generando documento…</body></html>`,
   );
@@ -66,7 +75,7 @@ export const printFormResponse = async (
   printWindow.document.open();
   printWindow.document.write(html);
   printWindow.document.close();
-  const triggerPrint = () => setTimeout(() => { try { printWindow.focus(); printWindow.print(); } catch {} }, 400);
+  const triggerPrint = () => setTimeout(() => { try { printWindow.focus(); printWindow.print(); } catch { /* la ventana se cerró antes de imprimir: no hay nada que hacer */ } }, 400);
   if (printWindow.document.readyState === "complete") {
     triggerPrint();
   } else {

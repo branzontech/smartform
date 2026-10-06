@@ -46,6 +46,7 @@ export const Vitals: React.FC<ContentComponentProps> = ({ question, onUpdate, re
         showBmiClassification: true,
       });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- inicialización única al montar; onUpdate puede ser inestable y repetiría la escritura
   }, []);
 
   const toggleVital = (key: string, enabled: boolean) => {

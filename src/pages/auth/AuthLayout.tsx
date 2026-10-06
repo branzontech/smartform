@@ -26,7 +26,7 @@ export function AuthLayout({ titulo, descripcion, children, pie }: AuthLayoutPro
         />
         {/* El logo es blanco y lima: va sobre una placa morada para leerse sobre la ilustración. */}
         <div className="absolute left-6 top-6 rounded-2xl bg-[#3b2364]/75 px-4 py-3 shadow-sm backdrop-blur">
-          <img src="/kerhub-logo-recortado.png" alt="Ker Hub" className="h-8 w-auto sm:h-9" />
+          <img src="/kerhub-logo-color.png" alt="Ker Hub" className="h-8 w-auto sm:h-9" />
         </div>
         <p className="absolute bottom-6 left-6 hidden rounded-full bg-background/85 px-3.5 py-1.5 text-xs font-medium text-foreground shadow-sm backdrop-blur lg:block">
           Tu consulta, en un solo lugar

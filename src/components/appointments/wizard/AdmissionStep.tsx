@@ -86,30 +86,38 @@ export const AdmissionStep: React.FC<AdmissionStepProps> = ({
 
   // ── Fetch active contracts with payer name ──
   useEffect(() => {
+    let vigente = true;
     const fetchContratos = async () => {
       setLoadingContratos(true);
-      const { data, error } = await baseDatos
-        .from("contratos")
-        .select("id, nombre_convenio, tipo_contratacion, pagador_id, pagadores(nombre)")
-        .eq("estado", "activo")
-        .order("nombre_convenio");
+      try {
+        const { data, error } = await baseDatos
+          .from("contratos")
+          .select("id, nombre_convenio, tipo_contratacion, pagador_id, pagadores(nombre)")
+          .eq("estado", "activo")
+          .order("nombre_convenio");
 
-      if (error) {
-        console.error("Error fetching contratos:", error);
-        toast.error("Error al cargar convenios");
-      } else {
-        setContratos(
-          (data || []).map((c: any) => ({
-            id: c.id,
-            nombre_convenio: c.nombre_convenio,
-            pagador_nombre: c.pagadores?.nombre || "Sin pagador",
-            tipo_contratacion: c.tipo_contratacion,
-          }))
-        );
+        if (!vigente) return;
+        if (error) {
+          console.error("Error fetching contratos:", error);
+          toast.error("Error al cargar convenios");
+        } else {
+          setContratos(
+            (data || []).map((c: any) => ({
+              id: c.id,
+              nombre_convenio: c.nombre_convenio,
+              pagador_nombre: c.pagadores?.nombre || "Sin pagador",
+              tipo_contratacion: c.tipo_contratacion,
+            }))
+          );
+        }
+      } finally {
+        if (vigente) setLoadingContratos(false);
       }
-      setLoadingContratos(false);
     };
     fetchContratos();
+    return () => {
+      vigente = false;
+    };
   }, []);
 
   // ── Fetch services when contract changes ──
@@ -120,36 +128,45 @@ export const AdmissionStep: React.FC<AdmissionStepProps> = ({
       return;
     }
 
+    let vigente = true;
     const fetchServicios = async () => {
       setLoadingServicios(true);
-      // Get tarifario_id from the selected contract
-      const { data: contrato } = await baseDatos
-        .from("contratos")
-        .select("tarifario_id")
-        .eq("id", selectedContratoId)
-        .single();
+      try {
+        // Get tarifario_id from the selected contract
+        const { data: contrato } = await baseDatos
+          .from("contratos")
+          .select("tarifario_id")
+          .eq("id", selectedContratoId)
+          .single();
 
-      if (!contrato?.tarifario_id) {
-        setServicios([]);
-        setLoadingServicios(false);
-        return;
+        if (!vigente) return;
+        if (!contrato?.tarifario_id) {
+          setServicios([]);
+          return;
+        }
+
+        const { data, error } = await baseDatos
+          .from("tarifarios_servicios")
+          .select("id, codigo_servicio, descripcion_servicio, valor, activo")
+          .eq("tarifario_id", contrato.tarifario_id)
+          .eq("activo", true)
+          .order("codigo_servicio");
+
+        if (!vigente) return;
+        if (error) {
+          console.error("Error fetching servicios:", error);
+        } else {
+          setServicios(data || []);
+        }
+      } finally {
+        if (vigente) setLoadingServicios(false);
       }
-
-      const { data, error } = await baseDatos
-        .from("tarifarios_servicios")
-        .select("id, codigo_servicio, descripcion_servicio, valor, activo")
-        .eq("tarifario_id", contrato.tarifario_id)
-        .eq("activo", true)
-        .order("codigo_servicio");
-
-      if (error) {
-        console.error("Error fetching servicios:", error);
-      } else {
-        setServicios(data || []);
-      }
-      setLoadingServicios(false);
     };
     fetchServicios();
+    return () => {
+      vigente = false;
+      setLoadingServicios(false);
+    };
   }, [selectedContratoId]);
 
   // ── Handlers ──

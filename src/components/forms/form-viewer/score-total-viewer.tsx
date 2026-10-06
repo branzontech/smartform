@@ -58,12 +58,12 @@ export const ScoreTotalViewer: React.FC<ScoreTotalViewerProps> = ({ question, fo
       </div>
       {ranges.length > 0 && (
         <div className="space-y-0.5">
-          {ranges.map((r: ScoringRange, i: number) => {
+          {ranges.map((r: ScoringRange) => {
             const isActive = matchedRange === r;
             const colors = RANGE_COLOR_MAP[r.color] || RANGE_COLOR_MAP.gray;
             return (
               <div
-                key={i}
+                key={`${r.min}-${r.max}-${r.label}`}
                 className={cn(
                   "flex items-center gap-3 px-3 py-1.5 rounded-md text-sm transition-colors",
                   !isActive && "text-muted-foreground"

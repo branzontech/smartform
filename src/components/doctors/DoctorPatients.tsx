@@ -21,18 +21,22 @@ const DoctorPatients = ({ doctorId }: DoctorPatientsProps) => {
   const [view, setView] = useState<'table' | 'card'>('table');
   
   useEffect(() => {
+    let vigente = true;
     const fetchPatients = async () => {
       try {
         const data = await getDoctorPatients(doctorId);
-        setPatients(data);
+        if (vigente) setPatients(data);
       } catch (error) {
         console.error("Error fetching patients:", error);
       } finally {
-        setLoading(false);
+        if (vigente) setLoading(false);
       }
     };
     
     fetchPatients();
+    return () => {
+      vigente = false;
+    };
   }, [doctorId]);
   
   const handleViewPatient = (patientId: string) => {

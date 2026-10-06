@@ -2,6 +2,7 @@ import {
   buildDoctorFooter,
   buildInstitutionHeader,
   buildPatientBlock,
+  escapeHtml,
   fetchDoctor,
   fetchInstitution,
   fetchPatient,
@@ -83,11 +84,11 @@ function buildItemsTable(order: OrderLike): string {
             ${order.items_detalle.map((it, i) => `
               <tr>
                 <td class="center">${i + 1}</td>
-                <td class="mono">${it.codigo_procedimiento}</td>
-                <td>${it.descripcion_procedimiento}</td>
-                <td class="center">${it.cantidad}</td>
-                <td class="center">${it.dias}</td>
-                <td class="muted">${it.notas || '—'}</td>
+                <td class="mono">${escapeHtml(it.codigo_procedimiento)}</td>
+                <td>${escapeHtml(it.descripcion_procedimiento)}</td>
+                <td class="center">${escapeHtml(it.cantidad)}</td>
+                <td class="center">${escapeHtml(it.dias)}</td>
+                <td class="muted">${escapeHtml(it.notas || '—')}</td>
               </tr>
             `).join('')}
           </tbody>
@@ -117,11 +118,11 @@ function buildItemsTable(order: OrderLike): string {
               ${order.items.map((it: any, i: number) => `
                 <tr>
                   <td class="center">${i + 1}</td>
-                  <td><strong>${it.nombre || '—'}</strong></td>
-                  <td>${[it.dosis, it.unidad].filter(Boolean).join(' ') || '—'}</td>
-                  <td>${it.via || '—'}</td>
-                  <td>${it.frecuencia || '—'}</td>
-                  <td>${it.duracion || '—'}</td>
+                  <td><strong>${escapeHtml(it.nombre || '—')}</strong></td>
+                  <td>${escapeHtml([it.dosis, it.unidad].filter(Boolean).join(' ') || '—')}</td>
+                  <td>${escapeHtml(it.via || '—')}</td>
+                  <td>${escapeHtml(it.frecuencia || '—')}</td>
+                  <td>${escapeHtml(it.duracion || '—')}</td>
                 </tr>
               `).join('')}
             </tbody>
@@ -139,7 +140,7 @@ function buildItemsTable(order: OrderLike): string {
             ${order.items.map((it: any, i: number) => `
               <tr>
                 <td class="center">${i + 1}</td>
-                <td>${it.nombre || it.descripcion || JSON.stringify(it)}</td>
+                <td>${escapeHtml(it.nombre || it.descripcion || JSON.stringify(it))}</td>
               </tr>
             `).join('')}
           </tbody>
@@ -172,8 +173,8 @@ function buildMetaGrid(order: OrderLike): string {
     <section class="doc-meta">
       ${fields.map(f => `
         <div class="meta-field">
-          <span class="meta-label">${f.label}</span>
-          <span class="meta-value">${f.value}</span>
+          <span class="meta-label">${escapeHtml(f.label)}</span>
+          <span class="meta-value">${escapeHtml(f.value)}</span>
         </div>
       `).join('')}
     </section>
@@ -182,11 +183,11 @@ function buildMetaGrid(order: OrderLike): string {
 
 function buildDiagnosis(order: OrderLike): string {
   if (!order.diagnostico_descripcion) return '';
-  const code = order.diagnostico_codigo ? `<span class="dx-code">${order.diagnostico_codigo}</span>` : '';
+  const code = order.diagnostico_codigo ? `<span class="dx-code">${escapeHtml(order.diagnostico_codigo)}</span>` : '';
   return `
     <section class="doc-block">
       <div class="doc-section-label">Diagnóstico</div>
-      <div class="doc-dx">${code}<span>${order.diagnostico_descripcion}</span></div>
+      <div class="doc-dx">${code}<span>${escapeHtml(order.diagnostico_descripcion)}</span></div>
     </section>
   `;
 }
@@ -196,7 +197,7 @@ function buildIndications(order: OrderLike): string {
   return `
     <section class="doc-block">
       <div class="doc-section-label">Indicaciones</div>
-      <p class="doc-indications">${order.indicaciones.replace(/\n/g, '<br/>')}</p>
+      <p class="doc-indications">${escapeHtml(order.indicaciones).replace(/\n/g, '<br/>')}</p>
     </section>
   `;
 }
@@ -454,7 +455,7 @@ export async function buildOrderFullHtml(input: OrderDocumentInput): Promise<str
   const inner = await buildOrderInnerHtml(input);
   return `<!DOCTYPE html><html lang="es"><head>
     <meta charset="utf-8" />
-    <title>${ORDER_TYPE_LABELS[input.order.tipo] || 'Orden'} ${input.order.numero_orden}</title>
+    <title>${escapeHtml(ORDER_TYPE_LABELS[input.order.tipo] || 'Orden')} ${escapeHtml(input.order.numero_orden)}</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">

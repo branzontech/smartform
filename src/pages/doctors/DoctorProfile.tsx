@@ -19,20 +19,22 @@ const DoctorProfile = () => {
   const [loading, setLoading] = useState(true);
   
   useEffect(() => {
+    let vigente = true;
     const fetchDoctor = async () => {
       if (!id) return;
       
       try {
         const doctorData = await getDoctorById(id);
-        setDoctor(doctorData);
+        if (vigente) setDoctor(doctorData);
       } catch (error) {
         console.error("Error fetching doctor:", error);
       } finally {
-        setLoading(false);
+        if (vigente) setLoading(false);
       }
     };
     
     fetchDoctor();
+    return () => { vigente = false; };
   }, [id]);
   
   if (loading) {

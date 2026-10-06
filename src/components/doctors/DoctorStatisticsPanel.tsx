@@ -15,18 +15,20 @@ const DoctorStatisticsPanel = ({ doctorId }: DoctorStatisticsPanelProps) => {
   const [loading, setLoading] = useState(true);
   
   useEffect(() => {
+    let vigente = true;
     const fetchStatistics = async () => {
       try {
         const data = await getDoctorStatistics(doctorId);
-        setStatistics(data);
+        if (vigente) setStatistics(data);
       } catch (error) {
         console.error("Error fetching doctor statistics:", error);
       } finally {
-        setLoading(false);
+        if (vigente) setLoading(false);
       }
     };
     
     fetchStatistics();
+    return () => { vigente = false; };
   }, [doctorId]);
   
   if (loading) {

@@ -109,8 +109,8 @@ export const QuestionSummary = ({ question, responses, onViewAllResponses }: Que
       ) : (
         <div className="mt-4">
           <div className="space-y-4">
-            {summary.map((item, i) => (
-              <div key={i} className="flex items-center">
+            {summary.map((item) => (
+              <div key={String(item.answer)} className="flex items-center">
                 <div className="w-1/2 text-sm">{item.displayValue}</div>
                 <div className="w-1/2">
                   <div className="flex items-center">

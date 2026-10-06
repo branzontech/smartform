@@ -93,6 +93,110 @@ const mockMedicalNotifications: MedicalNotification[] = [
   }
 ];
 
+const getPriorityColor = (priority: 'Alta' | 'Media' | 'Baja') => {
+  switch (priority) {
+    case 'Alta':
+      return 'text-red-600 bg-red-50 border-red-200 dark:text-red-400 dark:bg-red-900/20 dark:border-red-800';
+    case 'Media':
+      return 'text-amber-600 bg-amber-50 border-amber-200 dark:text-amber-400 dark:bg-amber-900/20 dark:border-amber-800';
+    case 'Baja':
+      return 'text-green-600 bg-green-50 border-green-200 dark:text-green-400 dark:bg-green-900/20 dark:border-green-800';
+  }
+};
+
+const getChannelIcon = (channel: NotificationChannel) => {
+  switch (channel) {
+    case "WhatsApp":
+      return <MessageSquare className="h-4 w-4 text-emerald-500" />;
+    case "Email":
+      return <Mail className="h-4 w-4 text-blue-500" />;
+    case "Ambos":
+      return (
+        <div className="flex -space-x-1">
+          <MessageSquare className="h-4 w-4 text-emerald-500" />
+          <Mail className="h-4 w-4 text-blue-500" />
+        </div>
+      );
+  }
+};
+
+interface NotificationCardProps {
+  notification: MedicalNotification;
+  onViewDetails: (id: string) => void;
+  onMarkAsCompleted: (id: string) => void;
+}
+
+const NotificationCard = ({ notification, onViewDetails, onMarkAsCompleted }: NotificationCardProps) => (
+  <Card className="hover:shadow-md transition-shadow">
+    <CardContent className="p-4">
+      <div className="flex items-start justify-between mb-3">
+        <div className="flex items-start gap-3 flex-1">
+          <div className="flex-shrink-0 mt-1">
+            {notification.priority === 'Alta' && <AlertTriangle className="h-5 w-5 text-red-500" />}
+            {notification.priority === 'Media' && <Clock className="h-5 w-5 text-amber-500" />}
+            {notification.priority === 'Baja' && <Bell className="h-5 w-5 text-blue-500" />}
+          </div>
+          
+          <div className="flex-1">
+            <div className="flex items-center gap-2 mb-1">
+              <h3 className="font-semibold text-sm">{notification.title}</h3>
+              <Badge variant="outline" className={`text-xs ${getPriorityColor(notification.priority)}`}>
+                {notification.priority}
+              </Badge>
+            </div>
+            
+            <p className="text-sm font-medium text-primary mb-1">{notification.customerName}</p>
+            <p className="text-xs text-muted-foreground line-clamp-2 mb-2">
+              {notification.message}
+            </p>
+            
+            {notification.lastAction && (
+              <p className="text-xs text-muted-foreground italic mb-2">
+                • {notification.lastAction}
+              </p>
+            )}
+            
+            <div className="flex items-center gap-3 text-xs text-muted-foreground">
+              <div className="flex items-center gap-1">
+                <CalendarClock className="h-3 w-3" />
+                {format(notification.reminderDate, "dd/MM/yyyy HH:mm", { locale: es })}
+              </div>
+              <div className="flex items-center gap-1">
+                {getChannelIcon(notification.channel)}
+                {notification.channel}
+              </div>
+              <Badge variant="secondary" className="text-xs">
+                {notification.patientType}
+              </Badge>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div className="flex gap-2">
+        <Button
+          variant="outline"
+          size="sm"
+          className="flex-1 h-8"
+          onClick={() => onViewDetails(notification.id)}
+        >
+          <Eye className="h-3 w-3 mr-1" />
+          Ver detalles
+        </Button>
+        <Button
+          variant="default"
+          size="sm"
+          className="flex-1 h-8"
+          onClick={() => onMarkAsCompleted(notification.id)}
+        >
+          <CheckCheck className="h-3 w-3 mr-1" />
+          Completar
+        </Button>
+      </div>
+    </CardContent>
+  </Card>
+);
+
 export const NotificationCenter = () => {
   const [notifications, setNotifications] = useState<MedicalNotification[]>(mockMedicalNotifications);
   const [activeTab, setActiveTab] = useState<"overdue" | "today" | "upcoming">("overdue");
@@ -119,104 +223,6 @@ export const NotificationCenter = () => {
     // Navegar a detalles del paciente/cliente
     console.log(`Ver detalles de notificación: ${id}`);
   };
-
-  const getPriorityColor = (priority: 'Alta' | 'Media' | 'Baja') => {
-    switch (priority) {
-      case 'Alta':
-        return 'text-red-600 bg-red-50 border-red-200 dark:text-red-400 dark:bg-red-900/20 dark:border-red-800';
-      case 'Media':
-        return 'text-amber-600 bg-amber-50 border-amber-200 dark:text-amber-400 dark:bg-amber-900/20 dark:border-amber-800';
-      case 'Baja':
-        return 'text-green-600 bg-green-50 border-green-200 dark:text-green-400 dark:bg-green-900/20 dark:border-green-800';
-    }
-  };
-
-  const getChannelIcon = (channel: NotificationChannel) => {
-    switch (channel) {
-      case "WhatsApp":
-        return <MessageSquare className="h-4 w-4 text-emerald-500" />;
-      case "Email":
-        return <Mail className="h-4 w-4 text-blue-500" />;
-      case "Ambos":
-        return (
-          <div className="flex -space-x-1">
-            <MessageSquare className="h-4 w-4 text-emerald-500" />
-            <Mail className="h-4 w-4 text-blue-500" />
-          </div>
-        );
-    }
-  };
-
-  const NotificationCard = ({ notification }: { notification: MedicalNotification }) => (
-    <Card className="hover:shadow-md transition-shadow">
-      <CardContent className="p-4">
-        <div className="flex items-start justify-between mb-3">
-          <div className="flex items-start gap-3 flex-1">
-            <div className="flex-shrink-0 mt-1">
-              {notification.priority === 'Alta' && <AlertTriangle className="h-5 w-5 text-red-500" />}
-              {notification.priority === 'Media' && <Clock className="h-5 w-5 text-amber-500" />}
-              {notification.priority === 'Baja' && <Bell className="h-5 w-5 text-blue-500" />}
-            </div>
-            
-            <div className="flex-1">
-              <div className="flex items-center gap-2 mb-1">
-                <h3 className="font-semibold text-sm">{notification.title}</h3>
-                <Badge variant="outline" className={`text-xs ${getPriorityColor(notification.priority)}`}>
-                  {notification.priority}
-                </Badge>
-              </div>
-              
-              <p className="text-sm font-medium text-primary mb-1">{notification.customerName}</p>
-              <p className="text-xs text-muted-foreground line-clamp-2 mb-2">
-                {notification.message}
-              </p>
-              
-              {notification.lastAction && (
-                <p className="text-xs text-muted-foreground italic mb-2">
-                  • {notification.lastAction}
-                </p>
-              )}
-              
-              <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                <div className="flex items-center gap-1">
-                  <CalendarClock className="h-3 w-3" />
-                  {format(notification.reminderDate, "dd/MM/yyyy HH:mm", { locale: es })}
-                </div>
-                <div className="flex items-center gap-1">
-                  {getChannelIcon(notification.channel)}
-                  {notification.channel}
-                </div>
-                <Badge variant="secondary" className="text-xs">
-                  {notification.patientType}
-                </Badge>
-              </div>
-            </div>
-          </div>
-        </div>
-        
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            className="flex-1 h-8"
-            onClick={() => handleViewDetails(notification.id)}
-          >
-            <Eye className="h-3 w-3 mr-1" />
-            Ver detalles
-          </Button>
-          <Button
-            variant="default"
-            size="sm"
-            className="flex-1 h-8"
-            onClick={() => handleMarkAsCompleted(notification.id)}
-          >
-            <CheckCheck className="h-3 w-3 mr-1" />
-            Completar
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
-  );
 
   return (
     <div className="space-y-6">
@@ -303,7 +309,12 @@ export const NotificationCenter = () => {
                     </AlertDescription>
                   </Alert>
                   {overdueNotifications.map((notification) => (
-                    <NotificationCard key={notification.id} notification={notification} />
+                    <NotificationCard
+                      key={notification.id}
+                      notification={notification}
+                      onViewDetails={handleViewDetails}
+                      onMarkAsCompleted={handleMarkAsCompleted}
+                    />
                   ))}
                 </div>
               ) : (
@@ -324,7 +335,12 @@ export const NotificationCenter = () => {
                     </AlertDescription>
                   </Alert>
                   {todayNotifications.map((notification) => (
-                    <NotificationCard key={notification.id} notification={notification} />
+                    <NotificationCard
+                      key={notification.id}
+                      notification={notification}
+                      onViewDetails={handleViewDetails}
+                      onMarkAsCompleted={handleMarkAsCompleted}
+                    />
                   ))}
                 </div>
               ) : (
@@ -339,7 +355,12 @@ export const NotificationCenter = () => {
               {upcomingNotifications.length > 0 ? (
                 <div className="space-y-3">
                   {upcomingNotifications.map((notification) => (
-                    <NotificationCard key={notification.id} notification={notification} />
+                    <NotificationCard
+                      key={notification.id}
+                      notification={notification}
+                      onViewDetails={handleViewDetails}
+                      onMarkAsCompleted={handleMarkAsCompleted}
+                    />
                   ))}
                 </div>
               ) : (

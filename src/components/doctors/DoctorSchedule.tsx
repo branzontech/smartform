@@ -41,8 +41,8 @@ const DoctorSchedule = ({ doctor }: DoctorScheduleProps) => {
     
     return (
       <div className="space-y-1">
-        {day.breaks.map((breakTime, index) => (
-          <div key={index} className="flex items-center text-sm">
+        {day.breaks.map((breakTime) => (
+          <div key={`${breakTime.startTime}-${breakTime.endTime}`} className="flex items-center text-sm">
             <AlarmClock size={12} className="mr-1 text-gray-500" />
             <span>{breakTime.startTime} - {breakTime.endTime}</span>
           </div>

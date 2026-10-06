@@ -47,19 +47,29 @@ export const DiagnosisSearch: React.FC<DiagnosisSearchProps> = ({
   // Search
   useEffect(() => {
     if (searchTerm.length < 1) { setResults([]); return; }
+    let vigente = true;
     const timer = setTimeout(async () => {
       setLoading(true);
-      const { data } = await baseDatos
-        .from("catalogo_diagnosticos")
-        .select("*")
-        .eq("sistema", sistema)
-        .eq("activo", true)
-        .or(`codigo.ilike.%${searchTerm}%,descripcion.ilike.%${searchTerm}%`)
-        .limit(10);
-      setResults((data as DiagnosticoCatalogo[]) || []);
-      setLoading(false);
+      try {
+        const { data } = await baseDatos
+          .from("catalogo_diagnosticos")
+          .select("*")
+          .eq("sistema", sistema)
+          .eq("activo", true)
+          .or(`codigo.ilike.%${searchTerm}%,descripcion.ilike.%${searchTerm}%`)
+          .limit(10);
+        if (vigente) setResults((data as DiagnosticoCatalogo[]) || []);
+      } catch (error) {
+        console.error("Error buscando diagnósticos:", error);
+        if (vigente) setResults([]);
+      } finally {
+        if (vigente) setLoading(false);
+      }
     }, 200);
-    return () => clearTimeout(timer);
+    return () => {
+      vigente = false;
+      clearTimeout(timer);
+    };
   }, [searchTerm, sistema]);
 
   // Click outside
@@ -121,7 +131,7 @@ export const DiagnosisSearch: React.FC<DiagnosisSearchProps> = ({
         <div className="space-y-1.5">
           {diagnoses.map((diag, i) => (
             <div
-              key={`${diag.codigo}-${i}`}
+              key={`${diag.sistema}-${diag.codigo}`}
               className={cn(
                 "flex items-center gap-2 px-3 py-2 rounded-xl border text-sm",
                 i === 0

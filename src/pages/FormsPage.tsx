@@ -41,27 +41,30 @@ const Home = () => {
 
   const loadForms = async () => {
     setLoading(true);
-    const { data, error } = await baseDatos
-      .from("formularios")
-      .select("*")
-      .eq("estado", "activo")
-      .order("created_at", { ascending: false });
+    try {
+      const { data, error } = await baseDatos
+        .from("formularios")
+        .select("*")
+        .eq("estado", "activo")
+        .order("created_at", { ascending: false });
 
-    if (data && !error) {
-      const mapped: Form[] = data.map((f) => ({
-        id: f.id,
-        title: f.titulo,
-        description: f.descripcion || "",
-        questions: (f.preguntas as any[]) || [],
-        createdAt: new Date(f.created_at),
-        updatedAt: new Date(f.updated_at),
-        responseCount: f.respuestas_count || 0,
-        formType: f.tipo || "historia_clinica",
-        designOptions: f.opciones_diseno as unknown as FormDesignOptions | undefined,
-      }));
-      setForms(mapped);
+      if (data && !error) {
+        const mapped: Form[] = data.map((f) => ({
+          id: f.id,
+          title: f.titulo,
+          description: f.descripcion || "",
+          questions: (f.preguntas as any[]) || [],
+          createdAt: new Date(f.created_at),
+          updatedAt: new Date(f.updated_at),
+          responseCount: f.respuestas_count || 0,
+          formType: f.tipo || "historia_clinica",
+          designOptions: f.opciones_diseno as unknown as FormDesignOptions | undefined,
+        }));
+        setForms(mapped);
+      }
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   useEffect(() => {

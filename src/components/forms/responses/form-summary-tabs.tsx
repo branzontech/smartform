@@ -62,7 +62,7 @@ export const FormSummaryTabs = ({
         <div className="space-y-6 animate-fade-in">
           {responses.map((response, index) => (
             <IndividualResponse
-              key={response.recordId ?? index}
+              key={response.recordId ?? response.timestamp}
               response={response}
               index={index}
               formData={formData}

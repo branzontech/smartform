@@ -98,7 +98,10 @@ export const ZoneMap: React.FC<ZoneMapProps> = ({
 
   // Helper: Clear drawing state
   const clearDrawing = useCallback(() => {
-    drawingMarkersRef.current.forEach(m => m.setMap(null));
+    drawingMarkersRef.current.forEach(m => {
+      google.maps.event.clearInstanceListeners(m);
+      m.setMap(null);
+    });
     drawingMarkersRef.current = [];
     drawingPointsRef.current = [];
     if (drawingPolylineRef.current) {
@@ -117,7 +120,10 @@ export const ZoneMap: React.FC<ZoneMapProps> = ({
     
     // Remove last marker
     const lastMarker = drawingMarkersRef.current.pop();
-    if (lastMarker) lastMarker.setMap(null);
+    if (lastMarker) {
+      google.maps.event.clearInstanceListeners(lastMarker);
+      lastMarker.setMap(null);
+    }
     
     // Update polyline
     if (drawingPolylineRef.current) {
@@ -167,10 +173,12 @@ export const ZoneMap: React.FC<ZoneMapProps> = ({
 
     googleMapRef.current = map;
     setIsMapLoaded(true);
+    const polygons = polygonsRef.current;
+    const markers = markersRef.current;
 
     return () => {
-      polygonsRef.current.forEach(p => p.setMap(null));
-      markersRef.current.forEach(m => m.setMap(null));
+      polygons.forEach(p => p.setMap(null));
+      markers.forEach(m => m.setMap(null));
       if (userMarkerRef.current) userMarkerRef.current.setMap(null);
       clearDrawing();
     };
@@ -222,7 +230,7 @@ export const ZoneMap: React.FC<ZoneMapProps> = ({
     map.setOptions({ draggableCursor: 'crosshair' });
 
     // Add click listener for drawing
-    mapClickListenerRef.current = map.addListener('click', (e: google.maps.MapMouseEvent) => {
+    const clickListener = map.addListener('click', (e: google.maps.MapMouseEvent) => {
       if (!e.latLng) return;
       
       const clickLatLng = e.latLng;
@@ -274,10 +282,12 @@ export const ZoneMap: React.FC<ZoneMapProps> = ({
       drawingMarkersRef.current.push(marker);
       updatePolyline();
     });
+    mapClickListenerRef.current = clickListener;
 
     return () => {
-      if (mapClickListenerRef.current) {
-        google.maps.event.removeListener(mapClickListenerRef.current);
+      google.maps.event.removeListener(clickListener);
+      if (mapClickListenerRef.current === clickListener) {
+        mapClickListenerRef.current = null;
       }
     };
   }, [drawingMode, isMapLoaded, isNearStartingPoint, onZoneCreated, clearDrawing, updatePolyline]);
@@ -324,6 +334,22 @@ export const ZoneMap: React.FC<ZoneMapProps> = ({
         markersRef.current.set(`label-${zone.id}`, label);
       }
     });
+
+    const polygons = polygonsRef.current;
+    const markers = markersRef.current;
+    return () => {
+      polygons.forEach(p => {
+        google.maps.event.clearInstanceListeners(p);
+        p.setMap(null);
+      });
+      polygons.clear();
+      markers.forEach((marker, key) => {
+        if (key.startsWith('label-')) {
+          marker.setMap(null);
+          markers.delete(key);
+        }
+      });
+    };
   }, [zones, selectedZone, isMapLoaded, onZoneSelected]);
 
   // Render location markers
@@ -370,6 +396,17 @@ export const ZoneMap: React.FC<ZoneMapProps> = ({
 
       markersRef.current.set(location.id, marker);
     });
+
+    const markers = markersRef.current;
+    return () => {
+      markers.forEach((marker, key) => {
+        if (!key.startsWith('label-')) {
+          google.maps.event.clearInstanceListeners(marker);
+          marker.setMap(null);
+          markers.delete(key);
+        }
+      });
+    };
   }, [locations, isMapLoaded, onLocationSelected]);
 
   // Fit bounds when selected zone changes

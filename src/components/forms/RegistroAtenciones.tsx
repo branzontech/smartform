@@ -348,7 +348,7 @@ export const RegistroAtenciones: React.FC<RegistroAtencionesProps> = ({
     w.document.open();
     w.document.write(html);
     w.document.close();
-    const triggerPrint = () => setTimeout(() => { try { w.focus(); w.print(); } catch {} }, 400);
+    const triggerPrint = () => setTimeout(() => { try { w.focus(); w.print(); } catch { /* la ventana se cerró antes de imprimir: no hay nada que hacer */ } }, 400);
     if (w.document.readyState === 'complete') {
       triggerPrint();
     } else {
@@ -400,7 +400,7 @@ export const RegistroAtenciones: React.FC<RegistroAtencionesProps> = ({
     w.document.open();
     w.document.write(html);
     w.document.close();
-    const triggerPrint = () => setTimeout(() => { try { w.focus(); w.print(); } catch {} }, 400);
+    const triggerPrint = () => setTimeout(() => { try { w.focus(); w.print(); } catch { /* la ventana se cerró antes de imprimir: no hay nada que hacer */ } }, 400);
     if (w.document.readyState === 'complete') {
       triggerPrint();
     } else {

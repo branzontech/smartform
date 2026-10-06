@@ -30,8 +30,10 @@ export const MapPanelDrawer: React.FC<MapPanelDrawerProps> = ({
   // Fetch configured zones
   useEffect(() => {
     if (!isOpen) return;
+    let vigente = true;
     const fetchZones = async () => {
       const { data, error } = await baseDatos.from("zones").select("*");
+      if (!vigente) return;
       if (error) {
         console.error("Error fetching zones:", error);
         return;
@@ -46,6 +48,9 @@ export const MapPanelDrawer: React.FC<MapPanelDrawerProps> = ({
       }
     };
     fetchZones();
+    return () => {
+      vigente = false;
+    };
   }, [isOpen]);
 
   return (

@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Layout } from "@/components/layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -19,7 +19,7 @@ export default function ShiftManagement() {
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
-  const loadShiftData = async () => {
+  const loadShiftData = useCallback(async (isVigente: () => boolean = () => true) => {
     try {
       setLoading(true);
       const month = currentDate.getMonth();
@@ -29,24 +29,28 @@ export default function ShiftManagement() {
         createMonthlyShiftView(month, year),
         getShiftStatistics(month, year)
       ]);
+      if (!isVigente()) return;
       
       setMonthlyView(viewData);
       setStatistics(statsData);
     } catch (error) {
       console.error("Error loading shift data:", error);
+      if (!isVigente()) return;
       toast({
         title: "Error",
         description: "No se pudieron cargar los datos de turnos",
         variant: "destructive",
       });
     } finally {
-      setLoading(false);
+      if (isVigente()) setLoading(false);
     }
-  };
+  }, [currentDate, toast]);
 
   useEffect(() => {
-    loadShiftData();
-  }, [currentDate]);
+    let vigente = true;
+    loadShiftData(() => vigente);
+    return () => { vigente = false; };
+  }, [loadShiftData]);
 
   const navigateMonth = (direction: 'prev' | 'next') => {
     const newDate = new Date(currentDate);
@@ -156,7 +160,7 @@ export default function ShiftManagement() {
         {monthlyView && (
           <MonthlyShiftCalendar 
             monthlyView={monthlyView}
-            onShiftUpdate={loadShiftData}
+            onShiftUpdate={() => loadShiftData()}
           />
         )}
 

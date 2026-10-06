@@ -172,7 +172,7 @@ export const Header = ({ showCreate = true }: HeaderProps) => {
               onClick={() => navigate("/app/home")}
               className="flex items-center hover:opacity-80 transition-opacity cursor-pointer"
             >
-              <img src="/kerhub-logo.png" alt="Ker Hub" className="h-[118px] w-auto" />
+              <img src="/kerhub-logo-color.png" alt="Ker Hub" className="h-7 w-auto" />
             </button>
             <button
               onClick={() => setAppLauncherOpen(true)}

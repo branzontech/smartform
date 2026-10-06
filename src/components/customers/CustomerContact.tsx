@@ -125,8 +125,8 @@ export const CustomerContact = ({ customer }: CustomerContactProps) => {
           <CardContent>
             <div className="flex flex-wrap gap-2">
               {customer.tags && customer.tags.length > 0 ? (
-                customer.tags.map((tag, index) => (
-                  <Badge key={index} variant="secondary" className="flex items-center gap-1 hover:bg-secondary/80">
+                customer.tags.map((tag) => (
+                  <Badge key={tag} variant="secondary" className="flex items-center gap-1 hover:bg-secondary/80">
                     <Tag className="h-3 w-3" />
                     {tag}
                   </Badge>

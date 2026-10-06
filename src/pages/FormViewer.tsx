@@ -92,6 +92,9 @@ const DEFAULT_PANEL_WIDTH = 380;
 const MIN_PANEL_WIDTH = 280;
 const MIN_FORM_WIDTH = 400;
 const AUTOSAVE_INTERVAL = 30_000; // 30 seconds
+const SAVED_STATUS_DURATION_MS = 2000;
+const EMPTY_FORM_DATA: FormData = {};
+const EMPTY_QUESTIONS: QuestionData[] = [];
 
 const FormViewer = () => {
   const { id: formId } = useParams();
@@ -153,7 +156,8 @@ const FormViewer = () => {
   const patientId = queryParams.get("patientId");
   const consultationId = queryParams.get("consultationId");
   const isEmbedded = queryParams.get("embedded") === "true";
-  const extraFormIds = queryParams.get("forms")?.split(',').filter(Boolean) || [];
+  const formsParam = queryParams.get("forms") || '';
+  const extraFormIds = React.useMemo(() => formsParam.split(',').filter(Boolean), [formsParam]);
 
   // Resolve real DB admission UUID (consultationId might be a nanoid from localStorage)
   const isConsultationUUID = consultationId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(consultationId);
@@ -165,6 +169,7 @@ const FormViewer = () => {
       return;
     }
     if (!patientId) return;
+    let vigente = true;
     const fetchActiveAdmission = async () => {
       const { data } = await baseDatos
         .from('admisiones')
@@ -173,25 +178,27 @@ const FormViewer = () => {
         .in('estado', ['en_curso', 'planificada'])
         .order('fecha_inicio', { ascending: false })
         .limit(1);
-      if (data && data.length > 0) {
+      if (vigente && data && data.length > 0) {
         setResolvedAdmisionId(data[0].id);
       }
     };
     fetchActiveAdmission();
+    return () => { vigente = false; };
   }, [patientId, consultationId, isConsultationUUID]);
 
   // Incapacidades for this admission
   const { data: incapacidadesList = [] } = useIncapacidadesByAdmision(resolvedAdmisionId);
   const incapacidadCount = incapacidadesList.filter(i => i.estado === "activa").length;
 
-  // Build ordered list of all form IDs
+  // Build ordered list of all form IDs (keyed by content so equal lists keep the same reference)
+  const dynamicFormIdsKey = dynamicFormIds.join(',');
   const allFormIds = React.useMemo(() => {
     const ids: string[] = [];
     if (formId) ids.push(formId);
     extraFormIds.forEach(id => { if (!ids.includes(id)) ids.push(id); });
-    dynamicFormIds.forEach(id => { if (!ids.includes(id)) ids.push(id); });
+    dynamicFormIdsKey.split(',').filter(Boolean).forEach(id => { if (!ids.includes(id)) ids.push(id); });
     return ids;
-  }, [formId, extraFormIds.join(','), dynamicFormIds.join(',')]);
+  }, [formId, extraFormIds, dynamicFormIdsKey]);
 
   const isMultiForm = allFormIds.length > 1;
 
@@ -301,8 +308,8 @@ const FormViewer = () => {
 
   // Derived state from active form
   const activeEntry = formsMap[activeFormId];
-  const formData = activeEntry?.formData || {};
-  const questions = activeEntry?.questions || [];
+  const formData = activeEntry?.formData || EMPTY_FORM_DATA;
+  const questions = activeEntry?.questions || EMPTY_QUESTIONS;
   const formTitle = activeEntry?.title || "Formulario";
   const formDescription = activeEntry?.description || "";
   const formType = activeEntry?.formType || "historia_clinica";
@@ -440,7 +447,7 @@ const FormViewer = () => {
     }));
 
     return true;
-  }, [formsMap, patientId, consultationId, uiToast]);
+  }, [formsMap, patientId, consultationId, uiToast, resolvedAdmisionId]);
 
   // ── Helper: check if form has no responses ──
   const isFormEmpty = useCallback((fId: string): boolean => {
@@ -458,6 +465,18 @@ const FormViewer = () => {
     });
   }, [formsMap]);
 
+  // ── Show "saved" briefly, then go back to idle ──
+  const markSavedBriefly = useCallback(() => {
+    setSaveStatus('saved');
+    if (saveStatusTimerRef.current) clearTimeout(saveStatusTimerRef.current);
+    saveStatusTimerRef.current = setTimeout(() => setSaveStatus('idle'), SAVED_STATUS_DURATION_MS);
+  }, []);
+
+  // Clear the pending "saved" timer on unmount
+  useEffect(() => () => {
+    if (saveStatusTimerRef.current) clearTimeout(saveStatusTimerRef.current);
+  }, []);
+
   // ── Autosave on tab switch ──
   const handleTabSwitch = useCallback(async (targetFormId: string) => {
     if (targetFormId === activeFormId) return;
@@ -471,13 +490,11 @@ const FormViewer = () => {
         uiToast({ title: "Error al guardar", description: `No se pudo guardar "${currentEntry.title}". Corrige los errores antes de cambiar de formulario.`, variant: "destructive" });
         return;
       }
-      setSaveStatus('saved');
-      if (saveStatusTimerRef.current) clearTimeout(saveStatusTimerRef.current);
-      saveStatusTimerRef.current = setTimeout(() => setSaveStatus('idle'), 2000);
+      markSavedBriefly();
     }
 
     setActiveFormId(targetFormId);
-  }, [activeFormId, formsMap, saveFormToDb, uiToast, isFormEmpty]);
+  }, [activeFormId, formsMap, saveFormToDb, uiToast, isFormEmpty, markSavedBriefly]);
 
   // ── 30s interval autosave ──
   useEffect(() => {
@@ -489,18 +506,17 @@ const FormViewer = () => {
         if (entry?.isDirty && !isFormEmpty(fId)) {
           setSaveStatus('saving');
           await saveFormToDb(fId);
-          setSaveStatus('saved');
-          if (saveStatusTimerRef.current) clearTimeout(saveStatusTimerRef.current);
-          saveStatusTimerRef.current = setTimeout(() => setSaveStatus('idle'), 2000);
+          markSavedBriefly();
         }
       }
     }, AUTOSAVE_INTERVAL);
 
     return () => clearInterval(interval);
-  }, [allFormIds, formsMap, saveFormToDb, isFormEmpty]);
+  }, [allFormIds, formsMap, saveFormToDb, isFormEmpty, markSavedBriefly]);
 
   // ── Load all forms ──
   useEffect(() => {
+    let vigente = true;
     const loadAllForms = async () => {
       if (allFormIds.length === 0) return;
       setLoading(true);
@@ -511,6 +527,7 @@ const FormViewer = () => {
           baseDatos.from("configuracion_encabezado" as any).select("*").limit(1).single(),
           ...allFormIds.map(id => fetchFormById(id)),
         ]);
+        if (!vigente) return;
 
         if (headerResult.data) {
           setHeaderConfig(headerResult.data);
@@ -552,14 +569,15 @@ const FormViewer = () => {
         draftRestoredRef.current = true;
       } catch (error) {
         console.error('Error loading forms:', error);
-        setError("Error al cargar el formulario");
+        if (vigente) setError("Error al cargar el formulario");
       } finally {
-        setLoading(false);
+        if (vigente) setLoading(false);
       }
     };
 
     loadAllForms();
-  }, [allFormIds.join(','), patientId]);
+    return () => { vigente = false; };
+  }, [allFormIds, patientId, consultationId]);
 
   const dynamicSchema = createDynamicSchema(questions);
   
@@ -573,6 +591,7 @@ const FormViewer = () => {
     if (activeEntry) {
       form.reset(activeEntry.formData);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- solo al cambiar de pestaña; con activeEntry se reiniciaría el formulario en cada tecla
   }, [activeFormId]);
 
   const handleInputChange = (id: string, value: any) => {
@@ -927,7 +946,7 @@ const FormViewer = () => {
 
   const getFilledFieldsSummary = () => {
     if (!pendingValues) return [];
-    const summary: { label: string; value: string; isEmpty: boolean }[] = [];
+    const summary: { id: string; label: string; value: string; isEmpty: boolean }[] = [];
     
     questions.forEach(q => {
       if (q.type === "section") return;
@@ -947,7 +966,7 @@ const FormViewer = () => {
         displayValue = String(val).length > 80 ? String(val).substring(0, 80) + "..." : String(val);
       }
       
-      summary.push({ label: q.title, value: displayValue, isEmpty });
+      summary.push({ id: q.id, label: q.title, value: displayValue, isEmpty });
     });
     
     return summary;
@@ -1777,7 +1796,7 @@ const ConfirmationModal = ({
   onOpenChange: (open: boolean) => void;
   onConfirm: () => void;
   formTitle: string;
-  getFilledFieldsSummary: () => { label: string; value: string; isEmpty: boolean }[];
+  getFilledFieldsSummary: () => { id: string; label: string; value: string; isEmpty: boolean }[];
 }) => (
   <AlertDialog open={open} onOpenChange={onOpenChange}>
     <AlertDialogContent className="max-w-lg max-h-[80vh] overflow-hidden flex flex-col rounded-2xl">
@@ -1803,8 +1822,8 @@ const ConfirmationModal = ({
         </div>
 
         <div className="space-y-1.5">
-          {getFilledFieldsSummary().map((field, i) => (
-            <div key={i} className="flex items-start gap-2 p-2.5 rounded-lg border border-border/30 bg-card/50">
+          {getFilledFieldsSummary().map((field) => (
+            <div key={field.id} className="flex items-start gap-2 p-2.5 rounded-lg border border-border/30 bg-card/50">
               <div className="flex-1 min-w-0">
                 <p className="text-xs font-medium text-muted-foreground">{field.label}</p>
                 <p className={`text-sm mt-0.5 ${field.isEmpty ? "text-destructive italic" : "text-foreground"}`}>

@@ -376,6 +376,57 @@ const AppointmentCard = ({
   );
 };
 
+// Componente para renderizar el slot de tiempo con cita o disponible
+interface TimeSlotCardProps {
+  time: string;
+  appointment?: Appointment;
+  onView: (id: string) => void;
+  onCreate: () => void;
+}
+
+const TimeSlotCard = ({ appointment, onView, onCreate }: TimeSlotCardProps) => {
+  if (appointment) {
+    const statusColors = {
+      'Programada': 'bg-green-50 border-l-4 border-l-green-500',
+      'Pendiente': 'bg-yellow-50 border-l-4 border-l-yellow-500',
+      'Cancelada': 'bg-red-50 border-l-4 border-l-red-500',
+      'Completada': 'bg-blue-50 border-l-4 border-l-blue-500',
+      'Reprogramada': 'bg-purple-50 border-l-4 border-l-purple-500'
+    };
+    
+    return (
+      <div className={`p-4 rounded-lg ${statusColors[appointment.status]} cursor-pointer hover:shadow-md transition-shadow`}
+           onClick={() => onView(appointment.id)}>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm font-medium">
+              {appointment.patientName.charAt(0)}
+            </div>
+            <div>
+              <h4 className="font-medium text-gray-900">{appointment.patientName}</h4>
+              <p className="text-sm text-gray-600 flex items-center">
+                <Clock size={12} className="mr-1" />
+                {appointment.duration} min • {appointment.doctorName || 'Sin médico asignado'}
+              </p>
+            </div>
+          </div>
+          <AppointmentStatusBadge status={appointment.status} />
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="p-4 rounded-lg border-2 border-dashed border-gray-200 hover:border-purple-300 cursor-pointer transition-colors group"
+         onClick={onCreate}>
+      <div className="flex items-center justify-center text-gray-400 group-hover:text-purple-500">
+        <Plus size={16} className="mr-2" />
+        <span className="text-sm">Slot disponible</span>
+      </div>
+    </div>
+  );
+};
+
 const AppointmentList = () => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
@@ -617,50 +668,6 @@ const AppointmentList = () => {
     return acc;
   }, {} as Record<string, Appointment[]>);
 
-  // Componente para renderizar el slot de tiempo con cita o disponible
-  const TimeSlotCard = ({ time, appointment }: { time: string, appointment?: Appointment }) => {
-    if (appointment) {
-      const statusColors = {
-        'Programada': 'bg-green-50 border-l-4 border-l-green-500',
-        'Pendiente': 'bg-yellow-50 border-l-4 border-l-yellow-500',
-        'Cancelada': 'bg-red-50 border-l-4 border-l-red-500',
-        'Completada': 'bg-blue-50 border-l-4 border-l-blue-500',
-        'Reprogramada': 'bg-purple-50 border-l-4 border-l-purple-500'
-      };
-      
-      return (
-        <div className={`p-4 rounded-lg ${statusColors[appointment.status]} cursor-pointer hover:shadow-md transition-shadow`}
-             onClick={() => handleViewAppointment(appointment.id)}>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm font-medium">
-                {appointment.patientName.charAt(0)}
-              </div>
-              <div>
-                <h4 className="font-medium text-gray-900">{appointment.patientName}</h4>
-                <p className="text-sm text-gray-600 flex items-center">
-                  <Clock size={12} className="mr-1" />
-                  {appointment.duration} min • {appointment.doctorName || 'Sin médico asignado'}
-                </p>
-              </div>
-            </div>
-            <AppointmentStatusBadge status={appointment.status} />
-          </div>
-        </div>
-      );
-    }
-
-    return (
-      <div className="p-4 rounded-lg border-2 border-dashed border-gray-200 hover:border-purple-300 cursor-pointer transition-colors group"
-           onClick={handleCreateAppointment}>
-        <div className="flex items-center justify-center text-gray-400 group-hover:text-purple-500">
-          <Plus size={16} className="mr-2" />
-          <span className="text-sm">Slot disponible</span>
-        </div>
-      </div>
-    );
-  };
-
   const renderDayScheduleView = () => {
     const dayAppointments = filteredAppointments.filter(app => isSameDay(app.date, selectedDate));
     
@@ -680,7 +687,7 @@ const AppointmentList = () => {
                 {time}
               </div>
               <div className="col-span-10">
-                <TimeSlotCard time={time} appointment={appointment} />
+                <TimeSlotCard time={time} appointment={appointment} onView={handleViewAppointment} onCreate={handleCreateAppointment} />
               </div>
             </div>
           );
@@ -940,9 +947,9 @@ const AppointmentList = () => {
                 <div className="p-6">
                   {viewMode === 'week' && (
                     <div className={`grid grid-cols-7 gap-2 mb-6 ${isMobile ? 'overflow-x-auto' : ''}`}>
-                      {weekDays.map((day, i) => (
+                      {weekDays.map((day) => (
                         <Button
-                          key={i}
+                          key={day.toISOString()}
                           variant="ghost"
                           className={`text-xs h-auto py-3 rounded-xl transition-all ${
                             isSameDay(day, selectedDate) 

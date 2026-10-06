@@ -48,28 +48,23 @@ export const AppointmentWizard: React.FC<AppointmentWizardProps> = ({
   const [isMapOpen, setIsMapOpen] = useState(false);
   const [apiKey, setApiKey] = useState("");
 
-  // Fetch Google Maps API key
+  // Fetch Google Maps API key (se guarda solo en memoria, nunca en web storage)
   useEffect(() => {
+    let vigente = true;
     const fetchApiKey = async () => {
-      // Try localStorage first
-      const cachedKey = localStorage.getItem("google_maps_api_key");
-      if (cachedKey) {
-        setApiKey(cachedKey);
-        return;
-      }
-
-      // Try edge function
       try {
-        const { data, error } = await baseDatos.functions.invoke("get-maps-config");
-        if (data?.apiKey) {
+        const { data } = await baseDatos.functions.invoke("get-maps-config");
+        if (vigente && data?.apiKey) {
           setApiKey(data.apiKey);
-          localStorage.setItem("google_maps_api_key", data.apiKey);
         }
       } catch (e) {
         console.error("Error fetching maps config:", e);
       }
     };
     fetchApiKey();
+    return () => {
+      vigente = false;
+    };
   }, []);
 
   const goToStep = (step: number) => {
@@ -267,10 +262,10 @@ export const AppointmentWizard: React.FC<AppointmentWizardProps> = ({
                       {!isLast && (
                         <div className="flex-1 mx-3 h-0.5 bg-muted rounded-full overflow-hidden">
                           <motion.div 
-                            className="h-full bg-primary rounded-full"
-                            initial={{ width: "0%" }}
+                            className="h-full w-full origin-left bg-primary rounded-full"
+                            initial={{ scaleX: 0 }}
                             animate={{ 
-                              width: isCompleted ? "100%" : "0%" 
+                              scaleX: isCompleted ? 1 : 0 
                             }}
                             transition={{ duration: 0.4, ease: "easeOut" }}
                           />

@@ -5,12 +5,17 @@ import { ContentComponentProps } from "../types";
 import { Option } from "../controls/option";
 import { AddOptionButton } from "../controls/add-option-button";
 
+// Identificadores locales y estables para las claves de las opciones (las opciones son textos editables y pueden repetirse)
+let contadorOpciones = 0;
+const nuevoIdOpcion = () => `opcion-${++contadorOpciones}`;
+
 export const Dropdown: React.FC<ContentComponentProps> = ({ 
   question, 
   onUpdate, 
   readOnly 
 }) => {
   const [options, setOptions] = useState(question.options || ["", ""]);
+  const [optionIds, setOptionIds] = useState<string[]>(() => options.map(() => nuevoIdOpcion()));
   const [focusIndex, setFocusIndex] = useState<number | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -33,6 +38,7 @@ export const Dropdown: React.FC<ContentComponentProps> = ({
     const newOptions = [...options];
     newOptions.splice(index + 1, 0, "");
     setOptions(newOptions);
+    setOptionIds((prev) => [...prev.slice(0, index + 1), nuevoIdOpcion(), ...prev.slice(index + 1)]);
     onUpdate({ options: newOptions });
     setFocusIndex(index + 1);
   };
@@ -40,6 +46,7 @@ export const Dropdown: React.FC<ContentComponentProps> = ({
   const addOption = () => {
     const newOptions = [...options, ""];
     setOptions(newOptions);
+    setOptionIds((prev) => [...prev, nuevoIdOpcion()]);
     onUpdate({ options: newOptions });
     setFocusIndex(newOptions.length - 1);
   };
@@ -48,6 +55,7 @@ export const Dropdown: React.FC<ContentComponentProps> = ({
     if (options.length <= 2) return;
     const newOptions = options.filter((_, i) => i !== index);
     setOptions(newOptions);
+    setOptionIds((prev) => prev.filter((_, i) => i !== index));
     onUpdate({ options: newOptions });
   };
 
@@ -59,7 +67,7 @@ export const Dropdown: React.FC<ContentComponentProps> = ({
       <select disabled className="w-full border border-gray-300 rounded-md p-2 bg-transparent">
         <option value="" disabled selected>Seleccionar</option>
         {options.map((option, index) => (
-          option ? <option key={index} value={option}>{option}</option> : null
+          option ? <option key={optionIds[index]} value={option}>{option}</option> : null
         ))}
       </select>
     );
@@ -75,7 +83,7 @@ export const Dropdown: React.FC<ContentComponentProps> = ({
       >
         {options.map((option, index) => (
           <Option
-            key={index}
+            key={optionIds[index]}
             value={option}
             onChange={(value) => handleOptionChange(index, value)}
             onRemove={() => removeOption(index)}

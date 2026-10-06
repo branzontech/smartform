@@ -238,8 +238,8 @@ export const TestResultsSection = () => {
                     Parámetros Analizados
                   </h4>
                   <div className="grid grid-cols-1 gap-3">
-                    {result.results.map((param, index) => (
-                      <div key={index} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border">
+                    {result.results.map((param) => (
+                      <div key={param.parameter} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border">
                         <div className="flex items-center gap-3">
                           {getParameterStatusIcon(param.status)}
                           <div>
@@ -270,8 +270,8 @@ export const TestResultsSection = () => {
                     Archivos Adjuntos
                   </h4>
                   <div className="space-y-2">
-                    {result.files.map((file, index) => (
-                      <div key={index} className="flex items-center justify-between p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-700">
+                    {result.files.map((file) => (
+                      <div key={file.name} className="flex items-center justify-between p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-700">
                         <div className="flex items-center gap-3">
                           <FileText className="h-5 w-5 text-blue-600" />
                           <span className="font-medium text-blue-900 dark:text-blue-100">

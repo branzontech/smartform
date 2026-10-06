@@ -90,7 +90,7 @@ const WorkflowCanvas: React.FC<WorkflowCanvasProps> = ({
         onConnectionsChange(newConnections);
       }
     },
-    [edges, onConnectionsChange, readOnly]
+    [edges, setEdges, onConnectionsChange, readOnly]
   );
 
   // Manejar cambios en la posición de los nodos

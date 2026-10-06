@@ -323,7 +323,7 @@ const CatalogoProductosPage = () => {
       const found = PAISES_REG.find((p) => p.value === regPais);
       if (found) form.setValue("reg_entidad_regulatoria", found.entidad);
     }
-  }, [regPais]);
+  }, [regPais, form]);
 
   // ── Render ─────────────────────────────────────────
   return (
@@ -727,7 +727,7 @@ const CatalogoProductosPage = () => {
                           <FieldInput label="CUM (Código Único de Medicamentos)">
                             <Input
                               value={(form.watch("reg_datos") as any)?.cum || ""}
-                              onChange={(e) => form.setValue("reg_datos", { ...form.watch("reg_datos"), cum: e.target.value })}
+                              onChange={(e) => form.setValue("reg_datos", { ...form.getValues("reg_datos"), cum: e.target.value })}
                               placeholder="123456"
                               className="input-bottom"
                             />
@@ -735,7 +735,7 @@ const CatalogoProductosPage = () => {
                           <FieldInput label="Expediente INVIMA">
                             <Input
                               value={(form.watch("reg_datos") as any)?.expediente_invima || ""}
-                              onChange={(e) => form.setValue("reg_datos", { ...form.watch("reg_datos"), expediente_invima: e.target.value })}
+                              onChange={(e) => form.setValue("reg_datos", { ...form.getValues("reg_datos"), expediente_invima: e.target.value })}
                               placeholder="SD2024-001"
                               className="input-bottom"
                             />
@@ -746,7 +746,7 @@ const CatalogoProductosPage = () => {
                         <FieldInput label="Clave COFEPRIS">
                           <Input
                             value={(form.watch("reg_datos") as any)?.clave_cofepris || ""}
-                            onChange={(e) => form.setValue("reg_datos", { ...form.watch("reg_datos"), clave_cofepris: e.target.value })}
+                            onChange={(e) => form.setValue("reg_datos", { ...form.getValues("reg_datos"), clave_cofepris: e.target.value })}
                             placeholder="010.000.5267.00"
                             className="input-bottom"
                           />
@@ -756,7 +756,7 @@ const CatalogoProductosPage = () => {
                         <FieldInput label="Notificación sanitaria ARCSA">
                           <Input
                             value={(form.watch("reg_datos") as any)?.numero_notificacion_arcsa || ""}
-                            onChange={(e) => form.setValue("reg_datos", { ...form.watch("reg_datos"), numero_notificacion_arcsa: e.target.value })}
+                            onChange={(e) => form.setValue("reg_datos", { ...form.getValues("reg_datos"), numero_notificacion_arcsa: e.target.value })}
                             placeholder="NSA-EC-2024-001"
                             className="input-bottom"
                           />
@@ -766,7 +766,7 @@ const CatalogoProductosPage = () => {
                         <FieldInput label="Registro sanitario DIGEMID">
                           <Input
                             value={(form.watch("reg_datos") as any)?.registro_digemid || ""}
-                            onChange={(e) => form.setValue("reg_datos", { ...form.watch("reg_datos"), registro_digemid: e.target.value })}
+                            onChange={(e) => form.setValue("reg_datos", { ...form.getValues("reg_datos"), registro_digemid: e.target.value })}
                             placeholder="N-12345"
                             className="input-bottom"
                           />
@@ -776,7 +776,7 @@ const CatalogoProductosPage = () => {
                         <FieldInput label="Certificado ANMAT">
                           <Input
                             value={(form.watch("reg_datos") as any)?.certificado_anmat || ""}
-                            onChange={(e) => form.setValue("reg_datos", { ...form.watch("reg_datos"), certificado_anmat: e.target.value })}
+                            onChange={(e) => form.setValue("reg_datos", { ...form.getValues("reg_datos"), certificado_anmat: e.target.value })}
                             placeholder="PM-1234-5"
                             className="input-bottom"
                           />

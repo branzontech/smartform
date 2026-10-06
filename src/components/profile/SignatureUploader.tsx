@@ -24,20 +24,23 @@ export const SignatureUploader: React.FC = () => {
     let cancelled = false;
     const load = async () => {
       setLoading(true);
-      const { data } = await baseDatos
-        .from('profiles')
-        .select('signature_url, full_name, specialty, license_number')
-        .eq('user_id', user.id)
-        .maybeSingle();
-      if (!cancelled && data) {
-        setSignatureUrl(data.signature_url || null);
-        setDoctorMeta({
-          full_name: data.full_name || undefined,
-          specialty: data.specialty || undefined,
-          license_number: data.license_number || undefined,
-        });
+      try {
+        const { data } = await baseDatos
+          .from('profiles')
+          .select('signature_url, full_name, specialty, license_number')
+          .eq('user_id', user.id)
+          .maybeSingle();
+        if (!cancelled && data) {
+          setSignatureUrl(data.signature_url || null);
+          setDoctorMeta({
+            full_name: data.full_name || undefined,
+            specialty: data.specialty || undefined,
+            license_number: data.license_number || undefined,
+          });
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
       }
-      if (!cancelled) setLoading(false);
     };
     load();
     return () => { cancelled = true; };

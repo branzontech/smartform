@@ -27,85 +27,98 @@ const FormResponses = () => {
 
   useEffect(() => {
     if (!id) return;
+    let vigente = true;
     const load = async () => {
       setLoading(true);
-      // Load form metadata
-      const { data: formRow, error: formErr } = await baseDatos
-        .from("formularios")
-        .select("*")
-        .eq("id", id)
-        .single();
+      try {
+        // Load form metadata
+        const { data: formRow, error: formErr } = await baseDatos
+          .from("formularios")
+          .select("*")
+          .eq("id", id)
+          .single();
+        if (!vigente) return;
 
-      if (!formRow || formErr) {
-        toast({ title: "Error", description: "El formulario no existe", variant: "destructive" });
-        navigate("/");
-        return;
-      }
+        if (!formRow || formErr) {
+          toast({ title: "Error", description: "El formulario no existe", variant: "destructive" });
+          navigate("/");
+          return;
+        }
 
-      setFormData({
-        id: formRow.id,
-        title: formRow.titulo,
-        description: formRow.descripcion || "",
-        questions: (formRow.preguntas as any[]) || [],
-        createdAt: new Date(formRow.created_at),
-        updatedAt: new Date(formRow.updated_at),
-        responseCount: formRow.respuestas_count || 0,
-        formType: (formRow.tipo as "forms" | "formato") || "forms",
-      });
+        setFormData({
+          id: formRow.id,
+          title: formRow.titulo,
+          description: formRow.descripcion || "",
+          questions: (formRow.preguntas as any[]) || [],
+          createdAt: new Date(formRow.created_at),
+          updatedAt: new Date(formRow.updated_at),
+          responseCount: formRow.respuestas_count || 0,
+          formType: (formRow.tipo as "forms" | "formato") || "forms",
+        });
 
-      // Load responses (incluye anuladas/superseded para preservar contexto clínico)
-      const { data: respRows } = await baseDatos
-        .from("respuestas_formularios")
-        .select("*")
-        .eq("formulario_id", id)
-        .order("fecha_registro", { ascending: false });
+        // Load responses (incluye anuladas/superseded para preservar contexto clínico)
+        const { data: respRows } = await baseDatos
+          .from("respuestas_formularios")
+          .select("*")
+          .eq("formulario_id", id)
+          .order("fecha_registro", { ascending: false });
+        if (!vigente) return;
 
-      const respRowsArr = (respRows ?? []) as any[];
-      const recordIds = respRowsArr.map((r) => r.id);
+        const respRowsArr = (respRows ?? []) as any[];
+        const recordIds = respRowsArr.map((r) => r.id);
 
-      // Cargar último provenance por registro (para mostrar "anulado por X el Y")
-      const provByRecord: Record<
-        string,
-        { activityType: any; agentNombreCompleto: string; recordedAt: string }
-      > = {};
-      if (recordIds.length > 0) {
-        const { data: provRows } = await baseDatos
-          .from("provenance_clinico")
-          .select(
-            "target_record_id, activity_type, agent_nombre_completo, recorded_at"
-          )
-          .eq("target_table", "respuestas_formularios")
-          .in("target_record_id", recordIds)
-          .order("recorded_at", { ascending: false });
+        // Cargar último provenance por registro (para mostrar "anulado por X el Y")
+        const provByRecord: Record<
+          string,
+          { activityType: any; agentNombreCompleto: string; recordedAt: string }
+        > = {};
+        if (recordIds.length > 0) {
+          const { data: provRows } = await baseDatos
+            .from("provenance_clinico")
+            .select(
+              "target_record_id, activity_type, agent_nombre_completo, recorded_at"
+            )
+            .eq("target_table", "respuestas_formularios")
+            .in("target_record_id", recordIds)
+            .order("recorded_at", { ascending: false });
+          if (!vigente) return;
 
-        for (const p of (provRows ?? []) as any[]) {
-          if (!provByRecord[p.target_record_id]) {
-            provByRecord[p.target_record_id] = {
-              activityType: p.activity_type,
-              agentNombreCompleto: p.agent_nombre_completo,
-              recordedAt: p.recorded_at,
-            };
+          for (const p of (provRows ?? []) as any[]) {
+            if (!provByRecord[p.target_record_id]) {
+              provByRecord[p.target_record_id] = {
+                activityType: p.activity_type,
+                agentNombreCompleto: p.agent_nombre_completo,
+                recordedAt: p.recorded_at,
+              };
+            }
           }
         }
-      }
 
-      const mapped: FormResponse[] = respRowsArr.map((r) => ({
-        timestamp: r.fecha_registro,
-        recordId: r.id,
-        estadoRegistro: r.estado_registro ?? "active",
-        supersedes: r.supersedes ?? null,
-        supersededBy: r.superseded_by ?? null,
-        lastCorrection: provByRecord[r.id] ?? null,
-        data: {
-          ...r.datos_respuesta,
-          _patientId: r.paciente_id,
-          _consultationId: r.admision_id,
-        },
-      }));
-      setResponses(mapped);
-      setLoading(false);
+        const mapped: FormResponse[] = respRowsArr.map((r) => ({
+          timestamp: r.fecha_registro,
+          recordId: r.id,
+          estadoRegistro: r.estado_registro ?? "active",
+          supersedes: r.supersedes ?? null,
+          supersededBy: r.superseded_by ?? null,
+          lastCorrection: provByRecord[r.id] ?? null,
+          data: {
+            ...r.datos_respuesta,
+            _patientId: r.paciente_id,
+            _consultationId: r.admision_id,
+          },
+        }));
+        setResponses(mapped);
+      } catch (error) {
+        console.error("Error cargando respuestas del formulario:", error);
+        if (vigente) {
+          toast({ title: "Error", description: "No se pudieron cargar las respuestas", variant: "destructive" });
+        }
+      } finally {
+        if (vigente) setLoading(false);
+      }
     };
     load();
+    return () => { vigente = false; };
   }, [id, navigate, toast, reloadKey]);
 
   const responsesById = useMemo(() => {

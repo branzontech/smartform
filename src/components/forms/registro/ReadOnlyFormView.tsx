@@ -88,13 +88,13 @@ const ValueRenderer: React.FC<{ question: any; value: any; data: Record<string, 
         </div>
       );
 
-    case 'checkbox':
+    case 'checkbox': {
       if (!value || (Array.isArray(value) && value.length === 0)) return empty;
       const items = Array.isArray(value) ? value : [value];
       return (
         <div className="space-y-1">
-          {items.map((item: string, i: number) => (
-            <div key={i} className="flex items-center gap-2">
+          {items.map((item: string) => (
+            <div key={item} className="flex items-center gap-2">
               <div className="w-3.5 h-3.5 rounded-sm border border-primary bg-primary/10 flex items-center justify-center">
                 <svg className="w-2.5 h-2.5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
@@ -105,6 +105,7 @@ const ValueRenderer: React.FC<{ question: any; value: any; data: Record<string, 
           ))}
         </div>
       );
+    }
 
     case 'vitals':
       if (question.vitalType === 'TA') {
@@ -130,7 +131,7 @@ const ValueRenderer: React.FC<{ question: any; value: any; data: Record<string, 
       if (!value && value !== 0) return empty;
       return <p>{String(value)} {question.units || ''}</p>;
 
-    case 'clinical':
+    case 'clinical': {
       const clinVal = typeof value === 'object' && value ? value : {
         title: data[`${question.id}_title`],
         detail: data[`${question.id}_detail`],
@@ -142,6 +143,7 @@ const ValueRenderer: React.FC<{ question: any; value: any; data: Record<string, 
           {clinVal.detail && <p className="text-muted-foreground">{clinVal.detail}</p>}
         </div>
       );
+    }
 
     case 'multifield':
       if (typeof value === 'object' && value && !Array.isArray(value)) {

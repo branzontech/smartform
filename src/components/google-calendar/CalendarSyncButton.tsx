@@ -27,7 +27,9 @@ export const CalendarSyncButton = ({
   className = ""
 }: CalendarSyncButtonProps) => {
   const [isSyncing, setIsSyncing] = useState(false);
-  const [isSynced, setIsSynced] = useState(!!eventId);
+  // null = follow the eventId prop; a boolean = result of the last local sync action
+  const [syncedOverride, setIsSynced] = useState<boolean | null>(null);
+  const isSynced = syncedOverride ?? !!eventId;
   const [isGoogleConnected, setIsGoogleConnected] = useState(false);
 
   // Verificar si el usuario está conectado a Google

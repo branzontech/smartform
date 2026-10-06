@@ -70,7 +70,7 @@ export const ConsultationsStatusChart = ({ stats, expanded = false }: Consultati
             dataKey="value"
           >
             {data.map((entry, index) => (
-              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+              <Cell key={`cell-${entry.name}`} fill={COLORS[index % COLORS.length]} />
             ))}
           </Pie>
           <Tooltip formatter={(value) => [`${value} consultas`, data[0].name]} />
@@ -107,7 +107,7 @@ export const ConsultationsStatusChart = ({ stats, expanded = false }: Consultati
                 dataKey="value"
               >
                 {data.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  <Cell key={`cell-${entry.name}`} fill={COLORS[index % COLORS.length]} />
                 ))}
               </Pie>
               <Tooltip />

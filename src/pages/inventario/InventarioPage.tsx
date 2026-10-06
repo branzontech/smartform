@@ -429,7 +429,7 @@ const InventarioPage: React.FC = () => {
       {alerts.data && alerts.data.length > 0 && (
         <div className="space-y-1.5">
           <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Alertas</p>
-          {alerts.data.map((a, i) => <AlertRow key={i} alert={a} />)}
+          {alerts.data.map((a) => <AlertRow key={`${a.type}-${a.message}`} alert={a} />)}
         </div>
       )}
 

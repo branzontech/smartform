@@ -45,6 +45,19 @@ const slideVariants = {
   })
 };
 
+// Patient summary info row
+const InfoRow = ({ icon: Icon, label, value }: { icon: React.ElementType; label: string; value?: string | null }) => (
+  <div className="flex items-center gap-2.5 py-1">
+    <Icon className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+    <div className="min-w-0 flex-1">
+      <p className="text-[11px] text-muted-foreground leading-none mb-0.5">{label}</p>
+      <p className={cn("text-sm", !value && "text-muted-foreground/60 italic")}>
+        {value || "—"}
+      </p>
+    </div>
+  </div>
+);
+
 const NewConsultation = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -108,28 +121,37 @@ const NewConsultation = () => {
   useEffect(() => {
     if (!patientSearchTerm || patientSearchTerm.length < 2) {
       setSearchResults([]);
+      setIsSearching(false);
       return;
     }
 
+    let vigente = true;
     const timer = setTimeout(async () => {
       setIsSearching(true);
-      const { data, error } = await baseDatos
-        .from("pacientes")
-        .select("*")
-        .or(`numero_documento.ilike.%${patientSearchTerm}%,nombres.ilike.%${patientSearchTerm}%,apellidos.ilike.%${patientSearchTerm}%`)
-        .limit(20);
+      try {
+        const { data, error } = await baseDatos
+          .from("pacientes")
+          .select("*")
+          .or(`numero_documento.ilike.%${patientSearchTerm}%,nombres.ilike.%${patientSearchTerm}%,apellidos.ilike.%${patientSearchTerm}%`)
+          .limit(20);
 
-      if (data && !error) {
-        setSearchResults(data);
+        if (vigente && data && !error) {
+          setSearchResults(data);
+        }
+      } finally {
+        if (vigente) setIsSearching(false);
       }
-      setIsSearching(false);
     }, 300);
 
-    return () => clearTimeout(timer);
+    return () => {
+      vigente = false;
+      clearTimeout(timer);
+    };
   }, [patientSearchTerm]);
 
   // Load preselected patient
   useEffect(() => {
+    let vigente = true;
     if (preselectedPatientId && !selectedPatientData) {
       const loadPatient = async () => {
         const { data } = await baseDatos
@@ -137,6 +159,7 @@ const NewConsultation = () => {
           .select("*")
           .eq("id", preselectedPatientId)
           .single();
+        if (!vigente) return;
         if (data) {
           setSelectedPatientData(data);
           const { data: admData } = await baseDatos
@@ -145,15 +168,20 @@ const NewConsultation = () => {
             .eq("paciente_id", preselectedPatientId)
             .order("fecha_inicio", { ascending: false })
             .limit(10);
-          setPatientAdmissions(admData || []);
+          if (vigente) setPatientAdmissions(admData || []);
         }
       };
       loadPatient();
     }
+    return () => {
+      vigente = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- solo se carga al cambiar el paciente preseleccionado; selectedPatientData actúa como guarda y no debe relanzar la carga
   }, [preselectedPatientId]);
 
   // Load forms from database
   useEffect(() => {
+    let vigente = true;
     const loadForms = async () => {
       const { data, error } = await baseDatos
         .from("formularios")
@@ -161,6 +189,7 @@ const NewConsultation = () => {
         .eq("estado", "activo")
         .order("created_at", { ascending: false });
 
+      if (!vigente) return;
       if (data && !error) {
         const mapped = data.map((f: any) => ({
           id: f.id,
@@ -188,6 +217,10 @@ const NewConsultation = () => {
       setLoading(false);
     };
     loadForms();
+    return () => {
+      vigente = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- preselectedFormIds se recrea en cada render desde la URL; añadirlo relanzaría la carga en bucle
   }, [selectedPatientId]);
 
   const handleSelectPatient = async (dbPatient: any) => {
@@ -339,19 +372,6 @@ const NewConsultation = () => {
     );
   };
 
-  // Patient summary info row
-  const InfoRow = ({ icon: Icon, label, value }: { icon: React.ElementType; label: string; value?: string | null }) => (
-    <div className="flex items-center gap-2.5 py-1">
-      <Icon className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-      <div className="min-w-0 flex-1">
-        <p className="text-[11px] text-muted-foreground leading-none mb-0.5">{label}</p>
-        <p className={cn("text-sm", !value && "text-muted-foreground/60 italic")}>
-          {value || "—"}
-        </p>
-      </div>
-    </div>
-  );
-
   return (
     <div className="h-full flex flex-col overflow-hidden bg-gradient-to-br from-background via-background to-muted/20">
       {/* Stepper - matching AppointmentWizard style */}
@@ -413,10 +433,10 @@ const NewConsultation = () => {
 
                     {!isLast && (
                       <div className="flex-1 mx-3 h-0.5 bg-muted rounded-full overflow-hidden">
-                        <motion.div 
-                          className="h-full bg-primary rounded-full"
-                          initial={{ width: "0%" }}
-                          animate={{ width: isCompleted ? "100%" : "0%" }}
+                        <motion.div
+                          className="h-full w-full bg-primary rounded-full origin-left"
+                          initial={{ scaleX: 0 }}
+                          animate={{ scaleX: isCompleted ? 1 : 0 }}
                           transition={{ duration: 0.4, ease: "easeOut" }}
                         />
                       </div>

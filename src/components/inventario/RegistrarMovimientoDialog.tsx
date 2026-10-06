@@ -113,7 +113,7 @@ export const RegistrarMovimientoDialog: React.FC<Props> = ({ open, onOpenChange 
       setProductSearch('');
       setProductResults([]);
     }
-  }, [open]);
+  }, [open, form]);
 
   // Reset lote fields when tipo changes
   useEffect(() => {
@@ -123,7 +123,7 @@ export const RegistrarMovimientoDialog: React.FC<Props> = ({ open, onOpenChange 
     form.setValue('fecha_fabricacion', null);
     form.setValue('fecha_vencimiento', null);
     form.setValue('numero_serie', '');
-  }, [tipoMov]);
+  }, [tipoMov, isEntrada, form]);
 
   // Sedes
   const sedes = useQuery({

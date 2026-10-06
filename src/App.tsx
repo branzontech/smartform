@@ -11,6 +11,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { Layout } from "@/components/layout";
 import { HelmetProvider } from "react-helmet-async";
+import { MotionConfig } from "framer-motion";
 
 import Login from "./pages/auth/Login";
 import ForgotPassword from "./pages/auth/ForgotPassword";
@@ -46,6 +47,8 @@ const queryClient = new QueryClient();
 function App() {
   return (
     <HelmetProvider>
+      {/* Respeta «reducir movimiento» del sistema en todas las animaciones (WCAG 2.3.3). */}
+      <MotionConfig reducedMotion="user">
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
           <BrowserRouter>
@@ -84,6 +87,7 @@ function App() {
           </BrowserRouter>
         </TooltipProvider>
       </QueryClientProvider>
+      </MotionConfig>
     </HelmetProvider>
   );
 }

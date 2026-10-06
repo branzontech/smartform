@@ -143,26 +143,29 @@ const ContractsPage: React.FC = () => {
 
   const fetchData = useCallback(async () => {
     setLoading(true);
-    const [contratosRes, pagadoresRes, tarifariosRes] = await Promise.all([
-      baseDatos
-        .from("contratos")
-        .select("*, pagador:pagadores(*)")
-        .order("created_at", { ascending: false }),
-      baseDatos.from("pagadores").select("*").eq("activo", true).order("nombre"),
-      baseDatos.from("tarifarios_maestros" as any).select("id, nombre, moneda, estado").eq("estado", true).order("nombre"),
-    ]);
+    try {
+      const [contratosRes, pagadoresRes, tarifariosRes] = await Promise.all([
+        baseDatos
+          .from("contratos")
+          .select("*, pagador:pagadores(*)")
+          .order("created_at", { ascending: false }),
+        baseDatos.from("pagadores").select("*").eq("activo", true).order("nombre"),
+        baseDatos.from("tarifarios_maestros" as any).select("id, nombre, moneda, estado").eq("estado", true).order("nombre"),
+      ]);
 
-    if (contratosRes.data) {
-      setContratos(
-        (contratosRes.data as any[]).map((c) => ({
-          ...c,
-          pagador: c.pagador || undefined,
-        }))
-      );
+      if (contratosRes.data) {
+        setContratos(
+          (contratosRes.data as any[]).map((c) => ({
+            ...c,
+            pagador: c.pagador || undefined,
+          }))
+        );
+      }
+      if (pagadoresRes.data) setPagadores(pagadoresRes.data as Pagador[]);
+      if (tarifariosRes.data) setTarifarios(tarifariosRes.data as unknown as TarifarioMaestro[]);
+    } finally {
+      setLoading(false);
     }
-    if (pagadoresRes.data) setPagadores(pagadoresRes.data as Pagador[]);
-    if (tarifariosRes.data) setTarifarios(tarifariosRes.data as unknown as TarifarioMaestro[]);
-    setLoading(false);
   }, []);
 
   useEffect(() => {

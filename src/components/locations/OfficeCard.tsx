@@ -68,8 +68,8 @@ export const OfficeCard = ({ office, onEdit, onDelete }: OfficeCardProps) => {
           <div>
             <span className="block text-gray-700 dark:text-gray-300 mb-1">Especialidades:</span>
             <div className="flex flex-wrap gap-1">
-              {office.specialties.map((specialty, index) => (
-                <Badge key={index} variant="outline" className="text-xs">
+              {office.specialties.map((specialty) => (
+                <Badge key={specialty} variant="outline" className="text-xs">
                   {specialty}
                 </Badge>
               ))}

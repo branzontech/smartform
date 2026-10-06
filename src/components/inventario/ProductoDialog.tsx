@@ -151,7 +151,7 @@ export const ProductoDialog: React.FC<Props> = ({ open, onOpenChange, editProduc
       });
       setOpenLotes({});
     }
-  }, [editData, open]);
+  }, [editData, open, form]);
 
   useEffect(() => {
     if (!open) {
@@ -162,7 +162,7 @@ export const ProductoDialog: React.FC<Props> = ({ open, onOpenChange, editProduc
       });
       setOpenLotes({});
     }
-  }, [open]);
+  }, [open, form]);
 
   const toggleLote = (idx: number) => {
     const isOpen = !!openLotes[idx];

@@ -33,22 +33,26 @@ export default function ShiftAssignment() {
   const { toast } = useToast();
 
   useEffect(() => {
+    let vigente = true;
+    const loadProfessionals = async () => {
+      try {
+        const profs = await getAllProfessionals();
+        if (vigente) setProfessionals(profs.filter(p => p.isActive));
+      } catch (error) {
+        console.error("Error loading professionals:", error);
+        if (!vigente) return;
+        toast({
+          title: "Error",
+          description: "No se pudieron cargar los profesionales",
+          variant: "destructive",
+        });
+      }
+    };
     loadProfessionals();
-  }, []);
-
-  const loadProfessionals = async () => {
-    try {
-      const profs = await getAllProfessionals();
-      setProfessionals(profs.filter(p => p.isActive));
-    } catch (error) {
-      console.error("Error loading professionals:", error);
-      toast({
-        title: "Error",
-        description: "No se pudieron cargar los profesionales",
-        variant: "destructive",
-      });
-    }
-  };
+    return () => {
+      vigente = false;
+    };
+  }, [toast]);
 
   const handleDateSelect = (date: Date | undefined) => {
     if (!date) return;
@@ -341,8 +345,8 @@ export default function ShiftAssignment() {
                       <div>
                         <h4 className="font-medium mb-3">Fechas Seleccionadas ({selectedDates.length})</h4>
                         <div className="max-h-64 overflow-y-auto space-y-1">
-                          {selectedDates.map((date, index) => (
-                            <div key={index} className="flex justify-between items-center p-2 bg-gray-50 rounded">
+                          {selectedDates.map((date) => (
+                            <div key={date.getTime()} className="flex justify-between items-center p-2 bg-gray-50 rounded">
                               <span className="text-sm">
                                 {date.toLocaleDateString('es-ES', { 
                                   weekday: 'long', 
