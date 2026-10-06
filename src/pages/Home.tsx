@@ -1,73 +1,58 @@
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { Users, Calendar, Stethoscope, ClipboardCheck, BarChart3, FileText, ArrowRight, Sparkles, Package } from "lucide-react";
+import { ArrowRight, Sparkles } from "lucide-react";
+import { IconoModulo } from "@/components/ui/icono-modulo";
 
 const quickActions = [
   {
-    icon: Stethoscope,
+    icono: "atencion" as const,
     label: "Realizar atención",
     description: "Inicia una nueva consulta o atención médica",
     route: "/app/pacientes/nueva-consulta",
-    accent: "group-hover:text-primary",
-    bgAccent: "group-hover:bg-primary/10",
     featured: true,
   },
   {
-    icon: Calendar,
+    icono: "citas" as const,
     label: "Agendar paciente",
     description: "Crea una nueva cita o admite un paciente",
     route: "/app/citas/nueva",
-    accent: "group-hover:text-primary",
-    bgAccent: "group-hover:bg-primary/10",
   },
   {
-    icon: Users,
+    icono: "pacientes" as const,
     label: "Consultar pacientes",
     description: "Busca y gestiona la información de tus pacientes",
     route: "/app/pacientes",
-    accent: "group-hover:text-primary",
-    bgAccent: "group-hover:bg-primary/10",
   },
   {
-    icon: ClipboardCheck,
+    icono: "calidad" as const,
     label: "Realizar auditoría",
     description: "Revisa y audita los registros clínicos",
     route: "/app/informes",
-    accent: "group-hover:text-primary",
-    bgAccent: "group-hover:bg-primary/10",
   },
   {
-    icon: BarChart3,
+    icono: "informes" as const,
     label: "Consultar estadísticas",
     description: "Visualiza métricas y reportes del sistema",
     route: "/app/pacientes/dashboard",
-    accent: "group-hover:text-primary",
-    bgAccent: "group-hover:bg-primary/10",
   },
   {
-    icon: FileText,
+    icono: "formularios" as const,
     label: "Formularios",
     description: "Crea y gestiona formularios clínicos",
     route: "/app/configuracion?tab=forms",
-    accent: "group-hover:text-primary",
-    bgAccent: "group-hover:bg-primary/10",
   },
   {
-    icon: FileText,
+    icono: "cotizaciones" as const,
     label: "Cotizar Servicios",
     description: "Crea y gestiona cotizaciones de servicios",
     route: "/app/cotizaciones",
-    accent: "group-hover:text-primary",
-    bgAccent: "group-hover:bg-primary/10",
   },
   {
-    icon: Package,
+    icono: "inventario" as const,
     label: "Inventario",
     description: "Gestiona stock, lotes y movimientos",
     route: "/app/inventario",
-    accent: "group-hover:text-primary",
-    bgAccent: "group-hover:bg-primary/10",
   },
 ];
 
@@ -156,9 +141,10 @@ const Home = () => {
               {/* Hover gradient overlay */}
               <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.03] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-2xl" />
 
-              <div className={`relative p-2.5 rounded-xl bg-muted/50 text-muted-foreground ${action.bgAccent} ${action.accent} transition-all duration-300`}>
-                <action.icon className="w-5 h-5" strokeWidth={1.8} />
-              </div>
+              <IconoModulo
+                nombre={action.icono}
+                className="relative h-14 w-14 transition-transform duration-300 motion-safe:group-hover:-translate-y-0.5 motion-safe:group-hover:scale-105"
+              />
 
               <div className="relative space-y-1.5 flex-1">
                 <span className="text-sm font-semibold text-foreground flex items-center gap-2">
