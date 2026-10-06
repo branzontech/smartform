@@ -1,25 +1,20 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import type { User, Session } from "@supabase/supabase-js";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { apiFetch, ApiError, SESION_CADUCADA } from "@/integrations/api/client";
+import { authClient } from "@/integrations/auth/client";
 
-interface AuthContextType {
-  user: User | null;
-  session: Session | null;
-  profile: Profile | null;
-  roles: string[];
-  isLoading: boolean;
-  signUp: (email: string, password: string, fullName: string) => Promise<{ error: Error | null }>;
-  signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
-  signOut: () => Promise<void>;
-  resetPassword: (email: string) => Promise<{ error: Error | null }>;
-  updatePassword: (password: string) => Promise<{ error: Error | null }>;
-  hasRole: (role: string) => boolean;
-  refreshProfile: () => Promise<void>;
+/**
+ * Sesión de Ker Hub sobre la API propia (Better Auth + /api/me). Conserva la
+ * interfaz que usaba el resto de la app con Supabase: user, profile, roles,
+ * signIn, signOut, resetPassword, updatePassword, hasRole.
+ */
+
+export interface AuthUser {
+  id: string;
+  email: string;
+  name: string;
 }
 
 interface Profile {
-  id: string;
-  user_id: string;
   full_name: string | null;
   avatar_url: string | null;
   phone: string | null;
@@ -27,7 +22,28 @@ interface Profile {
   license_number: string | null;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+interface AuthContextType {
+  user: AuthUser | null;
+  session: { user: AuthUser } | null;
+  profile: Profile | null;
+  roles: string[];
+  isLoading: boolean;
+  signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
+  signOut: () => Promise<void>;
+  resetPassword: (email: string) => Promise<{ error: Error | null }>;
+  /** Cambia la contraseña con el token del enlace de restablecimiento (?token=). */
+  updatePassword: (password: string, token: string) => Promise<{ error: Error | null }>;
+  hasRole: (role: string) => boolean;
+  refreshProfile: () => Promise<void>;
+}
+
+interface Me {
+  user: AuthUser;
+  profile: Profile | null;
+  roles: string[];
+}
+
+const noMontado = async () => ({ error: new Error("AuthProvider no está montado") });
 
 const defaultAuthContext: AuthContextType = {
   user: null,
@@ -35,131 +51,103 @@ const defaultAuthContext: AuthContextType = {
   profile: null,
   roles: [],
   isLoading: true,
-  signUp: async () => ({ error: new Error("AuthProvider not mounted") }),
-  signIn: async () => ({ error: new Error("AuthProvider not mounted") }),
+  signIn: noMontado,
   signOut: async () => {},
-  resetPassword: async () => ({ error: new Error("AuthProvider not mounted") }),
-  updatePassword: async () => ({ error: new Error("AuthProvider not mounted") }),
+  resetPassword: noMontado,
+  updatePassword: noMontado,
   hasRole: () => false,
   refreshProfile: async () => {},
 };
 
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  return context ?? defaultAuthContext;
-};
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+export const useAuth = () => useContext(AuthContext) ?? defaultAuthContext;
+
+const comoError = (e: unknown) => (e instanceof Error ? e : new Error(String(e)));
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [roles, setRoles] = useState<string[]>([]);
+  const [me, setMe] = useState<Me | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const fetchProfile = async (userId: string) => {
-    const { data } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("user_id", userId)
-      .single();
-    setProfile(data as Profile | null);
-  };
-
-  const fetchRoles = async (userId: string) => {
-    const { data } = await supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", userId);
-    setRoles(data?.map((r: any) => r.role) || []);
-  };
-
-  useEffect(() => {
-    // Set up auth listener FIRST
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-
-        if (session?.user) {
-          // Use setTimeout to avoid Supabase client deadlock
-          setTimeout(() => {
-            fetchProfile(session.user.id);
-            fetchRoles(session.user.id);
-          }, 0);
-        } else {
-          setProfile(null);
-          setRoles([]);
-        }
-        setIsLoading(false);
-      }
-    );
-
-    // THEN check existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        fetchProfile(session.user.id);
-        fetchRoles(session.user.id);
-      }
-      setIsLoading(false);
-    });
-
-    return () => subscription.unsubscribe();
+  /** Lee quién soy. Sin sesión, la API responde 401 y queda en null. */
+  const cargarMe = useCallback(async () => {
+    try {
+      setMe(await apiFetch<Me>("/api/me"));
+    } catch (e) {
+      if (!(e instanceof ApiError && e.status === 401)) console.error("[auth] no se pudo leer la sesión:", e);
+      setMe(null);
+    }
   }, []);
 
-  const signUp = async (email: string, password: string, fullName: string) => {
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: { full_name: fullName },
-        emailRedirectTo: window.location.origin,
-      },
+  useEffect(() => {
+    let vigente = true;
+    cargarMe().finally(() => {
+      if (vigente) setIsLoading(false);
     });
-    return { error: error as Error | null };
-  };
+    // Si la API dice que la sesión murió (caducó o se cerró en otro lado), se olvida aquí también.
+    const alCaducar = () => setMe(null);
+    window.addEventListener(SESION_CADUCADA, alCaducar);
+    return () => {
+      vigente = false;
+      window.removeEventListener(SESION_CADUCADA, alCaducar);
+    };
+  }, [cargarMe]);
 
-  const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    return { error: error as Error | null };
-  };
-
-  const signOut = async () => {
-    await supabase.auth.signOut();
-    setUser(null);
-    setSession(null);
-    setProfile(null);
-    setRoles([]);
-  };
-
-  const resetPassword = async (email: string) => {
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/app/reset-password`,
-    });
-    return { error: error as Error | null };
-  };
-
-  const updatePassword = async (password: string) => {
-    const { error } = await supabase.auth.updateUser({ password });
-    return { error: error as Error | null };
-  };
-
-  const hasRole = (role: string) => roles.includes(role);
-
-  const refreshProfile = async () => {
-    if (user?.id) await fetchProfile(user.id);
-  };
-
-  return (
-    <AuthContext.Provider
-      value={{
-        user, session, profile, roles, isLoading,
-        signUp, signIn, signOut, resetPassword, updatePassword, hasRole,
-        refreshProfile,
-      }}
-    >
-      {children}
-    </AuthContext.Provider>
+  const signIn = useCallback(
+    async (email: string, password: string) => {
+      const { error } = await authClient.signIn.email({ email, password });
+      if (error) return { error: new Error(error.message ?? "No fue posible iniciar sesión") };
+      await cargarMe();
+      return { error: null };
+    },
+    [cargarMe],
   );
+
+  const signOut = useCallback(async () => {
+    try {
+      await authClient.signOut({});
+    } finally {
+      setMe(null);
+    }
+  }, []);
+
+  const resetPassword = useCallback(async (email: string) => {
+    try {
+      const { error } = await authClient.requestPasswordReset({
+        email,
+        redirectTo: `${window.location.origin}/app/reset-password`,
+      });
+      return { error: error ? new Error(error.message ?? "No fue posible enviar el enlace") : null };
+    } catch (e) {
+      return { error: comoError(e) };
+    }
+  }, []);
+
+  const updatePassword = useCallback(async (password: string, token: string) => {
+    try {
+      const { error } = await authClient.resetPassword({ newPassword: password, token });
+      return { error: error ? new Error(error.message ?? "No fue posible cambiar la contraseña") : null };
+    } catch (e) {
+      return { error: comoError(e) };
+    }
+  }, []);
+
+  const value = useMemo<AuthContextType>(() => {
+    const roles = me?.roles ?? [];
+    return {
+      user: me?.user ?? null,
+      session: me ? { user: me.user } : null,
+      profile: me?.profile ?? null,
+      roles,
+      isLoading,
+      signIn,
+      signOut,
+      resetPassword,
+      updatePassword,
+      hasRole: (role: string) => roles.includes(role),
+      refreshProfile: cargarMe,
+    };
+  }, [me, isLoading, signIn, signOut, resetPassword, updatePassword, cargarMe]);
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

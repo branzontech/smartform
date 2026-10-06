@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { baseDatos } from "@/integrations/datos/cliente";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -68,7 +68,7 @@ export const InstitutionHeaderConfig = () => {
   }, []);
 
   const loadConfig = async () => {
-    const { data, error } = await supabase
+    const { data, error } = await baseDatos
       .from("configuracion_encabezado" as any)
       .select("*")
       .limit(1)
@@ -124,7 +124,7 @@ export const InstitutionHeaderConfig = () => {
     setUploading(true);
     const ext = file.name.split(".").pop();
     const filePath = `logos/institution-logo.${ext}`;
-    const { error: uploadError } = await supabase.storage
+    const { error: uploadError } = await baseDatos.storage
       .from("institution-assets")
       .upload(filePath, file, { upsert: true });
     if (uploadError) {
@@ -132,7 +132,7 @@ export const InstitutionHeaderConfig = () => {
       setUploading(false);
       return;
     }
-    const { data: urlData } = supabase.storage.from("institution-assets").getPublicUrl(filePath);
+    const { data: urlData } = baseDatos.storage.from("institution-assets").getPublicUrl(filePath);
     setConfig((prev) => ({ ...prev, logo_url: urlData.publicUrl }));
     setUploading(false);
     toast({ title: "Logo cargado", description: "El logo se ha subido correctamente" });
@@ -185,12 +185,12 @@ export const InstitutionHeaderConfig = () => {
 
     let error;
     if (config.id) {
-      ({ error } = await supabase
+      ({ error } = await baseDatos
         .from("configuracion_encabezado" as any)
         .update(payload)
         .eq("id", config.id));
     } else {
-      const { data, error: insertError } = await supabase
+      const { data, error: insertError } = await baseDatos
         .from("configuracion_encabezado" as any)
         .insert(payload)
         .select()

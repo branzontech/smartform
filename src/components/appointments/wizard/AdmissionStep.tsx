@@ -26,7 +26,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { ExtendedPatient } from "../PatientPanel";
-import { supabase } from "@/integrations/supabase/client";
+import { baseDatos } from "@/integrations/datos/cliente";
 import { toast } from "sonner";
 
 // ── Types ──────────────────────────────────────────────
@@ -88,7 +88,7 @@ export const AdmissionStep: React.FC<AdmissionStepProps> = ({
   useEffect(() => {
     const fetchContratos = async () => {
       setLoadingContratos(true);
-      const { data, error } = await supabase
+      const { data, error } = await baseDatos
         .from("contratos")
         .select("id, nombre_convenio, tipo_contratacion, pagador_id, pagadores(nombre)")
         .eq("estado", "activo")
@@ -123,7 +123,7 @@ export const AdmissionStep: React.FC<AdmissionStepProps> = ({
     const fetchServicios = async () => {
       setLoadingServicios(true);
       // Get tarifario_id from the selected contract
-      const { data: contrato } = await supabase
+      const { data: contrato } = await baseDatos
         .from("contratos")
         .select("tarifario_id")
         .eq("id", selectedContratoId)
@@ -135,7 +135,7 @@ export const AdmissionStep: React.FC<AdmissionStepProps> = ({
         return;
       }
 
-      const { data, error } = await supabase
+      const { data, error } = await baseDatos
         .from("tarifarios_servicios")
         .select("id, codigo_servicio, descripcion_servicio, valor, activo")
         .eq("tarifario_id", contrato.tarifario_id)

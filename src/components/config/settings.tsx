@@ -13,7 +13,7 @@ import { SignatureUploader } from "@/components/profile/SignatureUploader";
 import { PatientFieldsConfig } from "@/components/config/PatientFieldsConfig";
 import { AdmissionFieldsConfig } from "@/components/config/AdmissionFieldsConfig";
 import { PatientHeaderConfig } from "@/components/config/PatientHeaderConfig";
-import { supabase } from "@/integrations/supabase/client";
+import { baseDatos } from "@/integrations/datos/cliente";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
@@ -150,7 +150,7 @@ export const SettingsPage = () => {
     if (activeCategory !== "forms") return;
     const loadForms = async () => {
       setFormsLoading(true);
-      const { data } = await supabase.from("formularios").select("*").order("created_at", { ascending: false });
+      const { data } = await baseDatos.from("formularios").select("*").order("created_at", { ascending: false });
       setForms(data || []);
       setFormsLoading(false);
     };

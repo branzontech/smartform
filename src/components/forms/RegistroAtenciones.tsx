@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { baseDatos } from "@/integrations/datos/cliente";
 import { useAuth } from '@/contexts/AuthContext';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -104,7 +104,7 @@ export const RegistroAtenciones: React.FC<RegistroAtencionesProps> = ({
   const { data: admisiones = [], isLoading: loadingAdm } = useQuery({
     queryKey: ['admisiones-paciente', patientId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await baseDatos
         .from('admisiones')
         .select('id, numero_ingreso, fecha_inicio, fecha_fin, estado, profesional_nombre, diagnostico_principal, motivo')
         .eq('paciente_id', patientId)
@@ -117,7 +117,7 @@ export const RegistroAtenciones: React.FC<RegistroAtencionesProps> = ({
   const { data: registros = [], isLoading: loadingReg } = useQuery({
     queryKey: ['registros-paciente', patientId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await baseDatos
         .from('respuestas_formularios')
         .select('id, formulario_id, admision_id, medico_id, datos_respuesta, created_at, estado_registro, supersedes, superseded_by, formularios(titulo, preguntas, opciones_diseno)')
         .eq('paciente_id', patientId)
@@ -135,7 +135,7 @@ export const RegistroAtenciones: React.FC<RegistroAtencionesProps> = ({
     queryKey: ['provenance-respuestas', patientId, respuestaIds],
     queryFn: async () => {
       if (respuestaIds.length === 0) return [];
-      const { data, error } = await supabase
+      const { data, error } = await baseDatos
         .from('provenance_clinico')
         .select('id, target_record_id, replacement_record_id, activity_type, agent_nombre_completo, recorded_at, reason_text')
         .eq('target_table', 'respuestas_formularios')

@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useMemo } from "react";
 import { Layout } from "@/components/layout";
-import { supabase } from "@/integrations/supabase/client";
+import { baseDatos } from "@/integrations/datos/cliente";
 import { toast } from "sonner";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm, Controller, useFieldArray } from "react-hook-form";
@@ -151,7 +151,7 @@ const CatalogoProductosPage = () => {
   const { data: productos = [], isLoading } = useQuery({
     queryKey: ["catalogo_productos", debouncedSearch, filterTipo],
     queryFn: async () => {
-      let q = supabase.from("catalogo_productos").select("*").order("nombre_generico");
+      let q = baseDatos.from("catalogo_productos").select("*").order("nombre_generico");
       if (debouncedSearch) {
         q = q.or(`nombre_generico.ilike.%${debouncedSearch}%,codigo.ilike.%${debouncedSearch}%,nombre_comercial.ilike.%${debouncedSearch}%`);
       }
@@ -185,10 +185,10 @@ const CatalogoProductosPage = () => {
       let productoId = editingId;
 
       if (editingId) {
-        const { error } = await supabase.from("catalogo_productos").update(productData).eq("id", editingId);
+        const { error } = await baseDatos.from("catalogo_productos").update(productData).eq("id", editingId);
         if (error) throw error;
       } else {
-        const { data, error } = await supabase.from("catalogo_productos").insert(productData).select("id").single();
+        const { data, error } = await baseDatos.from("catalogo_productos").insert(productData).select("id").single();
         if (error) throw error;
         productoId = data.id;
       }
@@ -196,7 +196,7 @@ const CatalogoProductosPage = () => {
       // Save presentaciones
       if (productoId) {
         // Delete existing then re-insert
-        await supabase.from("presentaciones_producto").delete().eq("producto_id", productoId);
+        await baseDatos.from("presentaciones_producto").delete().eq("producto_id", productoId);
         if (values.presentaciones.length > 0) {
           const presRows = values.presentaciones.map((p) => ({
             producto_id: productoId!,
@@ -207,14 +207,14 @@ const CatalogoProductosPage = () => {
             codigo_barras: p.codigo_barras || null,
             presentacion_comercial: p.presentacion_comercial || null,
           }));
-          const { error: pe } = await supabase.from("presentaciones_producto").insert(presRows);
+          const { error: pe } = await baseDatos.from("presentaciones_producto").insert(presRows);
           if (pe) throw pe;
         }
 
         // Save regulatorio
         if (values.reg_pais) {
           // Delete existing for this product
-          await supabase.from("catalogo_productos_regulatorio" as any).delete().eq("producto_id", productoId);
+          await baseDatos.from("catalogo_productos_regulatorio" as any).delete().eq("producto_id", productoId);
           const regRow = {
             producto_id: productoId,
             pais: values.reg_pais,
@@ -224,7 +224,7 @@ const CatalogoProductosPage = () => {
             fecha_vencimiento_registro: values.reg_fecha_vencimiento || null,
             datos_regulatorios: values.reg_datos || {},
           };
-          const { error: re } = await supabase.from("catalogo_productos_regulatorio" as any).insert(regRow);
+          const { error: re } = await baseDatos.from("catalogo_productos_regulatorio" as any).insert(regRow);
           if (re) throw re;
         }
       }
@@ -241,7 +241,7 @@ const CatalogoProductosPage = () => {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("catalogo_productos").delete().eq("id", id);
+      const { error } = await baseDatos.from("catalogo_productos").delete().eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -264,13 +264,13 @@ const CatalogoProductosPage = () => {
     setActiveTab("general");
 
     // Fetch presentaciones
-    const { data: pres } = await supabase
+    const { data: pres } = await baseDatos
       .from("presentaciones_producto")
       .select("*")
       .eq("producto_id", product.id);
 
     // Fetch regulatorio
-    const { data: regs } = await supabase
+    const { data: regs } = await baseDatos
       .from("catalogo_productos_regulatorio" as any)
       .select("*")
       .eq("producto_id", product.id);

@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { useGoogleMaps } from "@/hooks/useGoogleMaps";
-import { supabase } from "@/integrations/supabase/client";
+import { baseDatos } from "@/integrations/datos/cliente";
 import { ExtendedPatient } from "../PatientPanel";
 import { Zone, LatLng } from "@/types/zone-types";
 import { DistanceCalculator } from "@/components/zones/DistanceCalculator";
@@ -31,7 +31,7 @@ export const MapPanelDrawer: React.FC<MapPanelDrawerProps> = ({
   useEffect(() => {
     if (!isOpen) return;
     const fetchZones = async () => {
-      const { data, error } = await supabase.from("zones").select("*");
+      const { data, error } = await baseDatos.from("zones").select("*");
       if (error) {
         console.error("Error fetching zones:", error);
         return;

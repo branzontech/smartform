@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { supabase } from "@/integrations/supabase/client";
+import { baseDatos } from "@/integrations/datos/cliente";
 import { cn } from "@/lib/utils";
 
 interface DiagnosticoCatalogo {
@@ -49,7 +49,7 @@ export const DiagnosisSearch: React.FC<DiagnosisSearchProps> = ({
     if (searchTerm.length < 1) { setResults([]); return; }
     const timer = setTimeout(async () => {
       setLoading(true);
-      const { data } = await supabase
+      const { data } = await baseDatos
         .from("catalogo_diagnosticos")
         .select("*")
         .eq("sistema", sistema)

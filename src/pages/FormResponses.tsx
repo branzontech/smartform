@@ -12,7 +12,7 @@ import { FormatDocumentView } from "@/components/forms/responses/format-document
 import { FormSummaryTabs } from "@/components/forms/responses/form-summary-tabs";
 import { printFormResponse } from "@/utils/print-utils";
 import { FormResponse } from "@/types/form-types";
-import { supabase } from "@/integrations/supabase/client";
+import { baseDatos } from "@/integrations/datos/cliente";
 
 const FormResponses = () => {
   const { id } = useParams();
@@ -30,7 +30,7 @@ const FormResponses = () => {
     const load = async () => {
       setLoading(true);
       // Load form metadata
-      const { data: formRow, error: formErr } = await supabase
+      const { data: formRow, error: formErr } = await baseDatos
         .from("formularios")
         .select("*")
         .eq("id", id)
@@ -54,7 +54,7 @@ const FormResponses = () => {
       });
 
       // Load responses (incluye anuladas/superseded para preservar contexto clínico)
-      const { data: respRows } = await supabase
+      const { data: respRows } = await baseDatos
         .from("respuestas_formularios")
         .select("*")
         .eq("formulario_id", id)
@@ -69,7 +69,7 @@ const FormResponses = () => {
         { activityType: any; agentNombreCompleto: string; recordedAt: string }
       > = {};
       if (recordIds.length > 0) {
-        const { data: provRows } = await supabase
+        const { data: provRows } = await baseDatos
           .from("provenance_clinico")
           .select(
             "target_record_id, activity_type, agent_nombre_completo, recorded_at"

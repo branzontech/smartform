@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { baseDatos } from "@/integrations/datos/cliente";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { toast } from "sonner";
@@ -30,7 +30,7 @@ const CotizacionDetail = ({ cotizacionId, onBack, onEdit }: Props) => {
   const { data: cotizacion, isLoading } = useQuery({
     queryKey: ["cotizacion", cotizacionId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await baseDatos
         .from("cotizaciones" as any)
         .select("*, clientes_cotizacion:cliente_cotizacion_id(*)")
         .eq("id", cotizacionId)
@@ -43,7 +43,7 @@ const CotizacionDetail = ({ cotizacionId, onBack, onEdit }: Props) => {
   const { data: items } = useQuery({
     queryKey: ["cotizacion-items", cotizacionId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await baseDatos
         .from("cotizacion_items" as any)
         .select("*")
         .eq("cotizacion_id", cotizacionId)
@@ -56,7 +56,7 @@ const CotizacionDetail = ({ cotizacionId, onBack, onEdit }: Props) => {
   const { data: headerConfig } = useQuery({
     queryKey: ["configuracion-encabezado"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await baseDatos
         .from("configuracion_encabezado")
         .select("*")
         .limit(1)
@@ -69,7 +69,7 @@ const CotizacionDetail = ({ cotizacionId, onBack, onEdit }: Props) => {
   const { data: config } = useQuery({
     queryKey: ["configuracion-cotizaciones"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await baseDatos
         .from("configuracion_cotizaciones" as any)
         .select("*")
         .limit(1)
@@ -81,7 +81,7 @@ const CotizacionDetail = ({ cotizacionId, onBack, onEdit }: Props) => {
 
   const statusMutation = useMutation({
     mutationFn: async (newEstado: string) => {
-      const { error } = await supabase
+      const { error } = await baseDatos
         .from("cotizaciones" as any)
         .update({ estado: newEstado } as any)
         .eq("id", cotizacionId);

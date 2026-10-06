@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
-import { supabase } from "@/integrations/supabase/client";
+import { baseDatos } from "@/integrations/datos/cliente";
 import {
   Form,
   FormControl,
@@ -166,7 +166,7 @@ const FormViewer = () => {
     }
     if (!patientId) return;
     const fetchActiveAdmission = async () => {
-      const { data } = await supabase
+      const { data } = await baseDatos
         .from('admisiones')
         .select('id')
         .eq('paciente_id', patientId)
@@ -223,7 +223,7 @@ const FormViewer = () => {
   const searchForms = useCallback(async (query: string) => {
     setAddFormLoading(true);
     try {
-      let q = supabase.from('formularios').select('id, titulo, tipo').eq('estado', 'activo').limit(20);
+      let q = baseDatos.from('formularios').select('id, titulo, tipo').eq('estado', 'activo').limit(20);
       if (query.trim()) {
         q = q.ilike('titulo', `%${query.trim()}%`);
       }
@@ -381,7 +381,7 @@ const FormViewer = () => {
     const entry = formsMap[fId];
     if (!entry) return false;
 
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { user } } = await baseDatos.auth.getUser();
     const medicoId = user?.id;
 
     if (patientId && !medicoId) {
@@ -395,7 +395,7 @@ const FormViewer = () => {
       const admisionId = resolvedAdmisionId;
 
       if (entry.responseId) {
-        const { error: updateError } = await supabase
+        const { error: updateError } = await baseDatos
           .from("respuestas_formularios" as any)
           .update({ datos_respuesta: processed, updated_at: new Date().toISOString() })
           .eq('id', entry.responseId);
@@ -405,7 +405,7 @@ const FormViewer = () => {
           return false;
         }
       } else {
-        const { data: insertData, error: insertError } = await supabase
+        const { data: insertData, error: insertError } = await baseDatos
           .from("respuestas_formularios" as any)
           .insert({
             formulario_id: fId,
@@ -508,7 +508,7 @@ const FormViewer = () => {
 
       try {
         const [headerResult, ...formResults] = await Promise.all([
-          supabase.from("configuracion_encabezado" as any).select("*").limit(1).single(),
+          baseDatos.from("configuracion_encabezado" as any).select("*").limit(1).single(),
           ...allFormIds.map(id => fetchFormById(id)),
         ]);
 
@@ -781,7 +781,7 @@ const FormViewer = () => {
     }
 
     if (resolvedAdmisionId) {
-      const { error: admError } = await supabase
+      const { error: admError } = await baseDatos
         .from("admisiones" as any)
         .update({ estado: 'completada', fecha_fin: new Date().toISOString() })
         .eq('id', resolvedAdmisionId);
@@ -861,7 +861,7 @@ const FormViewer = () => {
     if (!pendingValues) return;
     setShowConfirmModal(false);
 
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { user } } = await baseDatos.auth.getUser();
     const medicoId = user?.id;
 
     if (patientId && !medicoId) {
@@ -886,7 +886,7 @@ const FormViewer = () => {
     let hadError = false;
     for (const { fId, data } of formsToSave) {
       if (patientId && medicoId) {
-        const { error: insertError } = await supabase
+        const { error: insertError } = await baseDatos
           .from("respuestas_formularios" as any)
           .insert({
             formulario_id: fId,
@@ -1605,7 +1605,7 @@ const FormViewer = () => {
           onOpenChange={setShowIncapacidadDialog}
           pacienteId={patientId}
           admisionId={resolvedAdmisionId}
-          medicoNombre={authUser?.user_metadata?.full_name || "Médico"}
+          medicoNombre={authUser?.name || "Médico"}
           medicoId={authUser?.id || ""}
         />
       )}

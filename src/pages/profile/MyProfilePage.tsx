@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Header } from "@/components/layout/header";
 import { BackButton } from "@/App";
 import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
+import { baseDatos } from "@/integrations/datos/cliente";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -39,7 +39,7 @@ const MyProfilePage: React.FC = () => {
     let cancelled = false;
     const load = async () => {
       setLoading(true);
-      const { data } = await supabase
+      const { data } = await baseDatos
         .from("profiles")
         .select("full_name, phone, specialty, license_number")
         .eq("user_id", user.id)
@@ -68,7 +68,7 @@ const MyProfilePage: React.FC = () => {
     if (!user) return;
     setSaving(true);
     try {
-      const { error } = await supabase
+      const { error } = await baseDatos
         .from("profiles")
         .update({
           full_name: form.full_name.trim(),

@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { baseDatos } from "@/integrations/datos/cliente";
 import type { Incapacidad, IncapacidadFormData } from "@/types/incapacidades";
 
 export function useIncapacidadesByAdmision(admisionId: string | null) {
@@ -7,7 +7,7 @@ export function useIncapacidadesByAdmision(admisionId: string | null) {
     queryKey: ["incapacidades", admisionId],
     queryFn: async () => {
       if (!admisionId) return [];
-      const { data, error } = await supabase
+      const { data, error } = await baseDatos
         .from("incapacidades")
         .select("*")
         .eq("admision_id", admisionId)
@@ -24,7 +24,7 @@ export function useCreateIncapacidad() {
 
   return useMutation({
     mutationFn: async (formData: IncapacidadFormData) => {
-      const { data, error } = await supabase
+      const { data, error } = await baseDatos
         .from("incapacidades")
         .insert(formData as any)
         .select()
@@ -44,7 +44,7 @@ export function useUpdateIncapacidad() {
 
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<IncapacidadFormData> }) => {
-      const { data: updated, error } = await supabase
+      const { data: updated, error } = await baseDatos
         .from("incapacidades")
         .update(data as any)
         .eq("id", id)

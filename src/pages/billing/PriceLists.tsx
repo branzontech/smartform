@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { Layout } from "@/components/layout";
-import { supabase } from "@/integrations/supabase/client";
+import { baseDatos } from "@/integrations/datos/cliente";
 import { toast } from "sonner";
 import {
   REGULATORY_COUNTRIES,
@@ -177,7 +177,7 @@ const PriceLists: React.FC = () => {
   // Fetch tarifarios
   const fetchTarifarios = useCallback(async () => {
     setLoading(true);
-    const { data, error } = await supabase
+    const { data, error } = await baseDatos
       .from("tarifarios_maestros" as any)
       .select("*")
       .order("created_at", { ascending: false });
@@ -188,7 +188,7 @@ const PriceLists: React.FC = () => {
       const counts: Record<string, number> = {};
 
       if (ids.length > 0) {
-        const { data: countData } = await supabase
+        const { data: countData } = await baseDatos
           .from("tarifarios_servicios" as any)
           .select("tarifario_id")
           .in("tarifario_id", ids);
@@ -218,7 +218,7 @@ const PriceLists: React.FC = () => {
   // Fetch servicios for a tarifario
   const fetchServicios = useCallback(async (tarifarioId: string) => {
     setLoadingServicios(true);
-    const { data, error } = await supabase
+    const { data, error } = await baseDatos
       .from("tarifarios_servicios" as any)
       .select("*")
       .eq("tarifario_id", tarifarioId)
@@ -276,7 +276,7 @@ const PriceLists: React.FC = () => {
     setSaving(true);
     try {
       if (editingTarifario) {
-        const { error } = await supabase
+        const { error } = await baseDatos
           .from("tarifarios_maestros" as any)
           .update({
             nombre: masterForm.nombre,
@@ -287,7 +287,7 @@ const PriceLists: React.FC = () => {
         if (error) throw error;
         toast.success("Tarifario actualizado");
       } else {
-        const { error } = await supabase
+        const { error } = await baseDatos
           .from("tarifarios_maestros" as any)
           .insert({
             nombre: masterForm.nombre,
@@ -308,7 +308,7 @@ const PriceLists: React.FC = () => {
   };
 
   const toggleEstado = async (t: TarifarioMaestro) => {
-    const { error } = await supabase
+    const { error } = await baseDatos
       .from("tarifarios_maestros" as any)
       .update({ estado: !t.estado } as any)
       .eq("id", t.id);
@@ -364,7 +364,7 @@ const PriceLists: React.FC = () => {
 
     setAddingServicio(true);
     try {
-      const { error } = await supabase
+      const { error } = await baseDatos
         .from("tarifarios_servicios" as any)
         .insert({
           tarifario_id: selectedTarifario.id,
@@ -390,7 +390,7 @@ const PriceLists: React.FC = () => {
   const handleToggleServicio = async (servicio: TarifarioServicio) => {
     if (!selectedTarifario) return;
     const newActivo = !servicio.activo;
-    const { error } = await supabase
+    const { error } = await baseDatos
       .from("tarifarios_servicios" as any)
       .update({ activo: newActivo } as any)
       .eq("id", servicio.id);
@@ -453,7 +453,7 @@ const PriceLists: React.FC = () => {
     }
     setSavingServicio(true);
     try {
-      const { error } = await supabase
+      const { error } = await baseDatos
         .from("tarifarios_servicios" as any)
         .update({
           sistema_codificacion: editServicioForm.sistema_codificacion,
@@ -485,7 +485,7 @@ const PriceLists: React.FC = () => {
   // Print tarifario
   const handlePrintTarifario = async (tarifario: TarifarioMaestro) => {
     // Fetch services for this tarifario
-    const { data, error } = await supabase
+    const { data, error } = await baseDatos
       .from("tarifarios_servicios" as any)
       .select("*")
       .eq("tarifario_id", tarifario.id)
@@ -591,7 +591,7 @@ const PriceLists: React.FC = () => {
     setCloning(true);
     try {
       // 1. Create new tarifario maestro
-      const { data: newMaestro, error: errMaestro } = await supabase
+      const { data: newMaestro, error: errMaestro } = await baseDatos
         .from("tarifarios_maestros" as any)
         .insert({
           nombre: cloneForm.nombre,
@@ -604,7 +604,7 @@ const PriceLists: React.FC = () => {
       if (errMaestro || !newMaestro) throw errMaestro || new Error("No se pudo crear");
 
       // 2. Fetch old services (only activo)
-      const { data: oldServices, error: errFetch } = await supabase
+      const { data: oldServices, error: errFetch } = await baseDatos
         .from("tarifarios_servicios" as any)
         .select("*")
         .eq("tarifario_id", cloneTarget.id)
@@ -622,14 +622,14 @@ const PriceLists: React.FC = () => {
           activo: true,
           metadata_regulatoria: s.metadata_regulatoria || {},
         }));
-        const { error: errInsert } = await supabase
+        const { error: errInsert } = await baseDatos
           .from("tarifarios_servicios" as any)
           .insert(newServices as any);
         if (errInsert) throw errInsert;
       }
 
       // 4. Deactivate old tarifario
-      await supabase
+      await baseDatos
         .from("tarifarios_maestros" as any)
         .update({ estado: false } as any)
         .eq("id", cloneTarget.id);

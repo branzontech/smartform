@@ -2,7 +2,7 @@ import { z } from "zod";
 import { QuestionData } from '@/components/forms/question/types';
 import { Form } from '@/pages/FormsPage';
 import { FormResponse, FormWithUsage } from "@/types/form-types";
-import { supabase } from "@/integrations/supabase/client";
+import { baseDatos } from "@/integrations/datos/cliente";
 
 // Ejemplo de formulario para desarrollo (solo se usa si no se encuentra el formulario en localStorage)
 export const mockForm = {
@@ -77,7 +77,7 @@ export const createDynamicSchema = (questions: QuestionData[]) => {
 };
 
 export const fetchFormById = async (formId: string) => {
-  const { data, error } = await supabase
+  const { data, error } = await baseDatos
     .from("formularios")
     .select("*")
     .eq("id", formId)

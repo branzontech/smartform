@@ -35,7 +35,7 @@ import { cn } from "@/lib/utils";
 import { ExtendedPatient, DOCUMENT_TYPES } from "../PatientPanel";
 import { PatientStatusBadge } from "@/components/patients/PatientStatusBadge";
 import { AdmissionHistorySection } from "@/components/patients/AdmissionHistorySection";
-import { supabase } from "@/integrations/supabase/client";
+import { baseDatos } from "@/integrations/datos/cliente";
 import { toast } from "sonner";
 
 interface PatientDetailStepProps {
@@ -77,7 +77,7 @@ export const PatientDetailStep: React.FC<PatientDetailStepProps> = ({
   // Load fhir_extensions from DB for companion data
   useEffect(() => {
     const loadExtensions = async () => {
-      const { data } = await supabase
+      const { data } = await baseDatos
         .from("pacientes")
         .select("fhir_extensions")
         .eq("id", patient.id)
@@ -96,7 +96,7 @@ export const PatientDetailStep: React.FC<PatientDetailStepProps> = ({
 
   const handleSave = async () => {
     setIsSaving(true);
-    const { error } = await supabase
+    const { error } = await baseDatos
       .from("pacientes")
       .update({
         nombres: editData.firstName,

@@ -11,7 +11,7 @@ import { SchedulingStep, SchedulingData } from "./SchedulingStep";
 import { MapPanelDrawer } from "./MapPanelDrawer";
 import { Dock, DockItem, DockActionItem } from "@/components/ui/dock";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { supabase } from "@/integrations/supabase/client";
+import { baseDatos } from "@/integrations/datos/cliente";
 import { toast } from "sonner";
 
 export interface WizardData {
@@ -60,7 +60,7 @@ export const AppointmentWizard: React.FC<AppointmentWizardProps> = ({
 
       // Try edge function
       try {
-        const { data, error } = await supabase.functions.invoke("get-maps-config");
+        const { data, error } = await baseDatos.functions.invoke("get-maps-config");
         if (data?.apiKey) {
           setApiKey(data.apiKey);
           localStorage.setItem("google_maps_api_key", data.apiKey);

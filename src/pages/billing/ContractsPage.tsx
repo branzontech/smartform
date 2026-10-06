@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { Layout } from "@/components/layout";
-import { supabase } from "@/integrations/supabase/client";
+import { baseDatos } from "@/integrations/datos/cliente";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -144,12 +144,12 @@ const ContractsPage: React.FC = () => {
   const fetchData = useCallback(async () => {
     setLoading(true);
     const [contratosRes, pagadoresRes, tarifariosRes] = await Promise.all([
-      supabase
+      baseDatos
         .from("contratos")
         .select("*, pagador:pagadores(*)")
         .order("created_at", { ascending: false }),
-      supabase.from("pagadores").select("*").eq("activo", true).order("nombre"),
-      supabase.from("tarifarios_maestros" as any).select("id, nombre, moneda, estado").eq("estado", true).order("nombre"),
+      baseDatos.from("pagadores").select("*").eq("activo", true).order("nombre"),
+      baseDatos.from("tarifarios_maestros" as any).select("id, nombre, moneda, estado").eq("estado", true).order("nombre"),
     ]);
 
     if (contratosRes.data) {
@@ -266,7 +266,7 @@ const ContractsPage: React.FC = () => {
       let pagadorId = selectedPagadorId;
 
       if (isNewPagador) {
-        const { data, error } = await supabase
+        const { data, error } = await baseDatos
           .from("pagadores")
           .insert({
             nombre: pagadorForm.nombre,
@@ -283,7 +283,7 @@ const ContractsPage: React.FC = () => {
 
       if (editingContrato) {
         // Update existing
-        const { error: contratoError } = await supabase
+        const { error: contratoError } = await baseDatos
           .from("contratos")
           .update({
             pagador_id: pagadorId!,
@@ -301,7 +301,7 @@ const ContractsPage: React.FC = () => {
         toast.success("Convenio actualizado exitosamente");
       } else {
         // Create new
-        const { error: contratoError } = await supabase.from("contratos").insert({
+        const { error: contratoError } = await baseDatos.from("contratos").insert({
           pagador_id: pagadorId!,
           nombre_convenio: contratoForm.nombre_convenio,
           tipo_contratacion: contratoForm.tipo_contratacion as any,
@@ -327,7 +327,7 @@ const ContractsPage: React.FC = () => {
 
   const toggleEstado = async (contrato: Contrato) => {
     const newEstado = contrato.estado === "activo" ? "inactivo" : "activo";
-    const { error } = await supabase
+    const { error } = await baseDatos
       .from("contratos")
       .update({ estado: newEstado })
       .eq("id", contrato.id);

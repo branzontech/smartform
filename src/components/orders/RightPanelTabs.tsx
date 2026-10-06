@@ -8,7 +8,7 @@ import { MedicationOrderForm } from './MedicationOrderForm';
 import { ProcedureOrderForm } from './ProcedureOrderForm';
 import { OrderPreviewDialog } from './OrderPreviewDialog';
 import { shareOrderEmail, shareOrderWhatsApp } from '@/utils/orders/order-actions';
-import { supabase } from '@/integrations/supabase/client';
+import { baseDatos } from "@/integrations/datos/cliente";
 import { cn } from '@/lib/utils';
 import { useOrdenesProcedimientosByAdmision, useOrdenProcedimientoDetail } from '@/hooks/useOrdenesProcedimientos';
 import { format } from 'date-fns';
@@ -204,7 +204,7 @@ export const RightPanelTabs: React.FC<RightPanelTabsProps> = ({
 
   const fetchCount = useCallback(async () => {
     if (!admisionId) { setOrdersCount(0); return; }
-    const { count } = await supabase
+    const { count } = await baseDatos
       .from('ordenes_medicas')
       .select('id', { count: 'exact', head: true })
       .eq('admision_id', admisionId);

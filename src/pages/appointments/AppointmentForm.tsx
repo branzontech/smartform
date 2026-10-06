@@ -4,7 +4,7 @@ import { format } from "date-fns";
 
 import { toast } from "sonner";
 import { isUserSignedIn, createGoogleCalendarEvent, updateGoogleCalendarEvent } from "@/utils/google-calendar";
-import { supabase } from "@/integrations/supabase/client";
+import { baseDatos } from "@/integrations/datos/cliente";
 import { ExtendedPatient } from "@/components/appointments/PatientPanel";
 import { AppointmentWizard, WizardData } from "@/components/appointments/wizard";
 
@@ -246,7 +246,7 @@ const AppointmentForm = () => {
     // Crear admisión en Supabase si el usuario completó el paso de admisión
     if (admission) {
       try {
-        const { error } = await supabase.from("admisiones").insert({
+        const { error } = await baseDatos.from("admisiones").insert({
           paciente_id: patient.id,
           contrato_id: admission.contrato_id,
           servicio_id: admission.servicio_id,

@@ -1,127 +1,93 @@
-import React, { useState } from "react";
+import { useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
-import { motion } from "framer-motion";
+import { ArrowLeft, ArrowRight, Loader2, Mail, MailCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Mail, ArrowLeft, ArrowRight, CheckCircle } from "lucide-react";
+import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import { AuthLayout } from "./AuthLayout";
+
+const volver = (
+  <Link to="/app/login" className="inline-flex items-center gap-1.5 font-medium text-foreground underline-offset-4 hover:underline">
+    <ArrowLeft className="h-3.5 w-3.5" />
+    Volver a iniciar sesión
+  </Link>
+);
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [isSubmitted, setIsSubmitted] = useState(false);
+  const [enviado, setEnviado] = useState(false);
   const { toast } = useToast();
   const { resetPassword } = useAuth();
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!email) {
-      toast({ title: "Error", description: "Por favor ingresa tu correo electrónico", variant: "destructive" });
+      toast({ title: "Falta el correo", description: "Ingresa el correo de tu cuenta", variant: "destructive" });
       return;
     }
-
     setIsLoading(true);
-    const { error } = await resetPassword(email);
-    setIsLoading(false);
-
-    if (error) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
-    } else {
-      setIsSubmitted(true);
+    try {
+      const { error } = await resetPassword(email.trim());
+      if (error) {
+        toast({ title: "No se pudo enviar", description: error.message, variant: "destructive" });
+        return;
+      }
+      setEnviado(true);
+    } finally {
+      setIsLoading(false);
     }
   };
 
+  if (enviado) {
+    return (
+      <AuthLayout insignia="Revisa tu correo" titulo="Te enviamos un enlace" pie={volver}>
+        <div className="flex items-start gap-3 rounded-2xl bg-muted/60 p-4 text-sm text-muted-foreground">
+          <MailCheck className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
+          <p>
+            Si <span className="font-medium text-foreground">{email}</span> tiene una cuenta en Ker Hub, recibirás un
+            enlace para elegir una nueva contraseña. Caduca en una hora.
+          </p>
+        </div>
+      </AuthLayout>
+    );
+  }
+
   return (
-    <div className="min-h-screen flex items-center justify-center relative overflow-auto bg-background">
-      {/* Background */}
-      <div className="absolute inset-0 -z-10">
-        <motion.div
-          animate={{ scale: [1, 1.2, 1], opacity: [0.2, 0.4, 0.2] }}
-          transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute top-20 left-1/4 w-96 h-96 bg-primary/20 rounded-full blur-[100px]"
-        />
-      </div>
-
-      <motion.div
-        initial={{ opacity: 0, y: 30 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-        className="w-full max-w-md p-6"
-      >
-        <Link to="/" className="flex items-center justify-center mb-8">
-          <div className="bg-foreground/90 rounded-2xl px-5 py-3 shadow-lg">
-            <img src="/kerhub-logo.png" alt="Ker Hub" className="h-16 w-auto" />
-          </div>
-        </Link>
-
-        <div className="bg-card border border-border/50 rounded-3xl p-8 shadow-xl">
-          {!isSubmitted ? (
-            <>
-              <div className="text-center mb-8">
-                <h2 className="text-2xl font-bold mb-2">Recuperar contraseña</h2>
-                <p className="text-muted-foreground">Ingresa tu correo y te enviaremos instrucciones</p>
-              </div>
-
-              <form onSubmit={handleSubmit} className="space-y-5">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Correo electrónico</label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                    <Input
-                      type="email"
-                      placeholder="tu@email.com"
-                      className="pl-10 h-12 bg-background border-border/50 focus:border-primary"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      required
-                    />
-                  </div>
-                </div>
-
-                <motion.div whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }}>
-                  <Button
-                    type="submit"
-                    className="w-full h-12 text-base font-medium bg-gradient-to-r from-primary to-primary/80 shadow-lg shadow-primary/25 group"
-                    disabled={isLoading}
-                  >
-                    {isLoading ? (
-                      <span className="flex items-center gap-2">
-                        <span className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
-                        Enviando...
-                      </span>
-                    ) : (
-                      <span className="flex items-center gap-2">
-                        Enviar instrucciones
-                        <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                      </span>
-                    )}
-                  </Button>
-                </motion.div>
-              </form>
-            </>
-          ) : (
-            <div className="text-center py-4">
-              <CheckCircle className="w-16 h-16 text-primary mx-auto mb-4" />
-              <h2 className="text-2xl font-bold mb-2">¡Correo enviado!</h2>
-              <p className="text-muted-foreground mb-2">
-                Hemos enviado instrucciones a <strong>{email}</strong>
-              </p>
-              <p className="text-sm text-muted-foreground">
-                Si no recibes el correo en unos minutos, revisa tu carpeta de spam.
-              </p>
-            </div>
-          )}
-
-          <div className="mt-6 text-center">
-            <Link to="/app/login" className="text-sm text-primary font-medium hover:underline inline-flex items-center gap-1">
-              <ArrowLeft className="w-4 h-4" />
-              Volver a inicio de sesión
-            </Link>
+    <AuthLayout
+      insignia="Recuperar acceso"
+      titulo="¿Olvidaste tu contraseña?"
+      descripcion="Escribe tu correo y te enviaremos un enlace para restablecerla."
+      pie={volver}
+    >
+      <form onSubmit={handleSubmit} className="space-y-5" noValidate>
+        <div className="space-y-1.5">
+          <Label htmlFor="email" className="text-[13px] font-medium text-muted-foreground">
+            Correo electrónico
+          </Label>
+          <div className="group relative">
+            <Mail className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground transition-colors group-focus-within:text-foreground" />
+            <Input
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="tucorreo@clinica.com"
+              autoComplete="email"
+              disabled={isLoading}
+              className="campo-relleno pl-10"
+            />
           </div>
         </div>
-      </motion.div>
-    </div>
+        <Button type="submit" disabled={isLoading} className="group h-12 w-full rounded-xl text-[15px] font-semibold">
+          {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+          Enviar enlace
+          {!isLoading && <ArrowRight className="ml-1.5 h-4 w-4" />}
+        </Button>
+      </form>
+    </AuthLayout>
   );
 };
 

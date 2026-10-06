@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FileText, PieChart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FormDesignOptions } from "@/components/forms/question/types";
-import { supabase } from "@/integrations/supabase/client";
+import { baseDatos } from "@/integrations/datos/cliente";
 
 export const DEFAULT_FORM_CATEGORIES = [
   { value: "historia_clinica", label: "Historia clínica" },
@@ -41,7 +41,7 @@ const Home = () => {
 
   const loadForms = async () => {
     setLoading(true);
-    const { data, error } = await supabase
+    const { data, error } = await baseDatos
       .from("formularios")
       .select("*")
       .eq("estado", "activo")
@@ -95,7 +95,7 @@ const Home = () => {
 
   const confirmDeleteForm = async () => {
     if (formToDelete) {
-      const { error } = await supabase
+      const { error } = await baseDatos
         .from("formularios")
         .delete()
         .eq("id", formToDelete);

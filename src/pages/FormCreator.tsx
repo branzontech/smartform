@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Plus, FileText, Palette, SeparatorHorizontal, Save, X } from "lucide-react";
 import { nanoid } from "nanoid";
-import { supabase } from "@/integrations/supabase/client";
+import { baseDatos } from "@/integrations/datos/cliente";
 
 import { Question } from "@/components/ui/question";
 import { QuestionData, FormDesignOptions, defaultDesignOptions } from "@/components/forms/question/types";
@@ -94,7 +94,7 @@ const FormCreator = () => {
   useEffect(() => {
     if (id) {
       const loadForm = async () => {
-        const { data, error } = await supabase
+        const { data, error } = await baseDatos
           .from("formularios")
           .select("*")
           .eq("id", id)
@@ -282,7 +282,7 @@ const FormCreator = () => {
       let formId = id;
       
       if (id) {
-        const { error } = await supabase
+        const { error } = await baseDatos
           .from("formularios")
           .update(formPayload)
           .eq("id", id);
@@ -294,7 +294,7 @@ const FormCreator = () => {
           description: "Los cambios han sido guardados",
         });
       } else {
-        const { data, error } = await supabase
+        const { data, error } = await baseDatos
           .from("formularios")
           .insert(formPayload)
           .select("id")

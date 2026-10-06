@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { supabase } from "@/integrations/supabase/client";
+import { baseDatos } from "@/integrations/datos/cliente";
 import type {
   AnulacionInput,
   CorreccionConfiguracion,
@@ -48,14 +48,14 @@ function obtenerUserAgent(): string {
 async function obtenerDatosAgente(
   userId: string
 ): Promise<{ role: string; nombre: string }> {
-  const { data: roleData } = await supabase
+  const { data: roleData } = await baseDatos
     .from("user_roles")
     .select("role")
     .eq("user_id", userId)
     .limit(1)
     .maybeSingle();
 
-  const { data: profileData } = await supabase
+  const { data: profileData } = await baseDatos
     .from("profiles")
     .select("full_name")
     .eq("user_id", userId)
@@ -73,7 +73,7 @@ async function obtenerDatosAgente(
 export async function obtenerConfiguracionCorreccion(
   targetTable: CorreccionTargetTable
 ): Promise<CorreccionConfiguracion | null> {
-  const { data, error } = await supabase
+  const { data, error } = await baseDatos
     .from("correccion_configuracion")
     .select("*")
     .eq("target_table", targetTable)
@@ -145,11 +145,11 @@ export async function anularRegistro(
 
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await baseDatos.auth.getUser();
   if (!user) throw new Error("Usuario no autenticado");
 
   // 1. Snapshot del registro original
-  const { data: originalRecord, error: fetchError } = await supabase
+  const { data: originalRecord, error: fetchError } = await baseDatos
     .from(parsed.target_table)
     .select("*")
     .eq("id", parsed.target_record_id)
@@ -170,7 +170,7 @@ export async function anularRegistro(
   const userAgent = obtenerUserAgent();
 
   // 3. Insertar provenance (inmutable)
-  const { data: provenance, error: provError } = await supabase
+  const { data: provenance, error: provError } = await baseDatos
     .from("provenance_clinico")
     .insert({
       target_table: parsed.target_table,
@@ -196,7 +196,7 @@ export async function anularRegistro(
   }
 
   // 4. Marcar el registro original como 'entered-in-error'
-  const { error: updateError } = await supabase
+  const { error: updateError } = await baseDatos
     .from(parsed.target_table)
     .update({ estado_registro: "entered-in-error" } as any)
     .eq("id", parsed.target_record_id);
@@ -221,11 +221,11 @@ export async function corregirRegistro(input: CorreccionInput): Promise<{
 
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await baseDatos.auth.getUser();
   if (!user) throw new Error("Usuario no autenticado");
 
   // 1. Snapshot original
-  const { data: originalRecord, error: fetchError } = await supabase
+  const { data: originalRecord, error: fetchError } = await baseDatos
     .from(parsed.target_table)
     .select("*")
     .eq("id", parsed.target_record_id)
@@ -257,7 +257,7 @@ export async function corregirRegistro(input: CorreccionInput): Promise<{
     superseded_by: null,
   };
 
-  const { data: replacement, error: insertError } = await supabase
+  const { data: replacement, error: insertError } = await baseDatos
     .from(parsed.target_table)
     .insert(replacementPayload as any)
     .select("id")
@@ -273,7 +273,7 @@ export async function corregirRegistro(input: CorreccionInput): Promise<{
   const { role, nombre } = await obtenerDatosAgente(user.id);
   const userAgent = obtenerUserAgent();
 
-  const { data: provenance, error: provError } = await supabase
+  const { data: provenance, error: provError } = await baseDatos
     .from("provenance_clinico")
     .insert({
       target_table: parsed.target_table,
@@ -299,7 +299,7 @@ export async function corregirRegistro(input: CorreccionInput): Promise<{
   }
 
   // 4. Marcar original como superseded
-  const { error: updateError } = await supabase
+  const { error: updateError } = await baseDatos
     .from(parsed.target_table)
     .update({
       estado_registro: "superseded",
@@ -326,7 +326,7 @@ export async function obtenerHistorialProvenance(
   targetTable: CorreccionTargetTable,
   targetRecordId: string
 ): Promise<ProvenanceClinico[]> {
-  const { data, error } = await supabase
+  const { data, error } = await baseDatos
     .from("provenance_clinico")
     .select("*")
     .eq("target_table", targetTable)

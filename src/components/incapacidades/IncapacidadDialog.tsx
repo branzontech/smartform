@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { baseDatos } from "@/integrations/datos/cliente";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -137,7 +137,7 @@ const DiagnosticoSearch: React.FC<{
     queryKey: ["catalogo_diagnosticos", debouncedQuery],
     queryFn: async () => {
       if (debouncedQuery.length < 2) return [];
-      const { data } = await supabase
+      const { data } = await baseDatos
         .from("catalogo_diagnosticos")
         .select("codigo, descripcion")
         .eq("activo", true)

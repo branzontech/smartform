@@ -21,7 +21,7 @@ import {
   AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Separator } from "@/components/ui/separator";
-import { supabase } from "@/integrations/supabase/client";
+import { baseDatos } from "@/integrations/datos/cliente";
 import { toast } from "sonner";
 
 // ── Field type definitions ──────────────────────────────────────────
@@ -102,7 +102,7 @@ export const DynamicFieldConfigurator: React.FC<DynamicFieldConfiguratorProps> =
 
   const fetchFields = async () => {
     setIsLoading(true);
-    const { data, error } = await supabase
+    const { data, error } = await baseDatos
       .from(tableName)
       .select("*")
       .order("orden", { ascending: true });
@@ -144,7 +144,7 @@ export const DynamicFieldConfigurator: React.FC<DynamicFieldConfiguratorProps> =
       maestro: newField.tipo_dato.startsWith("catalog_") ? newField.maestro || null : null,
     };
 
-    const { error } = await supabase.from(tableName).insert(insertData);
+    const { error } = await baseDatos.from(tableName).insert(insertData);
     setIsSaving(false);
     if (error) { toast.error("Error: " + error.message); return; }
 
@@ -155,7 +155,7 @@ export const DynamicFieldConfigurator: React.FC<DynamicFieldConfiguratorProps> =
   };
 
   const handleDelete = async (field: DynamicFieldConfig) => {
-    const { error } = await supabase.from(tableName).delete().eq("id", field.id);
+    const { error } = await baseDatos.from(tableName).delete().eq("id", field.id);
     if (error) { toast.error("Error: " + error.message); return; }
     toast.success(`Campo "${field.label}" eliminado`);
     fetchFields();

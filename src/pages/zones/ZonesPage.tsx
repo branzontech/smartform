@@ -8,7 +8,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { ZoneMap, ZoneSidebar, CreateZoneModal, DistanceCalculator } from '@/components/zones';
 import { useGoogleMaps } from '@/hooks/useGoogleMaps';
 import { Zone, GeocodedLocation, LatLng, DrawingMode } from '@/types/zone-types';
-import { supabase } from '@/integrations/supabase/client';
+import { baseDatos } from "@/integrations/datos/cliente";
 import {
   ResizablePanelGroup,
   ResizablePanel,
@@ -121,7 +121,7 @@ const ZonesPage: React.FC = () => {
         }
 
         // Then try to fetch from edge function (for configured secrets)
-        const response = await supabase.functions.invoke('get-maps-config');
+        const response = await baseDatos.functions.invoke('get-maps-config');
         if (response.data?.apiKey) {
           setApiKey(response.data.apiKey);
           // Cache it in localStorage for faster subsequent loads
@@ -145,7 +145,7 @@ const ZonesPage: React.FC = () => {
     const loadZones = async () => {
       setIsLoading(true);
       try {
-        const { data, error } = await supabase
+        const { data, error } = await baseDatos
           .from('zones')
           .select('*')
           .order('created_at', { ascending: false });
@@ -212,7 +212,7 @@ const ZonesPage: React.FC = () => {
       };
 
       // Save to database
-      const { data: savedZone, error } = await supabase
+      const { data: savedZone, error } = await baseDatos
         .from('zones')
         .insert([newZoneData])
         .select()
@@ -242,7 +242,7 @@ const ZonesPage: React.FC = () => {
 
   const handleDeleteZone = async (zoneId: string) => {
     try {
-      const { error } = await supabase
+      const { error } = await baseDatos
         .from('zones')
         .delete()
         .eq('id', zoneId);

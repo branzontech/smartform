@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useRef } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { baseDatos } from "@/integrations/datos/cliente";
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -96,7 +96,7 @@ export const MedicationOrderForm: React.FC<MedicationOrderFormProps> = ({
   const searchDiagnosis = useCallback(async (term: string) => {
     if (term.length < 2) { setDiagResults([]); return; }
     setDiagLoading(true);
-    const { data } = await supabase
+    const { data } = await baseDatos
       .from('catalogo_diagnosticos')
       .select('codigo, descripcion, sistema, fhir_system_uri')
       .eq('sistema', 'CIE-10')
@@ -165,7 +165,7 @@ export const MedicationOrderForm: React.FC<MedicationOrderFormProps> = ({
         indicaciones: m.indicaciones,
       }));
 
-      const { error } = await supabase.from('ordenes_medicas').insert({
+      const { error } = await baseDatos.from('ordenes_medicas').insert({
         tipo: 'medicamento',
         paciente_id: pacienteId,
         admision_id: admisionId,

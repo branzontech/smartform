@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { baseDatos } from "@/integrations/datos/cliente";
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -24,7 +24,7 @@ export const SignatureUploader: React.FC = () => {
     let cancelled = false;
     const load = async () => {
       setLoading(true);
-      const { data } = await supabase
+      const { data } = await baseDatos
         .from('profiles')
         .select('signature_url, full_name, specialty, license_number')
         .eq('user_id', user.id)
@@ -64,15 +64,15 @@ export const SignatureUploader: React.FC = () => {
       const ext = file.name.split('.').pop() || 'png';
       const path = `${user.id}/signature.${ext}`;
 
-      const { error: upErr } = await supabase.storage
+      const { error: upErr } = await baseDatos.storage
         .from('signatures')
         .upload(path, file, { upsert: true, contentType: file.type });
       if (upErr) throw upErr;
 
-      const { data: urlData } = supabase.storage.from('signatures').getPublicUrl(path);
+      const { data: urlData } = baseDatos.storage.from('signatures').getPublicUrl(path);
       const publicUrl = `${urlData.publicUrl}?v=${Date.now()}`;
 
-      const { error: profErr } = await supabase
+      const { error: profErr } = await baseDatos
         .from('profiles')
         .update({ signature_url: publicUrl })
         .eq('user_id', user.id);
@@ -92,13 +92,13 @@ export const SignatureUploader: React.FC = () => {
     setUploading(true);
     try {
       // Try to remove file (best-effort, both common extensions)
-      await supabase.storage.from('signatures').remove([
+      await baseDatos.storage.from('signatures').remove([
         `${user.id}/signature.png`,
         `${user.id}/signature.jpg`,
         `${user.id}/signature.jpeg`,
         `${user.id}/signature.webp`,
       ]);
-      const { error } = await supabase
+      const { error } = await baseDatos
         .from('profiles')
         .update({ signature_url: null })
         .eq('user_id', user.id);

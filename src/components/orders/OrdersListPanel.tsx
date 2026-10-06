@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { baseDatos } from "@/integrations/datos/cliente";
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -67,7 +67,7 @@ export const OrdersListPanel: React.FC<OrdersListPanelProps> = ({ admisionId }) 
   const fetchOrders = useCallback(async () => {
     if (!admisionId) { setLoading(false); return; }
     setLoading(true);
-    const { data } = await supabase
+    const { data } = await baseDatos
       .from('ordenes_medicas')
       .select('id, tipo, numero_orden, estado, fecha_orden, prioridad, medico_id, medico_nombre, paciente_id, diagnostico_codigo, diagnostico_descripcion, diagnostico_sistema, indicaciones, items, alcance, fhir_extensions')
       .eq('admision_id', admisionId)

@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { baseDatos } from "@/integrations/datos/cliente";
 import type { OrdenProcedimientoConItems, OrdenProcedimientoItem } from '@/types/ordenes-procedimientos';
 
 const QUERY_KEY = 'ordenes_procedimientos';
@@ -10,7 +10,7 @@ export function useOrdenesProcedimientosByAdmision(admisionId: string | null) {
     queryFn: async (): Promise<OrdenProcedimientoConItems[]> => {
       if (!admisionId) return [];
 
-      const { data: ordenes, error } = await supabase
+      const { data: ordenes, error } = await baseDatos
         .from('ordenes_medicas')
         .select('*')
         .eq('tipo', 'procedimiento')
@@ -22,14 +22,14 @@ export function useOrdenesProcedimientosByAdmision(admisionId: string | null) {
 
       const ordenIds = ordenes.map(o => o.id);
 
-      const { data: items, error: itemsError } = await supabase
+      const { data: items, error: itemsError } = await baseDatos
         .from('orden_procedimiento_items')
         .select('*')
         .in('orden_id', ordenIds);
 
       if (itemsError) throw itemsError;
 
-      const itemsByOrden = (items || []).reduce<Record<string, OrdenProcedimientoItem[]>>((acc, item) => {
+      const itemsByOrden = ((items ?? []) as unknown[]).reduce<Record<string, OrdenProcedimientoItem[]>>((acc, item) => {
         const typed = item as unknown as OrdenProcedimientoItem;
         if (!acc[typed.orden_id]) acc[typed.orden_id] = [];
         acc[typed.orden_id].push(typed);
@@ -52,7 +52,7 @@ export function useOrdenProcedimientoDetail(ordenId: string | null) {
     queryFn: async (): Promise<OrdenProcedimientoConItems | null> => {
       if (!ordenId) return null;
 
-      const { data: orden, error } = await supabase
+      const { data: orden, error } = await baseDatos
         .from('ordenes_medicas')
         .select('*')
         .eq('id', ordenId)
@@ -61,7 +61,7 @@ export function useOrdenProcedimientoDetail(ordenId: string | null) {
       if (error) throw error;
       if (!orden) return null;
 
-      const { data: items, error: itemsError } = await supabase
+      const { data: items, error: itemsError } = await baseDatos
         .from('orden_procedimiento_items')
         .select('*')
         .eq('orden_id', ordenId);
@@ -70,7 +70,7 @@ export function useOrdenProcedimientoDetail(ordenId: string | null) {
 
       let servicio = null;
       if (orden.servicio_id) {
-        const { data: svc } = await supabase
+        const { data: svc } = await baseDatos
           .from('servicios_clinicos')
           .select('nombre, codigo')
           .eq('id', orden.servicio_id)
@@ -119,7 +119,7 @@ export function useCreateOrdenProcedimiento() {
   return useMutation({
     mutationFn: async ({ orden, items }: { orden: CreateOrdenInput; items: CreateOrdenItemInput[] }) => {
       // 1. Insert into ordenes_medicas
-      const { data: newOrden, error: ordenError } = await supabase
+      const { data: newOrden, error: ordenError } = await baseDatos
         .from('ordenes_medicas')
         .insert({
           tipo: 'procedimiento',
@@ -160,7 +160,7 @@ export function useCreateOrdenProcedimiento() {
           notas: item.notas || null,
         }));
 
-        const { error: itemsError } = await supabase
+        const { error: itemsError } = await baseDatos
           .from('orden_procedimiento_items')
           .insert(itemRows as any);
 
@@ -180,7 +180,7 @@ export function useSearchProcedimientos(search: string, servicioId?: string) {
     queryKey: ['search_procedimientos', search, servicioId],
     queryFn: async () => {
       if (servicioId) {
-        const { data, error } = await supabase
+        const { data, error } = await baseDatos
           .from('servicio_procedimientos')
           .select('procedimiento_id, catalogo_procedimientos(*)')
           .eq('servicio_id', servicioId)
@@ -195,7 +195,7 @@ export function useSearchProcedimientos(search: string, servicioId?: string) {
         );
       }
 
-      const { data, error } = await supabase
+      const { data, error } = await baseDatos
         .from('catalogo_procedimientos')
         .select('*')
         .eq('activo', true)

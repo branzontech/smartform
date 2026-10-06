@@ -15,7 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import { supabase } from "@/integrations/supabase/client";
+import { baseDatos } from "@/integrations/datos/cliente";
 
 type SortField = 'name' | 'documentId' | 'dateOfBirth' | 'lastVisitAt' | 'createdAt';
 type SortDirection = 'asc' | 'desc';
@@ -49,7 +49,7 @@ const PatientList = () => {
     const fetchPatients = async () => {
       setLoading(true);
       try {
-        const { data, error } = await supabase
+        const { data, error } = await baseDatos
           .from("pacientes")
           .select("*")
           .order("created_at", { ascending: false });

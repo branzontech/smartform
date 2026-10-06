@@ -17,7 +17,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { getRecentAndFrequentForms } from "@/utils/form-utils";
 import { cn } from "@/lib/utils";
-import { supabase } from "@/integrations/supabase/client";
+import { baseDatos } from "@/integrations/datos/cliente";
 import { Sparkles } from "lucide-react";
 
 type WorkflowStep = 1 | 2;
@@ -113,7 +113,7 @@ const NewConsultation = () => {
 
     const timer = setTimeout(async () => {
       setIsSearching(true);
-      const { data, error } = await supabase
+      const { data, error } = await baseDatos
         .from("pacientes")
         .select("*")
         .or(`numero_documento.ilike.%${patientSearchTerm}%,nombres.ilike.%${patientSearchTerm}%,apellidos.ilike.%${patientSearchTerm}%`)
@@ -132,14 +132,14 @@ const NewConsultation = () => {
   useEffect(() => {
     if (preselectedPatientId && !selectedPatientData) {
       const loadPatient = async () => {
-        const { data } = await supabase
+        const { data } = await baseDatos
           .from("pacientes")
           .select("*")
           .eq("id", preselectedPatientId)
           .single();
         if (data) {
           setSelectedPatientData(data);
-          const { data: admData } = await supabase
+          const { data: admData } = await baseDatos
             .from("admisiones")
             .select("*")
             .eq("paciente_id", preselectedPatientId)
@@ -155,7 +155,7 @@ const NewConsultation = () => {
   // Load forms from database
   useEffect(() => {
     const loadForms = async () => {
-      const { data, error } = await supabase
+      const { data, error } = await baseDatos
         .from("formularios")
         .select("*")
         .eq("estado", "activo")
@@ -196,7 +196,7 @@ const NewConsultation = () => {
     setPatientSearchTerm("");
     setSearchResults([]);
     saveToRecents(dbPatient);
-    const { data } = await supabase
+    const { data } = await baseDatos
       .from("admisiones")
       .select("*")
       .eq("paciente_id", dbPatient.id)
@@ -625,7 +625,7 @@ const NewConsultation = () => {
                                               "active:scale-[0.99]"
                                             )}
                                             onClick={async () => {
-                                              const { data } = await supabase
+                                              const { data } = await baseDatos
                                                 .from("pacientes")
                                                 .select("*")
                                                 .eq("id", patient.id)

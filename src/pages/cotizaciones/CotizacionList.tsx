@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { baseDatos } from "@/integrations/datos/cliente";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { toast } from "sonner";
@@ -51,7 +51,7 @@ const CotizacionList = ({ onNewClick, onView, onEdit }: Props) => {
   const { data: cotizaciones, isLoading } = useQuery({
     queryKey: ["cotizaciones", estadoFilter, fechaDesde, fechaHasta, searchCliente],
     queryFn: async () => {
-      let query = supabase
+      let query = baseDatos
         .from("cotizaciones" as any)
         .select("*, clientes_cotizacion:cliente_cotizacion_id(*)")
         .order("created_at", { ascending: false });
@@ -90,7 +90,7 @@ const CotizacionList = ({ onNewClick, onView, onEdit }: Props) => {
     queryKey: ["profiles-map", creatorIds],
     queryFn: async () => {
       if (creatorIds.length === 0) return {};
-      const { data, error } = await supabase
+      const { data, error } = await baseDatos
         .from("profiles")
         .select("user_id, full_name")
         .in("user_id", creatorIds);
@@ -121,8 +121,8 @@ const CotizacionList = ({ onNewClick, onView, onEdit }: Props) => {
   // Delete mutation
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      await supabase.from("cotizacion_items" as any).delete().eq("cotizacion_id", id);
-      const { error } = await supabase.from("cotizaciones" as any).delete().eq("id", id);
+      await baseDatos.from("cotizacion_items" as any).delete().eq("cotizacion_id", id);
+      const { error } = await baseDatos.from("cotizaciones" as any).delete().eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -138,7 +138,7 @@ const CotizacionList = ({ onNewClick, onView, onEdit }: Props) => {
   // Duplicate mutation
   const duplicateMutation = useMutation({
     mutationFn: async (cotId: string) => {
-      const { data: original, error: fetchErr } = await supabase
+      const { data: original, error: fetchErr } = await baseDatos
         .from("cotizaciones" as any)
         .select("*")
         .eq("id", cotId)
@@ -146,14 +146,14 @@ const CotizacionList = ({ onNewClick, onView, onEdit }: Props) => {
       if (fetchErr) throw fetchErr;
       const orig = original as any;
 
-      const { data: origItems, error: itemsErr } = await supabase
+      const { data: origItems, error: itemsErr } = await baseDatos
         .from("cotizacion_items" as any)
         .select("*")
         .eq("cotizacion_id", cotId)
         .order("orden", { ascending: true });
       if (itemsErr) throw itemsErr;
 
-      const { data: newCot, error: insertErr } = await supabase
+      const { data: newCot, error: insertErr } = await baseDatos
         .from("cotizaciones" as any)
         .insert({
           numero_cotizacion: "",
@@ -189,7 +189,7 @@ const CotizacionList = ({ onNewClick, onView, onEdit }: Props) => {
           valor_total: item.valor_total,
           orden: item.orden,
         }));
-        await supabase.from("cotizacion_items" as any).insert(newItems as any);
+        await baseDatos.from("cotizacion_items" as any).insert(newItems as any);
       }
     },
     onSuccess: () => {

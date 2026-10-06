@@ -33,7 +33,7 @@ export const ProcedureOrderForm: React.FC<ProcedureOrderFormProps> = ({
   admisionId, pacienteId, onSaved, onCancel,
 }) => {
   const { user: authUser } = useAuth();
-  const medicoNombre = authUser?.user_metadata?.full_name || 'Médico';
+  const medicoNombre = authUser?.name || 'Médico';
   const medicoId = authUser?.id || '';
 
   const [servicioId, setServicioId] = useState('');

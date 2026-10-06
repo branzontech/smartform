@@ -1,6 +1,6 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { baseDatos } from "@/integrations/datos/cliente";
 import { Package, AlertTriangle, TrendingDown, Clock, Search, Filter, X, PackagePlus, Plus, Pencil } from 'lucide-react';
 import { ProductoDialog } from '@/components/inventario/ProductoDialog';
 import { RegistrarMovimientoDialog } from '@/components/inventario/RegistrarMovimientoDialog';
@@ -55,7 +55,7 @@ function useAlerts() {
       const now = new Date().toISOString().split('T')[0];
       const in90 = new Date(Date.now() + 90 * 86400000).toISOString().split('T')[0];
 
-      const { data: lots } = await supabase
+      const { data: lots } = await baseDatos
         .from('inventario_lotes')
         .select('numero_lote, fecha_vencimiento, stock_id, estado')
         .lte('fecha_vencimiento', in90)
@@ -65,7 +65,7 @@ function useAlerts() {
 
       if (lots && lots.length > 0) {
         const stockIds = [...new Set(lots.map(l => l.stock_id))];
-        const { data: stocks } = await supabase
+        const { data: stocks } = await baseDatos
           .from('inventario_stock')
           .select('id, producto_id, sede_id')
           .in('id', stockIds);
@@ -74,8 +74,8 @@ function useAlerts() {
         const sedeIds = [...new Set((stocks || []).map(s => s.sede_id))];
 
         const [{ data: prods }, { data: sedes }] = await Promise.all([
-          supabase.from('catalogo_productos').select('id, nombre_generico').in('id', prodIds),
-          supabase.from('sedes').select('id, nombre').in('id', sedeIds),
+          baseDatos.from('catalogo_productos').select('id, nombre_generico').in('id', prodIds),
+          baseDatos.from('sedes').select('id, nombre').in('id', sedeIds),
         ]);
 
         const prodMap = Object.fromEntries((prods || []).map(p => [p.id, p.nombre_generico]));
@@ -98,7 +98,7 @@ function useAlerts() {
       }
 
       // Low stock
-      const { data: lowStock } = await supabase
+      const { data: lowStock } = await baseDatos
         .from('inventario_stock')
         .select('producto_id, sede_id, cantidad_disponible, cantidad_minima')
         .gt('cantidad_minima', 0)
@@ -110,8 +110,8 @@ function useAlerts() {
           const prodIds = [...new Set(low.map(s => s.producto_id))];
           const sedeIds = [...new Set(low.map(s => s.sede_id))];
           const [{ data: prods }, { data: sedes }] = await Promise.all([
-            supabase.from('catalogo_productos').select('id, nombre_generico').in('id', prodIds),
-            supabase.from('sedes').select('id, nombre').in('id', sedeIds),
+            baseDatos.from('catalogo_productos').select('id, nombre_generico').in('id', prodIds),
+            baseDatos.from('sedes').select('id, nombre').in('id', sedeIds),
           ]);
           const prodMap = Object.fromEntries((prods || []).map(p => [p.id, p.nombre_generico]));
           const sedeMap = Object.fromEntries((sedes || []).map(s => [s.id, s.nombre]));
@@ -166,7 +166,7 @@ function useStockData(search: string, sedeFilter: string, tipoFilter: string) {
     staleTime: 30_000,
     queryFn: async () => {
       // Fetch stock with related data
-      const { data: stocks } = await supabase
+      const { data: stocks } = await baseDatos
         .from('inventario_stock')
         .select('id, producto_id, presentacion_id, sede_id, cantidad_disponible, cantidad_minima, cantidad_maxima')
         .order('created_at', { ascending: false })
@@ -180,10 +180,10 @@ function useStockData(search: string, sedeFilter: string, tipoFilter: string) {
       const stockIds = stocks.map(s => s.id);
 
       const [{ data: prods }, { data: pres }, { data: sedes }, { data: lots }] = await Promise.all([
-        supabase.from('catalogo_productos').select('id, nombre_generico, tipo_producto').in('id', prodIds),
-        supabase.from('presentaciones_producto').select('id, forma_farmaceutica, concentracion').in('id', presIds),
-        supabase.from('sedes').select('id, nombre').in('id', sedeIds),
-        supabase.from('inventario_lotes')
+        baseDatos.from('catalogo_productos').select('id, nombre_generico, tipo_producto').in('id', prodIds),
+        baseDatos.from('presentaciones_producto').select('id, forma_farmaceutica, concentracion').in('id', presIds),
+        baseDatos.from('sedes').select('id, nombre').in('id', sedeIds),
+        baseDatos.from('inventario_lotes')
           .select('stock_id, fecha_vencimiento')
           .in('stock_id', stockIds)
           .eq('estado', 'disponible')
@@ -240,7 +240,7 @@ function useSedes() {
     queryKey: ['sedes-list'],
     staleTime: 60_000,
     queryFn: async () => {
-      const { data } = await supabase.from('sedes').select('id, nombre').eq('activo', true).order('nombre');
+      const { data } = await baseDatos.from('sedes').select('id, nombre').eq('activo', true).order('nombre');
       return data || [];
     },
   });
@@ -284,7 +284,7 @@ function CatalogoTab({ onEdit }: { onEdit: (id: string) => void }) {
     queryKey: ['catalogo-productos', debouncedSearch],
     staleTime: 30_000,
     queryFn: async () => {
-      let q = supabase.from('catalogo_productos').select('id, codigo, nombre_generico, nombre_comercial, tipo_producto, principio_activo, fabricante, activo, controlado, requiere_cadena_frio').eq('activo', true).order('nombre_generico').limit(200);
+      let q = baseDatos.from('catalogo_productos').select('id, codigo, nombre_generico, nombre_comercial, tipo_producto, principio_activo, fabricante, activo, controlado, requiere_cadena_frio').eq('activo', true).order('nombre_generico').limit(200);
       if (debouncedSearch) {
         q = q.or(`nombre_generico.ilike.%${debouncedSearch}%,nombre_comercial.ilike.%${debouncedSearch}%,codigo.ilike.%${debouncedSearch}%`);
       }
@@ -374,20 +374,20 @@ const InventarioPage: React.FC = () => {
 
   // Metrics
   const totalProducts = useMetric('inv-total-products', async () => {
-    const { count } = await supabase.from('catalogo_productos').select('id', { count: 'exact', head: true }).eq('activo', true);
+    const { count } = await baseDatos.from('catalogo_productos').select('id', { count: 'exact', head: true }).eq('activo', true);
     return count || 0;
   });
   const totalStock = useMetric('inv-total-stock', async () => {
-    const { data } = await supabase.from('inventario_stock').select('cantidad_disponible');
+    const { data } = await baseDatos.from('inventario_stock').select('cantidad_disponible');
     return (data || []).reduce((sum, r) => sum + (r.cantidad_disponible || 0), 0);
   });
   const lowStock = useMetric('inv-low-stock', async () => {
-    const { data } = await supabase.from('inventario_stock').select('cantidad_disponible, cantidad_minima').gt('cantidad_minima', 0);
+    const { data } = await baseDatos.from('inventario_stock').select('cantidad_disponible, cantidad_minima').gt('cantidad_minima', 0);
     return (data || []).filter(r => r.cantidad_disponible <= r.cantidad_minima).length;
   });
   const expiringSoon = useMetric('inv-expiring', async () => {
     const in90 = new Date(Date.now() + 90 * 86400000).toISOString().split('T')[0];
-    const { count } = await supabase.from('inventario_lotes').select('id', { count: 'exact', head: true }).lte('fecha_vencimiento', in90).eq('estado', 'disponible');
+    const { count } = await baseDatos.from('inventario_lotes').select('id', { count: 'exact', head: true }).lte('fecha_vencimiento', in90).eq('estado', 'disponible');
     return count || 0;
   });
 

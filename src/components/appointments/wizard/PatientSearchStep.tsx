@@ -30,7 +30,7 @@ import {
 import { cn } from "@/lib/utils";
 import { ExtendedPatient, DOCUMENT_TYPES } from "../PatientPanel";
 import { PatientStatusBadge } from "@/components/patients/PatientStatusBadge";
-import { supabase } from "@/integrations/supabase/client";
+import { baseDatos } from "@/integrations/datos/cliente";
 import { toast } from "sonner";
 
 // Using shared DynamicFieldConfig type from DynamicFieldConfigurator
@@ -64,7 +64,7 @@ export const PatientSearchStep: React.FC<PatientSearchStepProps> = ({
   // Load dynamic field config
   useEffect(() => {
     const fetchDynamicFields = async () => {
-      const { data, error } = await supabase
+      const { data, error } = await baseDatos
         .from("configuracion_campos_paciente")
         .select("*")
         .order("orden", { ascending: true });
@@ -84,7 +84,7 @@ export const PatientSearchStep: React.FC<PatientSearchStepProps> = ({
 
     const timer = setTimeout(async () => {
       setIsSearching(true);
-      const { data, error } = await supabase
+      const { data, error } = await baseDatos
         .from("pacientes")
         .select("*")
         .or(`numero_documento.ilike.%${searchTerm}%,nombres.ilike.%${searchTerm}%,apellidos.ilike.%${searchTerm}%`)
@@ -139,7 +139,7 @@ export const PatientSearchStep: React.FC<PatientSearchStepProps> = ({
       fhirExtensions.companion = companionData;
     }
 
-    const { data, error } = await supabase
+    const { data, error } = await baseDatos
       .from("pacientes")
       .insert({
         nombres: newPatient.firstName,

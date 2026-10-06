@@ -13,9 +13,7 @@ import { OnboardingWrapper } from "@/components/onboarding/OnboardingWrapper";
 import { Layout } from "@/components/layout";
 import { HelmetProvider } from "react-helmet-async";
 
-import LandingPage from "./pages/landing";
 import Login from "./pages/auth/Login";
-import Register from "./pages/auth/Register";
 import ForgotPassword from "./pages/auth/ForgotPassword";
 import ResetPassword from "./pages/auth/ResetPassword";
 import AppRoutes from "./routes/AppRoutes";
@@ -58,10 +56,10 @@ function App() {
                 <Sonner />
                 <OnboardingWrapper>
                   <Routes>
-                    {/* Public routes */}
-                    <Route path="/" element={<LandingPage />} />
+                    {/* Acceso. La raíz va a la app; sin sesión, ProtectedRoute lleva al login. */}
+                    <Route path="/" element={<Navigate to="/app/home" replace />} />
                     <Route path="/app/login" element={<Login />} />
-                    <Route path="/app/register" element={<Register />} />
+                    <Route path="/app/register" element={<Navigate to="/app/login" replace />} />
                     <Route path="/app/forgot-password" element={<ForgotPassword />} />
                     <Route path="/app/reset-password" element={<ResetPassword />} />
 

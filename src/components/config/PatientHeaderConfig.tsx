@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { baseDatos } from "@/integrations/datos/cliente";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -101,7 +101,7 @@ export const PatientHeaderConfig: React.FC = () => {
   const { data: fields, isLoading } = useQuery({
     queryKey: ["configuracion-encabezado-paciente-admin"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await baseDatos
         .from("configuracion_encabezado_paciente")
         .select("*")
         .order("orden", { ascending: true });
@@ -123,7 +123,7 @@ export const PatientHeaderConfig: React.FC = () => {
 
       // Upsert batch
       for (const field of fieldsToSave) {
-        const { error } = await supabase
+        const { error } = await baseDatos
           .from("configuracion_encabezado_paciente")
           .update({
             etiqueta: field.etiqueta,

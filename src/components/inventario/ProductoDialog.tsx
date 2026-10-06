@@ -3,7 +3,7 @@ import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { baseDatos } from "@/integrations/datos/cliente";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -107,7 +107,7 @@ export const ProductoDialog: React.FC<Props> = ({ open, onOpenChange, editProduc
   const { data: sedes = [] } = useQuery({
     queryKey: ['sedes-select'],
     queryFn: async () => {
-      const { data } = await supabase.from('sedes').select('id, nombre').eq('activo', true).order('nombre');
+      const { data } = await baseDatos.from('sedes').select('id, nombre').eq('activo', true).order('nombre');
       return data || [];
     },
   });
@@ -118,8 +118,8 @@ export const ProductoDialog: React.FC<Props> = ({ open, onOpenChange, editProduc
     enabled: !!editProductId && open,
     queryFn: async () => {
       const [{ data: prod }, { data: pres }] = await Promise.all([
-        supabase.from('catalogo_productos').select('*').eq('id', editProductId!).single(),
-        supabase.from('presentaciones_producto').select('*').eq('producto_id', editProductId!).eq('activo', true),
+        baseDatos.from('catalogo_productos').select('*').eq('id', editProductId!).single(),
+        baseDatos.from('presentaciones_producto').select('*').eq('producto_id', editProductId!).eq('activo', true),
       ]);
       return { prod, pres: pres || [] };
     },
@@ -181,12 +181,12 @@ export const ProductoDialog: React.FC<Props> = ({ open, onOpenChange, editProduc
 
   const mutation = useMutation({
     mutationFn: async (values: FormValues) => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user } } = await baseDatos.auth.getUser();
       if (!user) throw new Error('No autenticado');
 
       if (isEdit) {
         // Update product
-        const { error: prodErr } = await supabase.from('catalogo_productos').update({
+        const { error: prodErr } = await baseDatos.from('catalogo_productos').update({
           nombre_generico: values.nombre_generico,
           nombre_comercial: values.nombre_comercial || null,
           tipo_producto: values.tipo_producto,
@@ -204,13 +204,13 @@ export const ProductoDialog: React.FC<Props> = ({ open, onOpenChange, editProduc
         const toDelete = originalIds.filter(id => !existingIds.includes(id));
 
         if (toDelete.length > 0) {
-          const { error } = await supabase.from('presentaciones_producto').update({ activo: false }).in('id', toDelete);
+          const { error } = await baseDatos.from('presentaciones_producto').update({ activo: false }).in('id', toDelete);
           if (error) throw error;
         }
 
         for (const pres of values.presentaciones) {
           if (pres.id) {
-            const { error } = await supabase.from('presentaciones_producto').update({
+            const { error } = await baseDatos.from('presentaciones_producto').update({
               forma_farmaceutica: pres.forma_farmaceutica,
               concentracion: pres.concentracion || null,
               unidad_medida: pres.unidad_medida,
@@ -219,7 +219,7 @@ export const ProductoDialog: React.FC<Props> = ({ open, onOpenChange, editProduc
             }).eq('id', pres.id);
             if (error) throw error;
           } else {
-            const { error } = await supabase.from('presentaciones_producto').insert({
+            const { error } = await baseDatos.from('presentaciones_producto').insert({
               producto_id: editProductId!,
               forma_farmaceutica: pres.forma_farmaceutica,
               concentracion: pres.concentracion || null,
@@ -235,7 +235,7 @@ export const ProductoDialog: React.FC<Props> = ({ open, onOpenChange, editProduc
       } else {
         // Create product
         const codigo = `${values.tipo_producto === 'medicamento' ? 'MED' : values.tipo_producto === 'insumo' ? 'INS' : 'DIS'}-${nanoid(6).toUpperCase()}`;
-        const { data: prod, error: prodErr } = await supabase.from('catalogo_productos').insert({
+        const { data: prod, error: prodErr } = await baseDatos.from('catalogo_productos').insert({
           codigo,
           nombre_generico: values.nombre_generico,
           nombre_comercial: values.nombre_comercial || null,
@@ -254,7 +254,7 @@ export const ProductoDialog: React.FC<Props> = ({ open, onOpenChange, editProduc
         let loteInfo: { numero: string; cantidad: number; sede: string } | null = null;
 
         for (const p of values.presentaciones) {
-          const { data: presData, error: presErr } = await supabase.from('presentaciones_producto').insert({
+          const { data: presData, error: presErr } = await baseDatos.from('presentaciones_producto').insert({
             producto_id: prod.id,
             forma_farmaceutica: p.forma_farmaceutica,
             concentracion: p.concentracion || null,
@@ -268,7 +268,7 @@ export const ProductoDialog: React.FC<Props> = ({ open, onOpenChange, editProduc
           const lote = p.lote_inicial;
           if (lote && lote.sede_id && lote.numero_lote && lote.fecha_vencimiento && lote.cantidad_inicial && lote.cantidad_inicial > 0) {
             // Find or create stock record
-            let { data: stock } = await supabase
+            let { data: stock } = await baseDatos
               .from('inventario_stock')
               .select('id')
               .eq('presentacion_id', presData.id)
@@ -277,7 +277,7 @@ export const ProductoDialog: React.FC<Props> = ({ open, onOpenChange, editProduc
               .maybeSingle();
 
             if (!stock) {
-              const { data: newStock, error: stockErr } = await supabase
+              const { data: newStock, error: stockErr } = await baseDatos
                 .from('inventario_stock')
                 .insert({
                   producto_id: prod.id,
@@ -292,7 +292,7 @@ export const ProductoDialog: React.FC<Props> = ({ open, onOpenChange, editProduc
             }
 
             // Create lot
-            const { data: loteData, error: loteErr } = await supabase
+            const { data: loteData, error: loteErr } = await baseDatos
               .from('inventario_lotes')
               .insert({
                 stock_id: stock!.id,
@@ -305,7 +305,7 @@ export const ProductoDialog: React.FC<Props> = ({ open, onOpenChange, editProduc
             if (loteErr) throw loteErr;
 
             // Create movement (trigger updates stock + lote quantities)
-            const { error: movErr } = await supabase
+            const { error: movErr } = await baseDatos
               .from('inventario_movimientos')
               .insert({
                 stock_id: stock!.id,

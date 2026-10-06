@@ -1,4 +1,4 @@
-import { supabase } from '@/integrations/supabase/client';
+import { baseDatos } from "@/integrations/datos/cliente";
 
 export interface InstitutionConfig {
   nombre_principal?: string;
@@ -35,7 +35,7 @@ export interface DoctorInfo {
 }
 
 export async function fetchInstitution(): Promise<InstitutionConfig | null> {
-  const { data } = await supabase
+  const { data } = await baseDatos
     .from('configuracion_encabezado')
     .select('*')
     .limit(1)
@@ -44,7 +44,7 @@ export async function fetchInstitution(): Promise<InstitutionConfig | null> {
 }
 
 export async function fetchPatient(patientId: string): Promise<PatientInfo | null> {
-  const { data } = await supabase
+  const { data } = await baseDatos
     .from('pacientes')
     .select('nombres, apellidos, tipo_documento, numero_documento, fecha_nacimiento, genero, numero_historia, telefono_principal, email, direccion, ciudad')
     .eq('id', patientId)
@@ -53,7 +53,7 @@ export async function fetchPatient(patientId: string): Promise<PatientInfo | nul
 }
 
 export async function fetchDoctor(medicoId: string): Promise<DoctorInfo | null> {
-  const { data } = await supabase
+  const { data } = await baseDatos
     .from('profiles')
     .select('full_name, specialty, license_number, signature_url, phone')
     .eq('user_id', medicoId)

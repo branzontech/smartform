@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { baseDatos } from "@/integrations/datos/cliente";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
@@ -46,7 +46,7 @@ export const PatientHeaderBanner: React.FC<PatientHeaderBannerProps> = ({
   const { data: patient, isLoading: patientLoading } = useQuery({
     queryKey: ["paciente", pacienteId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await baseDatos
         .from("pacientes")
         .select("*")
         .eq("id", pacienteId)
@@ -60,7 +60,7 @@ export const PatientHeaderBanner: React.FC<PatientHeaderBannerProps> = ({
   const { data: admision, isLoading: admisionLoading } = useQuery({
     queryKey: ["admision", admisionId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await baseDatos
         .from("admisiones")
         .select("*")
         .eq("id", admisionId!)

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { baseDatos } from "@/integrations/datos/cliente";
 import { Badge } from "@/components/ui/badge";
 import { ClipboardList, Clock, Calendar, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -35,7 +35,7 @@ export const AdmissionHistorySection: React.FC<Props> = ({ patientId }) => {
   useEffect(() => {
     const fetch = async () => {
       setLoading(true);
-      const { data } = await supabase
+      const { data } = await baseDatos
         .from("admisiones")
         .select("*, tipo_admision:tipos_admision(nombre)")
         .eq("paciente_id", patientId)

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { baseDatos } from "@/integrations/datos/cliente";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { format, addDays } from "date-fns";
@@ -49,7 +49,7 @@ const CotizacionForm = ({ editId, onCancel, onSaved }: Props) => {
   const { data: existingCot } = useQuery({
     queryKey: ["cotizacion", editId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await baseDatos
         .from("cotizaciones" as any)
         .select("*, clientes_cotizacion:cliente_cotizacion_id(*)")
         .eq("id", editId!)
@@ -63,7 +63,7 @@ const CotizacionForm = ({ editId, onCancel, onSaved }: Props) => {
   const { data: existingItems } = useQuery({
     queryKey: ["cotizacion-items", editId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await baseDatos
         .from("cotizacion_items" as any)
         .select("*")
         .eq("cotizacion_id", editId!)
@@ -80,7 +80,7 @@ const CotizacionForm = ({ editId, onCancel, onSaved }: Props) => {
   const { data: config } = useQuery({
     queryKey: ["configuracion-cotizaciones"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await baseDatos
         .from("configuracion_cotizaciones" as any)
         .select("*")
         .limit(1)
@@ -94,7 +94,7 @@ const CotizacionForm = ({ editId, onCancel, onSaved }: Props) => {
   const { data: headerConfig } = useQuery({
     queryKey: ["configuracion-encabezado"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await baseDatos
         .from("configuracion_encabezado")
         .select("*")
         .limit(1)
@@ -122,7 +122,7 @@ const CotizacionForm = ({ editId, onCancel, onSaved }: Props) => {
     queryKey: ["clientes-cotizacion", clienteSearch],
     queryFn: async () => {
       if (clienteSearch.length < 2) return [];
-      const { data, error } = await supabase
+      const { data, error } = await baseDatos
         .from("clientes_cotizacion" as any)
         .select("*")
         .or(`nombre_razon_social.ilike.%${clienteSearch}%,numero_documento.ilike.%${clienteSearch}%`)
@@ -135,7 +135,7 @@ const CotizacionForm = ({ editId, onCancel, onSaved }: Props) => {
 
   const createClienteMutation = useMutation({
     mutationFn: async (data: typeof newCliente) => {
-      const { data: created, error } = await supabase
+      const { data: created, error } = await baseDatos
         .from("clientes_cotizacion" as any)
         .insert(data as any)
         .select()
@@ -179,7 +179,7 @@ const CotizacionForm = ({ editId, onCancel, onSaved }: Props) => {
     queryKey: ["tarifarios-servicios", servicioSearch],
     queryFn: async () => {
       if (servicioSearch.length < 2) return [];
-      const { data, error } = await supabase
+      const { data, error } = await baseDatos
         .from("tarifarios_servicios")
         .select("*")
         .or(`codigo_servicio.ilike.%${servicioSearch}%,descripcion_servicio.ilike.%${servicioSearch}%`)
@@ -321,7 +321,7 @@ const CotizacionForm = ({ editId, onCancel, onSaved }: Props) => {
 
       if (isEditing && editId) {
         // UPDATE existing
-        const { error: cotError } = await supabase
+        const { error: cotError } = await baseDatos
           .from("cotizaciones" as any)
           .update(cotData)
           .eq("id", editId);
@@ -329,14 +329,14 @@ const CotizacionForm = ({ editId, onCancel, onSaved }: Props) => {
         cotId = editId;
 
         // Delete old items and re-insert
-        await supabase.from("cotizacion_items" as any).delete().eq("cotizacion_id", editId);
+        await baseDatos.from("cotizacion_items" as any).delete().eq("cotizacion_id", editId);
       } else {
         // INSERT new
         cotData.numero_cotizacion = "";
         cotData.fecha_emision = format(new Date(), "yyyy-MM-dd");
         cotData.creado_por = user.id;
 
-        const { data: cotizacion, error: cotError } = await supabase
+        const { data: cotizacion, error: cotError } = await baseDatos
           .from("cotizaciones" as any)
           .insert(cotData)
           .select()
@@ -357,7 +357,7 @@ const CotizacionForm = ({ editId, onCancel, onSaved }: Props) => {
         orden: idx,
       }));
 
-      const { error: itemsError } = await supabase
+      const { error: itemsError } = await baseDatos
         .from("cotizacion_items" as any)
         .insert(itemsToInsert as any);
 
