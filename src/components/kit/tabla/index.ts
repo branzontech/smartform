@@ -9,3 +9,4 @@ export { TablaDatos } from "./TablaDatos";
 export { CeldaEstado, type TonoEstado } from "./Celdas";
 export { tonoPlazo } from "./plazo";
 export { descargarCsv } from "./csv";
+export { TablaSimple, type ColumnaSimple } from "./TablaSimple";
