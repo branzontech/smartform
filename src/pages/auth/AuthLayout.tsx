@@ -1,8 +1,6 @@
 import type { ReactNode } from "react";
 
 interface AuthLayoutProps {
-  /** Etiqueta pequeña sobre el título (ej. «Iniciar sesión»). */
-  insignia: string;
   titulo: string;
   descripcion?: string;
   children: ReactNode;
@@ -15,7 +13,7 @@ interface AuthLayoutProps {
  * con la marca encima y, a la derecha, el formulario en una tarjeta sobre un
  * fondo con textura de puntos. En móvil la ilustración queda como franja superior.
  */
-export function AuthLayout({ insignia, titulo, descripcion, children, pie }: AuthLayoutProps) {
+export function AuthLayout({ titulo, descripcion, children, pie }: AuthLayoutProps) {
   return (
     <div className="grid min-h-screen w-full grid-cols-1 bg-muted/50 motion-safe:animate-in motion-safe:fade-in [animation-duration:300ms] lg:grid-cols-[58fr_42fr]">
       <div className="relative h-[220px] overflow-hidden bg-[#4b2f7a] sm:h-[300px] lg:sticky lg:top-0 lg:h-screen">
@@ -44,10 +42,7 @@ export function AuthLayout({ insignia, titulo, descripcion, children, pie }: Aut
         <div className="mx-auto w-full max-w-md motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-2 [animation-duration:500ms]">
           <div className="rounded-3xl border border-border bg-card p-7 shadow-[0_24px_60px_-28px_hsl(var(--foreground)/0.35),0_2px_6px_-2px_hsl(var(--foreground)/0.06)] sm:p-9">
             <div className="mb-7">
-              <span className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.1em] text-primary">
-                {insignia}
-              </span>
-              <h1 className="mt-3 text-[28px] font-bold leading-tight tracking-tight">{titulo}</h1>
+              <h1 className="text-[28px] font-bold leading-tight tracking-tight">{titulo}</h1>
               {descripcion && <p className="mt-1.5 text-sm text-muted-foreground">{descripcion}</p>}
             </div>
             {children}

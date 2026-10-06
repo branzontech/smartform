@@ -31,7 +31,6 @@ const ResetPassword = () => {
   if (!token || errorEnlace) {
     return (
       <AuthLayout
-        insignia="Enlace no válido"
         titulo="Este enlace ya no sirve"
         descripcion="Puede haber caducado o ya se usó. Pide uno nuevo desde «¿Olvidaste tu contraseña?»."
         pie={irALogin}
@@ -45,7 +44,7 @@ const ResetPassword = () => {
 
   if (listo) {
     return (
-      <AuthLayout insignia="Contraseña actualizada" titulo="Todo listo" pie={irALogin}>
+      <AuthLayout titulo="Todo listo" pie={irALogin}>
         <div className="flex items-start gap-3 rounded-2xl bg-muted/60 p-4 text-sm text-muted-foreground">
           <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
           <p>Ya puedes entrar con tu nueva contraseña.</p>
@@ -81,7 +80,7 @@ const ResetPassword = () => {
   };
 
   return (
-    <AuthLayout insignia="Nueva contraseña" titulo="Elige tu nueva contraseña" descripcion={`Mínimo ${CLAVE_MINIMA} caracteres.`} pie={irALogin}>
+    <AuthLayout titulo="Elige tu nueva contraseña" descripcion={`Mínimo ${CLAVE_MINIMA} caracteres.`} pie={irALogin}>
       <form onSubmit={handleSubmit} className="space-y-5" noValidate>
         {[
           { id: "password", etiqueta: "Nueva contraseña", valor: password, cambiar: setPassword },
@@ -101,7 +100,7 @@ const ResetPassword = () => {
                 placeholder="••••••••"
                 autoComplete="new-password"
                 disabled={isLoading}
-                className="campo-relleno pl-10"
+                className="campo-relleno focus-visible:ring-0 focus-visible:ring-offset-0 pl-10"
               />
             </div>
           </div>

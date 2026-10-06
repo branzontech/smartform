@@ -41,7 +41,7 @@ const Login = () => {
   };
 
   return (
-    <AuthLayout insignia="Iniciar sesión" titulo="Bienvenido de nuevo" descripcion="Ingresa con tu correo para continuar.">
+    <AuthLayout titulo="Bienvenido de nuevo" descripcion="Ingresa con tu correo para continuar.">
       <form onSubmit={handleSubmit} className="space-y-5" noValidate>
         <div className="space-y-1.5">
           <Label htmlFor="email" className="text-[13px] font-medium text-muted-foreground">
@@ -57,7 +57,7 @@ const Login = () => {
               placeholder="tucorreo@clinica.com"
               autoComplete="email"
               disabled={isLoading}
-              className="campo-relleno pl-10"
+              className="campo-relleno focus-visible:ring-0 focus-visible:ring-offset-0 pl-10"
             />
           </div>
         </div>
@@ -76,7 +76,7 @@ const Login = () => {
               placeholder="••••••••"
               autoComplete="current-password"
               disabled={isLoading}
-              className="campo-relleno pl-10 pr-11"
+              className="campo-relleno focus-visible:ring-0 focus-visible:ring-offset-0 pl-10 pr-11"
             />
             <button
               type="button"

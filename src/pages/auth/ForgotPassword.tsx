@@ -43,7 +43,7 @@ const ForgotPassword = () => {
 
   if (enviado) {
     return (
-      <AuthLayout insignia="Revisa tu correo" titulo="Te enviamos un enlace" pie={volver}>
+      <AuthLayout titulo="Te enviamos un enlace" pie={volver}>
         <div className="flex items-start gap-3 rounded-2xl bg-muted/60 p-4 text-sm text-muted-foreground">
           <MailCheck className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
           <p>
@@ -57,7 +57,6 @@ const ForgotPassword = () => {
 
   return (
     <AuthLayout
-      insignia="Recuperar acceso"
       titulo="¿Olvidaste tu contraseña?"
       descripcion="Escribe tu correo y te enviaremos un enlace para restablecerla."
       pie={volver}
@@ -77,7 +76,7 @@ const ForgotPassword = () => {
               placeholder="tucorreo@clinica.com"
               autoComplete="email"
               disabled={isLoading}
-              className="campo-relleno pl-10"
+              className="campo-relleno focus-visible:ring-0 focus-visible:ring-offset-0 pl-10"
             />
           </div>
         </div>
