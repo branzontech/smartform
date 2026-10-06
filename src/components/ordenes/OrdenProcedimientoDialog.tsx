@@ -2,9 +2,10 @@ import React, { useState, useCallback, useMemo, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { Badge } from "@/components/ui/badge";
+import { AccionesFila } from "@/components/kit/AccionesFila";
+import { TablaSimple, type ColumnaSimple } from "@/components/kit/tabla";
 import {
-  Save, Loader2, Search, X, Plus, Trash2, Scissors,
+  Save, Loader2, Search, X, Plus, Scissors,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -122,6 +123,24 @@ export default function OrdenProcedimientoDialog({
     const totalAcumulado = items.reduce((s, i) => s + i.cantidad * i.dias, 0);
     return { totalProcs, totalAcumulado };
   }, [items]);
+
+  const columnasItems: ColumnaSimple<ProcedimientoLineItem>[] = [
+    { id: "codigo", titulo: "Código", celda: (i) => i.codigo, className: "font-mono text-xs" },
+    { id: "descripcion", titulo: "Descripción", celda: (i) => i.descripcion, principal: true, className: "max-w-[220px] truncate" },
+    { id: "cantidad", titulo: "Cant.", celda: (i) => i.cantidad, className: "w-16 text-right tabular-nums" },
+    { id: "dias", titulo: "Días", celda: (i) => i.dias, className: "w-16 text-right tabular-nums" },
+    { id: "total", titulo: "Total", celda: (i) => i.cantidad * i.dias, className: "w-16 text-right font-medium tabular-nums text-foreground" },
+    { id: "notas", titulo: "Notas", celda: (i) => i.notas || "—", className: "max-w-[140px] truncate" },
+    {
+      id: "acciones", titulo: <span className="sr-only">Acciones</span>, className: "w-px px-2",
+      // Línea de un borrador (aún no es un registro): se quita desde «Más acciones», sin confirmación ni modal sobre modal.
+      celda: (i) => (
+        <div className="flex justify-end">
+          <AccionesFila nombre={i.descripcion} menu={[{ titulo: "Quitar de la orden", icono: X, onClick: () => handleRemoveItem(i.procedimiento_id) }]} />
+        </div>
+      ),
+    },
+  ];
 
   const handleSave = async () => {
     if (!servicioId) {
@@ -341,65 +360,20 @@ export default function OrdenProcedimientoDialog({
           {/* ─── RESUMEN / TABLA DE ITEMS ─── */}
           <div className="px-6 pb-4">
             <p className={cn(labelBase, "mb-2")}>
-              RESUMEN DE PROCEDIMIENTOS
-              {items.length > 0 && (
-                <Badge variant="secondary" className="ml-2 text-[10px] px-1.5 py-0">
-                  {items.length}
-                </Badge>
-              )}
+              Resumen de procedimientos{items.length > 0 && ` (${items.length})`}
             </p>
-
-            {items.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground/60">
-                <Scissors className="w-8 h-8 mx-auto mb-2 opacity-30" />
-                <p className="text-xs">No hay procedimientos agregados</p>
-              </div>
-            ) : (
-              <div className="border border-border/40 rounded-lg overflow-hidden">
-                <table className="w-full text-xs">
-                  <thead>
-                    <tr className="bg-muted/40 text-muted-foreground">
-                      <th className="text-left px-3 py-2 font-semibold">Código</th>
-                      <th className="text-left px-3 py-2 font-semibold">Descripción</th>
-                      <th className="text-center px-2 py-2 font-semibold w-16">Cant.</th>
-                      <th className="text-center px-2 py-2 font-semibold w-16">Días</th>
-                      <th className="text-center px-2 py-2 font-semibold w-16">Total</th>
-                      <th className="text-left px-2 py-2 font-semibold">Notas</th>
-                      <th className="w-8" />
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {items.map(item => (
-                      <tr key={item.procedimiento_id} className="border-t border-border/30 hover:bg-muted/20">
-                        <td className="px-3 py-2 font-mono font-semibold text-primary">{item.codigo}</td>
-                        <td className="px-3 py-2 max-w-[200px] truncate">{item.descripcion}</td>
-                        <td className="text-center px-2 py-2">{item.cantidad}</td>
-                        <td className="text-center px-2 py-2">{item.dias}</td>
-                        <td className="text-center px-2 py-2 font-semibold">{item.cantidad * item.dias}</td>
-                        <td className="px-2 py-2 text-muted-foreground max-w-[120px] truncate">{item.notas || "—"}</td>
-                        <td className="px-1 py-2">
-                          <button
-                            onClick={() => handleRemoveItem(item.procedimiento_id)}
-                            className="p-1 hover:bg-destructive/10 rounded text-muted-foreground hover:text-destructive transition-colors"
-                          >
-                            <Trash2 className="w-3 h-3" />
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                  <tfoot>
-                    <tr className="border-t-2 border-border/60 bg-muted/30 font-semibold">
-                      <td className="px-3 py-2" colSpan={2}>Total</td>
-                      <td className="text-center px-2 py-2">{totals.totalProcs}</td>
-                      <td className="text-center px-2 py-2">—</td>
-                      <td className="text-center px-2 py-2 text-primary">{totals.totalAcumulado}</td>
-                      <td colSpan={2} />
-                    </tr>
-                  </tfoot>
-                </table>
-              </div>
-            )}
+            <TablaSimple
+              columnas={columnasItems}
+              filas={items}
+              claveFila={(item) => item.procedimiento_id}
+              vacio="No hay procedimientos agregados."
+              pie={items.length > 0 && (
+                <div className="flex justify-end gap-6">
+                  <span>Procedimientos: <span className="font-semibold text-foreground">{totals.totalProcs}</span></span>
+                  <span>Total acumulado: <span className="font-semibold text-foreground">{totals.totalAcumulado}</span></span>
+                </div>
+              )}
+            />
           </div>
         </div>
 

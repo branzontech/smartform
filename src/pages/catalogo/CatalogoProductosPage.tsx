@@ -1,34 +1,28 @@
-import React, { useState, useCallback, useMemo } from "react";
-import { Layout } from "@/components/layout";
+import React, { useState } from "react";
 import { baseDatos } from "@/integrations/datos/cliente";
 import { toast } from "sonner";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm, Controller, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { motion } from "framer-motion";
-import {
-  Plus, Search, Loader2, Pencil, Trash2, MoreHorizontal,
-  Pill, Package, Cpu, Snowflake, ShieldAlert, X,
-} from "lucide-react";
+import { Plus, Loader2, Snowflake, ShieldAlert, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
-} from "@/components/ui/table";
 import {
   Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription,
 } from "@/components/ui/sheet";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
+import { EncabezadoModulo } from "@/components/kit/EncabezadoModulo";
+import { AccionesFila } from "@/components/kit/AccionesFila";
 import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+  BarraTabla, CeldaEstado, TablaDatos, useTablaDatos,
+  type ColumnaTabla, type FiltroTabla, type SegmentoTabla,
+} from "@/components/kit/tabla";
 import { cn } from "@/lib/utils";
 
 // ── Types ──────────────────────────────────────────────
@@ -38,12 +32,6 @@ const TIPO_LABELS: Record<TipoProducto, string> = {
   medicamento: "Medicamento",
   insumo: "Insumo",
   dispositivo_medico: "Dispositivo médico",
-};
-
-const TIPO_ICONS: Record<TipoProducto, React.ReactNode> = {
-  medicamento: <Pill className="h-3 w-3" />,
-  insumo: <Package className="h-3 w-3" />,
-  dispositivo_medico: <Cpu className="h-3 w-3" />,
 };
 
 const FHIR_MAP: Record<TipoProducto, string> = {
@@ -71,6 +59,57 @@ const PAISES_REG = [
   { value: "PE", label: "🇵🇪 Perú", entidad: "DIGEMID" },
   { value: "AR", label: "🇦🇷 Argentina", entidad: "ANMAT" },
 ];
+
+/** Fila de public.catalogo_productos con lo que usan la lista y el formulario. */
+interface ProductoFila {
+  id: string;
+  codigo: string;
+  nombre_generico: string;
+  nombre_comercial: string | null;
+  tipo_producto: TipoProducto;
+  principio_activo: string | null;
+  codigo_atc: string | null;
+  codigo_snomed: string | null;
+  fabricante: string | null;
+  requiere_cadena_frio: boolean | null;
+  controlado: boolean | null;
+  activo: boolean | null;
+}
+
+const tipoTexto = (p: ProductoFila) => TIPO_LABELS[p.tipo_producto] ?? p.tipo_producto;
+const siNo = (v: boolean | null) => (v ? "Sí" : "No");
+
+/** Una celda, un dato, una línea. Lo demás está en la ficha del producto. */
+const COLUMNAS: ColumnaTabla<ProductoFila>[] = [
+  { id: "codigo", titulo: "Código", valor: (p) => p.codigo, className: "font-mono text-xs", fija: true },
+  { id: "nombre", titulo: "Nombre genérico", valor: (p) => p.nombre_generico, principal: true, className: "min-w-[220px]" },
+  { id: "comercial", titulo: "Nombre comercial", valor: (p) => p.nombre_comercial, oculta: true },
+  { id: "tipo", titulo: "Tipo", valor: tipoTexto },
+  { id: "principio", titulo: "Principio activo", valor: (p) => p.principio_activo },
+  { id: "atc", titulo: "ATC", valor: (p) => p.codigo_atc, className: "font-mono text-xs" },
+  { id: "fabricante", titulo: "Fabricante", valor: (p) => p.fabricante, oculta: true },
+  { id: "frio", titulo: "Cadena de frío", valor: (p) => siNo(p.requiere_cadena_frio), oculta: true },
+  { id: "controlado", titulo: "Controlado", valor: (p) => siNo(p.controlado), oculta: true },
+  {
+    id: "estado", titulo: "Estado", valor: (p) => (p.activo ? "Activo" : "Inactivo"), sinPadding: true, className: "w-28",
+    celda: (p) => <CeldaEstado tono={p.activo ? "exito" : "neutro"} texto={p.activo ? "Activo" : "Inactivo"} />,
+  },
+];
+
+const FILTROS: FiltroTabla<ProductoFila>[] = [
+  { id: "tipo", titulo: "Tipo", valor: tipoTexto },
+  { id: "fabricante", titulo: "Fabricante", valor: (p) => p.fabricante },
+  { id: "frio", titulo: "Cadena de frío", valor: (p) => siNo(p.requiere_cadena_frio) },
+  { id: "controlado", titulo: "Controlado", valor: (p) => siNo(p.controlado) },
+];
+
+const SEGMENTOS: SegmentoTabla<ProductoFila>[] = [
+  { id: "activos", titulo: "Activos", cumple: (p) => !!p.activo },
+  { id: "inactivos", titulo: "Inactivos", cumple: (p) => !p.activo },
+  { id: "todos", titulo: "Todos", cumple: () => true },
+];
+
+const claveFila = (p: ProductoFila) => p.id;
 
 // ── Zod Schemas ────────────────────────────────────────
 const presentacionSchema = z.object({
@@ -110,20 +149,9 @@ type ProductoForm = z.infer<typeof productoSchema>;
 // ── Component ──────────────────────────────────────────
 const CatalogoProductosPage = () => {
   const queryClient = useQueryClient();
-  const [search, setSearch] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
-  const [filterTipo, setFilterTipo] = useState<string>("all");
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("general");
-
-  // Debounce search
-  const debounceRef = React.useRef<ReturnType<typeof setTimeout>>();
-  const handleSearch = useCallback((val: string) => {
-    setSearch(val);
-    clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => setDebouncedSearch(val), 300);
-  }, []);
 
   // Form
   const form = useForm<ProductoForm>({
@@ -148,21 +176,17 @@ const CatalogoProductosPage = () => {
   const regPais = form.watch("reg_pais");
 
   // ── Queries ────────────────────────────────────────
+  // Se carga el catálogo completo: búsqueda, filtros y segmentos se resuelven en el cliente (kit de tablas).
   const { data: productos = [], isLoading } = useQuery({
-    queryKey: ["catalogo_productos", debouncedSearch, filterTipo],
+    queryKey: ["catalogo_productos"],
     queryFn: async () => {
-      let q = baseDatos.from("catalogo_productos").select("*").order("nombre_generico");
-      if (debouncedSearch) {
-        q = q.or(`nombre_generico.ilike.%${debouncedSearch}%,codigo.ilike.%${debouncedSearch}%,nombre_comercial.ilike.%${debouncedSearch}%`);
-      }
-      if (filterTipo !== "all") {
-        q = q.eq("tipo_producto", filterTipo);
-      }
-      const { data, error } = await q;
+      const { data, error } = await baseDatos.from("catalogo_productos").select("*").order("nombre_generico");
       if (error) throw error;
-      return data;
+      return (data ?? []) as unknown as ProductoFila[];
     },
   });
+
+  const t = useTablaDatos({ id: "catalogo.productos", filas: productos, columnas: COLUMNAS, claveFila, filtros: FILTROS, segmentos: SEGMENTOS });
 
   // ── Mutations ──────────────────────────────────────
   const saveMutation = useMutation({
@@ -259,7 +283,7 @@ const CatalogoProductosPage = () => {
     setSheetOpen(true);
   };
 
-  const openEdit = async (product: any) => {
+  const openEdit = async (product: ProductoFila) => {
     setEditingId(product.id);
     setActiveTab("general");
 
@@ -327,138 +351,27 @@ const CatalogoProductosPage = () => {
 
   // ── Render ─────────────────────────────────────────
   return (
-    <Layout>
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        className="p-4 md:p-6 space-y-4"
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-lg font-semibold text-foreground">Catálogo de Productos</h1>
-            <p className="text-xs text-muted-foreground">
-              Medicamentos, insumos y dispositivos médicos
-            </p>
-          </div>
-          <Button size="sm" onClick={openNew} className="gap-1.5">
-            <Plus className="h-3.5 w-3.5" /> Nuevo producto
-          </Button>
-        </div>
+    <div className="mx-auto max-w-7xl space-y-5 py-6">
+      <EncabezadoModulo titulo="Catálogo de productos" primaria={{ titulo: "Nuevo producto", onClick: openNew }} />
 
-        {/* Filters */}
-        <div className="flex items-center gap-3">
-          <div className="relative flex-1 max-w-xs">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-            <Input
-              placeholder="Buscar por nombre o código..."
-              value={search}
-              onChange={(e) => handleSearch(e.target.value)}
-              className="pl-8 h-8 text-sm border-0 border-b rounded-none bg-transparent focus-visible:ring-0 focus-visible:border-primary"
-            />
-          </div>
-          <Select value={filterTipo} onValueChange={setFilterTipo}>
-            <SelectTrigger className="w-[180px] h-8 text-xs border-0 border-b rounded-none bg-transparent">
-              <SelectValue placeholder="Tipo" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos los tipos</SelectItem>
-              <SelectItem value="medicamento">Medicamento</SelectItem>
-              <SelectItem value="insumo">Insumo</SelectItem>
-              <SelectItem value="dispositivo_medico">Dispositivo médico</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* Table */}
-        <div className="rounded-xl border border-border/50 bg-card/50 backdrop-blur-sm overflow-hidden">
-          <Table>
-            <TableHeader>
-              <TableRow className="hover:bg-transparent border-border/50">
-                <TableHead className="text-[11px] font-medium text-muted-foreground">Código</TableHead>
-                <TableHead className="text-[11px] font-medium text-muted-foreground">Nombre genérico</TableHead>
-                <TableHead className="text-[11px] font-medium text-muted-foreground">Tipo</TableHead>
-                <TableHead className="text-[11px] font-medium text-muted-foreground">Principio activo</TableHead>
-                <TableHead className="text-[11px] font-medium text-muted-foreground">ATC</TableHead>
-                <TableHead className="text-[11px] font-medium text-muted-foreground">Estado</TableHead>
-                <TableHead className="text-[11px] font-medium text-muted-foreground w-10" />
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading ? (
-                <TableRow>
-                  <TableCell colSpan={7} className="text-center py-12">
-                    <Loader2 className="h-5 w-5 animate-spin mx-auto text-muted-foreground" />
-                  </TableCell>
-                </TableRow>
-              ) : productos.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={7} className="text-center py-12 text-sm text-muted-foreground">
-                    No hay productos registrados
-                  </TableCell>
-                </TableRow>
-              ) : (
-                productos.map((p: any) => (
-                  <TableRow
-                    key={p.id}
-                    className="cursor-pointer hover:bg-muted/30 border-border/30 transition-colors"
-                    onClick={() => openEdit(p)}
-                  >
-                    <TableCell className="text-xs font-mono text-muted-foreground">{p.codigo}</TableCell>
-                    <TableCell className="text-sm font-medium">{p.nombre_generico}</TableCell>
-                    <TableCell>
-                      <Badge
-                        variant="outline"
-                        className="text-[10px] font-normal gap-1 border-border/60 text-muted-foreground"
-                      >
-                        {TIPO_ICONS[p.tipo_producto as TipoProducto]}
-                        {TIPO_LABELS[p.tipo_producto as TipoProducto] || p.tipo_producto}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-xs text-muted-foreground">
-                      {p.principio_activo || "—"}
-                    </TableCell>
-                    <TableCell className="text-xs font-mono text-muted-foreground">
-                      {p.codigo_atc || "—"}
-                    </TableCell>
-                    <TableCell>
-                      <span className={cn(
-                        "inline-flex items-center gap-1 text-[10px]",
-                        p.activo ? "text-primary" : "text-muted-foreground"
-                      )}>
-                        <span className={cn(
-                          "h-1.5 w-1.5 rounded-full",
-                          p.activo ? "bg-primary" : "bg-muted-foreground/40"
-                        )} />
-                        {p.activo ? "Activo" : "Inactivo"}
-                      </span>
-                    </TableCell>
-                    <TableCell onClick={(e) => e.stopPropagation()}>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-7 w-7">
-                            <MoreHorizontal className="h-3.5 w-3.5" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => openEdit(p)}>
-                            <Pencil className="h-3.5 w-3.5 mr-2" /> Editar
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            className="text-destructive"
-                            onClick={() => deleteMutation.mutate(p.id)}
-                          >
-                            <Trash2 className="h-3.5 w-3.5 mr-2" /> Eliminar
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </div>
+      <TablaDatos
+        t={t}
+        cargando={isLoading}
+        onFilaClick={(p) => void openEdit(p)}
+        barra={<BarraTabla t={t} nombre={["producto", "productos"]} placeholder="Buscar por nombre, código o principio activo" nombreArchivo="catalogo-productos" />}
+        acciones={(p) => (
+          <AccionesFila
+            nombre={p.nombre_generico}
+            onVer={() => void openEdit(p)}
+            onEliminar={() => deleteMutation.mutate(p.id)}
+            confirmarEliminar={{
+              titulo: "¿Eliminar este producto?",
+              descripcion: `«${p.nombre_generico}» se eliminará del catálogo y no se podrá recuperar.`,
+            }}
+          />
+        )}
+        vacio="Aún no hay productos. Registra uno con «Nuevo producto»."
+      />
 
         {/* Sheet */}
         <Sheet open={sheetOpen} onOpenChange={(o) => !o && closeSheet()}>
@@ -805,8 +718,7 @@ const CatalogoProductosPage = () => {
             </form>
           </SheetContent>
         </Sheet>
-      </motion.div>
-    </Layout>
+    </div>
   );
 };
 

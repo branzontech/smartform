@@ -4,34 +4,75 @@ import { baseDatos } from "@/integrations/datos/cliente";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { toast } from "sonner";
-import { Plus, Search, FileText, Eye, Pencil, Copy, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
+import { Copy, Pencil, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DatePicker } from "@/components/ui/date-picker";
+import { EncabezadoModulo } from "@/components/kit/EncabezadoModulo";
+import { AccionesFila } from "@/components/kit/AccionesFila";
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import type { EstadoCotizacion } from "@/types/cotizacion-types";
+  BarraTabla, CeldaEstado, TablaDatos, useTablaDatos,
+  type ColumnaTabla, type FiltroTabla, type SegmentoTabla, type TonoEstado,
+} from "@/components/kit/tabla";
+import type { ClienteCotizacion, EstadoCotizacion } from "@/types/cotizacion-types";
 
-const PAGE_SIZE = 10;
-
-const estadoBadge: Record<EstadoCotizacion, { label: string; className: string }> = {
-  borrador: { label: "Borrador", className: "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300 border-0" },
-  enviada: { label: "Enviada", className: "bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-300 border-0" },
-  aceptada: { label: "Aceptada", className: "bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-300 border-0" },
-  rechazada: { label: "Rechazada", className: "bg-red-50 text-red-600 dark:bg-red-900/30 dark:text-red-300 border-0" },
-  vencida: { label: "Vencida", className: "bg-amber-50 text-amber-600 dark:bg-amber-900/30 dark:text-amber-300 border-0" },
+const ESTADOS: Record<EstadoCotizacion, { label: string; tono: TonoEstado }> = {
+  borrador: { label: "Borrador", tono: "neutro" },
+  enviada: { label: "Enviada", tono: "info" },
+  aceptada: { label: "Aceptada", tono: "exito" },
+  rechazada: { label: "Rechazada", tono: "error" },
+  vencida: { label: "Vencida", tono: "aviso" },
 };
+
+/** Fila de public.cotizaciones con el cliente y el nombre de quien la hizo. */
+interface CotizacionFila {
+  id: string;
+  numero_cotizacion: string;
+  fecha_emision: string;
+  fecha_validez: string;
+  estado: EstadoCotizacion;
+  total: number;
+  moneda: string;
+  creado_por: string | null;
+  clientes_cotizacion?: Pick<ClienteCotizacion, "nombre_razon_social"> | null;
+  creador: string;
+}
+
+const estadoDe = (c: CotizacionFila) => ESTADOS[c.estado] ?? ESTADOS.borrador;
+const fechaCorta = (f: string) => format(new Date(f), "dd MMM yyyy", { locale: es });
+const formatCurrency = (val: number, moneda: string = "COP") =>
+  new Intl.NumberFormat("es-CO", { style: "currency", currency: moneda, minimumFractionDigits: 0 }).format(val);
+
+/** Una celda, un dato, una línea. */
+const COLUMNAS: ColumnaTabla<CotizacionFila>[] = [
+  { id: "numero", titulo: "N° cotización", valor: (c) => c.numero_cotizacion, className: "font-mono text-xs", fija: true },
+  { id: "cliente", titulo: "Cliente", valor: (c) => c.clientes_cotizacion?.nombre_razon_social, principal: true, className: "min-w-[220px]" },
+  { id: "creador", titulo: "Realizada por", valor: (c) => c.creador },
+  { id: "emision", titulo: "Fecha emisión", valor: (c) => c.fecha_emision, celda: (c) => fechaCorta(c.fecha_emision), className: "tabular-nums" },
+  { id: "validez", titulo: "Validez", valor: (c) => c.fecha_validez, celda: (c) => fechaCorta(c.fecha_validez), className: "tabular-nums" },
+  { id: "moneda", titulo: "Moneda", valor: (c) => c.moneda, oculta: true },
+  {
+    id: "total", titulo: "Total", valor: (c) => Number(c.total), className: "text-right tabular-nums",
+    celda: (c) => formatCurrency(Number(c.total), c.moneda),
+  },
+  {
+    id: "estado", titulo: "Estado", valor: (c) => estadoDe(c).label, sinPadding: true, className: "w-28",
+    celda: (c) => <CeldaEstado tono={estadoDe(c).tono} texto={estadoDe(c).label} />,
+  },
+];
+
+const FILTROS: FiltroTabla<CotizacionFila>[] = [
+  { id: "creador", titulo: "Realizada por", valor: (c) => c.creador },
+  { id: "moneda", titulo: "Moneda", valor: (c) => c.moneda },
+];
+
+const SEGMENTOS: SegmentoTabla<CotizacionFila>[] = [
+  { id: "todos", titulo: "Todas", cumple: () => true },
+  ...(Object.keys(ESTADOS) as EstadoCotizacion[]).map((e) => ({
+    id: e, titulo: ESTADOS[e].label, cumple: (c: CotizacionFila) => c.estado === e,
+  })),
+];
+
+const claveFila = (c: CotizacionFila) => c.id;
 
 interface Props {
   onNewClick: () => void;
@@ -41,24 +82,18 @@ interface Props {
 
 const CotizacionList = ({ onNewClick, onView, onEdit }: Props) => {
   const queryClient = useQueryClient();
-  const [estadoFilter, setEstadoFilter] = useState<string>("todos");
+  // El rango de fechas define qué se consulta (va al inicio de la barra); el resto se filtra en el cliente.
   const [fechaDesde, setFechaDesde] = useState<Date | undefined>();
   const [fechaHasta, setFechaHasta] = useState<Date | undefined>();
-  const [searchCliente, setSearchCliente] = useState("");
-  const [deleteId, setDeleteId] = useState<string | null>(null);
-  const [currentPage, setCurrentPage] = useState(1);
 
   const { data: cotizaciones, isLoading } = useQuery({
-    queryKey: ["cotizaciones", estadoFilter, fechaDesde, fechaHasta, searchCliente],
+    queryKey: ["cotizaciones", fechaDesde, fechaHasta],
     queryFn: async () => {
       let query = baseDatos
         .from("cotizaciones" as any)
         .select("*, clientes_cotizacion:cliente_cotizacion_id(*)")
         .order("created_at", { ascending: false });
 
-      if (estadoFilter !== "todos") {
-        query = query.eq("estado", estadoFilter);
-      }
       if (fechaDesde) {
         query = query.gte("fecha_emision", format(fechaDesde, "yyyy-MM-dd"));
       }
@@ -68,22 +103,14 @@ const CotizacionList = ({ onNewClick, onView, onEdit }: Props) => {
 
       const { data, error } = await query;
       if (error) throw error;
-
-      let results = data as any[];
-      if (searchCliente.trim()) {
-        const term = searchCliente.toLowerCase();
-        results = results.filter((c: any) =>
-          c.clientes_cotizacion?.nombre_razon_social?.toLowerCase().includes(term)
-        );
-      }
-      return results;
+      return (data ?? []) as unknown as Omit<CotizacionFila, "creador">[];
     },
   });
 
-  // Fetch profiles for creator names
+  // Nombres de quienes crearon las cotizaciones
   const creatorIds = useMemo(() => {
     if (!cotizaciones) return [];
-    return [...new Set(cotizaciones.map((c: any) => c.creado_por).filter(Boolean))];
+    return [...new Set(cotizaciones.map((c) => c.creado_por).filter((id): id is string => !!id))];
   }, [cotizaciones]);
 
   const { data: profilesMap } = useQuery({
@@ -104,21 +131,13 @@ const CotizacionList = ({ onNewClick, onView, onEdit }: Props) => {
     enabled: creatorIds.length > 0,
   });
 
-  // Pagination
-  const totalItems = cotizaciones?.length || 0;
-  const totalPages = Math.max(1, Math.ceil(totalItems / PAGE_SIZE));
-  const paginatedData = useMemo(() => {
-    if (!cotizaciones) return [];
-    const start = (currentPage - 1) * PAGE_SIZE;
-    return cotizaciones.slice(start, start + PAGE_SIZE);
-  }, [cotizaciones, currentPage]);
+  const filas = useMemo<CotizacionFila[]>(
+    () => (cotizaciones ?? []).map((c) => ({ ...c, creador: (c.creado_por && profilesMap?.[c.creado_por]) || "—" })),
+    [cotizaciones, profilesMap],
+  );
 
-  // Reset page when filters change
-  useMemo(() => {
-    setCurrentPage(1);
-  }, [estadoFilter, fechaDesde, fechaHasta, searchCliente]);
+  const t = useTablaDatos({ id: "cotizaciones.lista", filas, columnas: COLUMNAS, claveFila, filtros: FILTROS, segmentos: SEGMENTOS });
 
-  // Delete mutation
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
       await baseDatos.from("cotizacion_items" as any).delete().eq("cotizacion_id", id);
@@ -128,14 +147,12 @@ const CotizacionList = ({ onNewClick, onView, onEdit }: Props) => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["cotizaciones"] });
       toast.success("Cotización eliminada");
-      setDeleteId(null);
     },
     onError: (err: any) => {
       toast.error(err.message || "Error al eliminar");
     },
   });
 
-  // Duplicate mutation
   const duplicateMutation = useMutation({
     mutationFn: async (cotId: string) => {
       const { data: original, error: fetchErr } = await baseDatos
@@ -201,197 +218,58 @@ const CotizacionList = ({ onNewClick, onView, onEdit }: Props) => {
     },
   });
 
-  const formatCurrency = (val: number, moneda: string = "COP") => {
-    return new Intl.NumberFormat("es-CO", { style: "currency", currency: moneda, minimumFractionDigits: 0 }).format(val);
-  };
-
-  const isEmpty = !isLoading && (!cotizaciones || cotizaciones.length === 0);
+  const rangoFechas = (
+    <div className="flex items-center gap-1.5">
+      <DatePicker value={fechaDesde as Date} onChange={setFechaDesde} placeholder="Desde" className="h-8 w-[130px] rounded-lg text-[13px]" />
+      <DatePicker value={fechaHasta as Date} onChange={setFechaHasta} placeholder="Hasta" className="h-8 w-[130px] rounded-lg text-[13px]" />
+      {(fechaDesde || fechaHasta) && (
+        <Button
+          variant="ghost"
+          size="icon"
+          aria-label="Quitar rango de fechas"
+          title="Quitar fechas"
+          className="h-8 w-8 rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground"
+          onClick={() => { setFechaDesde(undefined); setFechaHasta(undefined); }}
+        >
+          <X className="h-4 w-4" />
+        </Button>
+      )}
+    </div>
+  );
 
   return (
-    <div className="space-y-5 p-4 md:p-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold text-foreground tracking-tight">Cotizaciones</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">Gestiona las cotizaciones de servicios</p>
-        </div>
-        <Button onClick={onNewClick} className="gap-2 shadow-sm">
-          <Plus className="w-4 h-4" />
-          Nueva Cotización
-        </Button>
-      </div>
-
-      {/* Filters */}
-      <div className="flex flex-wrap items-center gap-3 p-3 rounded-xl bg-card/50 backdrop-blur-sm border border-border/50">
-        <Select value={estadoFilter} onValueChange={setEstadoFilter}>
-          <SelectTrigger className="w-[170px] h-9 text-sm bg-background/80">
-            <SelectValue placeholder="Estado" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="todos">Todos los estados</SelectItem>
-            <SelectItem value="borrador">Borrador</SelectItem>
-            <SelectItem value="enviada">Enviada</SelectItem>
-            <SelectItem value="aceptada">Aceptada</SelectItem>
-            <SelectItem value="rechazada">Rechazada</SelectItem>
-            <SelectItem value="vencida">Vencida</SelectItem>
-          </SelectContent>
-        </Select>
-        <DatePicker value={fechaDesde as Date} onChange={(d) => setFechaDesde(d)} placeholder="Desde" className="w-[150px] h-9 text-sm bg-background/80" />
-        <DatePicker value={fechaHasta as Date} onChange={(d) => setFechaHasta(d)} placeholder="Hasta" className="w-[150px] h-9 text-sm bg-background/80" />
-        <div className="relative flex-1 min-w-[180px]">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input
-            placeholder="Buscar por cliente..."
-            value={searchCliente}
-            onChange={(e) => setSearchCliente(e.target.value)}
-            className="pl-9 h-9 text-sm bg-background/80"
+    <div className="mx-auto max-w-7xl space-y-5 py-6">
+      <EncabezadoModulo titulo="Cotizaciones" primaria={{ titulo: "Nueva cotización", onClick: onNewClick }} />
+      <TablaDatos
+        t={t}
+        cargando={isLoading}
+        onFilaClick={(c) => onView(c.id)}
+        barra={
+          <BarraTabla
+            t={t}
+            nombre={["cotización", "cotizaciones"]}
+            placeholder="Buscar por cliente o número"
+            nombreArchivo="cotizaciones"
+            inicio={rangoFechas}
           />
-        </div>
-      </div>
-
-      {/* Empty state */}
-      {isEmpty && (
-        <div className="flex flex-col items-center justify-center py-20 animate-in fade-in duration-300">
-          <div className="rounded-full bg-muted/50 p-6 mb-5">
-            <FileText className="w-12 h-12 text-muted-foreground/30" />
-          </div>
-          <h3 className="text-lg font-medium text-foreground mb-1">No hay cotizaciones aún</h3>
-          <p className="text-sm text-muted-foreground mb-6 max-w-sm text-center">
-            Crea tu primera cotización para comenzar a gestionar presupuestos de servicios.
-          </p>
-          <Button onClick={onNewClick} className="gap-2 shadow-sm">
-            <Plus className="w-4 h-4" />
-            Crear primera cotización
-          </Button>
-        </div>
-      )}
-
-      {/* Table */}
-      {!isEmpty && (
-        <div className="rounded-xl border border-border/50 bg-card/50 backdrop-blur-sm overflow-hidden shadow-sm">
-          <Table>
-            <TableHeader>
-              <TableRow className="bg-muted/40 hover:bg-muted/40 border-b border-border/50">
-                <TableHead className="text-xs font-medium uppercase tracking-wider text-muted-foreground">N° Cotización</TableHead>
-                <TableHead className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Cliente</TableHead>
-                <TableHead className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Realizada por</TableHead>
-                <TableHead className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Fecha Emisión</TableHead>
-                <TableHead className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Validez</TableHead>
-                <TableHead className="text-xs font-medium uppercase tracking-wider text-muted-foreground text-right">Total</TableHead>
-                <TableHead className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Estado</TableHead>
-                <TableHead className="text-xs font-medium uppercase tracking-wider text-muted-foreground text-right">Acciones</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading ? (
-                <TableRow>
-                  <TableCell colSpan={8} className="text-center py-12 text-muted-foreground">
-                    Cargando cotizaciones...
-                  </TableCell>
-                </TableRow>
-              ) : (
-                paginatedData.map((cot: any) => {
-                  const estado = cot.estado as EstadoCotizacion;
-                  const badge = estadoBadge[estado] || estadoBadge.borrador;
-                  const creatorName = profilesMap?.[cot.creado_por] || "—";
-                  return (
-                    <TableRow key={cot.id} className="hover:bg-muted/30 transition-colors duration-150 border-b border-border/30 cursor-pointer" onClick={() => onView(cot.id)}>
-                      <TableCell className="font-medium text-sm text-foreground">{cot.numero_cotizacion}</TableCell>
-                      <TableCell className="text-sm text-foreground">{cot.clientes_cotizacion?.nombre_razon_social || "—"}</TableCell>
-                      <TableCell className="text-sm text-muted-foreground">{creatorName}</TableCell>
-                      <TableCell className="text-sm text-muted-foreground">{format(new Date(cot.fecha_emision), "dd MMM yyyy", { locale: es })}</TableCell>
-                      <TableCell className="text-sm text-muted-foreground">{format(new Date(cot.fecha_validez), "dd MMM yyyy", { locale: es })}</TableCell>
-                      <TableCell className="text-right text-sm font-semibold text-foreground">{formatCurrency(cot.total, cot.moneda)}</TableCell>
-                      <TableCell>
-                        <Badge variant="secondary" className={`text-xs font-medium ${badge.className}`}>
-                          {badge.label}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
-                        <div className="flex items-center justify-end gap-0.5">
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={() => onView(cot.id)} title="Ver">
-                            <Eye className="w-4 h-4" />
-                          </Button>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={() => onEdit(cot.id)} title="Editar">
-                            <Pencil className="w-4 h-4" />
-                          </Button>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={() => duplicateMutation.mutate(cot.id)} title="Duplicar" disabled={duplicateMutation.isPending}>
-                            <Copy className="w-4 h-4" />
-                          </Button>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={() => setDeleteId(cot.id)} title="Eliminar">
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })
-              )}
-            </TableBody>
-          </Table>
-
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="flex items-center justify-between px-4 py-3 border-t border-border/50 bg-muted/20">
-              <span className="text-xs text-muted-foreground">
-                Mostrando {((currentPage - 1) * PAGE_SIZE) + 1}–{Math.min(currentPage * PAGE_SIZE, totalItems)} de {totalItems}
-              </span>
-              <div className="flex items-center gap-1">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8"
-                  disabled={currentPage === 1}
-                  onClick={() => setCurrentPage((p) => p - 1)}
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                </Button>
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                  <Button
-                    key={page}
-                    variant={page === currentPage ? "default" : "ghost"}
-                    size="icon"
-                    className="h-8 w-8 text-xs"
-                    onClick={() => setCurrentPage(page)}
-                  >
-                    {page}
-                  </Button>
-                ))}
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8"
-                  disabled={currentPage === totalPages}
-                  onClick={() => setCurrentPage((p) => p + 1)}
-                >
-                  <ChevronRight className="w-4 h-4" />
-                </Button>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Delete confirmation */}
-      <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>¿Eliminar cotización?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Esta acción no se puede deshacer. Se eliminará la cotización y todos sus ítems permanentemente.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => deleteId && deleteMutation.mutate(deleteId)}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              Eliminar
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+        }
+        acciones={(c) => (
+          <AccionesFila
+            nombre={c.numero_cotizacion || "cotización"}
+            onVer={() => onView(c.id)}
+            menu={[
+              { titulo: "Editar", icono: Pencil, onClick: () => onEdit(c.id) },
+              { titulo: "Duplicar", icono: Copy, onClick: () => { if (!duplicateMutation.isPending) duplicateMutation.mutate(c.id); } },
+            ]}
+            onEliminar={() => deleteMutation.mutate(c.id)}
+            confirmarEliminar={{
+              titulo: "¿Eliminar cotización?",
+              descripcion: "Esta acción no se puede deshacer. Se eliminará la cotización y todos sus ítems permanentemente.",
+            }}
+          />
+        )}
+        vacio="Aún no hay cotizaciones. Crea una con «Nueva cotización»."
+      />
     </div>
   );
 };

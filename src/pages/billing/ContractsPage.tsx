@@ -1,37 +1,12 @@
-import React, { useState, useEffect, useCallback } from "react";
-import { Layout } from "@/components/layout";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { baseDatos } from "@/integrations/datos/cliente";
 import { toast } from "sonner";
-import { format } from "date-fns";
-import { es } from "date-fns/locale";
 import { motion } from "framer-motion";
-import {
-  FileText,
-  Plus,
-  Search,
-  Building2,
-  Calendar,
-  MoreHorizontal,
-  Loader2,
-  CheckCircle2,
-  XCircle,
-  Clock,
-  Handshake,
-  Pencil,
-} from "lucide-react";
+import { Plus, Building2, Loader2, CheckCircle2, Handshake, Pencil, Power } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import {
   Sheet,
   SheetContent,
@@ -46,12 +21,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { EncabezadoModulo } from "@/components/kit/EncabezadoModulo";
+import { AccionesFila } from "@/components/kit/AccionesFila";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+  BarraTabla, CeldaEstado, TablaDatos, botonPrimario, tonoPlazo, useTablaDatos,
+  type ColumnaTabla, type FiltroTabla, type SegmentoTabla, type TonoEstado,
+} from "@/components/kit/tabla";
 import { cn } from "@/lib/utils";
 
 // Types
@@ -87,18 +62,76 @@ interface TarifarioMaestro {
   estado: boolean;
 }
 
-const TIPO_CONTRATACION_LABELS: Record<string, { label: string; color: string }> = {
-  evento: { label: "Por Evento", color: "bg-blue-500/10 text-blue-600 border-blue-500/20" },
-  capita: { label: "Capitación", color: "bg-purple-500/10 text-purple-600 border-purple-500/20" },
-  paquete: { label: "Paquete", color: "bg-amber-500/10 text-amber-600 border-amber-500/20" },
-  particular: { label: "Particular", color: "bg-emerald-500/10 text-emerald-600 border-emerald-500/20" },
+const TIPO_CONTRATACION: Record<string, string> = {
+  evento: "Por evento",
+  capita: "Capitación",
+  paquete: "Paquete",
+  particular: "Particular",
 };
 
-const ESTADO_LABELS: Record<string, { label: string; icon: React.ElementType }> = {
-  activo: { label: "Activo", icon: CheckCircle2 },
-  inactivo: { label: "Inactivo", icon: XCircle },
-  vencido: { label: "Vencido", icon: Clock },
+const ESTADO_CONTRATO: Record<string, { texto: string; tono: TonoEstado }> = {
+  activo: { texto: "Activo", tono: "exito" },
+  inactivo: { texto: "Inactivo", tono: "neutro" },
+  vencido: { texto: "Vencido", tono: "aviso" },
 };
+const estadoDe = (c: Contrato) => ESTADO_CONTRATO[c.estado] ?? { texto: c.estado, tono: "neutro" as TonoEstado };
+
+/** Fila de la tabla: el contrato con el nombre del tarifario resuelto. */
+type ContratoFila = Contrato & { tarifario_nombre: string | null };
+
+const DIA = 24 * 60 * 60 * 1000;
+const UMBRAL_POR_VENCER = 45;
+const fechaCorta = new Intl.DateTimeFormat("es-CO", { day: "2-digit", month: "short", year: "numeric" });
+/** Las fechas YYYY-MM-DD se leen como día local (sin corrimiento por zona horaria). */
+const leerFecha = (f: string) => new Date(f.length === 10 ? `${f}T00:00:00` : f);
+const diasParaFin = (c: Contrato) => (c.fecha_fin ? Math.ceil((leerFecha(c.fecha_fin).getTime() - Date.now()) / DIA) : null);
+const tipoDe = (c: Contrato) => TIPO_CONTRATACION[c.tipo_contratacion] ?? c.tipo_contratacion;
+/** Un convenio activo cuya fecha fin llega en los próximos 45 días. */
+const porVencer = (c: Contrato) => {
+  const d = diasParaFin(c);
+  return c.estado === "activo" && d !== null && d >= 0 && d <= UMBRAL_POR_VENCER;
+};
+
+const COLUMNAS: ColumnaTabla<ContratoFila>[] = [
+  { id: "convenio", titulo: "Convenio", valor: (c) => c.nombre_convenio, principal: true, fija: true, className: "min-w-[220px]" },
+  { id: "pagador", titulo: "Pagador", valor: (c) => c.pagador?.nombre },
+  {
+    id: "identificacion", titulo: "Identificación", className: "font-mono text-xs", oculta: true,
+    valor: (c) => (c.pagador?.numero_identificacion ? `${c.pagador.tipo_identificacion ?? ""} ${c.pagador.numero_identificacion}`.trim() : null),
+  },
+  { id: "tipo", titulo: "Tipo", valor: tipoDe },
+  { id: "inicio", titulo: "Inicio", valor: (c) => c.fecha_inicio, celda: (c) => fechaCorta.format(leerFecha(c.fecha_inicio)), className: "tabular-nums" },
+  {
+    id: "fin", titulo: "Fin", valor: (c) => c.fecha_fin, className: "tabular-nums",
+    // Fin cercano o pasado de un convenio activo: se marca con color, sin texto extra.
+    celda: (c) => (c.fecha_fin
+      ? <span className={c.estado === "activo" ? tonoPlazo(diasParaFin(c), UMBRAL_POR_VENCER) : undefined}>{fechaCorta.format(leerFecha(c.fecha_fin))}</span>
+      : "—"),
+  },
+  { id: "tarifario", titulo: "Tarifario", valor: (c) => c.tarifario_nombre, oculta: true },
+  { id: "notas", titulo: "Notas", valor: (c) => c.notas, className: "max-w-[260px] truncate", oculta: true },
+  { id: "registro", titulo: "Registrado", valor: (c) => c.created_at, celda: (c) => fechaCorta.format(new Date(c.created_at)), oculta: true },
+  {
+    id: "estado", titulo: "Estado", valor: (c) => estadoDe(c).texto, sinPadding: true,
+    celda: (c) => <CeldaEstado tono={estadoDe(c).tono} texto={estadoDe(c).texto} />,
+  },
+];
+
+const FILTROS: FiltroTabla<ContratoFila>[] = [
+  { id: "tipo", titulo: "Tipo de contratación", valor: tipoDe },
+  { id: "pagador", titulo: "Pagador", valor: (c) => c.pagador?.nombre },
+  { id: "tarifario", titulo: "Tarifario", valor: (c) => c.tarifario_nombre },
+];
+
+const SEGMENTOS: SegmentoTabla<ContratoFila>[] = [
+  { id: "todos", titulo: "Todos", cumple: () => true },
+  { id: "activos", titulo: "Activos", cumple: (c) => c.estado === "activo" },
+  { id: "por-vencer", titulo: "Por vencer", cumple: porVencer },
+  { id: "vencidos", titulo: "Vencidos", cumple: (c) => c.estado === "vencido" },
+  { id: "inactivos", titulo: "Inactivos", cumple: (c) => c.estado === "inactivo" },
+];
+
+const claveFila = (c: ContratoFila) => c.id;
 
 const PAISES = [
   { value: "CO", label: "🇨🇴 Colombia" },
@@ -111,12 +144,16 @@ const PAISES = [
   { value: "VE", label: "🇻🇪 Venezuela" },
 ];
 
-const ContractsPage: React.FC = () => {
+interface ContractsPageProps {
+  /** Dentro de las pestañas de Facturación: sin encabezado propio; «Nuevo convenio» va en la barra de la tabla. */
+  embebido?: boolean;
+}
+
+const ContractsPage = ({ embebido = false }: ContractsPageProps) => {
   const [contratos, setContratos] = useState<Contrato[]>([]);
   const [pagadores, setPagadores] = useState<Pagador[]>([]);
   const [tarifarios, setTarifarios] = useState<TarifarioMaestro[]>([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState("");
   const [sheetOpen, setSheetOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [sheetStep, setSheetStep] = useState<"pagador" | "contrato">("pagador");
@@ -172,14 +209,11 @@ const ContractsPage: React.FC = () => {
     fetchData();
   }, [fetchData]);
 
-  const filteredContratos = contratos.filter((c) => {
-    const q = search.toLowerCase();
-    return (
-      c.nombre_convenio.toLowerCase().includes(q) ||
-      c.pagador?.nombre?.toLowerCase().includes(q) ||
-      c.tipo_contratacion.toLowerCase().includes(q)
-    );
-  });
+  const filas = useMemo<ContratoFila[]>(
+    () => contratos.map((c) => ({ ...c, tarifario_nombre: tarifarios.find((x) => x.id === c.tarifario_id)?.nombre ?? null })),
+    [contratos, tarifarios],
+  );
+  const t = useTablaDatos({ id: "facturacion.convenios", filas, columnas: COLUMNAS, claveFila, filtros: FILTROS, segmentos: SEGMENTOS });
 
   const resetForm = () => {
     setPagadorForm({ nombre: "", tipo_identificacion: "NIT", numero_identificacion: "", pais: "CO" });
@@ -345,186 +379,44 @@ const ContractsPage: React.FC = () => {
 
   const isEditing = !!editingContrato;
 
-  return (
-    <Layout>
-      <div className="flex flex-col h-full w-full overflow-hidden">
-        {/* Header - shrink-0 */}
-        <div className="shrink-0 px-6 py-4 border-b border-border/40">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center">
-                <Handshake className="w-5 h-5 text-primary" />
-              </div>
-              <div>
-                <h1 className="text-xl font-bold">Convenios y Contratos</h1>
-                <p className="text-sm text-muted-foreground">
-                  Gestiona pagadores, EPS, aseguradoras y convenios
-                </p>
-              </div>
-            </div>
-            <Button onClick={openNewSheet} className="rounded-xl gap-2">
-              <Plus className="w-4 h-4" />
-              Nuevo Convenio
+  const tabla = (
+    <TablaDatos
+      t={t}
+      cargando={loading}
+      onFilaClick={openEditSheet}
+      barra={
+        <BarraTabla
+          t={t}
+          nombre={["convenio", "convenios"]}
+          placeholder="Buscar por convenio, pagador o tipo"
+          nombreArchivo="convenios"
+          acciones={embebido ? (
+            <Button size="sm" className={botonPrimario} onClick={openNewSheet}>
+              <Plus className="h-4 w-4" />
+              Nuevo convenio
             </Button>
-          </div>
+          ) : undefined}
+        />
+      }
+      acciones={(c) => (
+        <AccionesFila
+          nombre={c.nombre_convenio}
+          onVer={() => openEditSheet(c)}
+          menu={[{ titulo: c.estado === "activo" ? "Desactivar" : "Activar", icono: Power, onClick: () => void toggleEstado(c) }]}
+        />
+      )}
+      vacio="Aún no hay convenios. Crea uno con «Nuevo convenio»."
+    />
+  );
 
-          {/* Search */}
-          <div className="relative mt-4 max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input
-              placeholder="Buscar por nombre, pagador o tipo..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="pl-9 rounded-xl"
-            />
-          </div>
+  return (
+    <>
+      {embebido ? tabla : (
+        <div className="mx-auto max-w-7xl space-y-5 py-6">
+          <EncabezadoModulo titulo="Convenios" primaria={{ titulo: "Nuevo convenio", onClick: openNewSheet }} />
+          {tabla}
         </div>
-
-        {/* Table area - flex-1 overflow */}
-        <div className="flex-1 overflow-y-auto min-h-0 px-6 py-4">
-          {loading ? (
-            <div className="flex items-center justify-center py-20">
-              <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
-            </div>
-          ) : filteredContratos.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-20 text-center">
-              <FileText className="w-12 h-12 text-muted-foreground/30 mb-3" />
-              <p className="text-lg font-medium text-muted-foreground">
-                {search ? "Sin resultados" : "Sin convenios registrados"}
-              </p>
-              <p className="text-sm text-muted-foreground/60 mt-1">
-                {search
-                  ? "Intenta con otro término de búsqueda"
-                  : "Crea tu primer convenio con el botón superior"}
-              </p>
-            </div>
-          ) : (
-            <div className="rounded-xl border border-border/40 overflow-hidden">
-              <Table>
-                <TableHeader>
-                  <TableRow className="bg-muted/30">
-                    <TableHead>Convenio</TableHead>
-                    <TableHead>Pagador</TableHead>
-                    <TableHead>Tipo</TableHead>
-                    <TableHead>Vigencia</TableHead>
-                    <TableHead>Estado</TableHead>
-                    <TableHead className="w-10" />
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredContratos.map((contrato) => {
-                    const tipo = TIPO_CONTRATACION_LABELS[contrato.tipo_contratacion] || {
-                      label: contrato.tipo_contratacion,
-                      color: "bg-muted text-muted-foreground",
-                    };
-                    const estado = ESTADO_LABELS[contrato.estado] || ESTADO_LABELS.activo;
-                    const EstadoIcon = estado.icon;
-
-                    return (
-                      <TableRow
-                        key={contrato.id}
-                        className="group cursor-pointer hover:bg-muted/40"
-                        onClick={() => openEditSheet(contrato)}
-                      >
-                        <TableCell>
-                          <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                              <FileText className="w-4 h-4 text-primary" />
-                            </div>
-                            <div>
-                              <p className="font-medium text-sm">{contrato.nombre_convenio}</p>
-                              {contrato.notas && (
-                                <p className="text-xs text-muted-foreground truncate max-w-[200px]">
-                                  {contrato.notas}
-                                </p>
-                              )}
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <Building2 className="w-3.5 h-3.5 text-muted-foreground" />
-                            <span className="text-sm">
-                              {contrato.pagador?.nombre || "—"}
-                            </span>
-                            {contrato.pagador?.es_particular && (
-                              <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
-                                Particular
-                              </Badge>
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge
-                            variant="outline"
-                            className={cn("text-xs", tipo.color)}
-                          >
-                            {tipo.label}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                            <Calendar className="w-3 h-3" />
-                            {format(new Date(contrato.fecha_inicio), "dd MMM yyyy", {
-                              locale: es,
-                            })}
-                            {contrato.fecha_fin && (
-                              <>
-                                <span>→</span>
-                                {format(new Date(contrato.fecha_fin), "dd MMM yyyy", {
-                                  locale: es,
-                                })}
-                              </>
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-1.5">
-                            <EstadoIcon
-                              className={cn(
-                                "w-3.5 h-3.5",
-                                contrato.estado === "activo"
-                                  ? "text-emerald-500"
-                                  : contrato.estado === "vencido"
-                                  ? "text-amber-500"
-                                  : "text-muted-foreground"
-                              )}
-                            />
-                            <span className="text-sm">{estado.label}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8"
-                                onClick={(e) => e.stopPropagation()}
-                              >
-                                <MoreHorizontal className="w-4 h-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={(e) => { e.stopPropagation(); openEditSheet(contrato); }}>
-                                <Pencil className="w-3.5 h-3.5 mr-2" />
-                                Editar
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={(e) => { e.stopPropagation(); toggleEstado(contrato); }}>
-                                {contrato.estado === "activo" ? "Desactivar" : "Activar"}
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </div>
-      </div>
+      )}
 
       {/* Sheet for creating/editing pagador + contrato */}
       <Sheet open={sheetOpen} onOpenChange={(open) => { setSheetOpen(open); if (!open) resetForm(); }}>
@@ -532,7 +424,7 @@ const ContractsPage: React.FC = () => {
           <SheetHeader>
             <SheetTitle className="flex items-center gap-2">
               <Handshake className="w-5 h-5 text-primary" />
-              {isEditing ? "Editar Convenio" : "Nuevo Convenio"}
+              {isEditing ? "Editar convenio" : "Nuevo convenio"}
             </SheetTitle>
             <SheetDescription>
               {isEditing
@@ -557,7 +449,7 @@ const ContractsPage: React.FC = () => {
                 >
                   1
                 </div>
-                <div className="flex-1 h-0.5 bg-border rounded-full">
+                <div className="flex-1 h-px bg-border rounded-full">
                   <div
                     className={cn(
                       "h-full bg-primary rounded-full transition-all",
@@ -868,7 +760,7 @@ const ContractsPage: React.FC = () => {
           </div>
         </SheetContent>
       </Sheet>
-    </Layout>
+    </>
   );
 };
 

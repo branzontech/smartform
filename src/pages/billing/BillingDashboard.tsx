@@ -1,108 +1,107 @@
-
-import React, { useState } from "react";
-import { Layout } from "@/components/layout";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useEffect, useState, type ComponentType } from "react";
+import { useNavigate } from "react-router-dom";
+import { EncabezadoModulo } from "@/components/kit/EncabezadoModulo";
+import { PestanasCarpeta, type PestanaCarpeta } from "@/components/kit/pestanas/PestanasCarpeta";
+import { unaDe, useEstadoPersistente } from "@/components/kit/tabla";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { BackButton } from "@/App";
 import InvoiceList from "@/components/billing/InvoiceList";
 import PendingPayments from "@/components/billing/PendingPayments";
 import BillingReports from "@/components/billing/BillingReports";
 import BillingStats from "@/components/billing/BillingStats";
 import InvoiceGenerator from "@/components/billing/InvoiceGenerator";
-import { CreditCard, FileText, Clock, BarChart3, Plus } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { useNavigate } from "react-router-dom";
+import ContractsPage from "./ContractsPage";
+import PriceLists from "./PriceLists";
 
+/** Resumen del módulo: es la única vista con indicadores (KPI), como un dashboard. */
+function ResumenFacturacion() {
+  return (
+    <div className="space-y-6">
+      <BillingStats />
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle>Pagos pendientes recientes</CardTitle>
+            <CardDescription>Últimas facturas pendientes de cobro</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <PendingPayments limit={5} compact />
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>Últimas facturas generadas</CardTitle>
+            <CardDescription>Facturas emitidas recientemente</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <InvoiceList limit={5} compact />
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}
+
+const VISTAS = {
+  facturas: InvoiceList,
+  pendientes: PendingPayments,
+  convenios: () => <ContractsPage embebido />,
+  tarifarios: () => <PriceLists embebido />,
+  reportes: BillingReports,
+  resumen: ResumenFacturacion,
+  generar: InvoiceGenerator,
+} satisfies Record<string, ComponentType>;
+type Vista = keyof typeof VISTAS;
+
+const PESTANAS: PestanaCarpeta<Vista>[] = [
+  { id: "facturas", titulo: "Facturas", fija: true },
+  { id: "pendientes", titulo: "Pagos pendientes" },
+  { id: "convenios", titulo: "Convenios" },
+  { id: "tarifarios", titulo: "Tarifarios" },
+  { id: "reportes", titulo: "Reportes" },
+  { id: "resumen", titulo: "Resumen" },
+  { id: "generar", titulo: "Generar" },
+];
+const IDS = PESTANAS.map((p) => p.id);
+const VISIBLES_INICIALES: Vista[] = ["facturas", "pendientes", "convenios", "tarifarios", "reportes"];
+
+/**
+ * Facturación con la convención de páginas de módulo: encabezado estándar y
+ * vistas en pestañas tipo carpeta que quedan montadas al abrirlas (conservan
+ * búsqueda y scroll al volver). Convenios y Tarifarios siguen teniendo su
+ * ruta propia (/app/facturacion/convenios y /tarifarios).
+ */
 const BillingDashboard = () => {
-  const [activeTab, setActiveTab] = useState("dashboard");
   const navigate = useNavigate();
+  const [activa, setActiva] = useEstadoPersistente<Vista>("facturacion.vista", "facturas", unaDe(IDS));
+  const [abiertas, setAbiertas] = useState<Set<Vista>>(() => new Set([activa]));
+
+  useEffect(() => {
+    setAbiertas((prev) => (prev.has(activa) ? prev : new Set(prev).add(activa)));
+  }, [activa]);
 
   return (
-    <Layout>
-      <div className="container max-w-7xl py-6">
-        <div className="flex justify-between items-center mb-6">
-          <div>
-            <BackButton />
-            <h1 className="text-3xl font-bold">Facturación</h1>
-            <p className="text-muted-foreground">
-              Gestiona facturas, pagos y reportes financieros
-            </p>
+    <div className="mx-auto max-w-7xl space-y-5 py-6">
+      <EncabezadoModulo
+        titulo="Facturación"
+        primaria={{ titulo: "Nueva factura", onClick: () => navigate("/app/facturacion/nueva") }}
+      />
+      <PestanasCarpeta
+        id="facturacion.pestanas"
+        etiqueta="Vistas de facturación"
+        pestanas={PESTANAS}
+        activa={activa}
+        onCambio={setActiva}
+        visiblesIniciales={VISIBLES_INICIALES}
+      />
+      {[...abiertas].map((v) => {
+        const Vista = VISTAS[v];
+        return (
+          <div key={v} role="tabpanel" hidden={v !== activa}>
+            <Vista />
           </div>
-          <Button 
-            onClick={() => navigate("/app/facturacion/nueva")}
-            className="gap-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700"
-          >
-            <Plus size={16} />
-            Nueva factura
-          </Button>
-        </div>
-
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid grid-cols-4 md:grid-cols-5 gap-2">
-            <TabsTrigger value="dashboard" className="flex items-center gap-2">
-              <CreditCard size={16} />
-              <span className="hidden sm:inline">Dashboard</span>
-            </TabsTrigger>
-            <TabsTrigger value="invoices" className="flex items-center gap-2">
-              <FileText size={16} />
-              <span className="hidden sm:inline">Facturas</span>
-            </TabsTrigger>
-            <TabsTrigger value="pending" className="flex items-center gap-2">
-              <Clock size={16} />
-              <span className="hidden sm:inline">Pendientes</span>
-            </TabsTrigger>
-            <TabsTrigger value="reports" className="flex items-center gap-2">
-              <BarChart3 size={16} />
-              <span className="hidden sm:inline">Reportes</span>
-            </TabsTrigger>
-            <TabsTrigger value="generator" className="flex items-center gap-2 hidden md:flex">
-              <Plus size={16} />
-              <span className="hidden sm:inline">Generar</span>
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="dashboard" className="space-y-6">
-            <BillingStats />
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Pagos pendientes recientes</CardTitle>
-                  <CardDescription>Últimas facturas pendientes de cobro</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <PendingPayments limit={5} compact />
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader>
-                  <CardTitle>Últimas facturas generadas</CardTitle>
-                  <CardDescription>Facturas emitidas recientemente</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <InvoiceList limit={5} compact />
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="invoices">
-            <InvoiceList />
-          </TabsContent>
-
-          <TabsContent value="pending">
-            <PendingPayments />
-          </TabsContent>
-
-          <TabsContent value="reports">
-            <BillingReports />
-          </TabsContent>
-
-          <TabsContent value="generator">
-            <InvoiceGenerator />
-          </TabsContent>
-        </Tabs>
-      </div>
-    </Layout>
+        );
+      })}
+    </div>
   );
 };
 

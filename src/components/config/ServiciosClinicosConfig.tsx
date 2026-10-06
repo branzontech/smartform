@@ -1,11 +1,16 @@
 import { useState, useMemo, useCallback } from "react";
-import { Search, Plus, Edit, Link, X, Loader2, Package, FlaskConical, Stethoscope } from "lucide-react";
+import { Search, Plus, Edit, Link, X, Loader2, FlaskConical, Stethoscope, Power } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
+import { Skeleton } from "@/components/ui/skeleton";
+import { AccionesFila } from "@/components/kit/AccionesFila";
+import {
+  BarraTabla, CeldaEstado, TablaDatos, botonPrimario, useTablaDatos,
+  type ColumnaTabla, type FiltroTabla, type SegmentoTabla,
+} from "@/components/kit/tabla";
 import {
   useServiciosConConteo,
   useCreateServicioClinico,
@@ -50,6 +55,61 @@ const TIPO_PROC_LABELS: Record<string, string> = {
   otro: "Otro",
 };
 
+// ========== TABLAS (convención Ker Hub) ==========
+type ServicioConConteo = ServicioClinico & { procedimientos_count?: number };
+
+const derecha = "text-right tabular-nums";
+
+function columnaEstado<T extends { activo: boolean }>(): ColumnaTabla<T> {
+  return {
+    id: "estado", titulo: "Estado", valor: (f) => (f.activo ? "Activo" : "Inactivo"), sinPadding: true,
+    celda: (f) => <CeldaEstado tono={f.activo ? "exito" : "neutro"} texto={f.activo ? "Activo" : "Inactivo"} />,
+  };
+}
+
+function segmentosActivo<T extends { activo: boolean }>(): SegmentoTabla<T>[] {
+  return [
+    { id: "todos", titulo: "Todos", cumple: () => true },
+    { id: "activos", titulo: "Activos", cumple: (f) => f.activo },
+    { id: "inactivos", titulo: "Inactivos", cumple: (f) => !f.activo },
+  ];
+}
+
+const SEGMENTOS_SERVICIOS = segmentosActivo<ServicioConConteo>();
+const SEGMENTOS_PROCEDIMIENTOS = segmentosActivo<CatalogoProcedimiento>();
+const claveServicio = (s: ServicioConConteo) => s.id;
+const claveProcedimiento = (p: CatalogoProcedimiento) => p.id;
+
+const COLUMNAS_SERVICIOS: ColumnaTabla<ServicioConConteo>[] = [
+  { id: "codigo", titulo: "Código", valor: (s) => s.codigo, className: "font-mono text-xs", fija: true },
+  { id: "nombre", titulo: "Nombre", valor: (s) => s.nombre, principal: true, className: "min-w-[220px]" },
+  { id: "tipo", titulo: "Tipo", valor: (s) => TIPO_LABELS[s.tipo] || s.tipo },
+  { id: "centroCosto", titulo: "Centro de costo", valor: (s) => s.centro_costo },
+  { id: "procedimientos", titulo: "Procedimientos", valor: (s) => s.procedimientos_count ?? 0, className: derecha },
+  { id: "descripcion", titulo: "Descripción", valor: (s) => s.descripcion, oculta: true },
+  columnaEstado<ServicioConConteo>(),
+];
+
+const FILTROS_SERVICIOS: FiltroTabla<ServicioConConteo>[] = [
+  { id: "tipo", titulo: "Tipo", valor: (s) => TIPO_LABELS[s.tipo] || s.tipo },
+  { id: "centroCosto", titulo: "Centro de costo", valor: (s) => s.centro_costo },
+];
+
+const COLUMNAS_PROCEDIMIENTOS: ColumnaTabla<CatalogoProcedimiento>[] = [
+  { id: "codigo", titulo: "Código", valor: (p) => p.codigo, className: "font-mono text-xs", fija: true },
+  { id: "descripcion", titulo: "Descripción", valor: (p) => p.descripcion, principal: true, className: "min-w-[260px] max-w-[420px] truncate" },
+  { id: "sistema", titulo: "Sistema", valor: (p) => SISTEMA_LABELS[p.sistema_codificacion] || p.sistema_codificacion },
+  { id: "tipo", titulo: "Tipo", valor: (p) => TIPO_PROC_LABELS[p.tipo] || p.tipo },
+  { id: "capitulo", titulo: "Capítulo", valor: (p) => p.capitulo, oculta: true },
+  columnaEstado<CatalogoProcedimiento>(),
+];
+
+const FILTROS_PROCEDIMIENTOS: FiltroTabla<CatalogoProcedimiento>[] = [
+  { id: "sistema", titulo: "Sistema", valor: (p) => SISTEMA_LABELS[p.sistema_codificacion] || p.sistema_codificacion },
+  { id: "tipo", titulo: "Tipo", valor: (p) => TIPO_PROC_LABELS[p.tipo] || p.tipo },
+  { id: "capitulo", titulo: "Capítulo", valor: (p) => p.capitulo },
+];
+
 // ========== SERVICIOS TAB ==========
 function ServiciosTab() {
   const { data: servicios, isLoading } = useServiciosConConteo();
@@ -57,7 +117,6 @@ function ServiciosTab() {
   const updateMut = useUpdateServicioClinico();
   const toggleMut = useToggleServicioActivo();
 
-  const [filter, setFilter] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<ServicioClinico | null>(null);
   const [procsDialogServicio, setProcsDialogServicio] = useState<ServicioClinico | null>(null);
@@ -95,90 +154,38 @@ function ServiciosTab() {
     } catch (e: any) { toast.error(e.message || "Error al guardar"); }
   };
 
-  const filtered = useMemo(() => {
-    if (!servicios) return [];
-    if (!filter) return servicios;
-    const lower = filter.toLowerCase();
-    return servicios.filter(s => s.codigo.toLowerCase().includes(lower) || s.nombre.toLowerCase().includes(lower));
-  }, [servicios, filter]);
+  const filas = useMemo(() => (servicios ?? []) as ServicioConConteo[], [servicios]);
+  const t = useTablaDatos({ id: "config.servicios", filas, columnas: COLUMNAS_SERVICIOS, claveFila: claveServicio, filtros: FILTROS_SERVICIOS, segmentos: SEGMENTOS_SERVICIOS });
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-base font-semibold">Servicios Clínicos</h2>
-        <Button size="sm" className="gap-1.5 text-xs" onClick={openCreate}><Plus size={14} /> Nuevo Servicio</Button>
-      </div>
+      <h2 className="text-base font-semibold">Servicios clínicos</h2>
 
-      <div className="relative">
-        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-        <input
-          value={filter}
-          onChange={e => setFilter(e.target.value)}
-          placeholder="Buscar por nombre o código..."
-          className="w-full pl-9 pr-3 py-2 text-sm bg-transparent border-b border-border focus:border-primary outline-none transition-colors"
-        />
-      </div>
-
-      {isLoading ? (
-        <div className="flex justify-center py-12"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
-      ) : filtered.length === 0 ? (
-        <div className="text-center py-12">
-          <Stethoscope className="h-10 w-10 text-muted-foreground/30 mx-auto mb-2" />
-          <p className="text-sm text-muted-foreground">No hay servicios clínicos</p>
-        </div>
-      ) : (
-        <div className="rounded-xl border border-border bg-card/50 backdrop-blur-sm overflow-hidden">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-border text-xs text-muted-foreground">
-                <th className="text-left px-3 py-2 font-medium">Código</th>
-                <th className="text-left px-3 py-2 font-medium">Nombre</th>
-                <th className="text-left px-3 py-2 font-medium">Tipo</th>
-                <th className="text-left px-3 py-2 font-medium">C. Costo</th>
-                <th className="text-center px-3 py-2 font-medium">Procs.</th>
-                <th className="text-center px-3 py-2 font-medium">Activo</th>
-                <th className="text-right px-3 py-2 font-medium">Acciones</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {filtered.map(s => (
-                <tr key={s.id} className="hover:bg-muted/30 transition-colors">
-                  <td className="px-3 py-2 font-mono text-xs">{s.codigo}</td>
-                  <td className="px-3 py-2">{s.nombre}</td>
-                  <td className="px-3 py-2">
-                    <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-muted text-muted-foreground">
-                      {TIPO_LABELS[s.tipo] || s.tipo}
-                    </span>
-                  </td>
-                  <td className="px-3 py-2 text-muted-foreground text-xs">{s.centro_costo || "—"}</td>
-                  <td className="px-3 py-2 text-center">
-                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary/10 text-primary font-medium">
-                      {(s as any).procedimientos_count}
-                    </span>
-                  </td>
-                  <td className="px-3 py-2 text-center">
-                    <Switch
-                      checked={s.activo}
-                      onCheckedChange={v => toggleMut.mutate({ id: s.id, activo: v })}
-                      className="scale-75"
-                    />
-                  </td>
-                  <td className="px-3 py-2 text-right">
-                    <div className="flex justify-end gap-0.5">
-                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(s)}>
-                        <Edit size={13} />
-                      </Button>
-                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setProcsDialogServicio(s)}>
-                        <Link size={13} />
-                      </Button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+      <TablaDatos
+        t={t}
+        cargando={isLoading}
+        onFilaClick={openEdit}
+        barra={
+          <BarraTabla
+            t={t}
+            nombre={["servicio", "servicios"]}
+            placeholder="Buscar por nombre o código"
+            nombreArchivo="servicios-clinicos"
+            acciones={<Button className={botonPrimario} onClick={openCreate}><Plus className="h-4 w-4" /> Nuevo servicio</Button>}
+          />
+        }
+        acciones={(s) => (
+          <AccionesFila
+            nombre={s.nombre}
+            menu={[
+              { titulo: "Editar", icono: Edit, onClick: () => openEdit(s) },
+              { titulo: "Gestionar procedimientos", icono: Link, onClick: () => setProcsDialogServicio(s) },
+              { titulo: s.activo ? "Desactivar" : "Activar", icono: Power, onClick: () => toggleMut.mutate({ id: s.id, activo: !s.activo }) },
+            ]}
+          />
+        )}
+        vacio="Aún no hay servicios clínicos. Crea uno con «Nuevo servicio»."
+      />
 
       {/* Dialog crear/editar servicio */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
@@ -315,7 +322,7 @@ function GestionarProcedimientosDialog({ servicio, onClose }: { servicio: Servic
           <div className="space-y-2">
             <p className="text-xs text-muted-foreground font-medium">Asociados ({asociados?.length || 0})</p>
             {isLoading ? (
-              <div className="flex justify-center py-8"><Loader2 className="h-4 w-4 animate-spin" /></div>
+              <div className="space-y-1.5 py-2">{[0, 1, 2, 3].map((i) => <Skeleton key={i} className="h-7 w-full" />)}</div>
             ) : (asociados || []).length === 0 ? (
               <p className="text-xs text-muted-foreground py-8 text-center">Ningún procedimiento asociado</p>
             ) : (
@@ -353,7 +360,6 @@ function CatalogoProcedimientosTab() {
   const updateMut = useUpdateProcedimiento();
   const toggleMut = useToggleProcedimientoActivo();
 
-  const [filter, setFilter] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<CatalogoProcedimiento | null>(null);
 
@@ -398,85 +404,37 @@ function CatalogoProcedimientosTab() {
     } catch (e: any) { toast.error(e.message || "Error al guardar"); }
   };
 
-  const filtered = useMemo(() => {
-    if (!procs) return [];
-    if (!filter) return procs;
-    const lower = filter.toLowerCase();
-    return procs.filter(p => p.codigo.toLowerCase().includes(lower) || p.descripcion.toLowerCase().includes(lower));
-  }, [procs, filter]);
+  const filas = useMemo(() => procs ?? [], [procs]);
+  const t = useTablaDatos({ id: "config.catalogoProcedimientos", filas, columnas: COLUMNAS_PROCEDIMIENTOS, claveFila: claveProcedimiento, filtros: FILTROS_PROCEDIMIENTOS, segmentos: SEGMENTOS_PROCEDIMIENTOS });
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-base font-semibold">Catálogo de Procedimientos</h2>
-        <Button size="sm" className="gap-1.5 text-xs" onClick={openCreate}><Plus size={14} /> Nuevo Procedimiento</Button>
-      </div>
+      <h2 className="text-base font-semibold">Catálogo de procedimientos</h2>
 
-      <div className="relative">
-        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-        <input
-          value={filter}
-          onChange={e => setFilter(e.target.value)}
-          placeholder="Buscar por código o descripción..."
-          className="w-full pl-9 pr-3 py-2 text-sm bg-transparent border-b border-border focus:border-primary outline-none transition-colors"
-        />
-      </div>
-
-      {isLoading ? (
-        <div className="flex justify-center py-12"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
-      ) : filtered.length === 0 ? (
-        <div className="text-center py-12">
-          <FlaskConical className="h-10 w-10 text-muted-foreground/30 mx-auto mb-2" />
-          <p className="text-sm text-muted-foreground">No hay procedimientos en el catálogo</p>
-        </div>
-      ) : (
-        <div className="rounded-xl border border-border bg-card/50 backdrop-blur-sm overflow-hidden">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-border text-xs text-muted-foreground">
-                <th className="text-left px-3 py-2 font-medium">Código</th>
-                <th className="text-left px-3 py-2 font-medium">Descripción</th>
-                <th className="text-left px-3 py-2 font-medium">Sistema</th>
-                <th className="text-left px-3 py-2 font-medium">Tipo</th>
-                <th className="text-left px-3 py-2 font-medium">Capítulo</th>
-                <th className="text-center px-3 py-2 font-medium">Activo</th>
-                <th className="text-right px-3 py-2 font-medium">Acciones</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {filtered.map(p => (
-                <tr key={p.id} className="hover:bg-muted/30 transition-colors">
-                  <td className="px-3 py-2 font-mono text-xs">{p.codigo}</td>
-                  <td className="px-3 py-2 max-w-[250px] truncate">{p.descripcion}</td>
-                  <td className="px-3 py-2">
-                    <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-muted text-muted-foreground">
-                      {SISTEMA_LABELS[p.sistema_codificacion] || p.sistema_codificacion}
-                    </span>
-                  </td>
-                  <td className="px-3 py-2">
-                    <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-muted text-muted-foreground">
-                      {TIPO_PROC_LABELS[p.tipo] || p.tipo}
-                    </span>
-                  </td>
-                  <td className="px-3 py-2 text-xs text-muted-foreground">{p.capitulo || "—"}</td>
-                  <td className="px-3 py-2 text-center">
-                    <Switch
-                      checked={p.activo}
-                      onCheckedChange={v => toggleMut.mutate({ id: p.id, activo: v })}
-                      className="scale-75"
-                    />
-                  </td>
-                  <td className="px-3 py-2 text-right">
-                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(p)}>
-                      <Edit size={13} />
-                    </Button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+      <TablaDatos
+        t={t}
+        cargando={isLoading}
+        onFilaClick={openEdit}
+        barra={
+          <BarraTabla
+            t={t}
+            nombre={["procedimiento", "procedimientos"]}
+            placeholder="Buscar por código o descripción"
+            nombreArchivo="catalogo-procedimientos"
+            acciones={<Button className={botonPrimario} onClick={openCreate}><Plus className="h-4 w-4" /> Nuevo procedimiento</Button>}
+          />
+        }
+        acciones={(p) => (
+          <AccionesFila
+            nombre={p.descripcion}
+            menu={[
+              { titulo: "Editar", icono: Edit, onClick: () => openEdit(p) },
+              { titulo: p.activo ? "Desactivar" : "Activar", icono: Power, onClick: () => toggleMut.mutate({ id: p.id, activo: !p.activo }) },
+            ]}
+          />
+        )}
+        vacio="Aún no hay procedimientos en el catálogo. Crea uno con «Nuevo procedimiento»."
+      />
 
       {/* Dialog crear/editar procedimiento */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>

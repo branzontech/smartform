@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { PanelRightClose, Pill, TestTube, Scan, UserPlus, Scissors, ChevronRight, ChevronDown, Plus, Loader2, Eye, Mail, MessageCircle } from 'lucide-react';
+import { PanelRightClose, Pill, TestTube, Scan, UserPlus, Scissors, ChevronRight, ChevronDown, Plus, Eye, Mail, MessageCircle } from 'lucide-react';
 import { PatientHistoryPanel } from '@/components/patients/PatientHistoryPanel';
 import { MedicationOrderForm } from './MedicationOrderForm';
 import { ProcedureOrderForm } from './ProcedureOrderForm';
@@ -10,6 +11,8 @@ import { OrderPreviewDialog } from './OrderPreviewDialog';
 import { shareOrderEmail, shareOrderWhatsApp } from '@/utils/orders/order-actions';
 import { baseDatos } from "@/integrations/datos/cliente";
 import { cn } from '@/lib/utils';
+import { TablaSimple, type ColumnaSimple } from '@/components/kit/tabla';
+import type { OrdenProcedimientoItem } from '@/types/ordenes-procedimientos';
 import { useOrdenesProcedimientosByAdmision, useOrdenProcedimientoDetail } from '@/hooks/useOrdenesProcedimientos';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -20,6 +23,15 @@ const ORDER_TYPES = [
   { type: 'imagenologia', label: 'Imagenología', icon: Scan },
   { type: 'interconsulta', label: 'Interconsulta', icon: UserPlus },
   { type: 'procedimiento', label: 'Procedimientos', icon: Scissors },
+];
+
+/* Detalle de una orden: tabla de ítems (TablaSimple). */
+const COLUMNAS_ITEMS_ORDEN: ColumnaSimple<OrdenProcedimientoItem>[] = [
+  { id: "codigo", titulo: "Código", celda: (i) => i.codigo_procedimiento, className: "font-mono text-xs" },
+  { id: "descripcion", titulo: "Descripción", celda: (i) => i.descripcion_procedimiento, principal: true, className: "max-w-[260px] truncate" },
+  { id: "cantidad", titulo: "Cant.", celda: (i) => i.cantidad, className: "w-14 text-right tabular-nums" },
+  { id: "dias", titulo: "Días", celda: (i) => i.dias, className: "w-14 text-right tabular-nums" },
+  { id: "notas", titulo: "Notas", celda: (i) => i.notas || "—", className: "max-w-[160px] truncate" },
 ];
 
 /* ─── Procedimientos Tab Content ─── */
@@ -59,8 +71,8 @@ const ProcedimientosTabContent: React.FC<{
       {/* Orders list */}
       <div className="flex-1 min-h-0 overflow-y-auto px-3 pb-3">
         {isLoading ? (
-          <div className="flex items-center justify-center py-8">
-            <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+          <div className="space-y-2" aria-busy="true" aria-label="Cargando órdenes">
+            {[0, 1, 2].map((i) => <Skeleton key={i} className="h-14 w-full rounded-lg" />)}
           </div>
         ) : ordenes.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-10 text-center">
@@ -143,34 +155,12 @@ const ProcedimientosTabContent: React.FC<{
               </div>
               <div className="px-5 py-3">
                 <p className="text-[10px] uppercase font-semibold text-muted-foreground mb-2">Procedimientos</p>
-                {ordenDetail.items_detalle && ordenDetail.items_detalle.length > 0 ? (
-                  <div className="border border-border/40 rounded-lg overflow-hidden">
-                    <table className="w-full text-xs">
-                      <thead>
-                        <tr className="bg-muted/40 text-muted-foreground">
-                          <th className="text-left px-3 py-1.5 font-semibold">Código</th>
-                          <th className="text-left px-3 py-1.5 font-semibold">Descripción</th>
-                          <th className="text-center px-2 py-1.5 font-semibold w-14">Cant.</th>
-                          <th className="text-center px-2 py-1.5 font-semibold w-14">Días</th>
-                          <th className="text-left px-2 py-1.5 font-semibold">Notas</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {ordenDetail.items_detalle.map(item => (
-                          <tr key={item.id} className="border-t border-border/30">
-                            <td className="px-3 py-1.5 font-mono font-semibold text-primary">{item.codigo_procedimiento}</td>
-                            <td className="px-3 py-1.5">{item.descripcion_procedimiento}</td>
-                            <td className="text-center px-2 py-1.5">{item.cantidad}</td>
-                            <td className="text-center px-2 py-1.5">{item.dias}</td>
-                            <td className="px-2 py-1.5 text-muted-foreground">{item.notas || '—'}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                ) : (
-                  <p className="text-xs text-muted-foreground">Sin items</p>
-                )}
+                <TablaSimple
+                  columnas={COLUMNAS_ITEMS_ORDEN}
+                  filas={ordenDetail.items_detalle ?? []}
+                  claveFila={(item) => item.id}
+                  vacio="La orden no tiene procedimientos."
+                />
               </div>
             </div>
           )}

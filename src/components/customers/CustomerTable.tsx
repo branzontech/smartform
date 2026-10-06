@@ -1,38 +1,16 @@
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { Calendar, Edit, MessageCircle } from "lucide-react";
+import { AccionesFila } from "@/components/kit/AccionesFila";
+import {
+  BarraTabla, CeldaEstado, TablaDatos, useTablaDatos,
+  type ColumnaTabla, type FiltroTabla, type SegmentoTabla, type TonoEstado,
+} from "@/components/kit/tabla";
+import { useToast } from "@/hooks/use-toast";
+import type { Customer } from "@/types/customer-types";
 
-import React, { useState } from "react";
-import { Link } from "react-router-dom";
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { 
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { 
-  Edit, 
-  MoreHorizontal, 
-  MessageCircle, 
-  Calendar, 
-  Trash2,
-  Eye
-} from "lucide-react";
-import { Customer } from "@/types/customer-types";
-
-// Mock data - in a real app this would come from API
-const mockCustomers: Customer[] = [
+// DATOS SIMULADOS: el módulo de clientes aún no tiene tabla ni API; esta lista es de ejemplo.
+const CLIENTES_SIMULADOS: Customer[] = [
   {
     id: "1",
     name: "Ana García Martínez",
@@ -48,7 +26,7 @@ const mockCustomers: Customer[] = [
     appointmentCount: 24,
     totalSpent: 1850,
     lastAppointment: new Date(2023, 3, 20),
-    tags: ["VIP", "Tratamiento mensual"]
+    tags: ["VIP", "Tratamiento mensual"],
   },
   {
     id: "2",
@@ -79,7 +57,7 @@ const mockCustomers: Customer[] = [
     appointmentCount: 12,
     totalSpent: 980,
     lastAppointment: new Date(2023, 1, 15),
-    tags: ["Descuentos", "Preferencial"]
+    tags: ["Descuentos", "Preferencial"],
   },
   {
     id: "4",
@@ -109,175 +87,92 @@ const mockCustomers: Customer[] = [
     appointmentCount: 32,
     totalSpent: 2340,
     lastAppointment: new Date(2023, 2, 20),
-    tags: ["VIP", "Planes especiales"]
-  }
+    tags: ["VIP", "Planes especiales"],
+  },
 ];
 
+const TONO_ESTADO: Record<Customer["status"], TonoEstado> = {
+  Activo: "exito",
+  Inactivo: "error",
+  Potencial: "info",
+  Lead: "primario",
+};
+
+const fechaCorta = new Intl.DateTimeFormat("es-CO", { day: "2-digit", month: "short", year: "numeric" });
+const numero = new Intl.NumberFormat("es-CO");
+const derecha = "text-right tabular-nums";
+
+/** Una celda, un dato, una línea. Lo demás está en el detalle del cliente. */
+const COLUMNAS: ColumnaTabla<Customer>[] = [
+  { id: "cliente", titulo: "Cliente", valor: (c) => c.name, principal: true, fija: true, className: "min-w-[220px]" },
+  { id: "correo", titulo: "Correo", valor: (c) => c.email },
+  { id: "telefono", titulo: "Teléfono", valor: (c) => c.phone, className: "tabular-nums" },
+  {
+    id: "estado", titulo: "Estado", valor: (c) => c.status, sinPadding: true,
+    celda: (c) => <CeldaEstado tono={TONO_ESTADO[c.status]} texto={c.status} />,
+  },
+  { id: "frecuencia", titulo: "Frecuencia", valor: (c) => c.frequency },
+  { id: "fidelizacion", titulo: "Fidelización", valor: (c) => c.loyalty, oculta: true },
+  { id: "citas", titulo: "Citas", valor: (c) => c.appointmentCount, className: derecha, oculta: true },
+  { id: "total", titulo: "Total gastado", valor: (c) => c.totalSpent, celda: (c) => numero.format(c.totalSpent), className: derecha, oculta: true },
+  {
+    id: "ultimaVisita", titulo: "Última visita", valor: (c) => c.lastAppointment?.getTime(),
+    celda: (c) => (c.lastAppointment ? fechaCorta.format(c.lastAppointment) : "Sin visitas"), className: "tabular-nums",
+  },
+  {
+    id: "desde", titulo: "Cliente desde", valor: (c) => c.createdAt.getTime(),
+    celda: (c) => fechaCorta.format(c.createdAt), className: "tabular-nums", oculta: true,
+  },
+];
+
+const FILTROS: FiltroTabla<Customer>[] = [
+  { id: "frecuencia", titulo: "Frecuencia", valor: (c) => c.frequency },
+  { id: "fidelizacion", titulo: "Fidelización", valor: (c) => c.loyalty },
+  { id: "etiqueta", titulo: "Etiqueta", valor: (c) => c.tags ?? [] },
+];
+
+const SEGMENTOS: SegmentoTabla<Customer>[] = [
+  { id: "todos", titulo: "Todos", cumple: () => true },
+  { id: "activos", titulo: "Activos", cumple: (c) => c.status === "Activo" },
+  { id: "potenciales", titulo: "Potenciales", cumple: (c) => c.status === "Potencial" || c.status === "Lead" },
+  { id: "inactivos", titulo: "Inactivos", cumple: (c) => c.status === "Inactivo" },
+];
+
+const claveFila = (c: Customer) => c.id;
+
+/** Listado de clientes con la convención de tablas de Ker Hub. */
 export const CustomerTable = () => {
-  const [selectedCustomers, setSelectedCustomers] = useState<string[]>([]);
-  
-  const toggleSelectAll = () => {
-    if (selectedCustomers.length === mockCustomers.length) {
-      setSelectedCustomers([]);
-    } else {
-      setSelectedCustomers(mockCustomers.map(customer => customer.id));
-    }
-  };
-  
-  const toggleSelectCustomer = (id: string) => {
-    if (selectedCustomers.includes(id)) {
-      setSelectedCustomers(selectedCustomers.filter(customerId => customerId !== id));
-    } else {
-      setSelectedCustomers([...selectedCustomers, id]);
-    }
-  };
-  
-  const getStatusColor = (status: Customer["status"]) => {
-    switch (status) {
-      case "Activo":
-        return "bg-green-100 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800";
-      case "Inactivo":
-        return "bg-red-100 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800";
-      case "Potencial":
-        return "bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800";
-      case "Lead":
-        return "bg-purple-100 text-purple-700 border-purple-200 dark:bg-purple-900/30 dark:text-purple-400 dark:border-purple-800";
-      default:
-        return "";
-    }
-  };
-  
-  const getFrequencyColor = (frequency: Customer["frequency"]) => {
-    switch (frequency) {
-      case "Frecuente":
-        return "bg-indigo-100 text-indigo-700 border-indigo-200 dark:bg-indigo-900/30 dark:text-indigo-400 dark:border-indigo-800";
-      case "Regular":
-        return "bg-sky-100 text-sky-700 border-sky-200 dark:bg-sky-900/30 dark:text-sky-400 dark:border-sky-800";
-      case "Esporádico":
-        return "bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-800";
-      case "Nuevo":
-        return "bg-cyan-100 text-cyan-700 border-cyan-200 dark:bg-cyan-900/30 dark:text-cyan-400 dark:border-cyan-800";
-      default:
-        return "";
-    }
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const [clientes, setClientes] = useState<Customer[]>(CLIENTES_SIMULADOS);
+  const t = useTablaDatos({ id: "clientes.lista", filas: clientes, columnas: COLUMNAS, claveFila, filtros: FILTROS, segmentos: SEGMENTOS });
+
+  const ver = (c: Customer) => navigate(`/app/clientes/${c.id}`);
+
+  // Datos simulados: eliminar solo lo quita de la lista en pantalla.
+  const eliminar = (c: Customer) => {
+    setClientes((lista) => lista.filter((x) => x.id !== c.id));
+    toast({ title: "Cliente eliminado", description: c.name });
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm overflow-hidden">
-      <div className="overflow-x-auto">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-12">
-                <Checkbox 
-                  checked={selectedCustomers.length === mockCustomers.length && mockCustomers.length > 0} 
-                  onCheckedChange={toggleSelectAll}
-                  aria-label="Seleccionar todos"
-                />
-              </TableHead>
-              <TableHead>Cliente</TableHead>
-              <TableHead className="hidden sm:table-cell">Contacto</TableHead>
-              <TableHead className="hidden md:table-cell">Estado</TableHead>
-              <TableHead className="hidden md:table-cell">Frecuencia</TableHead>
-              <TableHead className="hidden lg:table-cell">Última Visita</TableHead>
-              <TableHead className="w-20 text-right">Acciones</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {mockCustomers.map((customer) => (
-              <TableRow key={customer.id} className="group">
-                <TableCell>
-                  <Checkbox 
-                    checked={selectedCustomers.includes(customer.id)} 
-                    onCheckedChange={() => toggleSelectCustomer(customer.id)}
-                    aria-label={`Seleccionar ${customer.name}`}
-                  />
-                </TableCell>
-                <TableCell>
-                  <div className="flex items-center space-x-3">
-                    <Avatar className="h-9 w-9">
-                      <AvatarImage src={customer.profileImage || undefined} alt={customer.name} />
-                      <AvatarFallback className="bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300">
-                        {customer.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <div className="font-medium">{customer.name}</div>
-                      <div className="text-xs text-muted-foreground">Cliente desde {customer.createdAt.toLocaleDateString('es-ES', { year: 'numeric', month: 'short' })}</div>
-                    </div>
-                  </div>
-                </TableCell>
-                <TableCell className="hidden sm:table-cell">
-                  <div className="text-sm">{customer.email}</div>
-                  <div className="text-xs text-muted-foreground mt-0.5">{customer.phone}</div>
-                </TableCell>
-                <TableCell className="hidden md:table-cell">
-                  <Badge className={`font-normal ${getStatusColor(customer.status)}`}>
-                    {customer.status}
-                  </Badge>
-                </TableCell>
-                <TableCell className="hidden md:table-cell">
-                  <Badge variant="outline" className={`font-normal ${getFrequencyColor(customer.frequency)}`}>
-                    {customer.frequency}
-                  </Badge>
-                </TableCell>
-                <TableCell className="hidden lg:table-cell">
-                  {customer.lastAppointment 
-                    ? customer.lastAppointment.toLocaleDateString('es-ES', { 
-                        day: 'numeric', 
-                        month: 'short', 
-                        year: 'numeric' 
-                      })
-                    : "Sin visitas"}
-                </TableCell>
-                <TableCell className="text-right">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="opacity-0 group-hover:opacity-100">
-                        <MoreHorizontal className="h-4 w-4" />
-                        <span className="sr-only">Acciones</span>
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-48 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
-                      <DropdownMenuLabel>Acciones</DropdownMenuLabel>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem className="cursor-pointer" asChild>
-                        <Link to={`/app/clientes/${customer.id}`} className="flex items-center">
-                          <Eye className="mr-2 h-4 w-4" />
-                          <span>Ver detalles</span>
-                        </Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem className="cursor-pointer" asChild>
-                        <Link to={`/app/clientes/editar/${customer.id}`} className="flex items-center">
-                          <Edit className="mr-2 h-4 w-4" />
-                          <span>Editar</span>
-                        </Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem className="cursor-pointer" asChild>
-                        <Link to={`/app/clientes/notificaciones/nueva?id=${customer.id}`} className="flex items-center">
-                          <MessageCircle className="mr-2 h-4 w-4" />
-                          <span>Enviar mensaje</span>
-                        </Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem className="cursor-pointer" asChild>
-                        <Link to={`/app/citas/nueva?clienteId=${customer.id}`} className="flex items-center">
-                          <Calendar className="mr-2 h-4 w-4" />
-                          <span>Agendar cita</span>
-                        </Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem className="text-red-600 dark:text-red-400 cursor-pointer">
-                        <Trash2 className="mr-2 h-4 w-4" />
-                        <span>Eliminar</span>
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
-    </div>
+    <TablaDatos
+      t={t}
+      onFilaClick={ver}
+      barra={<BarraTabla t={t} nombre={["cliente", "clientes"]} placeholder="Buscar por nombre, correo o teléfono" nombreArchivo="clientes" />}
+      acciones={(c) => (
+        <AccionesFila
+          nombre={c.name}
+          onVer={() => ver(c)}
+          menu={[
+            { titulo: "Editar", icono: Edit, onClick: () => navigate(`/app/clientes/editar/${c.id}`) },
+            { titulo: "Enviar mensaje", icono: MessageCircle, onClick: () => navigate(`/app/clientes/notificaciones/nueva?id=${c.id}`) },
+            { titulo: "Agendar cita", icono: Calendar, onClick: () => navigate(`/app/citas/nueva?clienteId=${c.id}`) },
+          ]}
+          onEliminar={() => eliminar(c)}
+        />
+      )}
+      vacio="Aún no hay clientes. Registra uno con «Nuevo cliente»."
+    />
   );
 };

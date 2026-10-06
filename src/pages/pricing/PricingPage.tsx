@@ -11,6 +11,60 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { useNavigate } from "react-router-dom";
 import { useTenant } from "@/contexts/TenantContext";
 import { toast } from "@/hooks/use-toast";
+import { TablaSimple, type ColumnaSimple } from "@/components/kit/tabla";
+
+type ValorPlan = string | boolean;
+
+interface FilaComparacion {
+  caracteristica: string;
+  ayuda?: string;
+  basico: ValorPlan;
+  profesional: ValorPlan;
+  institucional: ValorPlan;
+}
+
+const COMPARACION: FilaComparacion[] = [
+  { caracteristica: "Límite de pacientes", ayuda: "Número máximo de perfiles de pacientes que se pueden crear", basico: "100", profesional: "Ilimitados", institucional: "Ilimitados" },
+  { caracteristica: "Usuarios", basico: "1", profesional: "Hasta 3", institucional: "Hasta 10" },
+  { caracteristica: "Formularios personalizados", basico: "5", profesional: "Ilimitados", institucional: "Ilimitados" },
+  { caracteristica: "Telemedicina", basico: false, profesional: true, institucional: true },
+  { caracteristica: "Facturación electrónica", basico: false, profesional: true, institucional: true },
+  { caracteristica: "Almacenamiento", basico: "500 MB", profesional: "5 GB", institucional: "25 GB" },
+  { caracteristica: "Soporte", basico: "Correo", profesional: "Correo y chat", institucional: "Correo, chat y teléfono" },
+  { caracteristica: "Personalización de marca", basico: false, profesional: "Básica", institucional: "Completa" },
+  { caracteristica: "Reportes avanzados", basico: false, profesional: true, institucional: true },
+  { caracteristica: "API para integraciones", basico: false, profesional: false, institucional: true },
+];
+
+function ValorComparacion({ valor }: { valor: ValorPlan }) {
+  if (valor === true) return <><Check aria-hidden className="mx-auto h-4 w-4 text-[hsl(var(--success))]" /><span className="sr-only">Incluido</span></>;
+  if (valor === false) return <><X aria-hidden className="mx-auto h-4 w-4 text-muted-foreground/60" /><span className="sr-only">No incluido</span></>;
+  return <>{valor}</>;
+}
+
+const COLUMNAS_COMPARACION: ColumnaSimple<FilaComparacion>[] = [
+  {
+    id: "caracteristica", titulo: "Característica", principal: true,
+    celda: (f) => (
+      <span className="inline-flex items-center gap-1">
+        {f.caracteristica}
+        {f.ayuda && (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger aria-label={f.ayuda}>
+                <HelpCircle className="h-4 w-4 text-muted-foreground" />
+              </TooltipTrigger>
+              <TooltipContent>{f.ayuda}</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        )}
+      </span>
+    ),
+  },
+  { id: "basico", titulo: "Básico", celda: (f) => <ValorComparacion valor={f.basico} />, className: "text-center" },
+  { id: "profesional", titulo: "Profesional", celda: (f) => <ValorComparacion valor={f.profesional} />, className: "text-center" },
+  { id: "institucional", titulo: "Institucional", celda: (f) => <ValorComparacion valor={f.institucional} />, className: "text-center" },
+];
 
 const PricingPage = () => {
   const [billingAnnual, setBillingAnnual] = useState(false);
@@ -215,92 +269,12 @@ const PricingPage = () => {
         </div>
         
         {showComparison && (
-          <div className="rounded-lg border overflow-hidden mb-12">
-            <table className="w-full">
-              <thead>
-                <tr className="bg-muted">
-                  <th className="text-left p-4 border-b">Característica</th>
-                  <th className="text-center p-4 border-b">Básico</th>
-                  <th className="text-center p-4 border-b">Profesional</th>
-                  <th className="text-center p-4 border-b">Institucional</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td className="p-4 border-b flex items-center">
-                    Límite de pacientes
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger>
-                          <HelpCircle className="h-4 w-4 ml-1 text-muted-foreground" />
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          Número máximo de perfiles de pacientes que se pueden crear
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  </td>
-                  <td className="p-4 border-b text-center">100</td>
-                  <td className="p-4 border-b text-center">Ilimitados</td>
-                  <td className="p-4 border-b text-center">Ilimitados</td>
-                </tr>
-                <tr>
-                  <td className="p-4 border-b">Usuarios</td>
-                  <td className="p-4 border-b text-center">1</td>
-                  <td className="p-4 border-b text-center">Hasta 3</td>
-                  <td className="p-4 border-b text-center">Hasta 10</td>
-                </tr>
-                <tr>
-                  <td className="p-4 border-b">Formularios personalizados</td>
-                  <td className="p-4 border-b text-center">5</td>
-                  <td className="p-4 border-b text-center">Ilimitados</td>
-                  <td className="p-4 border-b text-center">Ilimitados</td>
-                </tr>
-                <tr>
-                  <td className="p-4 border-b">Telemedicina</td>
-                  <td className="p-4 border-b text-center"><X className="h-5 w-5 text-gray-400 mx-auto" /></td>
-                  <td className="p-4 border-b text-center"><Check className="h-5 w-5 text-green-500 mx-auto" /></td>
-                  <td className="p-4 border-b text-center"><Check className="h-5 w-5 text-green-500 mx-auto" /></td>
-                </tr>
-                <tr>
-                  <td className="p-4 border-b">Facturación electrónica</td>
-                  <td className="p-4 border-b text-center"><X className="h-5 w-5 text-gray-400 mx-auto" /></td>
-                  <td className="p-4 border-b text-center"><Check className="h-5 w-5 text-green-500 mx-auto" /></td>
-                  <td className="p-4 border-b text-center"><Check className="h-5 w-5 text-green-500 mx-auto" /></td>
-                </tr>
-                <tr>
-                  <td className="p-4 border-b">Almacenamiento</td>
-                  <td className="p-4 border-b text-center">500MB</td>
-                  <td className="p-4 border-b text-center">5GB</td>
-                  <td className="p-4 border-b text-center">25GB</td>
-                </tr>
-                <tr>
-                  <td className="p-4 border-b">Soporte</td>
-                  <td className="p-4 border-b text-center">Email</td>
-                  <td className="p-4 border-b text-center">Email + Chat</td>
-                  <td className="p-4 border-b text-center">Email + Chat + Teléfono</td>
-                </tr>
-                <tr>
-                  <td className="p-4 border-b">Personalización de marca</td>
-                  <td className="p-4 border-b text-center"><X className="h-5 w-5 text-gray-400 mx-auto" /></td>
-                  <td className="p-4 border-b text-center">Básica</td>
-                  <td className="p-4 border-b text-center">Completa</td>
-                </tr>
-                <tr>
-                  <td className="p-4 border-b">Reportes avanzados</td>
-                  <td className="p-4 border-b text-center"><X className="h-5 w-5 text-gray-400 mx-auto" /></td>
-                  <td className="p-4 border-b text-center"><Check className="h-5 w-5 text-green-500 mx-auto" /></td>
-                  <td className="p-4 border-b text-center"><Check className="h-5 w-5 text-green-500 mx-auto" /></td>
-                </tr>
-                <tr>
-                  <td className="p-4 border-b">API para integraciones</td>
-                  <td className="p-4 border-b text-center"><X className="h-5 w-5 text-gray-400 mx-auto" /></td>
-                  <td className="p-4 border-b text-center"><X className="h-5 w-5 text-gray-400 mx-auto" /></td>
-                  <td className="p-4 border-b text-center"><Check className="h-5 w-5 text-green-500 mx-auto" /></td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
+          <TablaSimple
+            className="mb-12"
+            columnas={COLUMNAS_COMPARACION}
+            filas={COMPARACION}
+            claveFila={(f) => f.caracteristica}
+          />
         )}
 
         <div className="max-w-3xl mx-auto bg-muted/50 rounded-lg p-6 border">

@@ -7,8 +7,10 @@ import { ArrowLeft, Pencil, Printer, Send, CheckCircle2, XCircle, Clock } from "
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Skeleton } from "@/components/ui/skeleton";
 import { FormHeaderPreview } from "@/components/forms/FormHeaderPreview";
-import type { EstadoCotizacion } from "@/types/cotizacion-types";
+import { TablaSimple, type ColumnaSimple } from "@/components/kit/tabla";
+import type { CotizacionItem, EstadoCotizacion } from "@/types/cotizacion-types";
 
 const estadoBadge: Record<EstadoCotizacion, { label: string; className: string }> = {
   borrador: { label: "Borrador", className: "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300 border-0" },
@@ -17,6 +19,21 @@ const estadoBadge: Record<EstadoCotizacion, { label: string; className: string }
   rechazada: { label: "Rechazada", className: "bg-red-50 text-red-600 dark:bg-red-900/30 dark:text-red-300 border-0" },
   vencida: { label: "Vencida", className: "bg-amber-50 text-amber-600 dark:bg-amber-900/30 dark:text-amber-300 border-0" },
 };
+
+const formatCurrency = (val: number, moneda: string = "COP") =>
+  new Intl.NumberFormat("es-CO", { style: "currency", currency: moneda, minimumFractionDigits: 0 }).format(val);
+
+const derecha = "text-right tabular-nums";
+
+/** Columnas de los ítems: una celda, un dato (el código del servicio va en su propia columna). */
+const columnasItems = (moneda: string): ColumnaSimple<CotizacionItem>[] => [
+  { id: "descripcion", titulo: "Descripción", celda: (i) => i.descripcion_servicio, principal: true },
+  { id: "codigo", titulo: "Código", celda: (i) => i.codigo_servicio || "—", className: "w-28 font-mono text-xs" },
+  { id: "cantidad", titulo: "Cant.", celda: (i) => i.cantidad, className: `w-16 ${derecha}` },
+  { id: "unitario", titulo: "V. unit.", celda: (i) => formatCurrency(Number(i.valor_unitario), moneda), className: `w-32 ${derecha}` },
+  { id: "descuento", titulo: "Dto. %", celda: (i) => (Number(i.descuento_porcentaje) > 0 ? `${i.descuento_porcentaje}%` : "—"), className: `w-20 ${derecha}` },
+  { id: "total", titulo: "Total", celda: (i) => formatCurrency(Number(i.valor_total), moneda), className: `w-32 font-medium text-foreground ${derecha}` },
+];
 
 interface Props {
   cotizacionId: string;
@@ -49,7 +66,7 @@ const CotizacionDetail = ({ cotizacionId, onBack, onEdit }: Props) => {
         .eq("cotizacion_id", cotizacionId)
         .order("orden", { ascending: true });
       if (error) throw error;
-      return data as any[];
+      return (data ?? []) as unknown as CotizacionItem[];
     },
   });
 
@@ -104,13 +121,11 @@ const CotizacionDetail = ({ cotizacionId, onBack, onEdit }: Props) => {
     },
   });
 
-  const formatCurrency = (val: number, moneda: string = "COP") =>
-    new Intl.NumberFormat("es-CO", { style: "currency", currency: moneda, minimumFractionDigits: 0 }).format(val);
-
   if (isLoading || !cotizacion) {
     return (
-      <div className="flex items-center justify-center h-64 text-muted-foreground">
-        Cargando cotización...
+      <div className="mx-auto max-w-3xl space-y-4 py-6" aria-busy="true" aria-label="Cargando cotización">
+        <Skeleton className="h-9 w-full rounded-lg" />
+        <Skeleton className="h-[480px] w-full rounded-xl" />
       </div>
     );
   }
@@ -120,9 +135,9 @@ const CotizacionDetail = ({ cotizacionId, onBack, onEdit }: Props) => {
   const cliente = cotizacion.clientes_cotizacion;
 
   return (
-    <div className="h-[calc(100vh-4rem)] overflow-hidden flex flex-col">
+    <div className="flex flex-col">
       {/* Toolbar */}
-      <div className="shrink-0 border-b border-border/50 bg-card/50 backdrop-blur-sm px-4 md:px-6 py-3 flex items-center justify-between print:hidden">
+      <div className="sticky top-0 z-10 border-b border-border/50 bg-background/95 backdrop-blur-sm px-4 md:px-6 py-3 flex flex-wrap items-center justify-between gap-2 print:hidden">
         <div className="flex items-center gap-3">
           <Button variant="ghost" size="sm" onClick={onBack} className="gap-1.5">
             <ArrowLeft className="w-4 h-4" />
@@ -176,7 +191,7 @@ const CotizacionDetail = ({ cotizacionId, onBack, onEdit }: Props) => {
       </div>
 
       {/* Document preview */}
-      <div className="flex-1 overflow-y-auto bg-muted/20 p-6 md:p-10 print:bg-white print:p-0">
+      <div className="bg-muted/20 p-6 md:p-10 print:bg-white print:p-0">
         <div className="max-w-3xl mx-auto bg-background rounded-xl shadow-sm border border-border/50 p-8 text-sm space-y-6 print:shadow-none print:border-0 print:rounded-none print:p-0 print:max-w-none">
           {/* Institution header */}
           {headerConfig && <FormHeaderPreview config={headerConfig as any} />}
@@ -213,33 +228,12 @@ const CotizacionDetail = ({ cotizacionId, onBack, onEdit }: Props) => {
 
           {/* Items table */}
           {items && items.length > 0 && (
-            <div className="border border-border/50 rounded-lg overflow-hidden">
-              <table className="w-full text-xs">
-                <thead>
-                  <tr className="bg-muted/50">
-                    <th className="text-left px-3 py-2.5 font-semibold text-foreground">Descripción</th>
-                    <th className="text-center px-2 py-2.5 font-semibold text-foreground w-16">Cant.</th>
-                    <th className="text-right px-2 py-2.5 font-semibold text-foreground w-28">V. Unit.</th>
-                    <th className="text-center px-2 py-2.5 font-semibold text-foreground w-16">Dto%</th>
-                    <th className="text-right px-3 py-2.5 font-semibold text-foreground w-28">Total</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {items.map((item: any, idx: number) => (
-                    <tr key={item.id} className={`border-t border-border/30 ${idx % 2 === 1 ? "bg-muted/20" : ""}`}>
-                      <td className="px-3 py-2 text-foreground">
-                        {item.descripcion_servicio}
-                        {item.codigo_servicio && <span className="text-muted-foreground ml-1">({item.codigo_servicio})</span>}
-                      </td>
-                      <td className="text-center px-2 py-2 text-foreground">{item.cantidad}</td>
-                      <td className="text-right px-2 py-2 text-foreground">{formatCurrency(Number(item.valor_unitario), cotizacion.moneda)}</td>
-                      <td className="text-center px-2 py-2 text-muted-foreground">{Number(item.descuento_porcentaje) > 0 ? `${item.descuento_porcentaje}%` : "—"}</td>
-                      <td className="text-right px-3 py-2 font-medium text-foreground">{formatCurrency(Number(item.valor_total), cotizacion.moneda)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <TablaSimple
+              columnas={columnasItems(cotizacion.moneda)}
+              filas={items}
+              claveFila={(i) => i.id}
+              className="shadow-none print:rounded-none"
+            />
           )}
 
           {/* Summary */}

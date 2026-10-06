@@ -7,7 +7,7 @@ import { format, addDays } from "date-fns";
 import { es } from "date-fns/locale";
 import { nanoid } from "nanoid";
 import { z } from "zod";
-import { Plus, Trash2, Search, UserPlus, Package, X, Printer, Download, FileText } from "lucide-react";
+import { Plus, Minus, Search, X, Printer, Download, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,6 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Separator } from "@/components/ui/separator";
 import { DatePicker } from "@/components/ui/date-picker";
 import { FormHeaderPreview } from "@/components/forms/FormHeaderPreview";
+import { TablaSimple, type ColumnaSimple } from "@/components/kit/tabla";
 import type {
   ClienteCotizacion,
   ConfiguracionCotizaciones,
@@ -39,6 +40,9 @@ interface Props {
 }
 
 const TIPOS_DOCUMENTO = ["CC", "CE", "NIT", "RUC", "RFC", "DNI", "CUIT", "PA"];
+
+const derecha = "text-right tabular-nums";
+const botonPaso = "h-6 w-6 rounded-md bg-muted/60 text-foreground hover:bg-muted";
 
 const CotizacionForm = ({ editId, onCancel, onSaved }: Props) => {
   const { user } = useAuth();
@@ -383,13 +387,66 @@ const CotizacionForm = ({ editId, onCancel, onSaved }: Props) => {
 
   const hasData = selectedCliente || items.length > 0 || observaciones;
 
+  // Ítems editables: una celda, un dato; los inputs van dentro de la celda.
+  const columnasEdicion: ColumnaSimple<CotizacionItemDraft>[] = [
+    { id: "descripcion", titulo: "Descripción", celda: (i) => i.descripcion_servicio, principal: true },
+    {
+      id: "cantidad", titulo: "Cant.", className: "w-28 text-center",
+      celda: (i) => (
+        <div className="flex items-center justify-center gap-1">
+          <Button type="button" variant="ghost" size="icon" className={botonPaso} aria-label={`Restar una unidad a ${i.descripcion_servicio}`}
+            onClick={() => updateItem(i.tempId, "cantidad", Math.max(1, i.cantidad - 1))}>
+            <Minus className="h-3 w-3" />
+          </Button>
+          <span className="w-8 text-center tabular-nums text-foreground">{i.cantidad}</span>
+          <Button type="button" variant="ghost" size="icon" className={botonPaso} aria-label={`Sumar una unidad a ${i.descripcion_servicio}`}
+            onClick={() => updateItem(i.tempId, "cantidad", i.cantidad + 1)}>
+            <Plus className="h-3 w-3" />
+          </Button>
+        </div>
+      ),
+    },
+    {
+      id: "unitario", titulo: "V. unit.", className: "w-36",
+      celda: (i) => (
+        <Input type="number" min="0" aria-label={`Valor unitario de ${i.descripcion_servicio}`} className="h-8 text-right text-sm tabular-nums" value={i.valor_unitario}
+          onChange={(e) => updateItem(i.tempId, "valor_unitario", parseFloat(e.target.value) || 0)} />
+      ),
+    },
+    {
+      id: "descuento", titulo: "Dto. %", className: "w-24",
+      celda: (i) => (
+        <Input type="number" min="0" max="100" aria-label={`Descuento de ${i.descripcion_servicio}`} className="h-8 text-right text-sm tabular-nums" value={i.descuento_porcentaje}
+          onChange={(e) => updateItem(i.tempId, "descuento_porcentaje", parseFloat(e.target.value) || 0)} />
+      ),
+    },
+    { id: "total", titulo: "Total", celda: (i) => formatCurrency(i.valor_total), className: `w-32 font-medium text-foreground ${derecha}` },
+    {
+      id: "quitar", titulo: <span className="sr-only">Quitar</span>, className: "w-11 text-center",
+      celda: (i) => (
+        <Button type="button" variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive"
+          aria-label={`Quitar ${i.descripcion_servicio}`} title="Quitar ítem" onClick={() => removeItem(i.tempId)}>
+          <X className="h-4 w-4" />
+        </Button>
+      ),
+    },
+  ];
+
+  const columnasVista: ColumnaSimple<CotizacionItemDraft>[] = [
+    { id: "descripcion", titulo: "Descripción", celda: (i) => i.descripcion_servicio, principal: true },
+    { id: "cantidad", titulo: "Cant.", celda: (i) => i.cantidad, className: `w-14 ${derecha}` },
+    { id: "unitario", titulo: "V. unit.", celda: (i) => formatCurrency(i.valor_unitario), className: derecha },
+    { id: "descuento", titulo: "Dto. %", celda: (i) => (i.descuento_porcentaje > 0 ? `${i.descuento_porcentaje}%` : "—"), className: derecha },
+    { id: "total", titulo: "Total", celda: (i) => formatCurrency(i.valor_total), className: `font-medium text-foreground ${derecha}` },
+  ];
+
   const handlePrint = () => window.print();
 
   return (
-    <div className="h-[calc(100vh-4rem)] overflow-hidden flex">
+    <div className="flex flex-col gap-6 py-6 lg:flex-row lg:items-start">
       {/* LEFT COLUMN — Form */}
-      <div className="flex-[6] overflow-y-auto border-r border-border/50">
-        <div className="p-6 space-y-6 max-w-3xl">
+      <div className="min-w-0 lg:flex-[6]">
+        <div className="space-y-6 max-w-3xl">
           {/* Header */}
           <div>
             <h1 className="text-xl font-semibold text-foreground tracking-tight">{isEditing ? "Editar Cotización" : "Nueva Cotización"}</h1>
@@ -563,52 +620,17 @@ const CotizacionForm = ({ editId, onCancel, onSaved }: Props) => {
               )}
 
               {items.length > 0 && (
-                <div className="rounded-xl border border-border/50 overflow-hidden">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="bg-muted/40 text-muted-foreground">
-                        <th className="text-left px-3 py-2.5 font-medium text-xs uppercase tracking-wider">Descripción</th>
-                        <th className="text-center px-2 py-2.5 font-medium text-xs uppercase tracking-wider w-24">Cant.</th>
-                        <th className="text-right px-2 py-2.5 font-medium text-xs uppercase tracking-wider w-32">V. Unit.</th>
-                        <th className="text-center px-2 py-2.5 font-medium text-xs uppercase tracking-wider w-20">Dto %</th>
-                        <th className="text-right px-2 py-2.5 font-medium text-xs uppercase tracking-wider w-32">Total</th>
-                        <th className="w-10"></th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {items.map((item, idx) => (
-                        <tr key={item.tempId} className={`border-t border-border/30 transition-colors duration-150 ${idx % 2 === 1 ? 'bg-muted/20' : ''}`}>
-                          <td className="px-3 py-2.5 text-foreground text-sm">{item.descripcion_servicio}</td>
-                          <td className="px-2 py-2.5">
-                            <div className="flex items-center justify-center gap-1">
-                              <button
-                                className="w-6 h-6 rounded-md bg-muted/60 flex items-center justify-center text-foreground hover:bg-muted transition-colors"
-                                onClick={() => updateItem(item.tempId, "cantidad", Math.max(1, item.cantidad - 1))}
-                              >−</button>
-                              <span className="w-8 text-center text-sm text-foreground">{item.cantidad}</span>
-                              <button
-                                className="w-6 h-6 rounded-md bg-muted/60 flex items-center justify-center text-foreground hover:bg-muted transition-colors"
-                                onClick={() => updateItem(item.tempId, "cantidad", item.cantidad + 1)}
-                              >+</button>
-                            </div>
-                          </td>
-                          <td className="px-2 py-2.5">
-                            <Input type="number" min="0" className="text-right h-8 text-sm" value={item.valor_unitario} onChange={(e) => updateItem(item.tempId, "valor_unitario", parseFloat(e.target.value) || 0)} />
-                          </td>
-                          <td className="px-2 py-2.5">
-                            <Input type="number" min="0" max="100" className="text-center h-8 text-sm" value={item.descuento_porcentaje} onChange={(e) => updateItem(item.tempId, "descuento_porcentaje", parseFloat(e.target.value) || 0)} />
-                          </td>
-                          <td className="px-2 py-2.5 text-right font-medium text-foreground">{formatCurrency(item.valor_total)}</td>
-                          <td className="px-2 py-2.5">
-                            <button onClick={() => removeItem(item.tempId)} className="text-muted-foreground hover:text-destructive transition-colors">
-                              <X className="w-4 h-4" />
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                <TablaSimple
+                  columnas={columnasEdicion}
+                  filas={items}
+                  claveFila={(i) => i.tempId}
+                  pie={
+                    <div className="flex justify-end gap-3">
+                      <span>Subtotal</span>
+                      <span className="min-w-[96px] text-right font-medium text-foreground">{formatCurrency(subtotal)}</span>
+                    </div>
+                  }
+                />
               )}
             </div>
           </section>
@@ -686,9 +708,9 @@ const CotizacionForm = ({ editId, onCancel, onSaved }: Props) => {
       </div>
 
       {/* RIGHT COLUMN — Live Preview */}
-      <div className="flex-[4] overflow-y-auto bg-muted/20 print:bg-white">
-        {/* Sticky toolbar */}
-        <div className="sticky top-0 z-10 bg-muted/40 backdrop-blur-md border-b border-border/50 px-4 py-2.5 flex items-center justify-between print:hidden">
+      <div className="min-w-0 overflow-hidden rounded-xl border border-border/50 bg-muted/20 lg:flex-[4] print:border-0 print:bg-white">
+        {/* Toolbar */}
+        <div className="bg-muted/40 border-b border-border/50 px-4 py-2.5 flex items-center justify-between print:hidden">
           <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Vista previa</span>
           <div className="flex gap-1.5">
             <Button variant="ghost" size="sm" className="h-7 gap-1.5 text-xs" onClick={handlePrint}>
@@ -748,61 +770,39 @@ const CotizacionForm = ({ editId, onCancel, onSaved }: Props) => {
                 )}
               </div>
 
-              {/* Items table */}
+              {/* Items table + summary */}
               {items.length > 0 && (
-                <div className="border border-border/50 rounded-lg overflow-hidden">
-                  <table className="w-full text-xs">
-                    <thead>
-                      <tr className="bg-muted/50">
-                        <th className="text-left px-3 py-2 font-semibold text-foreground">Descripción</th>
-                        <th className="text-center px-2 py-2 font-semibold text-foreground">Cant.</th>
-                        <th className="text-right px-2 py-2 font-semibold text-foreground">V. Unit.</th>
-                        <th className="text-center px-2 py-2 font-semibold text-foreground">Dto%</th>
-                        <th className="text-right px-3 py-2 font-semibold text-foreground">Total</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {items.map((item, idx) => (
-                        <tr key={item.tempId} className={`border-t border-border/30 ${idx % 2 === 1 ? 'bg-muted/20' : ''}`}>
-                          <td className="px-3 py-2 text-foreground">{item.descripcion_servicio}</td>
-                          <td className="text-center px-2 py-2 text-foreground">{item.cantidad}</td>
-                          <td className="text-right px-2 py-2 text-foreground">{formatCurrency(item.valor_unitario)}</td>
-                          <td className="text-center px-2 py-2 text-muted-foreground">{item.descuento_porcentaje > 0 ? `${item.descuento_porcentaje}%` : '—'}</td>
-                          <td className="text-right px-3 py-2 font-medium text-foreground">{formatCurrency(item.valor_total)}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-
-              {/* Summary */}
-              {items.length > 0 && (
-                <div className="flex justify-end">
-                  <div className="w-56 space-y-1.5 text-xs">
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Subtotal</span>
-                      <span className="text-foreground">{formatCurrency(subtotal)}</span>
-                    </div>
-                    {descuentoGeneral > 0 && (
+                <TablaSimple
+                  columnas={columnasVista}
+                  filas={items}
+                  claveFila={(i) => i.tempId}
+                  className="shadow-none"
+                  pie={
+                    <div className="ml-auto w-56 space-y-1.5 text-xs">
                       <div className="flex justify-between">
-                        <span className="text-muted-foreground">Descuento ({descuentoGeneral}%)</span>
-                        <span className="text-foreground">-{formatCurrency(descuentoValor)}</span>
+                        <span>Subtotal</span>
+                        <span className="text-foreground">{formatCurrency(subtotal)}</span>
                       </div>
-                    )}
-                    {impuestoPorcentaje > 0 && (
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">{config?.nombre_impuesto || "Impuesto"} ({impuestoPorcentaje}%)</span>
-                        <span className="text-foreground">+{formatCurrency(impuestoValor)}</span>
+                      {descuentoGeneral > 0 && (
+                        <div className="flex justify-between">
+                          <span>Descuento ({descuentoGeneral}%)</span>
+                          <span className="text-foreground">-{formatCurrency(descuentoValor)}</span>
+                        </div>
+                      )}
+                      {impuestoPorcentaje > 0 && (
+                        <div className="flex justify-between">
+                          <span>{config?.nombre_impuesto || "Impuesto"} ({impuestoPorcentaje}%)</span>
+                          <span className="text-foreground">+{formatCurrency(impuestoValor)}</span>
+                        </div>
+                      )}
+                      <Separator className="opacity-50" />
+                      <div className="flex justify-between text-sm font-bold">
+                        <span className="text-foreground">Total</span>
+                        <span className="text-primary">{formatCurrency(total)}</span>
                       </div>
-                    )}
-                    <Separator className="opacity-50" />
-                    <div className="flex justify-between font-bold text-sm">
-                      <span className="text-foreground">Total</span>
-                      <span className="text-primary">{formatCurrency(total)}</span>
                     </div>
-                  </div>
-                </div>
+                  }
+                />
               )}
 
               {/* Observaciones */}

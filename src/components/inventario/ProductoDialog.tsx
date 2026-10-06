@@ -10,9 +10,9 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { DatePicker } from '@/components/ui/date-picker';
-import { Loader2, Plus, Trash2, ChevronDown, Package } from 'lucide-react';
+import { TablaSimple, type ColumnaSimple } from '@/components/kit/tabla';
+import { Loader2, Plus, X, Package } from 'lucide-react';
 import { toast } from 'sonner';
 import { nanoid } from 'nanoid';
 import { cn } from '@/lib/utils';
@@ -333,10 +333,6 @@ export const ProductoDialog: React.FC<Props> = ({ open, onOpenChange, editProduc
       } else {
         toast.success(`Producto creado: ${result?.nombre}`);
       }
-      queryClient.invalidateQueries({ queryKey: ['inv-total-products'] });
-      queryClient.invalidateQueries({ queryKey: ['inv-total-stock'] });
-      queryClient.invalidateQueries({ queryKey: ['inv-low-stock'] });
-      queryClient.invalidateQueries({ queryKey: ['inv-expiring'] });
       queryClient.invalidateQueries({ queryKey: ['inventario-stock-table'] });
       queryClient.invalidateQueries({ queryKey: ['catalogo-productos'] });
       queryClient.invalidateQueries({ queryKey: ['edit-product'] });
@@ -351,6 +347,91 @@ export const ProductoDialog: React.FC<Props> = ({ open, onOpenChange, editProduc
 
   const onSubmit = (values: FormValues) => mutation.mutate(values);
 
+  const quitarPresentacion = (idx: number) => {
+    remove(idx);
+    setOpenLotes(prev => { const n = { ...prev }; delete n[idx]; return n; });
+  };
+
+  type FilaPresentacion = (typeof fields)[number];
+
+  // Una fila por presentación; los campos editables van dentro de cada celda.
+  const columnasPresentaciones: ColumnaSimple<FilaPresentacion>[] = [
+    {
+      id: 'forma', titulo: 'Forma *',
+      celda: (_, idx) => (
+        <Select
+          value={form.watch(`presentaciones.${idx}.forma_farmaceutica`)}
+          onValueChange={(v) => form.setValue(`presentaciones.${idx}.forma_farmaceutica`, v, { shouldValidate: true })}
+        >
+          <SelectTrigger aria-label="Forma farmacéutica" className="h-8 text-xs min-w-[110px]">
+            <SelectValue placeholder="Forma" />
+          </SelectTrigger>
+          <SelectContent>
+            {FORMAS.map(f => <SelectItem key={f} value={f} className="text-xs">{f}</SelectItem>)}
+          </SelectContent>
+        </Select>
+      ),
+    },
+    {
+      id: 'concentracion', titulo: 'Concentración',
+      celda: (_, idx) => <Input {...form.register(`presentaciones.${idx}.concentracion`)} aria-label="Concentración" placeholder="500mg" className="h-8 text-xs min-w-[80px]" />,
+    },
+    {
+      id: 'unidad', titulo: 'Unidad *',
+      celda: (_, idx) => (
+        <Select
+          value={form.watch(`presentaciones.${idx}.unidad_medida`)}
+          onValueChange={(v) => form.setValue(`presentaciones.${idx}.unidad_medida`, v, { shouldValidate: true })}
+        >
+          <SelectTrigger aria-label="Unidad de medida" className="h-8 text-xs min-w-[80px]">
+            <SelectValue placeholder="Unidad" />
+          </SelectTrigger>
+          <SelectContent>
+            {UNIDADES.map(u => <SelectItem key={u} value={u} className="text-xs">{u}</SelectItem>)}
+          </SelectContent>
+        </Select>
+      ),
+    },
+    {
+      id: 'via', titulo: 'Vía',
+      celda: (_, idx) => (
+        <Select
+          value={form.watch(`presentaciones.${idx}.via_administracion`) || ''}
+          onValueChange={(v) => form.setValue(`presentaciones.${idx}.via_administracion`, v)}
+        >
+          <SelectTrigger aria-label="Vía de administración" className="h-8 text-xs min-w-[90px]">
+            <SelectValue placeholder="Vía" />
+          </SelectTrigger>
+          <SelectContent>
+            {VIAS.map(v => <SelectItem key={v} value={v} className="text-xs">{v}</SelectItem>)}
+          </SelectContent>
+        </Select>
+      ),
+    },
+    {
+      id: 'comercial', titulo: 'Presentación comercial',
+      celda: (_, idx) => <Input {...form.register(`presentaciones.${idx}.presentacion_comercial`)} aria-label="Presentación comercial" placeholder="Caja x 30" className="h-8 text-xs min-w-[120px]" />,
+    },
+    // El lote inicial solo se registra al crear el producto.
+    ...(!isEdit ? [{
+      id: 'lote', titulo: 'Lote inicial', className: 'whitespace-nowrap',
+      celda: (_: FilaPresentacion, idx: number) => (
+        <Button type="button" variant="ghost" size="sm" aria-pressed={!!openLotes[idx]} className="h-7 gap-1 px-2 text-[11px] text-primary/80 hover:text-primary" onClick={() => toggleLote(idx)}>
+          <Package className="w-3 h-3" />
+          {openLotes[idx] ? 'Quitar lote' : 'Agregar lote'}
+        </Button>
+      ),
+    }] : []),
+    {
+      id: 'quitar', titulo: <span className="sr-only">Quitar</span>, className: 'w-11 text-center',
+      celda: (_, idx) => fields.length > 1 && (
+        <Button type="button" variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive" aria-label={`Quitar presentación ${idx + 1}`} title="Quitar presentación" onClick={() => quitarPresentacion(idx)}>
+          <X className="w-3.5 h-3.5" />
+        </Button>
+      ),
+    },
+  ];
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl w-[90vw] max-h-[85vh] overflow-y-auto p-0 gap-0">
@@ -362,7 +443,7 @@ export const ProductoDialog: React.FC<Props> = ({ open, onOpenChange, editProduc
         </DialogHeader>
 
         <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col">
-          <div className="px-6 py-5 space-y-6 overflow-y-auto flex-1">
+          <div className="px-6 py-5 space-y-6 flex-1">
             {/* Section: Información general */}
             <div>
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Información general</p>
@@ -440,145 +521,67 @@ export const ProductoDialog: React.FC<Props> = ({ open, onOpenChange, editProduc
               {form.formState.errors.presentaciones?.root && (
                 <p className="text-[10px] text-destructive mb-2">{form.formState.errors.presentaciones.root.message}</p>
               )}
-              <div className="rounded-xl border border-border/40 overflow-hidden">
-                <div className="overflow-x-auto">
-                  <table className="w-full text-xs">
-                    <thead>
-                      <tr className="bg-muted/30 border-b border-border/40">
-                        <th className="text-left font-medium text-muted-foreground px-2 py-2">Forma *</th>
-                        <th className="text-left font-medium text-muted-foreground px-2 py-2">Concentración</th>
-                        <th className="text-left font-medium text-muted-foreground px-2 py-2">Unidad *</th>
-                        <th className="text-left font-medium text-muted-foreground px-2 py-2">Vía</th>
-                        <th className="text-left font-medium text-muted-foreground px-2 py-2">Presentación comercial</th>
-                        <th className="w-8"></th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {fields.map((field, idx) => (
-                        <React.Fragment key={field.id}>
-                          <tr className="border-b border-border/20">
-                            <td className="px-2 py-1.5">
-                              <Select
-                                value={form.watch(`presentaciones.${idx}.forma_farmaceutica`)}
-                                onValueChange={(v) => form.setValue(`presentaciones.${idx}.forma_farmaceutica`, v, { shouldValidate: true })}
-                              >
-                                <SelectTrigger className="h-7 text-xs min-w-[110px]">
-                                  <SelectValue placeholder="Forma" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {FORMAS.map(f => <SelectItem key={f} value={f} className="text-xs">{f}</SelectItem>)}
-                                </SelectContent>
-                              </Select>
-                            </td>
-                            <td className="px-2 py-1.5">
-                              <Input {...form.register(`presentaciones.${idx}.concentracion`)} placeholder="500mg" className="h-7 text-xs min-w-[80px]" />
-                            </td>
-                            <td className="px-2 py-1.5">
-                              <Select
-                                value={form.watch(`presentaciones.${idx}.unidad_medida`)}
-                                onValueChange={(v) => form.setValue(`presentaciones.${idx}.unidad_medida`, v, { shouldValidate: true })}
-                              >
-                                <SelectTrigger className="h-7 text-xs min-w-[80px]">
-                                  <SelectValue placeholder="Unidad" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {UNIDADES.map(u => <SelectItem key={u} value={u} className="text-xs">{u}</SelectItem>)}
-                                </SelectContent>
-                              </Select>
-                            </td>
-                            <td className="px-2 py-1.5">
-                              <Select
-                                value={form.watch(`presentaciones.${idx}.via_administracion`) || ''}
-                                onValueChange={(v) => form.setValue(`presentaciones.${idx}.via_administracion`, v)}
-                              >
-                                <SelectTrigger className="h-7 text-xs min-w-[90px]">
-                                  <SelectValue placeholder="Vía" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {VIAS.map(v => <SelectItem key={v} value={v} className="text-xs">{v}</SelectItem>)}
-                                </SelectContent>
-                              </Select>
-                            </td>
-                            <td className="px-2 py-1.5">
-                              <Input {...form.register(`presentaciones.${idx}.presentacion_comercial`)} placeholder="Caja x 30" className="h-7 text-xs min-w-[120px]" />
-                            </td>
-                            <td className="px-2 py-1.5">
-                              {fields.length > 1 && (
-                                <Button type="button" variant="ghost" size="icon" className="h-7 w-7" onClick={() => { remove(idx); setOpenLotes(prev => { const n = { ...prev }; delete n[idx]; return n; }); }}>
-                                  <Trash2 className="w-3 h-3 text-muted-foreground hover:text-destructive" />
-                                </Button>
-                              )}
-                            </td>
-                          </tr>
-                          {/* Collapsible initial lot row - only for new products */}
-                          {!isEdit && (
-                            <tr className="border-b border-border/20">
-                              <td colSpan={6} className="px-2 py-0">
-                                <Collapsible open={!!openLotes[idx]} onOpenChange={() => toggleLote(idx)}>
-                                  <CollapsibleTrigger asChild>
-                                    <button type="button" className="flex items-center gap-1.5 py-1.5 text-[11px] text-primary/70 hover:text-primary transition-colors">
-                                      <Package className="w-3 h-3" />
-                                      <span>{openLotes[idx] ? 'Ocultar lote inicial' : '+ Agregar lote inicial (opcional)'}</span>
-                                      <ChevronDown className={cn("w-3 h-3 transition-transform duration-200", openLotes[idx] && "rotate-180")} />
-                                    </button>
-                                  </CollapsibleTrigger>
-                                  <CollapsibleContent>
-                                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pb-2.5 pt-1">
-                                      <div>
-                                        <Label className="text-[10px] text-muted-foreground">Sede *</Label>
-                                        <Select
-                                          value={form.watch(`presentaciones.${idx}.lote_inicial.sede_id`) || ''}
-                                          onValueChange={(v) => form.setValue(`presentaciones.${idx}.lote_inicial.sede_id`, v)}
-                                        >
-                                          <SelectTrigger className="h-7 text-xs mt-0.5">
-                                            <SelectValue placeholder="Seleccionar sede" />
-                                          </SelectTrigger>
-                                          <SelectContent>
-                                            {sedes.map(s => <SelectItem key={s.id} value={s.id} className="text-xs">{s.nombre}</SelectItem>)}
-                                          </SelectContent>
-                                        </Select>
-                                      </div>
-                                      <div>
-                                        <Label className="text-[10px] text-muted-foreground">N° Lote *</Label>
-                                        <Input
-                                          value={form.watch(`presentaciones.${idx}.lote_inicial.numero_lote`) || ''}
-                                          onChange={(e) => form.setValue(`presentaciones.${idx}.lote_inicial.numero_lote`, e.target.value)}
-                                          placeholder="LOT-001"
-                                          className="h-7 text-xs mt-0.5"
-                                        />
-                                      </div>
-                                      <div>
-                                        <Label className="text-[10px] text-muted-foreground">Vencimiento *</Label>
-                                        <DatePicker
-                                          value={form.watch(`presentaciones.${idx}.lote_inicial.fecha_vencimiento`) as Date}
-                                          onChange={(d) => form.setValue(`presentaciones.${idx}.lote_inicial.fecha_vencimiento`, d || null)}
-                                          placeholder="Fecha"
-                                          className="h-7 text-xs mt-0.5"
-                                        />
-                                      </div>
-                                      <div>
-                                        <Label className="text-[10px] text-muted-foreground">Cantidad *</Label>
-                                        <Input
-                                          type="number"
-                                          min={1}
-                                          value={form.watch(`presentaciones.${idx}.lote_inicial.cantidad_inicial`) ?? ''}
-                                          onChange={(e) => form.setValue(`presentaciones.${idx}.lote_inicial.cantidad_inicial`, e.target.value ? parseInt(e.target.value) : null)}
-                                          placeholder="10"
-                                          className="h-7 text-xs mt-0.5"
-                                        />
-                                      </div>
-                                    </div>
-                                  </CollapsibleContent>
-                                </Collapsible>
-                              </td>
-                            </tr>
-                          )}
-                        </React.Fragment>
-                      ))}
-                    </tbody>
-                  </table>
+              <TablaSimple
+                columnas={columnasPresentaciones}
+                filas={fields}
+                claveFila={(f) => f.id}
+                className="shadow-none"
+                vacio="Agrega al menos una presentación."
+              />
+
+              {/* Lote inicial de cada presentación (solo al crear el producto) */}
+              {!isEdit && fields.map((field, idx) => openLotes[idx] && (
+                <div key={field.id} className="mt-3 rounded-xl border border-border/40 bg-muted/20 p-3">
+                  <p className="mb-2 text-[11px] font-medium text-muted-foreground">
+                    Lote inicial · Presentación {idx + 1}{form.watch(`presentaciones.${idx}.forma_farmaceutica`) ? ` (${form.watch(`presentaciones.${idx}.forma_farmaceutica`)})` : ''}
+                  </p>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    <div>
+                      <Label className="text-[11px] text-muted-foreground">Sede *</Label>
+                      <Select
+                        value={form.watch(`presentaciones.${idx}.lote_inicial.sede_id`) || ''}
+                        onValueChange={(v) => form.setValue(`presentaciones.${idx}.lote_inicial.sede_id`, v)}
+                      >
+                        <SelectTrigger className="h-8 text-xs mt-0.5">
+                          <SelectValue placeholder="Seleccionar sede" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {sedes.map(s => <SelectItem key={s.id} value={s.id} className="text-xs">{s.nombre}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label className="text-[11px] text-muted-foreground">N° Lote *</Label>
+                      <Input
+                        value={form.watch(`presentaciones.${idx}.lote_inicial.numero_lote`) || ''}
+                        onChange={(e) => form.setValue(`presentaciones.${idx}.lote_inicial.numero_lote`, e.target.value)}
+                        placeholder="LOT-001"
+                        className="h-8 text-xs mt-0.5"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-[11px] text-muted-foreground">Vencimiento *</Label>
+                      <DatePicker
+                        value={form.watch(`presentaciones.${idx}.lote_inicial.fecha_vencimiento`) as Date}
+                        onChange={(d) => form.setValue(`presentaciones.${idx}.lote_inicial.fecha_vencimiento`, d || null)}
+                        placeholder="Fecha"
+                        className="h-8 text-xs mt-0.5"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-[11px] text-muted-foreground">Cantidad *</Label>
+                      <Input
+                        type="number"
+                        min={1}
+                        value={form.watch(`presentaciones.${idx}.lote_inicial.cantidad_inicial`) ?? ''}
+                        onChange={(e) => form.setValue(`presentaciones.${idx}.lote_inicial.cantidad_inicial`, e.target.value ? parseInt(e.target.value) : null)}
+                        placeholder="10"
+                        className="h-8 text-xs mt-0.5 tabular-nums"
+                      />
+                    </div>
+                  </div>
                 </div>
-              </div>
+              ))}
             </div>
           </div>
 

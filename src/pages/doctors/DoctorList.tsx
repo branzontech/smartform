@@ -1,175 +1,97 @@
-import React, { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Header } from "@/components/layout/header";
-import { BackButton } from "@/App";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Search, Plus, Filter, Users } from "lucide-react";
+import { EncabezadoModulo } from "@/components/kit/EncabezadoModulo";
+import { AccionesFila } from "@/components/kit/AccionesFila";
+import {
+  BarraTabla, CeldaEstado, TablaDatos, useTablaDatos,
+  type ColumnaTabla, type FiltroTabla, type SegmentoTabla, type TonoEstado,
+} from "@/components/kit/tabla";
+import { useToast } from "@/hooks/use-toast";
 import { getAllDoctors } from "@/utils/doctor-utils";
-import { Doctor } from "@/types/patient-types";
-import { EmptyState } from "@/components/ui/empty-state";
+import type { Doctor } from "@/types/patient-types";
 
+const TONO_ESTADO: Record<Doctor["status"], TonoEstado> = {
+  Activo: "exito",
+  Vacaciones: "aviso",
+  Inactivo: "error",
+};
+
+/** Una celda, un dato, una línea. Lo demás está en el perfil del profesional. */
+const COLUMNAS: ColumnaTabla<Doctor>[] = [
+  { id: "nombre", titulo: "Profesional", valor: (d) => d.name, principal: true, fija: true, className: "min-w-[220px]" },
+  { id: "especialidad", titulo: "Especialidad", valor: (d) => d.specialty },
+  { id: "registro", titulo: "Registro", valor: (d) => d.licenseNumber, className: "font-mono text-xs" },
+  { id: "documento", titulo: "Documento", valor: (d) => d.documentId, className: "font-mono text-xs", oculta: true },
+  { id: "telefono", titulo: "Teléfono", valor: (d) => d.contactNumber, className: "tabular-nums" },
+  { id: "correo", titulo: "Correo", valor: (d) => d.email, oculta: true },
+  {
+    id: "estado", titulo: "Estado", valor: (d) => d.status, sinPadding: true,
+    celda: (d) => <CeldaEstado tono={TONO_ESTADO[d.status] ?? "neutro"} texto={d.status} />,
+  },
+];
+
+const especialidades = (d: Doctor) => (d.specialties?.length ? d.specialties : [d.specialty]);
+
+const FILTROS: FiltroTabla<Doctor>[] = [{ id: "especialidad", titulo: "Especialidad", valor: especialidades }];
+
+const SEGMENTOS: SegmentoTabla<Doctor>[] = [
+  { id: "todos", titulo: "Todos", cumple: () => true },
+  { id: "activos", titulo: "Activos", cumple: (d) => d.status === "Activo" },
+  { id: "vacaciones", titulo: "En vacaciones", cumple: (d) => d.status === "Vacaciones" },
+  { id: "inactivos", titulo: "Inactivos", cumple: (d) => d.status === "Inactivo" },
+];
+
+const claveFila = (d: Doctor) => d.id;
+
+/**
+ * Médicos y profesionales. Fuente: getAllDoctors (datos simulados guardados en
+ * localStorage hasta que exista la tabla de profesionales).
+ */
 const DoctorList = () => {
   const navigate = useNavigate();
-  const [doctors, setDoctors] = useState<Doctor[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [specialtyFilter, setSpecialtyFilter] = useState<string>("Todas");
-  
+  const { toast } = useToast();
+  const [medicos, setMedicos] = useState<Doctor[]>([]);
+  const [cargando, setCargando] = useState(true);
+
   useEffect(() => {
-    const fetchDoctors = async () => {
+    let vigente = true;
+    (async () => {
       try {
-        const doctorsData = await getAllDoctors();
-        setDoctors(doctorsData);
+        const data = await getAllDoctors();
+        if (vigente) setMedicos(data);
       } catch (error) {
-        console.error("Error fetching doctors:", error);
+        if (vigente) {
+          toast({
+            title: "No se pudieron cargar los profesionales",
+            description: error instanceof Error ? error.message : undefined,
+            variant: "destructive",
+          });
+        }
       } finally {
-        setLoading(false);
+        if (vigente) setCargando(false);
       }
-    };
-    
-    fetchDoctors();
-  }, []);
-  
-  const handleViewDoctor = (id: string) => {
-    navigate(`/app/medicos/${id}`);
-  };
-  
-  const handleAddDoctor = () => {
-    navigate("/app/medicos/nuevo");
-  };
-  
-  const allSpecialties = ["Todas", ...new Set(doctors.flatMap(doctor => doctor.specialties || [doctor.specialty]))];
-  
-  const filteredDoctors = doctors.filter(doctor => {
-    const matchesSearch = doctor.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                          doctor.specialty.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesSpecialty = specialtyFilter === "Todas" || 
-                           doctor.specialty === specialtyFilter || 
-                           doctor.specialties?.includes(specialtyFilter);
-    
-    return matchesSearch && matchesSpecialty;
-  });
-  
-  const renderStatusBadge = (status: Doctor["status"]) => {
-    switch (status) {
-      case "Activo":
-        return <Badge className="bg-green-500">Activo</Badge>;
-      case "Inactivo":
-        return <Badge variant="destructive">Inactivo</Badge>;
-      case "Vacaciones":
-        return <Badge className="bg-amber-500">Vacaciones</Badge>;
-      default:
-        return null;
-    }
-  };
-  
-  if (loading) {
-    return (
-      <div className="min-h-screen flex flex-col">
-        <Header />
-        <div className="flex-1 container mx-auto py-8 px-4">
-          <BackButton />
-          <div className="animate-pulse space-y-6">
-            <div className="h-8 w-48 bg-gray-200 dark:bg-gray-800 rounded mb-6"></div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {[1, 2, 3, 4, 5, 6].map((i) => (
-                <div key={i} className="h-48 bg-gray-200 dark:bg-gray-800 rounded-xl"></div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-  
+    })();
+    return () => { vigente = false; };
+  }, [toast]);
+
+  const t = useTablaDatos({ id: "medicos.lista", filas: medicos, columnas: COLUMNAS, claveFila, filtros: FILTROS, segmentos: SEGMENTOS });
+
+  const ver = (d: Doctor) => navigate(`/app/medicos/${d.id}`);
+
   return (
-    <div className="min-h-screen flex flex-col">
-      <Header />
-      <main className="flex-1 container mx-auto py-8 px-4">
-        <BackButton />
-        
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold flex items-center">
-            <Users className="mr-2 text-purple-500" />
-            Médicos y Profesionales
-          </h1>
-          <Button 
-            onClick={handleAddDoctor}
-            className="bg-purple-600 hover:bg-purple-700"
-          >
-            <Plus className="mr-2" size={16} />
-            Nuevo Profesional
-          </Button>
-        </div>
-        
-        <div className="flex flex-col md:flex-row gap-4 mb-6">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-            <Input
-              placeholder="Buscar médico o especialidad"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-          
-          <div className="flex items-center">
-            <Filter size={16} className="mr-2 text-gray-500" />
-            <select
-              className="rounded-md border border-input px-3 py-2 bg-background"
-              value={specialtyFilter}
-              onChange={(e) => setSpecialtyFilter(e.target.value)}
-            >
-              {allSpecialties.map((specialty) => (
-                <option key={specialty} value={specialty}>
-                  {specialty}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-        
-        {filteredDoctors.length === 0 ? (
-          <EmptyState
-            title="No hay médicos para mostrar"
-            description="No se encontraron médicos que coincidan con los criterios de búsqueda."
-            icon={<Users size={48} className="text-gray-300" />}
-            buttonText="Nuevo Profesional"
-            onClick={handleAddDoctor}
-          />
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredDoctors.map((doctor) => (
-              <Card 
-                key={doctor.id}
-                className="cursor-pointer hover:shadow-md transition-shadow"
-                onClick={() => handleViewDoctor(doctor.id)}
-              >
-                <CardHeader className="flex flex-row items-center justify-between">
-                  <CardTitle className="text-xl font-medium">{doctor.name}</CardTitle>
-                  {renderStatusBadge(doctor.status)}
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-start gap-3">
-                    <div className="w-16 h-16 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 text-xl font-bold">
-                      {doctor.name.split(' ').map(part => part[0]).join('').slice(0, 2).toUpperCase()}
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-purple-600">{doctor.specialty}</p>
-                      <p className="text-sm text-gray-500 mt-1">Lic. {doctor.licenseNumber}</p>
-                      <p className="text-sm text-gray-500 mt-1">{doctor.email}</p>
-                      <p className="text-sm text-gray-500 mt-1">{doctor.contactNumber}</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
-      </main>
+    <div className="mx-auto max-w-7xl space-y-5 py-6">
+      <EncabezadoModulo
+        titulo="Médicos y profesionales"
+        primaria={{ titulo: "Nuevo profesional", onClick: () => navigate("/app/medicos/nuevo") }}
+      />
+      <TablaDatos
+        t={t}
+        cargando={cargando}
+        onFilaClick={ver}
+        barra={<BarraTabla t={t} nombre={["profesional", "profesionales"]} placeholder="Buscar por nombre o especialidad" nombreArchivo="profesionales" />}
+        acciones={(d) => <AccionesFila nombre={d.name} onVer={() => ver(d)} />}
+        vacio="Aún no hay profesionales. Registra uno con «Nuevo profesional»."
+      />
     </div>
   );
 };

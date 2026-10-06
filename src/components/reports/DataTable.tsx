@@ -1,123 +1,86 @@
-
-import React from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { ChartConfig, ReportVariable } from "@/types/report-types";
+import { useMemo } from "react";
+import { BarraTabla, TablaDatos, useTablaDatos, type ColumnaTabla, type FiltroTabla } from "@/components/kit/tabla";
+import type { ChartConfig, ReportVariable } from "@/types/report-types";
 
 interface DataTableProps {
   chart: ChartConfig;
   variables: ReportVariable[];
 }
 
-// Generar datos de ejemplo para la tabla
-const generateTableData = (chart: ChartConfig) => {
-  const baseData = [
-    { periodo: "Enero 2024", valor: 120, categoria: "Tipo A", porcentaje: "15%" },
-    { periodo: "Febrero 2024", valor: 190, categoria: "Tipo B", porcentaje: "23%" },
-    { periodo: "Marzo 2024", valor: 300, categoria: "Tipo A", porcentaje: "37%" },
-    { periodo: "Abril 2024", valor: 170, categoria: "Tipo C", porcentaje: "21%" },
-    { periodo: "Mayo 2024", valor: 250, categoria: "Tipo B", porcentaje: "31%" },
-    { periodo: "Junio 2024", valor: 180, categoria: "Tipo A", porcentaje: "22%" },
-  ];
+type FilaReporte = Record<string, string | number>;
 
-  // Personalizar datos según el tipo de gráfico
-  if (chart.type === 'pie') {
-    return [
-      { categoria: "Masculino", cantidad: 156, porcentaje: "60%", total: 260 },
-      { categoria: "Femenino", cantidad: 91, porcentaje: "35%", total: 260 },
-      { categoria: "Otro", cantidad: 13, porcentaje: "5%", total: 260 },
-    ];
-  }
+// DATOS SIMULADOS: la vista previa aún no consulta los datos reales del informe.
+const DATOS_SERIE: FilaReporte[] = [
+  { periodo: "Enero 2024", valor: 120, categoria: "Tipo A", porcentaje: 15 },
+  { periodo: "Febrero 2024", valor: 190, categoria: "Tipo B", porcentaje: 23 },
+  { periodo: "Marzo 2024", valor: 300, categoria: "Tipo A", porcentaje: 37 },
+  { periodo: "Abril 2024", valor: 170, categoria: "Tipo C", porcentaje: 21 },
+  { periodo: "Mayo 2024", valor: 250, categoria: "Tipo B", porcentaje: 31 },
+  { periodo: "Junio 2024", valor: 180, categoria: "Tipo A", porcentaje: 22 },
+];
+const DATOS_TORTA: FilaReporte[] = [
+  { categoria: "Masculino", cantidad: 156, porcentaje: 60, total: 260 },
+  { categoria: "Femenino", cantidad: 91, porcentaje: 35, total: 260 },
+  { categoria: "Otro", cantidad: 13, porcentaje: 5, total: 260 },
+];
 
-  return baseData;
-};
+const numero = new Intl.NumberFormat("es-CO");
+const derecha = "text-right tabular-nums";
 
+const colTexto = (id: string, titulo: string, principal = false): ColumnaTabla<FilaReporte> => ({
+  id, titulo, principal, valor: (f) => f[id],
+});
+const colNumero = (id: string, titulo: string, sufijo = ""): ColumnaTabla<FilaReporte> => ({
+  id, titulo, className: derecha, valor: (f) => f[id],
+  celda: (f) => (typeof f[id] === "number" ? `${numero.format(f[id] as number)}${sufijo}` : f[id]),
+});
+
+const COLUMNAS_SERIE: ColumnaTabla<FilaReporte>[] = [
+  { ...colTexto("periodo", "Período", true), fija: true },
+  colNumero("valor", "Valor"),
+  colTexto("categoria", "Categoría"),
+  colNumero("porcentaje", "Porcentaje", " %"),
+];
+const COLUMNAS_TORTA: ColumnaTabla<FilaReporte>[] = [
+  { ...colTexto("categoria", "Categoría", true), fija: true },
+  colNumero("cantidad", "Cantidad"),
+  colNumero("porcentaje", "Porcentaje", " %"),
+  colNumero("total", "Total"),
+];
+
+const FILTROS_SERIE: FiltroTabla<FilaReporte>[] = [{ id: "categoria", titulo: "Categoría", valor: (f) => String(f.categoria) }];
+const SIN_FILTROS: FiltroTabla<FilaReporte>[] = [];
+
+const claveFila = (f: FilaReporte) => String(f.periodo ?? f.categoria);
+
+/**
+ * Tabla de datos de un gráfico de informe: envoltorio de TablaDatos que
+ * conserva las props anteriores ({ chart, variables }).
+ */
 export const DataTable = ({ chart, variables }: DataTableProps) => {
-  const data = generateTableData(chart);
-  
-  const getVariableDisplayName = (variableId: string) => {
-    const variable = variables.find(v => v.id === variableId);
-    return variable?.displayName || variableId;
-  };
+  const torta = chart.type === "pie";
+  const filas = torta ? DATOS_TORTA : DATOS_SERIE;
+  const columnas = torta ? COLUMNAS_TORTA : COLUMNAS_SERIE;
+  const filtros = torta ? SIN_FILTROS : FILTROS_SERIE;
 
-  // Determinar las columnas basadas en el tipo de gráfico
-  const getTableColumns = () => {
-    if (chart.type === 'pie') {
-      return ['categoria', 'cantidad', 'porcentaje', 'total'];
-    }
-    return ['periodo', 'valor', 'categoria', 'porcentaje'];
-  };
+  const t = useTablaDatos({ id: `reportes.datos.${chart.id}.${torta ? "torta" : "serie"}`, filas, columnas, claveFila, filtros });
 
-  const columns = getTableColumns();
-
-  const getColumnHeader = (column: string) => {
-    const headers: Record<string, string> = {
-      periodo: 'Período',
-      valor: 'Valor',
-      categoria: 'Categoría',
-      porcentaje: 'Porcentaje',
-      cantidad: 'Cantidad',
-      total: 'Total'
-    };
-    return headers[column] || column;
-  };
-
-  const formatCellValue = (value: any, column: string) => {
-    if (column === 'valor' || column === 'cantidad' || column === 'total') {
-      return typeof value === 'number' ? value.toLocaleString() : value;
-    }
-    return value;
-  };
+  const ejes = useMemo(() => {
+    const nombre = (id: string) => variables.find((v) => v.id === id)?.displayName || id;
+    return [chart.xAxis && `Eje X: ${nombre(chart.xAxis)}`, chart.yAxis && `Eje Y: ${nombre(chart.yAxis)}`].filter(Boolean).join(" · ");
+  }, [chart.xAxis, chart.yAxis, variables]);
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-lg flex items-center gap-2">
-          Datos: {chart.title}
-          <Badge variant="outline" className="text-xs">
-            {data.length} registros
-          </Badge>
-        </CardTitle>
-        <div className="flex items-center space-x-2">
-          {chart.xAxis && (
-            <Badge variant="secondary" className="text-xs">
-              X: {getVariableDisplayName(chart.xAxis)}
-            </Badge>
-          )}
-          {chart.yAxis && (
-            <Badge variant="secondary" className="text-xs">
-              Y: {getVariableDisplayName(chart.yAxis)}
-            </Badge>
-          )}
-        </div>
-      </CardHeader>
-      <CardContent>
-        <div className="rounded-md border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                {columns.map((column) => (
-                  <TableHead key={column}>
-                    {getColumnHeader(column)}
-                  </TableHead>
-                ))}
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {data.map((row) => (
-                <TableRow key={'periodo' in row ? row.periodo : row.categoria}>
-                  {columns.map((column) => (
-                    <TableCell key={column}>
-                      {formatCellValue(row[column as keyof typeof row], column)}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-      </CardContent>
-    </Card>
+    <div className="space-y-2">
+      <div>
+        <h3 className="text-[15px] font-semibold text-foreground">Datos: {chart.title}</h3>
+        {ejes && <p className="text-[13px] text-muted-foreground">{ejes}</p>}
+      </div>
+      <TablaDatos
+        t={t}
+        barra={<BarraTabla t={t} nombre={["registro", "registros"]} placeholder="Buscar en los datos" nombreArchivo={`datos-${chart.title || "grafico"}`} />}
+        vacio="Este gráfico aún no tiene datos."
+      />
+    </div>
   );
 };
