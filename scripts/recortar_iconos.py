@@ -1,7 +1,8 @@
 """Separa y recorta los íconos 3D generados en Flow y los deja listos en public/iconos.
 
 Uso, una hoja con los 25 íconos sobre fondo liso (cian #00FFFF):
-    python scripts/recortar_iconos.py hoja.png
+    python scripts/recortar_iconos.py hoja.png              # pack 1, módulos actuales
+    python scripts/recortar_iconos.py hoja-2.png --pack 2   # pack 2, módulos futuros
 
 Los íconos se leen en orden de lectura (fila por fila, de izquierda a derecha) y se nombran según
 docs/iconos-3d/prompt-flow.md.
@@ -28,6 +29,14 @@ NOMBRES = [
     "catalogo", "sedes", "zonas", "facturacion", "clientes",
     "cotizaciones", "planes", "portal-usuario", "perfil", "configuracion",
 ]
+NOMBRES_PACK2 = [
+    "laboratorio", "imagenologia", "farmacia", "hospitalizacion", "urgencias",
+    "cirugia", "enfermeria", "vacunacion", "odontologia", "salud-mental",
+    "nutricion", "rehabilitacion", "atencion-domiciliaria", "traslados", "historia-clinica",
+    "facturacion-electronica", "cartera", "talento-humano", "compras", "documentos",
+    "calidad", "seguridad", "encuestas", "asistente-ia", "integraciones",
+]
+PACKS = {1: NOMBRES, 2: NOMBRES_PACK2}
 DESTINO = Path(__file__).resolve().parent.parent / "public" / "iconos"
 MARGEN = 0.06
 
@@ -129,9 +138,10 @@ def main():
     parser.add_argument("--nombres", default=None, help="nombres separados por coma, en orden de lectura")
     parser.add_argument("--destino", type=Path, default=DESTINO)
     parser.add_argument("--tamano", type=int, default=256)
+    parser.add_argument("--pack", type=int, choices=sorted(PACKS), default=1, help="1: módulos actuales, 2: módulos futuros")
     args = parser.parse_args()
     args.destino.mkdir(parents=True, exist_ok=True)
-    nombres = args.nombres.split(",") if args.nombres else NOMBRES
+    nombres = args.nombres.split(",") if args.nombres else PACKS[args.pack]
     procesar_hoja(args.entrada, nombres, args.destino, args.tamano)
 
 

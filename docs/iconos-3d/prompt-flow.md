@@ -127,3 +127,94 @@ Aspect ratio 1:1. Generate 2 versions of this same icon sheet.
 - **25 en una sola imagen sale mal:** divide en dos hojas con el mismo prompt (filas 1 a 3 y luego 4 a 5,
   agregando `match exactly the style of the previous icon sheet`) y recorta cada una con `--nombres`:
   `python scripts/recortar_iconos.py hoja-b.png --nombres catalogo,sedes,zonas,facturacion,clientes,cotizaciones,planes,portal-usuario,perfil,configuracion`
+
+---
+
+# Pack 2: 25 módulos futuros
+
+Mismo estilo, misma paleta, mismo fondo cian. Cubre módulos que la plataforma no tiene todavía pero que
+una IPS o clínica suele necesitar, para que cuando se creen ya tengan su ícono. **También solo para
+módulos principales.** No lleva personajes: así el set es más uniforme.
+
+**Hazlo en el mismo proyecto de Flow donde generaste el pack 1**, justo después, para que el agente copie
+el estilo de esa hoja. Para recortarlo:
+
+```
+python scripts/recortar_iconos.py "C:\Users\Deimer Domingo\Downloads\hoja-iconos-kerhub-2.png" --pack 2
+```
+
+| # | Archivo | Módulo futuro | Qué es el ícono |
+|---|---|---|---|
+| 1 | `laboratorio` | Laboratorio clínico | Gradilla con tubos de ensayo |
+| 2 | `imagenologia` | Imagenología / radiología | Placa de rayos X con hueso |
+| 3 | `farmacia` | Farmacia y dispensación | Blíster de pastillas |
+| 4 | `hospitalizacion` | Hospitalización / camas | Cama hospitalaria |
+| 5 | `urgencias` | Urgencias | Baliza de emergencia |
+| 6 | `cirugia` | Cirugía / quirófano | Lámpara quirúrgica |
+| 7 | `enfermeria` | Enfermería | Cofia de enfermería con cruz |
+| 8 | `vacunacion` | Vacunación | Jeringa y frasco |
+| 9 | `odontologia` | Odontología | Diente |
+| 10 | `salud-mental` | Salud mental / psicología | Cerebro con corazón |
+| 11 | `nutricion` | Nutrición | Manzana con cinta métrica |
+| 12 | `rehabilitacion` | Rehabilitación / terapias | Mancuerna |
+| 13 | `atencion-domiciliaria` | Atención domiciliaria | Casa con cruz y corazón |
+| 14 | `traslados` | Traslados / ambulancias | Ambulancia |
+| 15 | `historia-clinica` | Historia clínica | Carpeta médica con cruz |
+| 16 | `facturacion-electronica` | Facturación electrónica / RIPS | Documento con sello y nube |
+| 17 | `cartera` | Cartera y pagos | Billetera con tarjeta |
+| 18 | `talento-humano` | Talento humano / nómina | Credencial con cordón |
+| 19 | `compras` | Compras y proveedores | Carrito con caja |
+| 20 | `documentos` | Gestión documental | Archivador |
+| 21 | `calidad` | Calidad y auditoría médica | Escudo con check |
+| 22 | `seguridad` | Seguridad y permisos | Candado |
+| 23 | `encuestas` | Encuestas y PQRS | Tableta con estrellas |
+| 24 | `asistente-ia` | Asistente con IA | Burbuja con destellos |
+| 25 | `integraciones` | Integraciones / API | Piezas de rompecabezas |
+
+## Prompt del pack 2 (pegar completo en Flow, en el mismo proyecto del pack 1)
+
+```
+Create 2 different versions of ONE single image: a second icon sheet with exactly 25 NEW app icons arranged in a clean grid of 5 columns and 5 rows, evenly spaced. Match exactly the style of the previous 25-icon sheet (purple clay house, white clipboard with stethoscope, purple calendar, purple bell, purple gear): same material, same light, same angle, same size, same palette. Do not create separate images per icon: all 25 icons must be in the same image.
+
+STYLE, identical for all 25 icons: premium 3D icons for a professional healthcare software product, soft matte clay material with a very subtle satin sheen, smooth rounded shapes with soft bevels, clean and minimal with few details, elegant and professional (not childish, not cartoonish), the same three-quarter front view seen slightly from above, the same soft studio key light from the top left, gentle soft shading. All icons have the same visual size and fill their grid cell evenly, are fully visible and have wide empty space around them: they never touch, never overlap and are never cut by the image edge. No characters and no people in this sheet.
+
+BACKGROUND: the entire canvas is one perfectly flat, uniform, solid cyan color #00FFFF. No gradient, no vignette, no texture, no floor, no ground, no surface, no scene, no environment, no shadows and no reflections on the background. It is a chroma key background that will be removed later.
+
+NOT ALLOWED: photographs, realistic scenes, rooms, people, faces, text, letters, words, labels, logos, watermarks, numbers, currency symbols, the "Rx" symbol, blood.
+
+STRICT PALETTE, use only these colors in every icon: purple #8B35E9 (main color of the whole set), deep violet #4C1D95, lavender #E9DDFB, lime green #A2F603 (small accents only: crosses, check marks, arrows, small details), white #FFFFFF, light gray #E5E7EB, charcoal #1F2937. Never use cyan, turquoise, teal, blue, red, pink, magenta, orange or yellow inside the icons. Medical crosses are lime green or white, never red.
+
+THE 25 ICONS, in reading order (row 1 left to right, then row 2, and so on):
+Row 1
+1. Laboratory: small purple rack holding three white test tubes with lavender, purple and lime green liquid.
+2. Imaging: rounded charcoal X-ray film panel showing a simple white bone shape, with a thin lavender frame.
+3. Pharmacy: white blister pack with round purple pills in two rows, one pill slot empty and one lime green pill.
+4. Hospitalization: small rounded hospital bed with a white mattress, a lavender pillow and a purple frame.
+5. Emergency: rounded purple emergency beacon light with a white base and a glowing lime green top.
+Row 2
+6. Surgery: round surgical ceiling lamp with a purple housing and a white glowing center, short charcoal arm.
+7. Nursing: white nurse cap with a purple band and a small lime green medical cross on the front.
+8. Vaccination: purple syringe with a white plunger and a small white vial with a lavender cap beside it.
+9. Dentistry: rounded white tooth with a small lime green sparkle and a lavender base shadow shape.
+10. Mental health: soft lavender brain shape with a small purple heart in front of it.
+Row 3
+11. Nutrition: rounded purple apple with a white leaf and a lime green measuring tape wrapped around it.
+12. Rehabilitation: rounded purple dumbbell with white grip and lime green rings on each side.
+13. Home care: small rounded white house with a purple roof, a lime green medical cross and a tiny purple heart on the door.
+14. Patient transport: small rounded white ambulance van with a purple stripe, a lime green cross and charcoal tires.
+15. Medical record: purple folder with a white document sticking out and a white circle holding a lime green medical cross.
+Row 4
+16. Electronic invoicing: white document with light gray lines and a lime green check seal, with a small purple cloud and upward arrow above it.
+17. Payments: purple wallet with a white card sticking out with a lime green stripe.
+18. Human resources: white ID badge with a purple person silhouette hanging from a purple lanyard.
+19. Purchasing: rounded purple shopping cart carrying a white box with a lime green ribbon.
+20. Document management: small purple filing cabinet with three drawers, the top drawer slightly open showing white papers.
+Row 5
+21. Quality: purple shield with a white rim and a lime green check mark in the center.
+22. Security: rounded purple padlock with a white shackle and a small lime green keyhole.
+23. Surveys: white tablet whose lavender screen shows three stars, two purple and one lime green.
+24. AI assistant: rounded purple speech bubble with three small white and lime green sparkle stars.
+25. Integrations: two interlocking rounded puzzle pieces, one purple and one lime green.
+
+Aspect ratio 1:1. Generate 2 versions of this same icon sheet.
+```
