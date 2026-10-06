@@ -106,9 +106,9 @@ const MyProfilePage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
+    <div className="flex flex-col">
       <Header />
-      <main className="flex-1 container mx-auto pt-28 pb-10 px-4 max-w-5xl">
+      <main className="mx-auto w-full max-w-5xl py-6">
         <BackButton />
 
         <div className="flex items-center gap-3 mb-6">

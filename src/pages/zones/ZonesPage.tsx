@@ -284,9 +284,9 @@ const ZonesPage: React.FC = () => {
   // Show API key input if not set
   if (!apiKey) {
     return (
-      <div className="min-h-screen flex flex-col bg-background">
+      <div className="flex flex-col">
         <Header />
-        <main className="flex-1 flex items-center justify-center p-8">
+        <main className="flex justify-center py-6">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}

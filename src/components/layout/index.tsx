@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useContext } from "react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "./app-sidebar";
 import { DentroDeLayout, Header } from "./header";
@@ -35,7 +35,15 @@ interface LayoutProps {
   children: React.ReactNode;
 }
 
-export const Layout = ({ children }: LayoutProps) => {
+/**
+ * Varias páginas heredadas se envuelven otra vez en <Layout> aunque la ruta ya lo pone:
+ * eso duplicaba el espacio del encabezado (~80 px) y creaba un segundo scroll.
+ * Si ya hay un Layout por encima, el interno solo devuelve el contenido.
+ */
+export const Layout = ({ children }: LayoutProps) =>
+  useContext(DentroDeLayout) ? <>{children}</> : <LayoutBase>{children}</LayoutBase>;
+
+const LayoutBase = ({ children }: LayoutProps) => {
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [searchOpen, setSearchOpen] = useState(false);
   const navigate = useNavigate();
