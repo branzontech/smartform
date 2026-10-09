@@ -35,7 +35,7 @@ import { cn } from "@/lib/utils";
 import { ExtendedPatient, DOCUMENT_TYPES } from "../PatientPanel";
 import { PatientStatusBadge } from "@/components/patients/PatientStatusBadge";
 import { AdmissionHistorySection } from "@/components/patients/AdmissionHistorySection";
-import { baseDatos } from "@/integrations/datos/cliente";
+import { db } from "@/integrations/data/client";
 import { toast } from "sonner";
 
 interface PatientDetailStepProps {
@@ -78,7 +78,7 @@ export const PatientDetailStep: React.FC<PatientDetailStepProps> = ({
   useEffect(() => {
     let vigente = true;
     const loadExtensions = async () => {
-      const { data } = await baseDatos
+      const { data } = await db
         .from("pacientes")
         .select("fhir_extensions")
         .eq("id", patient.id)
@@ -101,7 +101,7 @@ export const PatientDetailStep: React.FC<PatientDetailStepProps> = ({
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      const { error } = await baseDatos
+      const { error } = await db
         .from("pacientes")
         .update({
           nombres: editData.firstName,

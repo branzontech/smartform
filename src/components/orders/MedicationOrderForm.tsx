@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useRef } from 'react';
-import { baseDatos } from "@/integrations/datos/cliente";
+import { db } from "@/integrations/data/client";
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -97,7 +97,7 @@ export const MedicationOrderForm: React.FC<MedicationOrderFormProps> = ({
     if (term.length < 2) { setDiagResults([]); return; }
     setDiagLoading(true);
     try {
-      const { data } = await baseDatos
+      const { data } = await db
         .from('catalogo_diagnosticos')
         .select('codigo, descripcion, sistema, fhir_system_uri')
         .eq('sistema', 'CIE-10')
@@ -171,7 +171,7 @@ export const MedicationOrderForm: React.FC<MedicationOrderFormProps> = ({
         indicaciones: m.indicaciones,
       }));
 
-      const { error } = await baseDatos.from('ordenes_medicas').insert({
+      const { error } = await db.from('ordenes_medicas').insert({
         tipo: 'medicamento',
         paciente_id: pacienteId,
         admision_id: admisionId,

@@ -21,6 +21,11 @@ export default {
 		},
 		extend: {
 			colors: {
+				canvas: 'hsl(var(--canvas))',
+				highlight: {
+					DEFAULT: 'hsl(var(--highlight))',
+					foreground: 'hsl(var(--highlight-foreground))'
+				},
 				border: 'hsl(var(--border))',
 				input: 'hsl(var(--input))',
 				ring: 'hsl(var(--ring))',
@@ -74,7 +79,13 @@ export default {
 					ring: 'hsl(var(--sidebar-ring))'
 				}
 			},
+			boxShadow: {
+				card: "0 1px 2px rgb(15 23 42 / 0.04), 0 12px 32px -16px rgb(15 23 42 / 0.12)",
+				"card-hover": "0 2px 4px rgb(15 23 42 / 0.05), 0 20px 40px -18px rgb(15 23 42 / 0.20)",
+			},
 			borderRadius: {
+				card: '1.5rem',
+				tile: '1rem',
 				lg: 'var(--radius)',
 				md: 'calc(var(--radius) - 2px)',
 				sm: 'calc(var(--radius) - 4px)'

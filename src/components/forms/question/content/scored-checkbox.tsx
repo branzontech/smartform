@@ -35,7 +35,8 @@ export const ScoredCheckbox: React.FC<ContentComponentProps> = ({
   const [rawScores, setRawScores] = useState<Record<string, string>>(() => {
     const map: Record<string, string> = {};
     for (const opt of migrateOptions()) {
-      map[opt.id] = opt.score === 0 ? "" : String(opt.score);
+      // 0 es un puntaje válido (p. ej. «Dependiente» en Barthel): se muestra, no se deja vacío.
+      map[opt.id] = String(opt.score ?? 0);
     }
     return map;
   });

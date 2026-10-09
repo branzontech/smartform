@@ -1,49 +1,49 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Calendar, CalendarDays, Gift, MessageCircle, Upload } from "lucide-react";
-import { EncabezadoModulo } from "@/components/kit/EncabezadoModulo";
-import { PestanasCarpeta, type PestanaCarpeta } from "@/components/kit/pestanas/PestanasCarpeta";
+import { ModuleHeader } from "@/components/kit/ModuleHeader";
+import { FolderTabs, type FolderTab } from "@/components/kit/tabs/FolderTabs";
 import { CustomerTable } from "@/components/customers/CustomerTable";
 import { CustomerStats } from "@/components/customers/CustomerStats";
 
-type VistaClientes = "lista" | "estadisticas";
+type CustomerView = "list" | "stats";
 
-const PESTANAS: PestanaCarpeta<VistaClientes>[] = [
-  { id: "lista", titulo: "Clientes", fija: true },
-  { id: "estadisticas", titulo: "Estadísticas" },
+const TABS: FolderTab<CustomerView>[] = [
+  { id: "list", title: "Clientes", pinned: true },
+  { id: "stats", title: "Estadísticas" },
 ];
-const VISIBLES: VistaClientes[] = ["lista", "estadisticas"];
+const INITIAL_VISIBLE: CustomerView[] = ["list", "stats"];
 
 /** Clientes: lista y estadísticas como pestañas de carpeta. */
 const CustomerList = () => {
   const navigate = useNavigate();
-  const [vista, setVista] = useState<VistaClientes>("lista");
+  const [view, setView] = useState<CustomerView>("list");
 
   return (
     <div className="mx-auto max-w-7xl space-y-5 py-6">
-      <EncabezadoModulo
-        titulo="Clientes"
-        secundarias={[
-          { titulo: "Nueva notificación", icono: MessageCircle, onClick: () => navigate("/app/clientes/notificaciones/nueva") },
-          { titulo: "Nueva cita", icono: Calendar, onClick: () => navigate("/app/citas/nueva") },
+      <ModuleHeader
+        title="Clientes"
+        secondary={[
+          { title: "Nueva notificación", icon: MessageCircle, onClick: () => navigate("/app/clientes/notificaciones/nueva") },
+          { title: "Nueva cita", icon: Calendar, onClick: () => navigate("/app/citas/nueva") },
         ]}
         menu={[
-          { titulo: "Importar clientes", icono: Upload, onClick: () => navigate("/app/clientes/importar") },
-          { titulo: "Ver calendario", icono: CalendarDays, onClick: () => navigate("/app/citas") },
-          { titulo: "Descuentos", icono: Gift, onClick: () => navigate("/app/clientes/descuentos") },
+          { title: "Importar clientes", icon: Upload, onClick: () => navigate("/app/clientes/importar") },
+          { title: "Ver calendario", icon: CalendarDays, onClick: () => navigate("/app/citas") },
+          { title: "Descuentos", icon: Gift, onClick: () => navigate("/app/clientes/descuentos") },
         ]}
-        primaria={{ titulo: "Nuevo cliente", onClick: () => navigate("/app/clientes/nuevo") }}
+        primary={{ title: "Nuevo cliente", onClick: () => navigate("/app/clientes/nuevo") }}
       />
       <div>
-        <PestanasCarpeta
-          id="clientes.vistas"
-          pestanas={PESTANAS}
-          activa={vista}
-          onCambio={setVista}
-          visiblesIniciales={VISIBLES}
-          etiqueta="Vistas de clientes"
+        <FolderTabs
+          id="customers.tabs"
+          tabs={TABS}
+          active={view}
+          onChange={setView}
+          initialVisible={INITIAL_VISIBLE}
+          label="Vistas de clientes"
         />
-        <div className="pt-4">{vista === "lista" ? <CustomerTable /> : <CustomerStats />}</div>
+        <div className="pt-4">{view === "list" ? <CustomerTable /> : <CustomerStats />}</div>
       </div>
     </div>
   );

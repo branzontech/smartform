@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
-import { baseDatos } from "@/integrations/datos/cliente";
+import { db } from "@/integrations/data/client";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
@@ -33,6 +33,8 @@ interface PatientHeaderBannerProps {
   pacienteData?: any;
   admisionId?: string;
   admisionData?: any;
+  /** Dentro de la barra superior de la consulta: sin caja ni margen propios. */
+  inline?: boolean;
 }
 
 export const PatientHeaderBanner: React.FC<PatientHeaderBannerProps> = ({
@@ -40,13 +42,14 @@ export const PatientHeaderBanner: React.FC<PatientHeaderBannerProps> = ({
   pacienteData,
   admisionId,
   admisionData,
+  inline = false,
 }) => {
   const [expanded, setExpanded] = useState(false);
 
   const { data: patient, isLoading: patientLoading } = useQuery({
     queryKey: ["paciente", pacienteId],
     queryFn: async () => {
-      const { data, error } = await baseDatos
+      const { data, error } = await db
         .from("pacientes")
         .select("*")
         .eq("id", pacienteId)
@@ -60,7 +63,7 @@ export const PatientHeaderBanner: React.FC<PatientHeaderBannerProps> = ({
   const { data: admision, isLoading: admisionLoading } = useQuery({
     queryKey: ["admision", admisionId],
     queryFn: async () => {
-      const { data, error } = await baseDatos
+      const { data, error } = await db
         .from("admisiones")
         .select("*")
         .eq("id", admisionId!)
@@ -150,7 +153,7 @@ export const PatientHeaderBanner: React.FC<PatientHeaderBannerProps> = ({
 
   return (
     <>
-      <div className="mb-3 bg-muted/20 border border-border/40 rounded-md px-4 py-2 transition-all duration-200">
+      <div className={cn("transition-all duration-200", inline ? "min-w-0 flex-1" : "mb-3 bg-muted/20 border border-border/40 rounded-md px-4 py-2")}>
         {/* Collapsed row */}
         <div className="flex items-center gap-3 min-w-0">
           <Avatar className="h-8 w-8 shrink-0">
@@ -159,7 +162,7 @@ export const PatientHeaderBanner: React.FC<PatientHeaderBannerProps> = ({
             </AvatarFallback>
           </Avatar>
 
-          <span className="font-semibold text-sm text-foreground truncate shrink-0">
+          <span className={cn("truncate shrink-0 font-semibold text-foreground", inline ? "text-base" : "text-sm")}>
             {fullName}
           </span>
 

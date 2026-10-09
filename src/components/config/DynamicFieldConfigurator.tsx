@@ -12,13 +12,13 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectGroup, SelectLabel, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import { AccionesFila } from "@/components/kit/AccionesFila";
+import { RowActions } from "@/components/kit/RowActions";
 import {
-  BarraTabla, TablaDatos, botonPrimario, useTablaDatos,
-  type ColumnaTabla, type FiltroTabla, type SegmentoTabla,
-} from "@/components/kit/tabla";
+  TableToolbar, DataTable, primaryButtonClass, useDataTable,
+  type TableColumn, type TableFilter, type TableSegment,
+} from "@/components/kit/table";
 import { Separator } from "@/components/ui/separator";
-import { baseDatos } from "@/integrations/datos/cliente";
+import { db } from "@/integrations/data/client";
 import { toast } from "sonner";
 
 // ── Field type definitions ──────────────────────────────────────────
@@ -66,30 +66,30 @@ const getFieldTypeLabel = (tipo: string) => FIELD_TYPE_MAP[tipo]?.label || tipo;
 
 // ── Tabla (convención Ker Hub) ─────────────────────────────────────
 
-const COLUMNAS: ColumnaTabla<DynamicFieldConfig>[] = [
-  { id: "orden", titulo: "Orden", valor: (f) => f.orden, className: "text-right tabular-nums", oculta: true },
-  { id: "etiqueta", titulo: "Etiqueta", valor: (f) => f.label, principal: true, fija: true, className: "min-w-[200px]" },
-  { id: "tipo", titulo: "Tipo", valor: (f) => getFieldTypeLabel(f.tipo_dato) },
+const COLUMNS: TableColumn<DynamicFieldConfig>[] = [
+  { id: "order", title: "Orden", value: (f) => f.orden, className: "text-right tabular-nums", hidden: true },
+  { id: "label", title: "Etiqueta", value: (f) => f.label, primary: true, alwaysVisible: true, className: "min-w-[200px]" },
+  { id: "type", title: "Tipo", value: (f) => getFieldTypeLabel(f.tipo_dato) },
   {
-    id: "opciones", titulo: "Opciones", className: "max-w-[280px] truncate",
-    valor: (f) => (f.tipo_dato === "select" && f.opciones?.length ? f.opciones.map(String).join(", ") : null),
+    id: "options", title: "Opciones", className: "max-w-[280px] truncate",
+    value: (f) => (f.tipo_dato === "select" && f.opciones?.length ? f.opciones.map(String).join(", ") : null),
   },
-  { id: "catalogo", titulo: "Catálogo", valor: (f) => f.maestro || null },
-  { id: "requerido", titulo: "Obligatorio", valor: (f) => (f.es_requerido ? "Sí" : "No") },
-  { id: "marcador", titulo: "Texto de ayuda", valor: (f) => f.placeholder || null, oculta: true },
+  { id: "catalog", title: "Catálogo", value: (f) => f.maestro || null },
+  { id: "required", title: "Obligatorio", value: (f) => (f.es_requerido ? "Sí" : "No") },
+  { id: "placeholder", title: "Texto de ayuda", value: (f) => f.placeholder || null, hidden: true },
 ];
 
-const FILTROS: FiltroTabla<DynamicFieldConfig>[] = [
-  { id: "tipo", titulo: "Tipo", valor: (f) => getFieldTypeLabel(f.tipo_dato) },
+const FILTERS: TableFilter<DynamicFieldConfig>[] = [
+  { id: "type", title: "Tipo", value: (f) => getFieldTypeLabel(f.tipo_dato) },
 ];
 
-const SEGMENTOS: SegmentoTabla<DynamicFieldConfig>[] = [
-  { id: "todos", titulo: "Todos", cumple: () => true },
-  { id: "obligatorios", titulo: "Obligatorios", cumple: (f) => f.es_requerido },
-  { id: "opcionales", titulo: "Opcionales", cumple: (f) => !f.es_requerido },
+const SEGMENTS: TableSegment<DynamicFieldConfig>[] = [
+  { id: "all", title: "Todos", match: () => true },
+  { id: "required", title: "Obligatorios", match: (f) => f.es_requerido },
+  { id: "optional", title: "Opcionales", match: (f) => !f.es_requerido },
 ];
 
-const claveFila = (f: DynamicFieldConfig) => f.id;
+const rowKey = (f: DynamicFieldConfig) => f.id;
 
 // ── Props ───────────────────────────────────────────────────────────
 
@@ -126,7 +126,7 @@ export const DynamicFieldConfigurator: React.FC<DynamicFieldConfiguratorProps> =
   const fetchFields = useCallback(async () => {
     setIsLoading(true);
     try {
-      const { data, error } = await baseDatos
+      const { data, error } = await db
         .from(tableName)
         .select("*")
         .order("orden", { ascending: true });
@@ -172,7 +172,7 @@ export const DynamicFieldConfigurator: React.FC<DynamicFieldConfiguratorProps> =
 
     let error: { message: string } | null = null;
     try {
-      ({ error } = await baseDatos.from(tableName).insert(insertData));
+      ({ error } = await db.from(tableName).insert(insertData));
     } finally {
       setIsSaving(false);
     }
@@ -185,7 +185,7 @@ export const DynamicFieldConfigurator: React.FC<DynamicFieldConfiguratorProps> =
   };
 
   const handleDelete = async (field: DynamicFieldConfig) => {
-    const { error } = await baseDatos.from(tableName).delete().eq("id", field.id);
+    const { error } = await db.from(tableName).delete().eq("id", field.id);
     if (error) { toast.error("Error: " + error.message); return; }
     toast.success(`Campo "${field.label}" eliminado`);
     fetchFields();
@@ -206,7 +206,7 @@ export const DynamicFieldConfigurator: React.FC<DynamicFieldConfiguratorProps> =
   const needsOptions = newField.tipo_dato === "select";
   const isCatalog = newField.tipo_dato.startsWith("catalog_");
 
-  const t = useTablaDatos({ id: `config.campos.${tableName}`, filas: fields, columnas: COLUMNAS, claveFila, filtros: FILTROS, segmentos: SEGMENTOS });
+  const t = useDataTable({ id: `config.fields.${tableName}`, rows: fields, columns: COLUMNS, rowKey, filters: FILTERS, segments: SEGMENTS });
 
   return (
     <div className="space-y-4">
@@ -218,29 +218,29 @@ export const DynamicFieldConfigurator: React.FC<DynamicFieldConfiguratorProps> =
         </div>
       </div>
 
-      <TablaDatos
+      <DataTable
         t={t}
-        cargando={isLoading}
-        barra={
-          <BarraTabla
+        loading={isLoading}
+        toolbar={
+          <TableToolbar
             t={t}
-            nombre={["campo", "campos"]}
+            name={["campo", "campos"]}
             placeholder="Buscar campo"
-            nombreArchivo="campos-personalizados"
-            acciones={<Button className={botonPrimario} onClick={() => setIsOpen(true)}><Plus className="h-4 w-4" /> Nuevo campo</Button>}
+            fileName="campos-personalizados"
+            actions={<Button className={primaryButtonClass} onClick={() => setIsOpen(true)}><Plus className="h-4 w-4" /> Nuevo campo</Button>}
           />
         }
-        acciones={(field) => (
-          <AccionesFila
-            nombre={field.label}
-            onEliminar={() => handleDelete(field)}
-            confirmarEliminar={{
-              titulo: "¿Eliminar este campo?",
-              descripcion: `El campo «${field.label}» será eliminado permanentemente. Los datos guardados previamente no se verán afectados.`,
+        actions={(field) => (
+          <RowActions
+            name={field.label}
+            onDelete={() => handleDelete(field)}
+            deleteConfirmation={{
+              title: "¿Eliminar este campo?",
+              description: `El campo «${field.label}» será eliminado permanentemente. Los datos guardados previamente no se verán afectados.`,
             }}
           />
         )}
-        vacio="No hay campos personalizados configurados aún. Crea el primero con «Nuevo campo»."
+        empty="No hay campos personalizados configurados aún. Crea el primero con «Nuevo campo»."
       />
 
       <Dialog open={isOpen} onOpenChange={(open) => { setIsOpen(open); if (!open) resetForm(); }}>

@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { baseDatos } from "@/integrations/datos/cliente";
+import { db } from "@/integrations/data/client";
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -68,7 +68,7 @@ export const OrdersListPanel: React.FC<OrdersListPanelProps> = ({ admisionId }) 
     if (!admisionId) { setLoading(false); return; }
     setLoading(true);
     try {
-      const { data } = await baseDatos
+      const { data } = await db
         .from('ordenes_medicas')
         .select('id, tipo, numero_orden, estado, fecha_orden, prioridad, medico_id, medico_nombre, paciente_id, diagnostico_codigo, diagnostico_descripcion, diagnostico_sistema, indicaciones, items, alcance, fhir_extensions')
         .eq('admision_id', admisionId)

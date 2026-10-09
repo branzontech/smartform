@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { baseDatos } from "@/integrations/datos/cliente";
+import { db } from "@/integrations/data/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -68,7 +68,7 @@ export const InstitutionHeaderConfig = () => {
   }, []);
 
   const loadConfig = async () => {
-    const { data, error } = await baseDatos
+    const { data, error } = await db
       .from("configuracion_encabezado" as any)
       .select("*")
       .limit(1)
@@ -125,14 +125,14 @@ export const InstitutionHeaderConfig = () => {
     try {
       const ext = file.name.split(".").pop();
       const filePath = `logos/institution-logo.${ext}`;
-      const { error: uploadError } = await baseDatos.storage
+      const { error: uploadError } = await db.storage
         .from("institution-assets")
         .upload(filePath, file, { upsert: true });
       if (uploadError) {
         toast({ title: "Error al subir logo", description: uploadError.message, variant: "destructive" });
         return;
       }
-      const { data: urlData } = baseDatos.storage.from("institution-assets").getPublicUrl(filePath);
+      const { data: urlData } = db.storage.from("institution-assets").getPublicUrl(filePath);
       setConfig((prev) => ({ ...prev, logo_url: urlData.publicUrl }));
       toast({ title: "Logo cargado", description: "El logo se ha subido correctamente" });
     } finally {
@@ -188,12 +188,12 @@ export const InstitutionHeaderConfig = () => {
     try {
       let error;
       if (config.id) {
-        ({ error } = await baseDatos
+        ({ error } = await db
           .from("configuracion_encabezado" as any)
           .update(payload)
           .eq("id", config.id));
       } else {
-        const { data, error: insertError } = await baseDatos
+        const { data, error: insertError } = await db
           .from("configuracion_encabezado" as any)
           .insert(payload)
           .select()

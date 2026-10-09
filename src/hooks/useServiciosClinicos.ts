@@ -1,12 +1,12 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { baseDatos } from "@/integrations/datos/cliente";
+import { db } from "@/integrations/data/client";
 import type { ServicioClinico, CatalogoProcedimiento, ServicioProcedimiento } from '@/types/servicios';
 
 export function useServiciosClinicos(activo?: boolean) {
   return useQuery({
     queryKey: ['servicios_clinicos', activo],
     queryFn: async () => {
-      const query = baseDatos
+      const query = db
         .from('servicios_clinicos')
         .select('*')
         .order('nombre');
@@ -24,13 +24,13 @@ export function useServiciosConConteo() {
   return useQuery({
     queryKey: ['servicios_clinicos_conteo'],
     queryFn: async () => {
-      const { data: servicios, error } = await baseDatos
+      const { data: servicios, error } = await db
         .from('servicios_clinicos')
         .select('*')
         .order('nombre');
       if (error) throw error;
 
-      const { data: asociaciones, error: e2 } = await baseDatos
+      const { data: asociaciones, error: e2 } = await db
         .from('servicio_procedimientos')
         .select('servicio_id')
         .eq('activo', true);
@@ -54,7 +54,7 @@ export function useCatalogoProcedimientos(search?: string, servicioId?: string) 
     queryKey: ['catalogo_procedimientos', search, servicioId],
     queryFn: async () => {
       if (servicioId) {
-        const { data, error } = await baseDatos
+        const { data, error } = await db
           .from('servicio_procedimientos')
           .select('procedimiento_id, catalogo_procedimientos(*)')
           .eq('servicio_id', servicioId)
@@ -72,7 +72,7 @@ export function useCatalogoProcedimientos(search?: string, servicioId?: string) 
         return procs;
       }
 
-      let query = baseDatos
+      let query = db
         .from('catalogo_procedimientos')
         .select('*')
         .eq('activo', true)
@@ -95,7 +95,7 @@ export function useAllCatalogoProcedimientos(search?: string) {
   return useQuery({
     queryKey: ['catalogo_procedimientos_all', search],
     queryFn: async () => {
-      let query = baseDatos
+      let query = db
         .from('catalogo_procedimientos')
         .select('*')
         .order('codigo')
@@ -118,7 +118,7 @@ export function useServicioProcedimientos(servicioId?: string) {
     queryKey: ['servicio_procedimientos', servicioId],
     queryFn: async () => {
       if (!servicioId) return [];
-      const { data, error } = await baseDatos
+      const { data, error } = await db
         .from('servicio_procedimientos')
         .select('*, catalogo_procedimientos(*)')
         .eq('servicio_id', servicioId)
@@ -135,7 +135,7 @@ export function useCreateServicioClinico() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (servicio: Omit<ServicioClinico, 'id' | 'created_at' | 'updated_at'>) => {
-      const { data, error } = await baseDatos
+      const { data, error } = await db
         .from('servicios_clinicos')
         .insert(servicio as any)
         .select()
@@ -151,7 +151,7 @@ export function useUpdateServicioClinico() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, ...updates }: Partial<ServicioClinico> & { id: string }) => {
-      const { data, error } = await baseDatos
+      const { data, error } = await db
         .from('servicios_clinicos')
         .update(updates as any)
         .eq('id', id)
@@ -171,7 +171,7 @@ export function useToggleServicioActivo() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, activo }: { id: string; activo: boolean }) => {
-      const { error } = await baseDatos
+      const { error } = await db
         .from('servicios_clinicos')
         .update({ activo } as any)
         .eq('id', id);
@@ -188,7 +188,7 @@ export function useAsociarProcedimiento() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ servicio_id, procedimiento_id }: { servicio_id: string; procedimiento_id: string }) => {
-      const { error } = await baseDatos
+      const { error } = await db
         .from('servicio_procedimientos')
         .insert({ servicio_id, procedimiento_id, activo: true } as any);
       if (error) throw error;
@@ -204,7 +204,7 @@ export function useDesasociarProcedimiento() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, servicio_id }: { id: string; servicio_id: string }) => {
-      const { error } = await baseDatos
+      const { error } = await db
         .from('servicio_procedimientos')
         .delete()
         .eq('id', id);
@@ -222,7 +222,7 @@ export function useCreateProcedimiento() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (proc: Omit<CatalogoProcedimiento, 'id' | 'created_at' | 'updated_at'>) => {
-      const { data, error } = await baseDatos
+      const { data, error } = await db
         .from('catalogo_procedimientos')
         .insert(proc as any)
         .select()
@@ -241,7 +241,7 @@ export function useUpdateProcedimiento() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, ...updates }: Partial<CatalogoProcedimiento> & { id: string }) => {
-      const { data, error } = await baseDatos
+      const { data, error } = await db
         .from('catalogo_procedimientos')
         .update(updates as any)
         .eq('id', id)
@@ -261,7 +261,7 @@ export function useToggleProcedimientoActivo() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, activo }: { id: string; activo: boolean }) => {
-      const { error } = await baseDatos
+      const { error } = await db
         .from('catalogo_procedimientos')
         .update({ activo } as any)
         .eq('id', id);

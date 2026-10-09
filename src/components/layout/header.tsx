@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { mainNavItems } from "@/config/navigation";
+import { currentEnvironment, ENVIRONMENTS } from "@/config/environments";
 import { SearchModal } from "./SearchModal";
 import { 
   Tooltip,
@@ -182,6 +183,7 @@ const HeaderBase = ({ showCreate = true }: HeaderProps) => {
             >
               <img src="/kerhub-logo-color.png" alt="Ker Hub" className="h-7 w-auto" />
             </button>
+            {ENVIRONMENTS.length > 1 && <EnvironmentLabel />}
             <button
               onClick={() => setAppLauncherOpen(true)}
               className="p-2 rounded-full hover:bg-white/10 transition-colors"
@@ -377,3 +379,17 @@ const HeaderBase = ({ showCreate = true }: HeaderProps) => {
     </TooltipProvider>
   );
 };
+
+/** Ambiente en el que se está trabajando (solo en local, donde hay varios). */
+function EnvironmentLabel() {
+  const environment = currentEnvironment();
+  const production = environment.id === "produccion";
+  return (
+    <span
+      title={environment.description}
+      className={`hidden sm:inline rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${production ? "bg-amber-300 text-amber-950" : "bg-white/15 text-white"}`}
+    >
+      {environment.label}
+    </span>
+  );
+}

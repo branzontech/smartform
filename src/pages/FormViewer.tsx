@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
-import { baseDatos } from "@/integrations/datos/cliente";
+import { db } from "@/integrations/data/client";
 import {
   Form,
   FormControl,
@@ -15,11 +15,13 @@ import {
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, FormProvider } from "react-hook-form";
 import { z } from "zod";
-import { QuestionRenderer } from '@/components/forms/form-viewer/question-renderer';
+import { SectionedForm } from "@/components/forms/form-viewer/SectionedForm";
+import { hasPartialAnswer, isAnswerable, missingRequired } from "@/components/forms/form-viewer/answers";
 import { QuestionData } from '@/components/forms/question/types';
 import { FormTitle } from '@/components/ui/form-title';
 import { BackButton } from '@/App';
-import { Check, Link as LinkIcon, Printer, AlertTriangle, CalendarIcon, ClipboardList, PanelRightClose, PanelRightOpen, GripVertical, MoreHorizontal, ArrowLeft, Save, Plus, Search, CheckCircle, Loader2, AlertCircle, Clock, XCircle, Circle, CalendarDays, Eye } from 'lucide-react';
+import { Check, Link as LinkIcon, Printer, AlertTriangle, CalendarIcon, ClipboardList, PanelRightClose, PanelRightOpen, GripVertical, MoreHorizontal, ArrowLeft, Save, Plus, Search, CheckCircle, Loader2, AlertCircle, Clock, XCircle, Circle, CalendarDays, Eye, Repeat } from 'lucide-react';
+import { ChangeHistoryDialog } from '@/components/forms/ChangeHistoryDialog';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { toast } from "sonner";
 import { Form as FormType } from './FormsPage';
@@ -28,12 +30,24 @@ import { FormError } from '@/components/forms/form-viewer/form-error';
 import { FormSubmissionSuccess } from '@/components/forms/form-viewer/form-submission-success';
 import { createDynamicSchema, fetchFormById, saveFormResponse } from '@/utils/form-utils';
 import { useToast } from '@/hooks/use-toast';
-import { RightPanelTabs } from '@/components/orders/RightPanelTabs';
+import { ORDER_TYPES, OrderTabContent } from '@/components/orders/RightPanelTabs';
+import { PatientHistoryPanel } from '@/components/patients/PatientHistoryPanel';
+import { FolderTabs, type FolderTab } from '@/components/kit/tabs/FolderTabs';
+
+/** Pestañas de la consulta (como en Magnet): la historia en curso y, a la mano, registros, antecedentes y cada tipo de orden. */
+const CONSULT_TABS: FolderTab<string>[] = [
+  { id: "historia", title: "Historia clínica", pinned: true },
+  { id: "registros", title: "Historial de registros" },
+  { id: "antecedentes", title: "Antecedentes" },
+  ...ORDER_TYPES.map((o) => ({ id: `orden-${o.type}`, title: o.label })),
+];
+/** Como en Magnet: al inicio solo la historia; el médico ancla desde «Más» las que use. */
+const CONSULT_INITIAL_TABS = ["historia"];
 import { FormHeaderPreview } from '@/components/forms/FormHeaderPreview';
 import { useAuth } from '@/contexts/AuthContext';
 
 import { PatientHeaderBanner } from '@/components/forms/PatientHeaderBanner';
-import { RegistroAtenciones } from '@/components/forms/RegistroAtenciones';
+import { RecordsHistory } from '@/components/forms/registros/RecordsHistory';
 import { IncapacidadDialog } from '@/components/incapacidades/IncapacidadDialog';
 import { IncapacidadPreviewDialog } from '@/components/incapacidades/IncapacidadPreviewDialog';
 import { useIncapacidadesByAdmision } from '@/hooks/useIncapacidades';
@@ -78,6 +92,8 @@ interface FormEntry {
   title: string;
   description: string;
   formType: string;
+  /** Versión de las preguntas con que se diligencia (la del registro guardado o la vigente). */
+  version?: number;
   formData: FormData;
   saved: boolean;
   isDirty: boolean;
@@ -101,6 +117,16 @@ const FormViewer = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const draftRestoredRef = useRef(false);
+  /** Último formsMap: lo leen el autoguardado y los guardados en curso sin cierres desactualizados. */
+  const formsMapRef = useRef<Record<string, FormEntry>>({});
+  /** id de la respuesta ya creada por formato: evita insertar dos veces si dos guardados coinciden. */
+  const responseIdsRef = useRef<Record<string, string>>({});
+  const savesInFlightRef = useRef<Record<string, Promise<boolean>>>({});
+  /** Versión del contenido por formato: lo escrito durante un guardado no queda marcado como guardado. */
+  const versionRef = useRef<Record<string, number>>({});
+  const loadedOnceRef = useRef(false);
+  /** Sube cada vez que llegan formatos: los campos se rellenan con el borrador recuperado. */
+  const [loadCount, setLoadCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [submitted, setSubmitted] = useState(false);
@@ -108,6 +134,13 @@ const FormViewer = () => {
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [pendingValues, setPendingValues] = useState<any>(null);
   const [showRegistro, setShowRegistro] = useState(false);
+  const [workspaceTab, setWorkspaceTab] = useState("historia");
+  const workspaceRef = useRef<HTMLDivElement>(null);
+  // Al cambiar de pestaña el área vuelve arriba: si no, el contenido nuevo queda fuera de la vista.
+  const openWorkspaceTab = (tabId: string) => {
+    setWorkspaceTab(tabId);
+    workspaceRef.current?.scrollTo({ top: 0 });
+  };
   const [showIncapacidadDialog, setShowIncapacidadDialog] = useState(false);
   const [previewIncapacidad, setPreviewIncapacidad] = useState<IncapacidadLike | null>(null);
   const { hasRole, user: authUser } = useAuth();
@@ -129,6 +162,18 @@ const FormViewer = () => {
   const pendingNavigationRef = useRef<string | number | null>(null);
   const [isCompletingAttention, setIsCompletingAttention] = useState(false);
   const [isCompleted, setIsCompleted] = useState(false);
+  const [showChangeHistory, setShowChangeHistory] = useState(false);
+  // Aviso tras cambiar de historia: cuántos campos pasaron de la equivocada a la correcta.
+  useEffect(() => {
+    const carried = sessionStorage.getItem("kerhub-history-changed");
+    if (carried === null) return;
+    sessionStorage.removeItem("kerhub-history-changed");
+    uiToast({
+      title: "Historia clínica cambiada",
+      description: Number(carried) > 0 ? `${carried} campo(s) pasaron de la historia anterior: revísalos y vuelve a firmar.` : "La historia anterior no tenía campos en común con esta.",
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- solo al abrir la consulta
+  }, []);
   const [showCompletedDialog, setShowCompletedDialog] = useState(false);
   const [showValidationDialog, setShowValidationDialog] = useState(false);
   const [validationIssues, setValidationIssues] = useState<{formId: string; title: string; missingCount: number}[]>([]);
@@ -171,7 +216,7 @@ const FormViewer = () => {
     if (!patientId) return;
     let vigente = true;
     const fetchActiveAdmission = async () => {
-      const { data } = await baseDatos
+      const { data } = await db
         .from('admisiones')
         .select('id')
         .eq('paciente_id', patientId)
@@ -230,7 +275,7 @@ const FormViewer = () => {
   const searchForms = useCallback(async (query: string) => {
     setAddFormLoading(true);
     try {
-      let q = baseDatos.from('formularios').select('id, titulo, tipo').eq('estado', 'activo').limit(20);
+      let q = db.from('formularios').select('id, titulo, tipo').eq('estado', 'activo').limit(20);
       if (query.trim()) {
         q = q.ilike('titulo', `%${query.trim()}%`);
       }
@@ -294,6 +339,7 @@ const FormViewer = () => {
           title: result.form!.title,
           description: result.form!.description,
           formType: result.form!.formType || 'historia_clinica',
+          version: result.form!.version,
           formData: {},
           saved: false,
           isDirty: false,
@@ -307,7 +353,10 @@ const FormViewer = () => {
   };
 
   // Derived state from active form
+  formsMapRef.current = formsMap;
   const activeEntry = formsMap[activeFormId];
+  // Historia clínica de la consulta: el formato principal (el de la ruta) cuando es una historia.
+  const historyEntry = formId && formsMap[formId]?.formType === "historia_clinica" ? formsMap[formId] : undefined;
   const formData = activeEntry?.formData || EMPTY_FORM_DATA;
   const questions = activeEntry?.questions || EMPTY_QUESTIONS;
   const formTitle = activeEntry?.title || "Formulario";
@@ -321,6 +370,8 @@ const FormViewer = () => {
   useEffect(() => {
     if (!draftRestoredRef.current) return;
     if (submitted) return;
+    // Solo cambios pendientes: lo ya guardado en la base no necesita borrador.
+    if (!activeEntry?.isDirty) return;
     const hasData = Object.keys(formData).some(k => {
       const v = formData[k];
       return v !== undefined && v !== null && v !== '';
@@ -333,7 +384,7 @@ const FormViewer = () => {
       } catch { /* quota exceeded */ }
     }, 500);
     return () => clearTimeout(timer);
-  }, [formData, draftKey, submitted]);
+  }, [formData, draftKey, submitted, activeEntry?.isDirty]);
 
   const clearDraft = useCallback(() => {
     localStorage.removeItem(draftKey);
@@ -384,85 +435,87 @@ const FormViewer = () => {
   }, [panelWidth]);
 
   // ── Save a single form to DB ──
-  const saveFormToDb = useCallback(async (fId: string, showToast = false): Promise<boolean> => {
-    const entry = formsMap[fId];
-    if (!entry) return false;
+  // Un solo guardado por formato a la vez: si ya hay uno en curso se espera ese.
+  const saveFormToDb = useCallback((fId: string, showToast = false): Promise<boolean> => {
+    const pending = savesInFlightRef.current[fId];
+    if (pending) return pending;
+    const run = (async (): Promise<boolean> => {
+      const entry = formsMapRef.current[fId];
+      if (!entry) return false;
+      const startVersion = versionRef.current[fId] ?? 0;
 
-    const { data: { user } } = await baseDatos.auth.getUser();
-    const medicoId = user?.id;
+      const { data: { user } } = await db.auth.getUser();
+      const medicoId = user?.id;
+      if (patientId && !medicoId) {
+        if (showToast) uiToast({ title: "Tu sesión caducó", description: "Vuelve a iniciar sesión para guardar.", variant: "destructive" });
+        return false;
+      }
 
-    if (patientId && !medicoId) {
-      if (showToast) uiToast({ title: "Error de autenticación", description: "Debes iniciar sesión.", variant: "destructive" });
-      return false;
-    }
+      const processed = processFormValues(entry.questions, entry.formData, entry.formData);
 
-    const processed = processFormValues(entry.questions, entry.formData, entry.formData);
-
-    if (patientId && medicoId) {
-      const admisionId = resolvedAdmisionId;
-
-      if (entry.responseId) {
-        const { error: updateError } = await baseDatos
-          .from("respuestas_formularios" as any)
-          .update({ datos_respuesta: processed, updated_at: new Date().toISOString() })
-          .eq('id', entry.responseId);
-        if (updateError) {
-          if (showToast) uiToast({ title: "Error al guardar", description: `${entry.title}: ${updateError.message}`, variant: "destructive" });
-          setFormsMap(prev => ({ ...prev, [fId]: { ...prev[fId], saveError: true } }));
-          return false;
+      if (patientId && medicoId) {
+        const existingId = entry.responseId ?? responseIdsRef.current[fId];
+        if (existingId) {
+          const { error: updateError } = await db
+            .from("respuestas_formularios" as any)
+            .update({ datos_respuesta: processed, updated_at: new Date().toISOString() })
+            .eq('id', existingId);
+          if (updateError) {
+            if (showToast) uiToast({ title: "No se pudo guardar", description: `${entry.title}: ${updateError.message}`, variant: "destructive" });
+            setFormsMap(prev => ({ ...prev, [fId]: { ...prev[fId], saveError: true } }));
+            return false;
+          }
+        } else {
+          const { data: insertData, error: insertError } = await db
+            .from("respuestas_formularios" as any)
+            .insert({
+              formulario_id: fId,
+              // La versión que el profesional tenía abierta, aunque el formato haya cambiado mientras tanto.
+              formulario_version: entry.version,
+              paciente_id: patientId,
+              admision_id: resolvedAdmisionId,
+              medico_id: medicoId,
+              datos_respuesta: processed,
+              // Para reabrir la consulta con lo ya guardado (la consulta aún no es una tabla).
+              fhir_extensions: consultationId ? { consulta_id: consultationId } : {},
+            })
+            .select('id')
+            .single();
+          if (insertError) {
+            if (showToast) uiToast({ title: "No se pudo guardar", description: `${entry.title}: ${insertError.message}`, variant: "destructive" });
+            setFormsMap(prev => ({ ...prev, [fId]: { ...prev[fId], saveError: true } }));
+            return false;
+          }
+          const newId = (insertData as any)?.id as string | undefined;
+          if (newId) responseIdsRef.current[fId] = newId;
+          setFormsMap(prev => ({ ...prev, [fId]: { ...prev[fId], responseId: newId } }));
         }
       } else {
-        const { data: insertData, error: insertError } = await baseDatos
-          .from("respuestas_formularios" as any)
-          .insert({
-            formulario_id: fId,
-            paciente_id: patientId,
-            admision_id: admisionId,
-            medico_id: medicoId,
-            datos_respuesta: processed,
-          })
-          .select('id')
-          .single();
-        if (insertError) {
-          if (showToast) uiToast({ title: "Error al guardar", description: `${entry.title}: ${insertError.message}`, variant: "destructive" });
-          setFormsMap(prev => ({ ...prev, [fId]: { ...prev[fId], saveError: true } }));
-          return false;
-        }
-        setFormsMap(prev => ({
-          ...prev,
-          [fId]: { ...prev[fId], responseId: (insertData as any)?.id },
-        }));
+        saveFormResponse(fId, { ...processed, _patientId: patientId, _consultationId: consultationId });
       }
-    } else {
-      saveFormResponse(fId, { ...processed, _patientId: patientId, _consultationId: consultationId });
-    }
 
-    const dk = `kerhub-draft-${fId}${patientId ? `-${patientId}` : ''}${consultationId ? `-${consultationId}` : ''}`;
-    localStorage.removeItem(dk);
-
-    const timeStr = new Date().toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-    setFormsMap(prev => ({
-      ...prev,
-      [fId]: { ...prev[fId], saved: true, isDirty: false, lastSavedTime: timeStr, saveError: false },
-    }));
-
-    return true;
-  }, [formsMap, patientId, consultationId, uiToast, resolvedAdmisionId]);
+      const changedMeanwhile = (versionRef.current[fId] ?? 0) !== startVersion;
+      if (!changedMeanwhile) {
+        localStorage.removeItem(`kerhub-draft-${fId}${patientId ? `-${patientId}` : ''}${consultationId ? `-${consultationId}` : ''}`);
+      }
+      const timeStr = new Date().toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      setFormsMap(prev => ({
+        ...prev,
+        [fId]: { ...prev[fId], saved: true, isDirty: changedMeanwhile, lastSavedTime: timeStr, saveError: false },
+      }));
+      return true;
+    })();
+    savesInFlightRef.current[fId] = run;
+    run.finally(() => { delete savesInFlightRef.current[fId]; });
+    return run;
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- lee formsMapRef; processFormValues es estable en la práctica
+  }, [patientId, consultationId, uiToast, resolvedAdmisionId]);
 
   // ── Helper: check if form has no responses ──
   const isFormEmpty = useCallback((fId: string): boolean => {
     const entry = formsMap[fId];
     if (!entry) return true;
-    return entry.questions.filter(q => q.type !== 'section' && q.type !== 'score_total').every(q => {
-      const val = entry.formData[q.id];
-      if (val === undefined || val === null || val === '') return true;
-      if (Array.isArray(val) && val.length === 0) return true;
-      if (typeof val === 'object' && !Array.isArray(val)) {
-        if (val.score !== undefined && val.selectedOptions) return !val.selectedOptions?.length;
-        return Object.values(val).every((v: any) => !v && v !== 0);
-      }
-      return false;
-    });
+    return !entry.questions.some(q => hasPartialAnswer(q, entry.formData));
   }, [formsMap]);
 
   // ── Show "saved" briefly, then go back to idle ──
@@ -497,85 +550,136 @@ const FormViewer = () => {
   }, [activeFormId, formsMap, saveFormToDb, uiToast, isFormEmpty, markSavedBriefly]);
 
   // ── 30s interval autosave ──
+  const saveRef = useRef(saveFormToDb);
+  saveRef.current = saveFormToDb;
+  const allFormIdsRef = useRef<string[]>([]);
+  allFormIdsRef.current = allFormIds;
   useEffect(() => {
-    if (!draftRestoredRef.current) return;
-
     const interval = setInterval(async () => {
-      for (const fId of allFormIds) {
-        const entry = formsMap[fId];
-        if (entry?.isDirty && !isFormEmpty(fId)) {
+      if (!draftRestoredRef.current) return;
+      for (const fId of allFormIdsRef.current) {
+        const entry = formsMapRef.current[fId];
+        if (entry?.isDirty && entry.questions.some(q => hasPartialAnswer(q, entry.formData))) {
           setSaveStatus('saving');
-          await saveFormToDb(fId);
+          await saveRef.current(fId);
           markSavedBriefly();
         }
       }
     }, AUTOSAVE_INTERVAL);
-
     return () => clearInterval(interval);
-  }, [allFormIds, formsMap, saveFormToDb, isFormEmpty, markSavedBriefly]);
+  }, [markSavedBriefly]);
 
   // ── Load all forms ──
+  // Solo carga los formatos que aún no están: agregar uno a mitad de consulta no
+  // borra lo escrito en los demás ni pierde sus respuestas ya guardadas.
   useEffect(() => {
     let vigente = true;
-    const loadAllForms = async () => {
-      if (allFormIds.length === 0) return;
-      setLoading(true);
-      setError("");
-
+    const loadMissingForms = async () => {
+      const toLoad = allFormIds.filter(id => !formsMapRef.current[id]);
+      if (toLoad.length === 0) return;
+      const firstLoad = !loadedOnceRef.current;
+      if (firstLoad) {
+        setLoading(true);
+        setError("");
+      }
       try {
         const [headerResult, ...formResults] = await Promise.all([
-          baseDatos.from("configuracion_encabezado" as any).select("*").limit(1).single(),
-          ...allFormIds.map(id => fetchFormById(id)),
-        ]);
+          firstLoad
+            ? db.from("configuracion_encabezado" as any).select("*").limit(1).single()
+            : Promise.resolve({ data: null }),
+          ...toLoad.map(id => fetchFormById(id)),
+        ] as Promise<any>[]);
         if (!vigente) return;
+        if (headerResult?.data) setHeaderConfig(headerResult.data);
 
-        if (headerResult.data) {
-          setHeaderConfig(headerResult.data);
+        // Respuestas ya guardadas de esta consulta: se recuperan al reabrirla.
+        const savedByForm: Record<string, { id: string; datos: Record<string, any>; version?: number }> = {};
+        if (patientId && consultationId) {
+          const { data: savedRows } = await db
+            .from("respuestas_formularios" as any)
+            .select("id, formulario_id, formulario_version, admision_id, datos_respuesta, fhir_extensions")
+            .eq("paciente_id", patientId)
+            // Un registro anulado (p. ej. historia equivocada) no vuelve a la consulta.
+            .eq("estado_registro", "active")
+            .in("formulario_id", toLoad)
+            .order("created_at", { ascending: false })
+            .limit(50);
+          if (!vigente) return;
+          for (const row of (savedRows as any[]) ?? []) {
+            const sameConsultation = row.fhir_extensions?.consulta_id === consultationId || (isConsultationUUID && row.admision_id === consultationId);
+            if (sameConsultation && !savedByForm[row.formulario_id]) {
+              savedByForm[row.formulario_id] = { id: row.id, datos: row.datos_respuesta ?? {}, version: row.formulario_version ?? undefined };
+            }
+          }
+        }
+
+        // Un registro ya guardado se retoma con las preguntas de su versión, no con las del formato editado después.
+        const versionQuestions: Record<string, { preguntas: QuestionData[]; version: number }> = {};
+        const outdated = toLoad.filter((fId, idx) => {
+          const saved = savedByForm[fId];
+          const current = formResults[idx]?.form?.version;
+          return saved?.version && current && saved.version !== current;
+        });
+        if (outdated.length) {
+          const { data: versionRows } = await db
+            .from("formularios_versiones" as any)
+            .select("formulario_id, version, preguntas")
+            .in("formulario_id", outdated);
+          if (!vigente) return;
+          for (const row of (versionRows as any[]) ?? []) {
+            if (row.version === savedByForm[row.formulario_id]?.version) {
+              versionQuestions[row.formulario_id] = { preguntas: row.preguntas ?? [], version: row.version };
+            }
+          }
         }
 
         const newFormsMap: Record<string, FormEntry> = {};
-
-        formResults.forEach((result, idx) => {
-          const fId = allFormIds[idx];
+        formResults.forEach((result: any, idx: number) => {
+          const fId = toLoad[idx];
           if (result.form) {
-            const qs = result.form.questions as QuestionData[] || [];
             newFormsMap[fId] = {
               id: fId,
-              questions: qs,
+              questions: versionQuestions[fId]?.preguntas ?? ((result.form.questions as QuestionData[]) || []),
               title: result.form.title,
               description: result.form.description,
               formType: result.form.formType || "historia_clinica",
-              formData: {},
-              saved: false,
+              version: versionQuestions[fId]?.version ?? savedByForm[fId]?.version ?? result.form.version,
+              formData: savedByForm[fId]?.datos ?? {},
+              saved: !!savedByForm[fId],
               isDirty: false,
+              responseId: savedByForm[fId]?.id,
             };
-
-            // Restore draft
+            if (savedByForm[fId]) responseIdsRef.current[fId] = savedByForm[fId].id;
+            // Borrador temporal (cambios aún no guardados, más recientes que la base)
             const dk = `kerhub-draft-${fId}${patientId ? `-${patientId}` : ''}${consultationId ? `-${consultationId}` : ''}`;
             try {
               const savedDraft = localStorage.getItem(dk);
               if (savedDraft) {
-                newFormsMap[fId].formData = { ...newFormsMap[fId].formData, ...JSON.parse(savedDraft) };
+                const draft = JSON.parse(savedDraft) as Record<string, unknown>;
+                const base = newFormsMap[fId].formData;
+                // Pendiente solo si el borrador trae algo distinto de lo guardado.
+                const differs = Object.keys(draft).some(k => JSON.stringify(draft[k]) !== JSON.stringify(base[k]));
+                newFormsMap[fId].formData = { ...base, ...draft };
+                newFormsMap[fId].isDirty = differs;
+                if (!differs) localStorage.removeItem(dk);
               }
-            } catch { /* ignore */ }
+            } catch { /* borrador ilegible: se ignora */ }
           }
-          if (result.error && idx === 0) {
-            setError(result.error);
-          }
+          if (result.error && firstLoad && idx === 0) setError(result.error);
         });
 
-        setFormsMap(newFormsMap);
-        setActiveFormId(allFormIds[0]);
+        setFormsMap(prev => ({ ...newFormsMap, ...prev }));
+        setLoadCount(c => c + 1);
+        if (firstLoad) setActiveFormId(allFormIds[0]);
+        loadedOnceRef.current = true;
         draftRestoredRef.current = true;
-      } catch (error) {
-        console.error('Error loading forms:', error);
-        if (vigente) setError("Error al cargar el formulario");
+      } catch {
+        if (vigente) setError("No se pudo cargar el formulario. Intenta de nuevo.");
       } finally {
-        if (vigente) setLoading(false);
+        if (vigente && firstLoad) setLoading(false);
       }
     };
-
-    loadAllForms();
+    loadMissingForms();
     return () => { vigente = false; };
   }, [allFormIds, patientId, consultationId]);
 
@@ -586,15 +690,16 @@ const FormViewer = () => {
     defaultValues: formData,
   });
 
-  // Reset form values when switching tabs
+  // Rellena los campos al cambiar de pestaña y al terminar de cargar (borrador recuperado)
   useEffect(() => {
     if (activeEntry) {
       form.reset(activeEntry.formData);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- solo al cambiar de pestaña; con activeEntry se reiniciaría el formulario en cada tecla
-  }, [activeFormId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- solo al cambiar de pestaña o al cargar; con activeEntry se reiniciaría en cada tecla
+  }, [activeFormId, loadCount]);
 
   const handleInputChange = (id: string, value: any) => {
+    versionRef.current[activeFormId] = (versionRef.current[activeFormId] ?? 0) + 1;
     setFormsMap(prev => ({
       ...prev,
       [activeFormId]: {
@@ -628,44 +733,15 @@ const FormViewer = () => {
   const getRequiredFieldErrors = useCallback((fId: string): string[] => {
     const entry = formsMap[fId];
     if (!entry) return [];
-    const missing: string[] = [];
-    entry.questions.forEach(q => {
-      if (!q.required || q.type === 'section' || q.type === 'score_total') return;
-      // Vitals store data as ${qId}_temperature, ${qId}_weight, etc.
-      if (q.type === 'vitals') {
-        if (!vitalsHasData(entry.formData, q.id)) missing.push(q.id);
-        return;
-      }
-      const val = entry.formData[q.id];
-      let isEmpty = false;
-      if (val === undefined || val === null || val === '') isEmpty = true;
-      else if (Array.isArray(val) && val.length === 0) isEmpty = true;
-      else if (typeof val === 'object' && !Array.isArray(val)) {
-        if (val.score !== undefined && val.selectedOptions) isEmpty = !val.selectedOptions?.length;
-        else isEmpty = Object.values(val).every((v: any) => !v && v !== 0);
-      }
-      if (isEmpty) missing.push(q.id);
-    });
-    return missing;
-  }, [formsMap, vitalsHasData]);
+    return missingRequired(entry.questions.filter(isAnswerable), entry.formData).map(q => q.id);
+  }, [formsMap]);
 
   // ── Helper: check if form has any response ──
   const formHasAnyResponse = useCallback((fId: string): boolean => {
     const entry = formsMap[fId];
     if (!entry) return false;
-    return entry.questions.filter(q => q.type !== 'section' && q.type !== 'score_total').some(q => {
-      // Vitals store data as ${qId}_key
-      if (q.type === 'vitals') return vitalsHasData(entry.formData, q.id);
-      const val = entry.formData[q.id];
-      if (val === undefined || val === null || val === '') return false;
-      if (Array.isArray(val) && val.length === 0) return false;
-      if (typeof val === 'object' && !Array.isArray(val)) {
-        if (val.score !== undefined) return !!val.selectedOptions?.length;
-        return Object.values(val).some((v: any) => !!v || v === 0);
-      }
-      return true;
-    });
-  }, [formsMap, vitalsHasData]);
+    return entry.questions.some(q => hasPartialAnswer(q, entry.formData));
+  }, [formsMap]);
 
   // ── Helper: check if all required fields are filled ──
   const allRequiredFilled = useCallback((fId: string): boolean => {
@@ -689,6 +765,41 @@ const FormViewer = () => {
     if (entry.saved && !reqFilled) return { label: `En progreso - Guardado parcial ✓ ${entry.lastSavedTime || ''}`, color: '#f97316', status: 'guardado_parcial' };
     return { label: 'En progreso - Sin guardar', color: '#f97316', status: 'en_progreso_sin_guardar' };
   }, [formsMap, formHasAnyResponse, allRequiredFilled]);
+
+  const handleSaveActive = async () => {
+    const fId = activeFormId;
+    const entry = formsMap[fId];
+    if (!entry || isCompleted) return;
+    setSaveStatus('saving');
+    const ok = await saveFormToDb(fId, true);
+    if (!ok) { setSaveStatus('idle'); return; }
+    markSavedBriefly();
+    const missing = getRequiredFieldErrors(fId);
+    setValidationErrorsByForm(prev => ({ ...prev, [fId]: missing }));
+    if (missing.length > 0) {
+      uiToast({
+        title: "Guardado parcial",
+        description: missing.length === 1
+          ? `Falta 1 campo obligatorio en «${entry.title}». Está marcado en rojo.`
+          : `Faltan ${missing.length} campos obligatorios en «${entry.title}». Están marcados en rojo.`,
+      });
+      document.querySelector(`[id^="q-${missing[0]}"]`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+    } else {
+      uiToast({ title: "Formato guardado", description: `«${entry.title}» está completo.` });
+    }
+  };
+  const saveActiveRef = useRef(handleSaveActive);
+  saveActiveRef.current = handleSaveActive;
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s") {
+        e.preventDefault();
+        void saveActiveRef.current();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
 
   const processFormValues = (qs: QuestionData[], fd: FormData, rawValues: any) => {
     const processedValues = { ...rawValues };
@@ -800,7 +911,7 @@ const FormViewer = () => {
     }
 
     if (resolvedAdmisionId) {
-      const { error: admError } = await baseDatos
+      const { error: admError } = await db
         .from("admisiones" as any)
         .update({ estado: 'completada', fecha_fin: new Date().toISOString() })
         .eq('id', resolvedAdmisionId);
@@ -880,7 +991,7 @@ const FormViewer = () => {
     if (!pendingValues) return;
     setShowConfirmModal(false);
 
-    const { data: { user } } = await baseDatos.auth.getUser();
+    const { data: { user } } = await db.auth.getUser();
     const medicoId = user?.id;
 
     if (patientId && !medicoId) {
@@ -905,10 +1016,11 @@ const FormViewer = () => {
     let hadError = false;
     for (const { fId, data } of formsToSave) {
       if (patientId && medicoId) {
-        const { error: insertError } = await baseDatos
+        const { error: insertError } = await db
           .from("respuestas_formularios" as any)
           .insert({
             formulario_id: fId,
+            formulario_version: formsMap[fId]?.version,
             paciente_id: patientId,
             admision_id: resolvedAdmisionId,
             medico_id: medicoId,
@@ -1062,15 +1174,7 @@ const FormViewer = () => {
         <FormProvider {...form}>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              {questions.map(question => (
-                <QuestionRenderer
-                  key={question.id}
-                  question={question}
-                  formData={formData}
-                  onChange={handleInputChange}
-                  errors={form.formState.errors}
-                />
-              ))}
+              <SectionedForm questions={questions} formData={formData} onChange={handleInputChange} errors={form.formState.errors} />
               <div className="pt-4">
                 <Button type="submit" className="w-full">
                   Completar formulario
@@ -1112,23 +1216,15 @@ const FormViewer = () => {
           </div>
         </div>
         
-        <div className="bg-card p-6 rounded-lg shadow-sm border border-border/50 print:shadow-none print:border-none">
+        <div className="print:bg-card">
           <div className="hidden print:block">
             <FormHeaderPreview config={headerConfig} formTitle={formTitle} />
           </div>
           <FormProvider {...form}>
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3">
-                {questions.map(question => (
-                  <QuestionRenderer
-                    key={question.id}
-                    question={question}
-                    formData={formData}
-                    onChange={handleInputChange}
-                    errors={form.formState.errors}
-                  />
-                ))}
-                <Button type="submit" className="w-full sm:w-auto print:hidden gap-2"><Save size={16} />Guardar</Button>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <SectionedForm questions={questions} formData={formData} onChange={handleInputChange} errors={form.formState.errors} />
+                <Button type="submit" className="h-11 w-full gap-2 rounded-full px-6 sm:w-auto print:hidden"><Save size={16} />Guardar</Button>
               </form>
             </Form>
           </FormProvider>
@@ -1155,61 +1251,32 @@ const FormViewer = () => {
       </div>
 
       {/* Fixed header bar */}
-      <div className="shrink-0 print:hidden bg-card border-b px-6 py-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
+      <div className="shrink-0 print:hidden bg-card border-b px-6 py-2.5">
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex min-w-0 flex-1 items-center gap-3">
             <Button
               variant="ghost"
+              size="icon"
               onClick={handleNavigateBack}
-              className="group flex items-center gap-2 px-4 py-2 rounded-xl bg-card/60 backdrop-blur-md border border-border/50 hover:bg-primary/10 hover:border-primary/30 transition-all duration-200"
+              aria-label="Volver"
+              title="Volver"
+              className="h-9 w-9 shrink-0 rounded-full text-muted-foreground hover:bg-primary/10 hover:text-primary"
             >
-              <div className="p-1.5 rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors">
-                <ArrowLeft className="h-4 w-4 text-primary" />
-              </div>
-              <span className="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors">
-                Volver
-              </span>
+              <ArrowLeft className="h-5 w-5" />
             </Button>
-            <div>
-              <h1 className="text-lg font-semibold">
-                {isMultiForm ? 'Consulta' : formTitle}
-              </h1>
-              {!isMultiForm && formDescription && (
-                <p className="text-xs text-muted-foreground">{formDescription}</p>
-              )}
-              {isMultiForm && (
-                <p className="text-xs text-muted-foreground">{allFormIds.length} formularios</p>
-              )}
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            {showRegistro ? (
-              <Button variant="outline" size="sm" className="gap-1.5 h-8 text-xs" onClick={() => {
-                setShowRegistro(false);
-                if (panelStateBeforeRegistroRef.current !== null) {
-                  setIsCollapsed(panelStateBeforeRegistroRef.current);
-                  panelStateBeforeRegistroRef.current = null;
-                }
-              }}>
-                <ArrowLeft className="w-3.5 h-3.5" />
-                Volver al formulario
-              </Button>
+            {patientId ? (
+              <PatientHeaderBanner inline pacienteId={patientId} admisionId={resolvedAdmisionId || undefined} />
             ) : (
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 text-muted-foreground"
-                title="Registro de Atenciones"
-                onClick={() => {
-                  panelStateBeforeRegistroRef.current = isCollapsed;
-                  setIsCollapsed(true);
-                  setShowRegistro(true);
-                }}
-              >
-                <ClipboardList className="w-4 h-4" />
-              </Button>
+              <h1 className="truncate text-base font-semibold">{isMultiForm ? 'Consulta' : formTitle}</h1>
             )}
-
+          </div>
+          <div className="flex shrink-0 items-center gap-2">
+            {isConsultationForm && (
+              <span className={cn("mr-1 hidden text-[13px] md:inline", isCompleted ? "font-semibold text-green-700 dark:text-green-400" : "text-muted-foreground")}>
+                {isCompleted ? "Atención completada" : "Consulta en curso"}
+                {isMultiForm ? ` · ${allFormIds.length} formatos` : ""}
+              </span>
+            )}
             {/* Incapacidad button */}
             {patientId && resolvedAdmisionId && (
               <Popover>
@@ -1305,42 +1372,67 @@ const FormViewer = () => {
                   <LinkIcon className="w-4 h-4" />
                   Compartir enlace
                 </DropdownMenuItem>
+                {historyEntry && patientId && !isCompleted && (
+                  <DropdownMenuItem onClick={() => setShowChangeHistory(true)} className="gap-2 text-sm">
+                    <Repeat className="w-4 h-4" />
+                    Cambiar historia clínica
+                  </DropdownMenuItem>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
+            {historyEntry && patientId && showChangeHistory && (
+              <ChangeHistoryDialog
+                open={showChangeHistory}
+                onOpenChange={setShowChangeHistory}
+                current={{
+                  id: historyEntry.id,
+                  title: historyEntry.title,
+                  questions: historyEntry.questions,
+                  formData: historyEntry.formData,
+                  responseId: historyEntry.responseId ?? responseIdsRef.current[historyEntry.id],
+                }}
+                // Solo la admisión explícita de la consulta; si no hay, el diálogo busca la en curso del paciente.
+                admissionId={isConsultationUUID ? consultationId : null}
+                patientId={patientId}
+                canAnnul={hasRole("doctor") || hasRole("admin")}
+                draftKeyFor={(fId) => `kerhub-draft-${fId}${patientId ? `-${patientId}` : ""}${consultationId ? `-${consultationId}` : ""}`}
+                onChanged={(newId, carried) => {
+                  // Misma consulta con la historia correcta en lugar de la equivocada.
+                  const params = new URLSearchParams(location.search);
+                  const forms = (params.get("forms") ?? "").split(",").filter(Boolean).map((id) => (id === historyEntry.id ? newId : id));
+                  if (forms.length) params.set("forms", [...new Set(forms)].join(","));
+                  sessionStorage.setItem("kerhub-history-changed", String(carried.length));
+                  window.location.assign(`/app/ver/${newId}?${params.toString()}`);
+                }}
+              />
+            )}
           </div>
         </div>
 
-        {isConsultationForm && (
-          isCompleted ? (
-            <div className="mt-1.5 flex items-center gap-1.5 text-[10px] tracking-wide uppercase" style={{ color: '#15803d' }}>
-              <CheckCircle className="w-3 h-3" />
-              Atención completada
-            </div>
-          ) : (
-            <p className="mt-1.5 text-[10px] text-muted-foreground tracking-wide uppercase">
-              ● Consulta en curso
-            </p>
-          )
-        )}
       </div>
 
       {/* Two-column area */}
       <div className="flex-1 min-h-0 flex overflow-hidden">
-        {/* LEFT — Form or Registro with its own scroll */}
-        <div className="flex-1 min-w-0 overflow-y-auto p-6 bg-background" style={{ overscrollBehavior: 'contain' }}>
-          {showRegistro && patientId ? (
-            <RegistroAtenciones
-              patientId={patientId}
-              headerConfig={headerConfig}
-            />
+        {/* Área de trabajo: paciente arriba y pestañas de carpeta a todo el ancho */}
+        {/* En el historial, el panel ocupa el alto que queda y sus columnas se desplazan solas: la página no hace scroll doble. */}
+        <div ref={workspaceRef} className={cn("flex-1 min-w-0 overflow-y-auto px-6 pb-6 pt-4 bg-canvas", workspaceTab === "registros" && "md:flex md:flex-col")} style={{ overscrollBehavior: 'contain' }}>
+          <div className="mb-4 shrink-0 print:hidden">
+            <FolderTabs id="consult.workspace.v2" label="Consulta" tabs={CONSULT_TABS} active={workspaceTab} onChange={openWorkspaceTab} initialVisible={CONSULT_INITIAL_TABS} />
+          </div>
+          {workspaceTab === "registros" && patientId ? (
+            <div className="overflow-hidden rounded-card bg-card shadow-card dark:border dark:border-border dark:shadow-none md:min-h-[360px] md:flex-1">
+              <RecordsHistory patientId={patientId} headerConfig={headerConfig} />
+            </div>
+          ) : workspaceTab === "antecedentes" && patientId ? (
+            <div className="rounded-card bg-card shadow-card dark:border dark:border-border dark:shadow-none">
+              <PatientHistoryPanel patientId={patientId} />
+            </div>
+          ) : workspaceTab.startsWith("orden-") && patientId ? (
+            <div className="min-h-[420px] rounded-card bg-card shadow-card dark:border dark:border-border dark:shadow-none">
+              <OrderTabContent type={workspaceTab.slice("orden-".length)} patientId={patientId} admisionId={resolvedAdmisionId} />
+            </div>
           ) : (
             <>
-              {patientId && (
-                <PatientHeaderBanner
-                  pacienteId={patientId}
-                  admisionId={resolvedAdmisionId || undefined}
-               />
-              )}
               {/* Multi-form chevron tabs + add button */}
               {!showRegistro && (
                 <div className="mb-4">
@@ -1375,14 +1467,6 @@ const FormViewer = () => {
                               className="h-full flex items-center gap-1.5 text-xs font-medium"
                             >
                               <span className="max-w-[160px] truncate">{entry.title}</span>
-                              {(() => {
-                                const st = getFormStatus(fId);
-                                return (
-                                  <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{
-                                    backgroundColor: st.status === 'sin_diligenciar' ? 'transparent' : st.color
-                                  }} />
-                                );
-                              })()}
                             </button>
                             {canRemove && (
                               <button
@@ -1434,9 +1518,17 @@ const FormViewer = () => {
                       : st.status === 'completo_guardado' ? CheckCircle
                       : XCircle;
                     return (
-                      <div className="h-6 flex items-center px-4 text-xs gap-1.5 rounded-b-md" style={{ backgroundColor: 'hsl(var(--muted) / 0.5)' }}>
-                        <StatusIcon className="w-3 h-3" style={{ color: st.color }} />
+                      <div className="flex min-h-10 items-center gap-2 rounded-b-md px-4 py-1.5 text-[13px]" style={{ backgroundColor: 'hsl(var(--muted) / 0.5)' }}>
+                        <StatusIcon className="h-3.5 w-3.5" style={{ color: st.color }} />
                         <span style={{ color: st.color }}>{st.label}</span>
+                        <div className="flex-1" />
+                        {!isCompleted && (
+                          <Button type="button" size="sm" variant="outline" onClick={() => void handleSaveActive()}
+                            disabled={saveStatus === 'saving'} className="h-8 gap-1.5 rounded-full" title="Guardar este formato (Ctrl+S)">
+                            {saveStatus === 'saving' ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
+                            Guardar formato
+                          </Button>
+                        )}
                       </div>
                     );
                   })()}
@@ -1496,116 +1588,36 @@ const FormViewer = () => {
               <FormProvider {...form}>
                 <Form {...form}>
                   <form onSubmit={(e) => e.preventDefault()} className={`space-y-3 max-w-none ${isCompleted ? 'pointer-events-none opacity-80' : ''}`}>
-                    {questions.map(question => {
-                      const hasValidationError = (validationErrorsByForm[activeFormId] || []).includes(question.id);
-                      return (
-                        <div key={question.id}>
-                          <div className={hasValidationError ? 'rounded-lg ring-1 ring-red-500' : ''}>
-                            <QuestionRenderer
-                              question={question}
-                              formData={formData}
-                              onChange={isCompleted ? () => {} : handleInputChange}
-                              errors={form.formState.errors}
-                            />
-                          </div>
-                          {hasValidationError && (
-                            <p className="text-xs mt-1 ml-1" style={{ color: '#ef4444' }}>Este campo es obligatorio</p>
-                          )}
-                        </div>
-                      );
-                    })}
+                    <SectionedForm
+                      questions={questions}
+                      formData={formData}
+                      onChange={isCompleted ? () => {} : handleInputChange}
+                      errors={form.formState.errors}
+                      invalidIds={validationErrorsByForm[activeFormId] || []}
+                      onOpenTab={openWorkspaceTab}
+                    />
                     <div className="h-12" />
                   </form>
                 </Form>
               </FormProvider>
-              {!isCompleted && (() => {
-                const formsWithData = allFormIds.filter(fId => formsMap[fId] && formHasAnyResponse(fId));
-                const allComplete = formsWithData.length > 0 && formsWithData.every(fId => {
-                  const st = getFormStatus(fId);
-                  return st.status === 'completo_guardado';
-                });
-                const isDisabled = isCompletingAttention || !allComplete;
-                const btn = (
+              {!isCompleted && (
+                // Siempre activo: al pulsarlo se valida y se dice qué formato y qué campos faltan.
+                <div className="sticky bottom-4 flex justify-end pointer-events-none print:hidden">
                   <Button
                     type="button"
-                    size="sm"
                     onClick={handleCompleteAttention}
-                    disabled={isDisabled}
-                    className="rounded-full shadow-lg pointer-events-auto gap-1.5 h-9 px-4 text-xs"
+                    disabled={isCompletingAttention}
+                    className="pointer-events-auto h-11 gap-2 rounded-full px-5 shadow-lg"
                   >
-                    {isCompletingAttention ? (
-                      <Loader2 size={14} className="animate-spin" />
-                    ) : (
-                      <CheckCircle size={14} />
-                    )}
+                    {isCompletingAttention ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle size={16} />}
                     Completar atención
                   </Button>
-                );
-                return (
-                  <div className="sticky bottom-4 flex justify-end pointer-events-none print:hidden">
-                    {!allComplete && !isCompletingAttention ? (
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <span className="pointer-events-auto">{btn}</span>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Hay formularios incompletos</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    ) : btn}
-                  </div>
-                );
-              })()}
+                </div>
+              )}
             </>
           )}
         </div>
 
-        {/* RIGHT — Resizable panel or collapsed strip */}
-        {!isCollapsed ? (
-          <>
-            {/* Resize handle */}
-            <div
-              className="w-1.5 hover:w-2 cursor-col-resize flex items-center justify-center hover:bg-primary/10 transition-all group shrink-0 print:hidden"
-              onMouseDown={handleResizeStart}
-            >
-              <div className="flex flex-col items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                <div className="w-0.5 h-1 bg-muted-foreground/30 rounded-full" />
-                <div className="w-0.5 h-1 bg-muted-foreground/30 rounded-full" />
-                <div className="w-0.5 h-1 bg-muted-foreground/30 rounded-full" />
-              </div>
-            </div>
-
-            {/* Panel */}
-            <div
-              className="shrink-0 overflow-hidden flex flex-col bg-muted/20 border-l print:hidden"
-              style={{ width: `${panelWidth}px` }}
-            >
-              <RightPanelTabs
-                patientId={patientId!}
-                admisionId={resolvedAdmisionId}
-                onCollapse={toggleCollapse}
-              />
-            </div>
-          </>
-        ) : (
-          /* Collapsed strip */
-          <div className="shrink-0 border-l flex flex-col items-center print:hidden">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => {
-                setIsCollapsed(false);
-                setPanelWidth(previousWidthRef.current || DEFAULT_PANEL_WIDTH);
-              }}
-              className="h-10 w-8 rounded-none hover:bg-muted text-muted-foreground"
-              title="Abrir panel de antecedentes"
-            >
-              <PanelRightOpen className="w-4 h-4" />
-            </Button>
-          </div>
-        )}
       </div>
 
       {/* Confirmation Modal (legacy for non-clinical) */}
@@ -1764,7 +1776,7 @@ const FormViewer = () => {
                 setShowCompletedDialog(false);
                 panelStateBeforeRegistroRef.current = isCollapsed;
                 setIsCollapsed(true);
-                setShowRegistro(true);
+                setWorkspaceTab("registros");
               }}
             >
               <ClipboardList className="w-4 h-4" />

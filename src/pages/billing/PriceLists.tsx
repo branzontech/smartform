@@ -1,6 +1,6 @@
 import { escapeHtml } from "@/utils/orders/header-builder";
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { baseDatos } from "@/integrations/datos/cliente";
+import { db } from "@/integrations/data/client";
 import { toast } from "sonner";
 import {
   REGULATORY_COUNTRIES,
@@ -47,13 +47,13 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { EncabezadoModulo } from "@/components/kit/EncabezadoModulo";
-import { AccionesFila } from "@/components/kit/AccionesFila";
-import { TablaSkeleton } from "@/components/kit/TablaSkeleton";
+import { ModuleHeader } from "@/components/kit/ModuleHeader";
+import { RowActions } from "@/components/kit/RowActions";
+import { TableSkeleton } from "@/components/kit/TableSkeleton";
 import {
-  BarraTabla, CeldaEstado, TablaDatos, TablaSimple, botonPrimario, useTablaDatos,
-  type ColumnaSimple, type ColumnaTabla, type FiltroTabla, type SegmentoTabla,
-} from "@/components/kit/tabla";
+  TableToolbar, StatusCell, DataTable, SimpleTable, primaryButtonClass, useDataTable,
+  type SimpleColumn, type TableColumn, type TableFilter, type TableSegment,
+} from "@/components/kit/table";
 
 // Types
 interface TarifarioMaestro {
@@ -61,6 +61,10 @@ interface TarifarioMaestro {
   nombre: string;
   descripcion: string | null;
   moneda: string;
+  /** Unidad de los valores: pesos o UVB (manual SOAT indexado). */
+  unidad: string;
+  /** referencia (SOAT, ISS…), propio, mercado o particular. */
+  tipo: string;
   estado: boolean;
   fhir_extensions: Record<string, any>;
   created_at: string;
@@ -79,7 +83,7 @@ interface TarifarioServicio {
   created_at: string;
 }
 
-const MONEDAS = [
+const CURRENCIES = [
   { value: "COP", label: "🇨🇴 COP - Peso Colombiano" },
   { value: "MXN", label: "🇲🇽 MXN - Peso Mexicano" },
   { value: "USD", label: "🇺🇸 USD - Dólar" },
@@ -90,15 +94,15 @@ const MONEDAS = [
   { value: "EUR", label: "🇪🇺 EUR - Euro" },
 ];
 
-const SISTEMAS_CODIFICACION = [
+const CODING_SYSTEMS = [
   { value: "CUPS", label: "CUPS" },
   { value: "CPT", label: "CPT" },
   { value: "SNOMED", label: "SNOMED CT" },
   { value: "INTERNO", label: "Interno" },
 ];
 
-const fechaCorta = new Intl.DateTimeFormat("es-CO", { day: "2-digit", month: "short", year: "numeric" });
-const derecha = "text-right tabular-nums";
+const shortDate = new Intl.DateTimeFormat("es-CO", { day: "2-digit", month: "short", year: "numeric" });
+const rightAligned = "text-right tabular-nums";
 
 const formatCurrency = (valor: number, moneda: string) => {
   try {
@@ -108,36 +112,36 @@ const formatCurrency = (valor: number, moneda: string) => {
   }
 };
 
-const COLUMNAS: ColumnaTabla<TarifarioMaestro>[] = [
-  { id: "nombre", titulo: "Nombre", valor: (t) => t.nombre, principal: true, fija: true, className: "min-w-[220px]" },
-  { id: "descripcion", titulo: "Descripción", valor: (t) => t.descripcion, className: "max-w-[280px] truncate", oculta: true },
-  { id: "moneda", titulo: "Moneda", valor: (t) => t.moneda, className: "font-mono text-xs" },
-  { id: "servicios", titulo: "Servicios", valor: (t) => t.servicios_count ?? 0, className: derecha },
-  { id: "creado", titulo: "Creado", valor: (t) => t.created_at, celda: (t) => fechaCorta.format(new Date(t.created_at)), className: "tabular-nums" },
+const COLUMNS: TableColumn<TarifarioMaestro>[] = [
+  { id: "name", title: "Nombre", value: (t) => t.nombre, primary: true, alwaysVisible: true, className: "min-w-[220px]" },
+  { id: "description", title: "Descripción", value: (t) => t.descripcion, className: "max-w-[280px] truncate", hidden: true },
+  { id: "currency", title: "Moneda", value: (t) => t.moneda, className: "font-mono text-xs" },
+  { id: "services", title: "Servicios", value: (t) => t.servicios_count ?? 0, className: rightAligned },
+  { id: "createdAt", title: "Creado", value: (t) => t.created_at, cell: (t) => shortDate.format(new Date(t.created_at)), className: "tabular-nums" },
   {
-    id: "estado", titulo: "Estado", valor: (t) => (t.estado ? "Activo" : "Inactivo"), sinPadding: true,
-    celda: (t) => <CeldaEstado tono={t.estado ? "exito" : "neutro"} texto={t.estado ? "Activo" : "Inactivo"} />,
+    id: "status", title: "Estado", value: (t) => (t.estado ? "Activo" : "Inactivo"), flush: true,
+    cell: (t) => <StatusCell tone={t.estado ? "success" : "neutral"} text={t.estado ? "Activo" : "Inactivo"} />,
   },
 ];
 
-const FILTROS: FiltroTabla<TarifarioMaestro>[] = [
-  { id: "moneda", titulo: "Moneda", valor: (t) => t.moneda },
+const FILTERS: TableFilter<TarifarioMaestro>[] = [
+  { id: "currency", title: "Moneda", value: (t) => t.moneda },
 ];
 
-const SEGMENTOS: SegmentoTabla<TarifarioMaestro>[] = [
-  { id: "todos", titulo: "Todos", cumple: () => true },
-  { id: "activos", titulo: "Activos", cumple: (t) => t.estado },
-  { id: "inactivos", titulo: "Inactivos", cumple: (t) => !t.estado },
+const SEGMENTS: TableSegment<TarifarioMaestro>[] = [
+  { id: "all", title: "Todos", match: () => true },
+  { id: "active", title: "Activos", match: (t) => t.estado },
+  { id: "inactive", title: "Inactivos", match: (t) => !t.estado },
 ];
 
-const claveFila = (t: TarifarioMaestro) => t.id;
+const rowKey = (t: TarifarioMaestro) => t.id;
 
 interface PriceListsProps {
   /** Dentro de las pestañas de Facturación: sin encabezado propio; «Nuevo tarifario» va en la barra de la tabla. */
-  embebido?: boolean;
+  embedded?: boolean;
 }
 
-const PriceLists = ({ embebido = false }: PriceListsProps) => {
+const PriceLists = ({ embedded = false }: PriceListsProps) => {
   // Master list state
   const [tarifarios, setTarifarios] = useState<TarifarioMaestro[]>([]);
   const [loading, setLoading] = useState(true);
@@ -150,6 +154,8 @@ const PriceLists = ({ embebido = false }: PriceListsProps) => {
     nombre: "",
     descripcion: "",
     moneda: "COP",
+    unidad: "COP",
+    tipo: "propio",
   });
 
   // Detail sheet state
@@ -201,7 +207,7 @@ const PriceLists = ({ embebido = false }: PriceListsProps) => {
   const fetchTarifarios = useCallback(async () => {
     setLoading(true);
     try {
-      const { data, error } = await baseDatos
+      const { data, error } = await db
         .from("tarifarios_maestros" as any)
         .select("*")
         .order("created_at", { ascending: false });
@@ -212,7 +218,7 @@ const PriceLists = ({ embebido = false }: PriceListsProps) => {
         const counts: Record<string, number> = {};
 
         if (ids.length > 0) {
-          const { data: countData } = await baseDatos
+          const { data: countData } = await db
             .from("tarifarios_servicios" as any)
             .select("tarifario_id")
             .in("tarifario_id", ids);
@@ -245,7 +251,7 @@ const PriceLists = ({ embebido = false }: PriceListsProps) => {
   const fetchServicios = useCallback(async (tarifarioId: string) => {
     setLoadingServicios(true);
     try {
-      const { data, error } = await baseDatos
+      const { data, error } = await db
         .from("tarifarios_servicios" as any)
         .select("*")
         .eq("tarifario_id", tarifarioId)
@@ -258,7 +264,7 @@ const PriceLists = ({ embebido = false }: PriceListsProps) => {
     }
   }, []);
 
-  const t = useTablaDatos({ id: "facturacion.tarifarios", filas: tarifarios, columnas: COLUMNAS, claveFila, filtros: FILTROS, segmentos: SEGMENTOS });
+  const t = useDataTable({ id: "billing.priceLists", rows: tarifarios, columns: COLUMNS, rowKey, filters: FILTERS, segments: SEGMENTS });
 
   const filteredServicios = servicios.filter((s) => {
     const q = searchServicios.toLowerCase();
@@ -271,7 +277,7 @@ const PriceLists = ({ embebido = false }: PriceListsProps) => {
 
   // Master CRUD
   const resetMasterForm = () => {
-    setMasterForm({ nombre: "", descripcion: "", moneda: "COP" });
+    setMasterForm({ nombre: "", descripcion: "", moneda: "COP", unidad: "COP", tipo: "propio" });
     setEditingTarifario(null);
   };
 
@@ -286,6 +292,8 @@ const PriceLists = ({ embebido = false }: PriceListsProps) => {
       nombre: t.nombre,
       descripcion: t.descripcion || "",
       moneda: t.moneda,
+      unidad: t.unidad ?? "COP",
+      tipo: t.tipo ?? "propio",
     });
     setDialogOpen(true);
   };
@@ -298,23 +306,27 @@ const PriceLists = ({ embebido = false }: PriceListsProps) => {
     setSaving(true);
     try {
       if (editingTarifario) {
-        const { error } = await baseDatos
+        const { error } = await db
           .from("tarifarios_maestros" as any)
           .update({
             nombre: masterForm.nombre,
             descripcion: masterForm.descripcion || null,
             moneda: masterForm.moneda,
+            unidad: masterForm.unidad,
+            tipo: masterForm.tipo,
           } as any)
           .eq("id", editingTarifario.id);
         if (error) throw error;
         toast.success("Tarifario actualizado");
       } else {
-        const { error } = await baseDatos
+        const { error } = await db
           .from("tarifarios_maestros" as any)
           .insert({
             nombre: masterForm.nombre,
             descripcion: masterForm.descripcion || null,
             moneda: masterForm.moneda,
+            unidad: masterForm.unidad,
+            tipo: masterForm.tipo,
           } as any);
         if (error) throw error;
         toast.success("Tarifario creado");
@@ -330,7 +342,7 @@ const PriceLists = ({ embebido = false }: PriceListsProps) => {
   };
 
   const toggleEstado = async (t: TarifarioMaestro) => {
-    const { error } = await baseDatos
+    const { error } = await db
       .from("tarifarios_maestros" as any)
       .update({ estado: !t.estado } as any)
       .eq("id", t.id);
@@ -386,7 +398,7 @@ const PriceLists = ({ embebido = false }: PriceListsProps) => {
 
     setAddingServicio(true);
     try {
-      const { error } = await baseDatos
+      const { error } = await db
         .from("tarifarios_servicios" as any)
         .insert({
           tarifario_id: selectedTarifario.id,
@@ -412,7 +424,7 @@ const PriceLists = ({ embebido = false }: PriceListsProps) => {
   const handleToggleServicio = async (servicio: TarifarioServicio) => {
     if (!selectedTarifario) return;
     const newActivo = !servicio.activo;
-    const { error } = await baseDatos
+    const { error } = await db
       .from("tarifarios_servicios" as any)
       .update({ activo: newActivo } as any)
       .eq("id", servicio.id);
@@ -475,7 +487,7 @@ const PriceLists = ({ embebido = false }: PriceListsProps) => {
     }
     setSavingServicio(true);
     try {
-      const { error } = await baseDatos
+      const { error } = await db
         .from("tarifarios_servicios" as any)
         .update({
           sistema_codificacion: editServicioForm.sistema_codificacion,
@@ -499,7 +511,7 @@ const PriceLists = ({ embebido = false }: PriceListsProps) => {
   // Print tarifario
   const handlePrintTarifario = async (tarifario: TarifarioMaestro) => {
     // Fetch services for this tarifario
-    const { data, error } = await baseDatos
+    const { data, error } = await db
       .from("tarifarios_servicios" as any)
       .select("*")
       .eq("tarifario_id", tarifario.id)
@@ -605,7 +617,7 @@ const PriceLists = ({ embebido = false }: PriceListsProps) => {
     setCloning(true);
     try {
       // 1. Create new tarifario maestro
-      const { data: newMaestro, error: errMaestro } = await baseDatos
+      const { data: newMaestro, error: errMaestro } = await db
         .from("tarifarios_maestros" as any)
         .insert({
           nombre: cloneForm.nombre,
@@ -618,7 +630,7 @@ const PriceLists = ({ embebido = false }: PriceListsProps) => {
       if (errMaestro || !newMaestro) throw errMaestro || new Error("No se pudo crear");
 
       // 2. Fetch old services (only activo)
-      const { data: oldServices, error: errFetch } = await baseDatos
+      const { data: oldServices, error: errFetch } = await db
         .from("tarifarios_servicios" as any)
         .select("*")
         .eq("tarifario_id", cloneTarget.id)
@@ -636,14 +648,14 @@ const PriceLists = ({ embebido = false }: PriceListsProps) => {
           activo: true,
           metadata_regulatoria: s.metadata_regulatoria || {},
         }));
-        const { error: errInsert } = await baseDatos
+        const { error: errInsert } = await db
           .from("tarifarios_servicios" as any)
           .insert(newServices as any);
         if (errInsert) throw errInsert;
       }
 
       // 4. Deactivate old tarifario
-      await baseDatos
+      await db
         .from("tarifarios_maestros" as any)
         .update({ estado: false } as any)
         .eq("id", cloneTarget.id);
@@ -659,24 +671,24 @@ const PriceLists = ({ embebido = false }: PriceListsProps) => {
     }
   };
 
-  const columnasServicios: ColumnaSimple<TarifarioServicio>[] = [
-    { id: "sistema", titulo: "Sistema", celda: (sv) => sv.sistema_codificacion, className: "text-xs" },
-    { id: "codigo", titulo: "Código", celda: (sv) => sv.codigo_servicio, className: "font-mono text-xs" },
-    { id: "descripcion", titulo: "Descripción", celda: (sv) => sv.descripcion_servicio, principal: true },
-    { id: "valor", titulo: "Valor", celda: (sv) => formatCurrency(sv.valor, selectedTarifario?.moneda || "COP"), className: derecha },
+  const serviceColumns: SimpleColumn<TarifarioServicio>[] = [
+    { id: "codingSystem", title: "Sistema", cell: (sv) => sv.sistema_codificacion, className: "text-xs" },
+    { id: "code", title: "Código", cell: (sv) => sv.codigo_servicio, className: "font-mono text-xs" },
+    { id: "description", title: "Descripción", cell: (sv) => sv.descripcion_servicio, primary: true },
+    { id: "value", title: "Valor", cell: (sv) => formatCurrency(sv.valor, selectedTarifario?.moneda || "COP"), className: rightAligned },
     {
-      id: "estado", titulo: "Estado", className: "w-28 p-0 text-center",
-      celda: (sv) => <CeldaEstado tono={sv.activo ? "exito" : "neutro"} texto={sv.activo ? "Activo" : "Inactivo"} />,
+      id: "status", title: "Estado", className: "w-28 p-0 text-center",
+      cell: (sv) => <StatusCell tone={sv.activo ? "success" : "neutral"} text={sv.activo ? "Activo" : "Inactivo"} />,
     },
     {
-      id: "acciones", titulo: <span className="sr-only">Acciones</span>, className: "w-px px-2 text-right",
-      celda: (sv) => (
+      id: "actions", title: <span className="sr-only">Acciones</span>, className: "w-px px-2 text-right",
+      cell: (sv) => (
         <div className="flex justify-end">
-          <AccionesFila
-            nombre={sv.descripcion_servicio}
+          <RowActions
+            name={sv.descripcion_servicio}
             menu={[
-              { titulo: "Editar", icono: Pencil, onClick: () => openEditServicio(sv) },
-              { titulo: sv.activo ? "Inactivar" : "Activar", icono: Power, onClick: () => void handleToggleServicio(sv) },
+              { title: "Editar", icon: Pencil, onClick: () => openEditServicio(sv) },
+              { title: sv.activo ? "Inactivar" : "Activar", icon: Power, onClick: () => void handleToggleServicio(sv) },
             ]}
           />
         </div>
@@ -684,47 +696,47 @@ const PriceLists = ({ embebido = false }: PriceListsProps) => {
     },
   ];
 
-  const tabla = (
-    <TablaDatos
+  const table = (
+    <DataTable
       t={t}
-      cargando={loading}
-      onFilaClick={openDetailSheet}
-      barra={
-        <BarraTabla
+      loading={loading}
+      onRowClick={openDetailSheet}
+      toolbar={
+        <TableToolbar
           t={t}
-          nombre={["tarifario", "tarifarios"]}
+          name={["tarifario", "tarifarios"]}
           placeholder="Buscar por nombre o moneda"
-          nombreArchivo="tarifarios"
-          acciones={embebido ? (
-            <Button size="sm" className={botonPrimario} onClick={openNewDialog}>
+          fileName="tarifarios"
+          actions={embedded ? (
+            <Button size="sm" className={primaryButtonClass} onClick={openNewDialog}>
               <Plus className="h-4 w-4" />
               Nuevo tarifario
             </Button>
           ) : undefined}
         />
       }
-      acciones={(tf) => (
-        <AccionesFila
-          nombre={tf.nombre}
-          onVer={() => openDetailSheet(tf)}
+      actions={(tf) => (
+        <RowActions
+          name={tf.nombre}
+          onView={() => openDetailSheet(tf)}
           menu={[
-            { titulo: "Editar", icono: Pencil, onClick: () => openEditDialog(tf) },
-            { titulo: tf.estado ? "Desactivar" : "Activar", icono: Power, onClick: () => void toggleEstado(tf) },
-            { titulo: "Actualizar (clonar)", icono: Copy, onClick: () => openCloneDialog(tf) },
-            { titulo: "Imprimir", icono: Printer, onClick: () => void handlePrintTarifario(tf) },
+            { title: "Editar", icon: Pencil, onClick: () => openEditDialog(tf) },
+            { title: tf.estado ? "Desactivar" : "Activar", icon: Power, onClick: () => void toggleEstado(tf) },
+            { title: "Actualizar (clonar)", icon: Copy, onClick: () => openCloneDialog(tf) },
+            { title: "Imprimir", icon: Printer, onClick: () => void handlePrintTarifario(tf) },
           ]}
         />
       )}
-      vacio="Aún no hay tarifarios. Crea uno con «Nuevo tarifario»."
+      empty="Aún no hay tarifarios. Crea uno con «Nuevo tarifario»."
     />
   );
 
   return (
     <>
-      {embebido ? tabla : (
+      {embedded ? table : (
         <div className="mx-auto max-w-7xl space-y-5 py-6">
-          <EncabezadoModulo titulo="Tarifarios" primaria={{ titulo: "Nuevo tarifario", onClick: openNewDialog }} />
-          {tabla}
+          <ModuleHeader title="Tarifarios" primary={{ title: "Nuevo tarifario", onClick: openNewDialog }} />
+          {table}
         </div>
       )}
 
@@ -760,6 +772,30 @@ const PriceLists = ({ embebido = false }: PriceListsProps) => {
                 className="mt-1.5 rounded-xl resize-none"
               />
             </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <Label htmlFor="price-list-type">Tipo de tarifario *</Label>
+                <Select value={masterForm.tipo} onValueChange={(v) => setMasterForm({ ...masterForm, tipo: v })}>
+                  <SelectTrigger id="price-list-type" className="mt-1.5 rounded-xl"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="referencia">Manual de referencia (SOAT, ISS…)</SelectItem>
+                    <SelectItem value="propio">Propio de la IPS</SelectItem>
+                    <SelectItem value="mercado">Del mercado</SelectItem>
+                    <SelectItem value="particular">Particular</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="price-list-unit">Valores en *</Label>
+                <Select value={masterForm.unidad} onValueChange={(v) => setMasterForm({ ...masterForm, unidad: v })}>
+                  <SelectTrigger id="price-list-unit" className="mt-1.5 rounded-xl"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="COP">Pesos</SelectItem>
+                    <SelectItem value="UVB">UVB (manual SOAT indexado)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
             <div>
               <Label>Moneda (ISO 4217) *</Label>
               <Select value={masterForm.moneda} onValueChange={(v) => setMasterForm({ ...masterForm, moneda: v })}>
@@ -767,7 +803,7 @@ const PriceLists = ({ embebido = false }: PriceListsProps) => {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {MONEDAS.map((m) => (
+                  {CURRENCIES.map((m) => (
                     <SelectItem key={m.value} value={m.value}>
                       {m.label}
                     </SelectItem>
@@ -847,7 +883,7 @@ const PriceLists = ({ embebido = false }: PriceListsProps) => {
                   >
                     <SelectTrigger className="mt-1 rounded-xl h-9 text-sm"><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      {SISTEMAS_CODIFICACION.map((s) => (
+                      {CODING_SYSTEMS.map((s) => (
                         <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
                       ))}
                     </SelectContent>
@@ -968,14 +1004,14 @@ const PriceLists = ({ embebido = false }: PriceListsProps) => {
             {/* Servicios del tarifario: un solo scroll (el de esta zona) */}
             <div className="flex-1 overflow-y-auto min-h-0">
               {loadingServicios ? (
-                <TablaSkeleton filas={4} columnas={5} />
+                <TableSkeleton rows={4} columns={5} />
               ) : (
-                <TablaSimple
-                  columnas={columnasServicios}
-                  filas={filteredServicios}
-                  claveFila={(sv) => sv.id}
-                  vacio={searchServicios ? "Ningún servicio coincide con la búsqueda." : "Sin servicios aún."}
-                  barra={
+                <SimpleTable
+                  columns={serviceColumns}
+                  rows={filteredServicios}
+                  rowKey={(sv) => sv.id}
+                  empty={searchServicios ? "Ningún servicio coincide con la búsqueda." : "Sin servicios aún."}
+                  toolbar={
                     <div className="relative">
                       <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
                       <Input

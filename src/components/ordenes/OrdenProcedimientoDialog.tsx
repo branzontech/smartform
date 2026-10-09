@@ -2,8 +2,8 @@ import React, { useState, useCallback, useMemo, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { AccionesFila } from "@/components/kit/AccionesFila";
-import { TablaSimple, type ColumnaSimple } from "@/components/kit/tabla";
+import { RowActions } from "@/components/kit/RowActions";
+import { SimpleTable, type SimpleColumn } from "@/components/kit/table";
 import {
   Save, Loader2, Search, X, Plus, Scissors,
 } from "lucide-react";
@@ -124,19 +124,19 @@ export default function OrdenProcedimientoDialog({
     return { totalProcs, totalAcumulado };
   }, [items]);
 
-  const columnasItems: ColumnaSimple<ProcedimientoLineItem>[] = [
-    { id: "codigo", titulo: "Código", celda: (i) => i.codigo, className: "font-mono text-xs" },
-    { id: "descripcion", titulo: "Descripción", celda: (i) => i.descripcion, principal: true, className: "max-w-[220px] truncate" },
-    { id: "cantidad", titulo: "Cant.", celda: (i) => i.cantidad, className: "w-16 text-right tabular-nums" },
-    { id: "dias", titulo: "Días", celda: (i) => i.dias, className: "w-16 text-right tabular-nums" },
-    { id: "total", titulo: "Total", celda: (i) => i.cantidad * i.dias, className: "w-16 text-right font-medium tabular-nums text-foreground" },
-    { id: "notas", titulo: "Notas", celda: (i) => i.notas || "—", className: "max-w-[140px] truncate" },
+  const itemColumns: SimpleColumn<ProcedimientoLineItem>[] = [
+    { id: "code", title: "Código", cell: (i) => i.codigo, className: "font-mono text-xs" },
+    { id: "description", title: "Descripción", cell: (i) => i.descripcion, primary: true, className: "max-w-[220px] truncate" },
+    { id: "quantity", title: "Cant.", cell: (i) => i.cantidad, className: "w-16 text-right tabular-nums" },
+    { id: "days", title: "Días", cell: (i) => i.dias, className: "w-16 text-right tabular-nums" },
+    { id: "total", title: "Total", cell: (i) => i.cantidad * i.dias, className: "w-16 text-right font-medium tabular-nums text-foreground" },
+    { id: "notes", title: "Notas", cell: (i) => i.notas || "—", className: "max-w-[140px] truncate" },
     {
-      id: "acciones", titulo: <span className="sr-only">Acciones</span>, className: "w-px px-2",
+      id: "actions", title: <span className="sr-only">Acciones</span>, className: "w-px px-2",
       // Línea de un borrador (aún no es un registro): se quita desde «Más acciones», sin confirmación ni modal sobre modal.
-      celda: (i) => (
+      cell: (i) => (
         <div className="flex justify-end">
-          <AccionesFila nombre={i.descripcion} menu={[{ titulo: "Quitar de la orden", icono: X, onClick: () => handleRemoveItem(i.procedimiento_id) }]} />
+          <RowActions name={i.descripcion} menu={[{ title: "Quitar de la orden", icon: X, onClick: () => handleRemoveItem(i.procedimiento_id) }]} />
         </div>
       ),
     },
@@ -362,12 +362,12 @@ export default function OrdenProcedimientoDialog({
             <p className={cn(labelBase, "mb-2")}>
               Resumen de procedimientos{items.length > 0 && ` (${items.length})`}
             </p>
-            <TablaSimple
-              columnas={columnasItems}
-              filas={items}
-              claveFila={(item) => item.procedimiento_id}
-              vacio="No hay procedimientos agregados."
-              pie={items.length > 0 && (
+            <SimpleTable
+              columns={itemColumns}
+              rows={items}
+              rowKey={(item) => item.procedimiento_id}
+              empty="No hay procedimientos agregados."
+              footer={items.length > 0 && (
                 <div className="flex justify-end gap-6">
                   <span>Procedimientos: <span className="font-semibold text-foreground">{totals.totalProcs}</span></span>
                   <span>Total acumulado: <span className="font-semibold text-foreground">{totals.totalAcumulado}</span></span>

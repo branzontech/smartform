@@ -1,6 +1,6 @@
 import React, { useRef, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { baseDatos } from "@/integrations/datos/cliente";
+import { db } from "@/integrations/data/client";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { UserAvatar } from "@/components/ui/user-avatar";
@@ -53,15 +53,15 @@ export const AvatarUploader: React.FC = () => {
       const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
       const path = `${user.id}/avatar-${Date.now()}.${ext}`;
 
-      const { error: upErr } = await baseDatos.storage
+      const { error: upErr } = await db.storage
         .from("avatars")
         .upload(path, file, { cacheControl: "3600", upsert: true });
       if (upErr) throw upErr;
 
-      const { data: pub } = baseDatos.storage.from("avatars").getPublicUrl(path);
+      const { data: pub } = db.storage.from("avatars").getPublicUrl(path);
       const publicUrl = pub.publicUrl;
 
-      const { error: updErr } = await baseDatos
+      const { error: updErr } = await db
         .from("profiles")
         .update({ avatar_url: publicUrl })
         .eq("user_id", user.id);
@@ -84,7 +84,7 @@ export const AvatarUploader: React.FC = () => {
     if (!user) return;
     setRemoving(true);
     try {
-      const { error } = await baseDatos
+      const { error } = await db
         .from("profiles")
         .update({ avatar_url: null })
         .eq("user_id", user.id);

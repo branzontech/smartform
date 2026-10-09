@@ -11,7 +11,7 @@ import { SchedulingStep, SchedulingData } from "./SchedulingStep";
 import { MapPanelDrawer } from "./MapPanelDrawer";
 import { Dock, DockItem, DockActionItem } from "@/components/ui/dock";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { baseDatos } from "@/integrations/datos/cliente";
+import { db } from "@/integrations/data/client";
 import { toast } from "sonner";
 
 export interface WizardData {
@@ -53,7 +53,7 @@ export const AppointmentWizard: React.FC<AppointmentWizardProps> = ({
     let vigente = true;
     const fetchApiKey = async () => {
       try {
-        const { data } = await baseDatos.functions.invoke("get-maps-config");
+        const { data } = await db.functions.invoke("get-maps-config");
         if (vigente && data?.apiKey) {
           setApiKey(data.apiKey);
         }

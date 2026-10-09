@@ -8,7 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { AuthLayout } from "./AuthLayout";
 
-const volver = (
+const backLink = (
   <Link to="/app/login" className="inline-flex items-center gap-1.5 font-medium text-foreground underline-offset-4 hover:underline">
     <ArrowLeft className="h-3.5 w-3.5" />
     Volver a iniciar sesión
@@ -18,7 +18,7 @@ const volver = (
 const ForgotPassword = () => {
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [enviado, setEnviado] = useState(false);
+  const [sent, setSent] = useState(false);
   const { toast } = useToast();
   const { resetPassword } = useAuth();
 
@@ -35,15 +35,15 @@ const ForgotPassword = () => {
         toast({ title: "No se pudo enviar", description: error.message, variant: "destructive" });
         return;
       }
-      setEnviado(true);
+      setSent(true);
     } finally {
       setIsLoading(false);
     }
   };
 
-  if (enviado) {
+  if (sent) {
     return (
-      <AuthLayout titulo="Te enviamos un enlace" pie={volver}>
+      <AuthLayout title="Te enviamos un enlace" footer={backLink}>
         <div className="flex items-start gap-3 rounded-2xl bg-muted/60 p-4 text-sm text-muted-foreground">
           <MailCheck className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
           <p>
@@ -57,9 +57,9 @@ const ForgotPassword = () => {
 
   return (
     <AuthLayout
-      titulo="¿Olvidaste tu contraseña?"
-      descripcion="Escribe tu correo y te enviaremos un enlace para restablecerla."
-      pie={volver}
+      title="¿Olvidaste tu contraseña?"
+      description="Escribe tu correo y te enviaremos un enlace para restablecerla."
+      footer={backLink}
     >
       <form onSubmit={handleSubmit} className="space-y-5" noValidate>
         <div className="space-y-1.5">

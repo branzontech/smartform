@@ -1,89 +1,96 @@
 import React, { useMemo, useEffect } from "react";
-import { FormLabel } from "@/components/ui/form";
 import { cn } from "@/lib/utils";
 import { QuestionData, ScoringRange } from "../question/types";
 
-const RANGE_COLOR_MAP: Record<string, { bg: string; text: string; border: string }> = {
-  red:    { bg: "rgba(239,68,68,0.12)",   text: "#b91c1c",  border: "rgba(239,68,68,0.3)" },
-  orange: { bg: "rgba(249,115,22,0.12)",  text: "#c2410c",  border: "rgba(249,115,22,0.3)" },
-  yellow: { bg: "rgba(234,179,8,0.12)",   text: "#a16207",  border: "rgba(234,179,8,0.3)" },
-  lime:   { bg: "rgba(132,204,22,0.12)",  text: "#4d7c0f",  border: "rgba(132,204,22,0.3)" },
-  green:  { bg: "rgba(34,197,94,0.12)",   text: "#15803d",  border: "rgba(34,197,94,0.3)" },
-  blue:   { bg: "rgba(59,130,246,0.12)",  text: "#1d4ed8",  border: "rgba(59,130,246,0.3)" },
-  gray:   { bg: "rgba(107,114,128,0.08)", text: "#374151",  border: "rgba(107,114,128,0.2)" },
+/** Color de texto por rango (claro y oscuro); el color va en el texto, nunca en puntos. */
+export const RANGE_TEXT: Record<string, string> = {
+  red: "text-red-700 dark:text-red-400",
+  orange: "text-orange-700 dark:text-orange-400",
+  yellow: "text-yellow-700 dark:text-yellow-400",
+  lime: "text-lime-700 dark:text-lime-400",
+  green: "text-green-700 dark:text-green-400",
+  blue: "text-blue-700 dark:text-blue-400",
+  gray: "text-foreground",
 };
 
 interface ScoreTotalViewerProps {
   question: QuestionData;
   formData: Record<string, any>;
   onChange: (id: string, value: any) => void;
+  /** Para calcular el puntaje máximo posible de las preguntas de origen. */
+  allQuestions?: QuestionData[];
 }
 
-export const ScoreTotalViewer: React.FC<ScoreTotalViewerProps> = ({ question, formData, onChange }) => {
+/** Puntaje máximo de una pregunta con puntaje: la mejor opción, o la suma si es de selección múltiple. */
+export function maxScoreOf(q: QuestionData | undefined): number {
+  if (!q) return 0;
+  const scores = (q.scoredItems ?? q.scoredOptions?.map((o) => ({ score: o.score })) ?? []).map((i) => i.score);
+  if (!scores.length) return 0;
+  const multiple = (q.selectionMode || q.scoredSelectionMode) === "multiple";
+  return multiple ? scores.filter((s) => s > 0).reduce((a, b) => a + b, 0) : Math.max(...scores);
+}
+
+export const ScoreTotalViewer: React.FC<ScoreTotalViewerProps> = ({ question, formData, onChange, allQuestions }) => {
   const sourceIds = question.sourceQuestionIds || [];
 
   const totalScore = useMemo(() => {
-    return sourceIds.reduce((sum: number, qId: string) => {
-      const answer = formData[qId];
-      return sum + (answer?.score || 0);
-    }, 0);
+    return sourceIds.reduce((sum: number, qId: string) => sum + (formData[qId]?.score || 0), 0);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sourceIds.join(","), ...sourceIds.map((id: string) => JSON.stringify(formData[id]))]);
+
+  const answered = sourceIds.filter((id) => (formData[id]?.selectedOptions?.length ?? 0) > 0).length;
+  const complete = sourceIds.length > 0 && answered === sourceIds.length;
+  const maxScore = allQuestions ? sourceIds.reduce((sum, id) => sum + maxScoreOf(allQuestions.find((q) => q.id === id)), 0) : null;
 
   const scoring = question.scoring;
   const matchedRange: ScoringRange | null = useMemo(() => {
     if (!scoring?.enabled || !scoring.ranges?.length) return null;
-    return scoring.ranges.find(
-      (r: ScoringRange) => totalScore >= r.min && totalScore <= r.max
-    ) || null;
+    return scoring.ranges.find((r: ScoringRange) => totalScore >= r.min && totalScore <= r.max) || null;
   }, [scoring, totalScore]);
 
   const interpretation = matchedRange?.label || "";
 
+  // Solo guarda cuando hay algo respondido: abrir el formato no debe marcarlo como modificado.
   useEffect(() => {
     const currentVal = formData[question.id];
+    if (!currentVal && answered === 0) return;
     if (!currentVal || currentVal.score !== totalScore || currentVal.interpretation !== interpretation) {
       onChange(question.id, { score: totalScore, interpretation });
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [totalScore, interpretation]);
+  }, [totalScore, interpretation, answered]);
 
   const ranges = scoring?.enabled && scoring.ranges?.length ? scoring.ranges : [];
 
   return (
-    <div className="border-t-2 border-primary/20 pt-4 mt-4">
-      <div className="flex items-baseline justify-between mb-3">
-        <span className="font-semibold text-sm">{question.title}</span>
-        <span className="text-3xl font-bold tabular-nums">{totalScore}</span>
+    <div className="grid gap-3 rounded-[16px] bg-primary/5 px-5 py-4">
+      <div className="grid gap-0.5">
+        <span className="kh-label">{question.title}</span>
+        <span className="kh-help">
+          {complete ? "Calculado automáticamente" : `Faltan ${sourceIds.length - answered} de ${sourceIds.length} ítems`}
+        </span>
+      </div>
+      <div className="flex items-baseline gap-2">
+        <span className="text-[44px] font-extrabold leading-none tabular-nums text-foreground">{totalScore}</span>
+        {maxScore ? <span className="text-base text-muted-foreground">/ {maxScore}</span> : null}
+      </div>
+      <div className={cn("text-[17px] font-bold", complete && matchedRange ? RANGE_TEXT[matchedRange.color] ?? RANGE_TEXT.gray : "text-muted-foreground")}>
+        {complete ? interpretation || "Sin interpretación para este puntaje" : "La interpretación aparece al completar la escala"}
       </div>
       {ranges.length > 0 && (
-        <div className="space-y-0.5">
+        <div className="flex flex-wrap gap-1.5">
           {ranges.map((r: ScoringRange) => {
-            const isActive = matchedRange === r;
-            const colors = RANGE_COLOR_MAP[r.color] || RANGE_COLOR_MAP.gray;
+            const active = complete && matchedRange === r;
             return (
-              <div
+              <span
                 key={`${r.min}-${r.max}-${r.label}`}
                 className={cn(
-                  "flex items-center gap-3 px-3 py-1.5 rounded-md text-sm transition-colors",
-                  !isActive && "text-muted-foreground"
+                  "rounded-full bg-card px-2.5 py-1 text-[13px] tabular-nums",
+                  active ? cn("font-bold ring-[1.5px] ring-current", RANGE_TEXT[r.color] ?? RANGE_TEXT.gray) : "text-muted-foreground",
                 )}
-                style={isActive ? {
-                  backgroundColor: colors.bg,
-                  color: colors.text,
-                  fontWeight: 500,
-                  border: `1px solid ${colors.border}`,
-                } : undefined}
               >
-                <span
-                  className="w-2.5 h-2.5 rounded-full shrink-0"
-                  style={{ backgroundColor: colors.text }}
-                />
-                <span className="tabular-nums w-16 shrink-0 text-right">
-                  {r.min === r.max ? r.min : `${r.min} - ${r.max}`}
-                </span>
-                <span>{r.label}</span>
-              </div>
+                {r.min === r.max ? r.min : `${r.min}–${r.max}`} · {r.label}
+              </span>
             );
           })}
         </div>

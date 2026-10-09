@@ -6,7 +6,7 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/
 import { Bar, BarChart, Line, LineChart, Pie, PieChart, Cell, Area, AreaChart, Scatter, ScatterChart, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Legend } from "recharts";
 import { ChartConfig, ReportVariable } from "@/types/report-types";
 import { Calendar, FileText } from "lucide-react";
-import { DataTable } from "./DataTable";
+import { ReportDataTable } from "./ReportDataTable";
 
 interface ReportPreviewProps {
   title: string;
@@ -217,7 +217,7 @@ export const ReportPreview = ({ title, description, charts, variables }: ReportP
 
               {/* Tabla de datos correspondiente */}
               {chart.xAxis && chart.yAxis && (
-                <DataTable chart={chart} variables={variables} />
+                <ReportDataTable chart={chart} variables={variables} />
               )}
             </div>
           ))

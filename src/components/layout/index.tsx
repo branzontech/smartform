@@ -4,7 +4,6 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "./app-sidebar";
 import { DentroDeLayout, Header } from "./header";
 import { TenantStatusBar } from "../tenant/TenantStatusBar";
-import { FloatingChatButton } from "./floating-chat-button";
 import { Button } from "@/components/ui/button";
 import { Stethoscope, Search, Bell, Moon, Sun, UserCircle } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
@@ -114,7 +113,7 @@ const LayoutBase = ({ children }: LayoutProps) => {
 
   return (
     <SidebarProvider defaultOpen={false}>
-      <div className="h-screen flex w-full bg-background overflow-hidden">
+      <div className="h-screen flex w-full bg-canvas overflow-hidden">
         <AppSidebar />
         <Header />
         
@@ -128,7 +127,7 @@ const LayoutBase = ({ children }: LayoutProps) => {
             <DentroDeLayout.Provider value={true}>{children}</DentroDeLayout.Provider>
           </main>
 
-        <FloatingChatButton />
+        {/* Chat flotante desactivado por ahora (pedido del usuario): el componente sigue en floating-chat-button.tsx. */}
         </div>
       </div>
 
@@ -139,7 +138,7 @@ const LayoutBase = ({ children }: LayoutProps) => {
       >
         <CommandInput 
           placeholder="Buscar en toda la navegación..." 
-          className="border-none focus:ring-2 focus:ring-primary/20"
+          className="border-none focus-visible:ring-0"
         />
         <CommandList>
           <CommandEmpty>No se encontraron resultados.</CommandEmpty>

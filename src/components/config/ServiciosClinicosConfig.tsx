@@ -6,11 +6,11 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
-import { AccionesFila } from "@/components/kit/AccionesFila";
+import { RowActions } from "@/components/kit/RowActions";
 import {
-  BarraTabla, CeldaEstado, TablaDatos, botonPrimario, useTablaDatos,
-  type ColumnaTabla, type FiltroTabla, type SegmentoTabla,
-} from "@/components/kit/tabla";
+  TableToolbar, StatusCell, DataTable, primaryButtonClass, useDataTable,
+  type TableColumn, type TableFilter, type TableSegment,
+} from "@/components/kit/table";
 import {
   useServiciosConConteo,
   useCreateServicioClinico,
@@ -26,7 +26,7 @@ import {
 } from "@/hooks/useServiciosClinicos";
 import type { ServicioClinico, CatalogoProcedimiento } from "@/types/servicios";
 
-const TIPO_LABELS: Record<string, string> = {
+const SERVICE_TYPE_LABELS: Record<string, string> = {
   procedimientos: "Procedimientos",
   laboratorio: "Laboratorio",
   imagenologia: "Imagenología",
@@ -39,7 +39,7 @@ const TIPO_LABELS: Record<string, string> = {
   otro: "Otro",
 };
 
-const SISTEMA_LABELS: Record<string, string> = {
+const CODING_SYSTEM_LABELS: Record<string, string> = {
   CUPS: "CUPS",
   CPT: "CPT",
   "SNOMED-CT": "SNOMED-CT",
@@ -47,7 +47,7 @@ const SISTEMA_LABELS: Record<string, string> = {
   ICD10PCS: "ICD-10-PCS",
 };
 
-const TIPO_PROC_LABELS: Record<string, string> = {
+const PROCEDURE_TYPE_LABELS: Record<string, string> = {
   procedimiento: "Procedimiento",
   laboratorio: "Laboratorio",
   imagenologia: "Imagenología",
@@ -56,58 +56,58 @@ const TIPO_PROC_LABELS: Record<string, string> = {
 };
 
 // ========== TABLAS (convención Ker Hub) ==========
-type ServicioConConteo = ServicioClinico & { procedimientos_count?: number };
+type ServiceWithCount = ServicioClinico & { procedimientos_count?: number };
 
-const derecha = "text-right tabular-nums";
+const rightAligned = "text-right tabular-nums";
 
-function columnaEstado<T extends { activo: boolean }>(): ColumnaTabla<T> {
+function statusColumn<T extends { activo: boolean }>(): TableColumn<T> {
   return {
-    id: "estado", titulo: "Estado", valor: (f) => (f.activo ? "Activo" : "Inactivo"), sinPadding: true,
-    celda: (f) => <CeldaEstado tono={f.activo ? "exito" : "neutro"} texto={f.activo ? "Activo" : "Inactivo"} />,
+    id: "status", title: "Estado", value: (f) => (f.activo ? "Activo" : "Inactivo"), flush: true,
+    cell: (f) => <StatusCell tone={f.activo ? "success" : "neutral"} text={f.activo ? "Activo" : "Inactivo"} />,
   };
 }
 
-function segmentosActivo<T extends { activo: boolean }>(): SegmentoTabla<T>[] {
+function activeSegments<T extends { activo: boolean }>(): TableSegment<T>[] {
   return [
-    { id: "todos", titulo: "Todos", cumple: () => true },
-    { id: "activos", titulo: "Activos", cumple: (f) => f.activo },
-    { id: "inactivos", titulo: "Inactivos", cumple: (f) => !f.activo },
+    { id: "all", title: "Todos", match: () => true },
+    { id: "active", title: "Activos", match: (f) => f.activo },
+    { id: "inactive", title: "Inactivos", match: (f) => !f.activo },
   ];
 }
 
-const SEGMENTOS_SERVICIOS = segmentosActivo<ServicioConConteo>();
-const SEGMENTOS_PROCEDIMIENTOS = segmentosActivo<CatalogoProcedimiento>();
-const claveServicio = (s: ServicioConConteo) => s.id;
-const claveProcedimiento = (p: CatalogoProcedimiento) => p.id;
+const SERVICE_SEGMENTS = activeSegments<ServiceWithCount>();
+const PROCEDURE_SEGMENTS = activeSegments<CatalogoProcedimiento>();
+const serviceKey = (s: ServiceWithCount) => s.id;
+const procedureKey = (p: CatalogoProcedimiento) => p.id;
 
-const COLUMNAS_SERVICIOS: ColumnaTabla<ServicioConConteo>[] = [
-  { id: "codigo", titulo: "Código", valor: (s) => s.codigo, className: "font-mono text-xs", fija: true },
-  { id: "nombre", titulo: "Nombre", valor: (s) => s.nombre, principal: true, className: "min-w-[220px]" },
-  { id: "tipo", titulo: "Tipo", valor: (s) => TIPO_LABELS[s.tipo] || s.tipo },
-  { id: "centroCosto", titulo: "Centro de costo", valor: (s) => s.centro_costo },
-  { id: "procedimientos", titulo: "Procedimientos", valor: (s) => s.procedimientos_count ?? 0, className: derecha },
-  { id: "descripcion", titulo: "Descripción", valor: (s) => s.descripcion, oculta: true },
-  columnaEstado<ServicioConConteo>(),
+const SERVICE_COLUMNS: TableColumn<ServiceWithCount>[] = [
+  { id: "code", title: "Código", value: (s) => s.codigo, className: "font-mono text-xs", alwaysVisible: true },
+  { id: "name", title: "Nombre", value: (s) => s.nombre, primary: true, className: "min-w-[220px]" },
+  { id: "type", title: "Tipo", value: (s) => SERVICE_TYPE_LABELS[s.tipo] || s.tipo },
+  { id: "costCenter", title: "Centro de costo", value: (s) => s.centro_costo },
+  { id: "procedures", title: "Procedimientos", value: (s) => s.procedimientos_count ?? 0, className: rightAligned },
+  { id: "description", title: "Descripción", value: (s) => s.descripcion, hidden: true },
+  statusColumn<ServiceWithCount>(),
 ];
 
-const FILTROS_SERVICIOS: FiltroTabla<ServicioConConteo>[] = [
-  { id: "tipo", titulo: "Tipo", valor: (s) => TIPO_LABELS[s.tipo] || s.tipo },
-  { id: "centroCosto", titulo: "Centro de costo", valor: (s) => s.centro_costo },
+const SERVICE_FILTERS: TableFilter<ServiceWithCount>[] = [
+  { id: "type", title: "Tipo", value: (s) => SERVICE_TYPE_LABELS[s.tipo] || s.tipo },
+  { id: "costCenter", title: "Centro de costo", value: (s) => s.centro_costo },
 ];
 
-const COLUMNAS_PROCEDIMIENTOS: ColumnaTabla<CatalogoProcedimiento>[] = [
-  { id: "codigo", titulo: "Código", valor: (p) => p.codigo, className: "font-mono text-xs", fija: true },
-  { id: "descripcion", titulo: "Descripción", valor: (p) => p.descripcion, principal: true, className: "min-w-[260px] max-w-[420px] truncate" },
-  { id: "sistema", titulo: "Sistema", valor: (p) => SISTEMA_LABELS[p.sistema_codificacion] || p.sistema_codificacion },
-  { id: "tipo", titulo: "Tipo", valor: (p) => TIPO_PROC_LABELS[p.tipo] || p.tipo },
-  { id: "capitulo", titulo: "Capítulo", valor: (p) => p.capitulo, oculta: true },
-  columnaEstado<CatalogoProcedimiento>(),
+const PROCEDURE_COLUMNS: TableColumn<CatalogoProcedimiento>[] = [
+  { id: "code", title: "Código", value: (p) => p.codigo, className: "font-mono text-xs", alwaysVisible: true },
+  { id: "description", title: "Descripción", value: (p) => p.descripcion, primary: true, className: "min-w-[260px] max-w-[420px] truncate" },
+  { id: "codingSystem", title: "Sistema", value: (p) => CODING_SYSTEM_LABELS[p.sistema_codificacion] || p.sistema_codificacion },
+  { id: "type", title: "Tipo", value: (p) => PROCEDURE_TYPE_LABELS[p.tipo] || p.tipo },
+  { id: "chapter", title: "Capítulo", value: (p) => p.capitulo, hidden: true },
+  statusColumn<CatalogoProcedimiento>(),
 ];
 
-const FILTROS_PROCEDIMIENTOS: FiltroTabla<CatalogoProcedimiento>[] = [
-  { id: "sistema", titulo: "Sistema", valor: (p) => SISTEMA_LABELS[p.sistema_codificacion] || p.sistema_codificacion },
-  { id: "tipo", titulo: "Tipo", valor: (p) => TIPO_PROC_LABELS[p.tipo] || p.tipo },
-  { id: "capitulo", titulo: "Capítulo", valor: (p) => p.capitulo },
+const PROCEDURE_FILTERS: TableFilter<CatalogoProcedimiento>[] = [
+  { id: "codingSystem", title: "Sistema", value: (p) => CODING_SYSTEM_LABELS[p.sistema_codificacion] || p.sistema_codificacion },
+  { id: "type", title: "Tipo", value: (p) => PROCEDURE_TYPE_LABELS[p.tipo] || p.tipo },
+  { id: "chapter", title: "Capítulo", value: (p) => p.capitulo },
 ];
 
 // ========== SERVICIOS TAB ==========
@@ -154,37 +154,37 @@ function ServiciosTab() {
     } catch (e: any) { toast.error(e.message || "Error al guardar"); }
   };
 
-  const filas = useMemo(() => (servicios ?? []) as ServicioConConteo[], [servicios]);
-  const t = useTablaDatos({ id: "config.servicios", filas, columnas: COLUMNAS_SERVICIOS, claveFila: claveServicio, filtros: FILTROS_SERVICIOS, segmentos: SEGMENTOS_SERVICIOS });
+  const rows = useMemo(() => (servicios ?? []) as ServiceWithCount[], [servicios]);
+  const t = useDataTable({ id: "config.services", rows, columns: SERVICE_COLUMNS, rowKey: serviceKey, filters: SERVICE_FILTERS, segments: SERVICE_SEGMENTS });
 
   return (
     <div className="space-y-4">
       <h2 className="text-base font-semibold">Servicios clínicos</h2>
 
-      <TablaDatos
+      <DataTable
         t={t}
-        cargando={isLoading}
-        onFilaClick={openEdit}
-        barra={
-          <BarraTabla
+        loading={isLoading}
+        onRowClick={openEdit}
+        toolbar={
+          <TableToolbar
             t={t}
-            nombre={["servicio", "servicios"]}
+            name={["servicio", "servicios"]}
             placeholder="Buscar por nombre o código"
-            nombreArchivo="servicios-clinicos"
-            acciones={<Button className={botonPrimario} onClick={openCreate}><Plus className="h-4 w-4" /> Nuevo servicio</Button>}
+            fileName="servicios-clinicos"
+            actions={<Button className={primaryButtonClass} onClick={openCreate}><Plus className="h-4 w-4" /> Nuevo servicio</Button>}
           />
         }
-        acciones={(s) => (
-          <AccionesFila
-            nombre={s.nombre}
+        actions={(s) => (
+          <RowActions
+            name={s.nombre}
             menu={[
-              { titulo: "Editar", icono: Edit, onClick: () => openEdit(s) },
-              { titulo: "Gestionar procedimientos", icono: Link, onClick: () => setProcsDialogServicio(s) },
-              { titulo: s.activo ? "Desactivar" : "Activar", icono: Power, onClick: () => toggleMut.mutate({ id: s.id, activo: !s.activo }) },
+              { title: "Editar", icon: Edit, onClick: () => openEdit(s) },
+              { title: "Gestionar procedimientos", icon: Link, onClick: () => setProcsDialogServicio(s) },
+              { title: s.activo ? "Desactivar" : "Activar", icon: Power, onClick: () => toggleMut.mutate({ id: s.id, activo: !s.activo }) },
             ]}
           />
         )}
-        vacio="Aún no hay servicios clínicos. Crea uno con «Nuevo servicio»."
+        empty="Aún no hay servicios clínicos. Crea uno con «Nuevo servicio»."
       />
 
       {/* Dialog crear/editar servicio */}
@@ -211,7 +211,7 @@ function ServiciosTab() {
                 <label className="text-xs text-muted-foreground mb-1 block">Tipo</label>
                 <select value={tipo} onChange={e => setTipo(e.target.value as ServicioClinico["tipo"])}
                   className="w-full px-0 py-1.5 text-sm bg-transparent border-b border-border focus:border-primary outline-none">
-                  {Object.entries(TIPO_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+                  {Object.entries(SERVICE_TYPE_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
                 </select>
               </div>
               <div>
@@ -404,36 +404,36 @@ function CatalogoProcedimientosTab() {
     } catch (e: any) { toast.error(e.message || "Error al guardar"); }
   };
 
-  const filas = useMemo(() => procs ?? [], [procs]);
-  const t = useTablaDatos({ id: "config.catalogoProcedimientos", filas, columnas: COLUMNAS_PROCEDIMIENTOS, claveFila: claveProcedimiento, filtros: FILTROS_PROCEDIMIENTOS, segmentos: SEGMENTOS_PROCEDIMIENTOS });
+  const rows = useMemo(() => procs ?? [], [procs]);
+  const t = useDataTable({ id: "config.procedureCatalog", rows, columns: PROCEDURE_COLUMNS, rowKey: procedureKey, filters: PROCEDURE_FILTERS, segments: PROCEDURE_SEGMENTS });
 
   return (
     <div className="space-y-4">
       <h2 className="text-base font-semibold">Catálogo de procedimientos</h2>
 
-      <TablaDatos
+      <DataTable
         t={t}
-        cargando={isLoading}
-        onFilaClick={openEdit}
-        barra={
-          <BarraTabla
+        loading={isLoading}
+        onRowClick={openEdit}
+        toolbar={
+          <TableToolbar
             t={t}
-            nombre={["procedimiento", "procedimientos"]}
+            name={["procedimiento", "procedimientos"]}
             placeholder="Buscar por código o descripción"
-            nombreArchivo="catalogo-procedimientos"
-            acciones={<Button className={botonPrimario} onClick={openCreate}><Plus className="h-4 w-4" /> Nuevo procedimiento</Button>}
+            fileName="catalogo-procedimientos"
+            actions={<Button className={primaryButtonClass} onClick={openCreate}><Plus className="h-4 w-4" /> Nuevo procedimiento</Button>}
           />
         }
-        acciones={(p) => (
-          <AccionesFila
-            nombre={p.descripcion}
+        actions={(p) => (
+          <RowActions
+            name={p.descripcion}
             menu={[
-              { titulo: "Editar", icono: Edit, onClick: () => openEdit(p) },
-              { titulo: p.activo ? "Desactivar" : "Activar", icono: Power, onClick: () => toggleMut.mutate({ id: p.id, activo: !p.activo }) },
+              { title: "Editar", icon: Edit, onClick: () => openEdit(p) },
+              { title: p.activo ? "Desactivar" : "Activar", icon: Power, onClick: () => toggleMut.mutate({ id: p.id, activo: !p.activo }) },
             ]}
           />
         )}
-        vacio="Aún no hay procedimientos en el catálogo. Crea uno con «Nuevo procedimiento»."
+        empty="Aún no hay procedimientos en el catálogo. Crea uno con «Nuevo procedimiento»."
       />
 
       {/* Dialog crear/editar procedimiento */}
@@ -453,7 +453,7 @@ function CatalogoProcedimientosTab() {
                 <label className="text-xs text-muted-foreground mb-1 block">Sistema de Codificación</label>
                 <select value={sistema} onChange={e => setSistema(e.target.value)}
                   className="w-full px-0 py-1.5 text-sm bg-transparent border-b border-border focus:border-primary outline-none">
-                  {Object.entries(SISTEMA_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+                  {Object.entries(CODING_SYSTEM_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
                 </select>
               </div>
             </div>
@@ -467,7 +467,7 @@ function CatalogoProcedimientosTab() {
                 <label className="text-xs text-muted-foreground mb-1 block">Tipo</label>
                 <select value={tipoPr} onChange={e => setTipoPr(e.target.value as CatalogoProcedimiento["tipo"])}
                   className="w-full px-0 py-1.5 text-sm bg-transparent border-b border-border focus:border-primary outline-none">
-                  {Object.entries(TIPO_PROC_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+                  {Object.entries(PROCEDURE_TYPE_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
                 </select>
               </div>
               <div>

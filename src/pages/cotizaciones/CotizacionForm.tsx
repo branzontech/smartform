@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { baseDatos } from "@/integrations/datos/cliente";
+import { db } from "@/integrations/data/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { format, addDays } from "date-fns";
@@ -16,7 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Separator } from "@/components/ui/separator";
 import { DatePicker } from "@/components/ui/date-picker";
 import { FormHeaderPreview } from "@/components/forms/FormHeaderPreview";
-import { TablaSimple, type ColumnaSimple } from "@/components/kit/tabla";
+import { SimpleTable, type SimpleColumn } from "@/components/kit/table";
 import type {
   ClienteCotizacion,
   ConfiguracionCotizaciones,
@@ -41,7 +41,7 @@ interface Props {
 
 const TIPOS_DOCUMENTO = ["CC", "CE", "NIT", "RUC", "RFC", "DNI", "CUIT", "PA"];
 
-const derecha = "text-right tabular-nums";
+const rightAligned = "text-right tabular-nums";
 const botonPaso = "h-6 w-6 rounded-md bg-muted/60 text-foreground hover:bg-muted";
 
 const CotizacionForm = ({ editId, onCancel, onSaved }: Props) => {
@@ -53,7 +53,7 @@ const CotizacionForm = ({ editId, onCancel, onSaved }: Props) => {
   const { data: existingCot } = useQuery({
     queryKey: ["cotizacion", editId],
     queryFn: async () => {
-      const { data, error } = await baseDatos
+      const { data, error } = await db
         .from("cotizaciones" as any)
         .select("*, clientes_cotizacion:cliente_cotizacion_id(*)")
         .eq("id", editId!)
@@ -67,7 +67,7 @@ const CotizacionForm = ({ editId, onCancel, onSaved }: Props) => {
   const { data: existingItems } = useQuery({
     queryKey: ["cotizacion-items", editId],
     queryFn: async () => {
-      const { data, error } = await baseDatos
+      const { data, error } = await db
         .from("cotizacion_items" as any)
         .select("*")
         .eq("cotizacion_id", editId!)
@@ -84,7 +84,7 @@ const CotizacionForm = ({ editId, onCancel, onSaved }: Props) => {
   const { data: config } = useQuery({
     queryKey: ["configuracion-cotizaciones"],
     queryFn: async () => {
-      const { data, error } = await baseDatos
+      const { data, error } = await db
         .from("configuracion_cotizaciones" as any)
         .select("*")
         .limit(1)
@@ -98,7 +98,7 @@ const CotizacionForm = ({ editId, onCancel, onSaved }: Props) => {
   const { data: headerConfig } = useQuery({
     queryKey: ["configuracion-encabezado"],
     queryFn: async () => {
-      const { data, error } = await baseDatos
+      const { data, error } = await db
         .from("configuracion_encabezado")
         .select("*")
         .limit(1)
@@ -126,7 +126,7 @@ const CotizacionForm = ({ editId, onCancel, onSaved }: Props) => {
     queryKey: ["clientes-cotizacion", clienteSearch],
     queryFn: async () => {
       if (clienteSearch.length < 2) return [];
-      const { data, error } = await baseDatos
+      const { data, error } = await db
         .from("clientes_cotizacion" as any)
         .select("*")
         .or(`nombre_razon_social.ilike.%${clienteSearch}%,numero_documento.ilike.%${clienteSearch}%`)
@@ -139,7 +139,7 @@ const CotizacionForm = ({ editId, onCancel, onSaved }: Props) => {
 
   const createClienteMutation = useMutation({
     mutationFn: async (data: typeof newCliente) => {
-      const { data: created, error } = await baseDatos
+      const { data: created, error } = await db
         .from("clientes_cotizacion" as any)
         .insert(data as any)
         .select()
@@ -183,7 +183,7 @@ const CotizacionForm = ({ editId, onCancel, onSaved }: Props) => {
     queryKey: ["tarifarios-servicios", servicioSearch],
     queryFn: async () => {
       if (servicioSearch.length < 2) return [];
-      const { data, error } = await baseDatos
+      const { data, error } = await db
         .from("tarifarios_servicios")
         .select("*")
         .or(`codigo_servicio.ilike.%${servicioSearch}%,descripcion_servicio.ilike.%${servicioSearch}%`)
@@ -325,7 +325,7 @@ const CotizacionForm = ({ editId, onCancel, onSaved }: Props) => {
 
       if (isEditing && editId) {
         // UPDATE existing
-        const { error: cotError } = await baseDatos
+        const { error: cotError } = await db
           .from("cotizaciones" as any)
           .update(cotData)
           .eq("id", editId);
@@ -333,14 +333,14 @@ const CotizacionForm = ({ editId, onCancel, onSaved }: Props) => {
         cotId = editId;
 
         // Delete old items and re-insert
-        await baseDatos.from("cotizacion_items" as any).delete().eq("cotizacion_id", editId);
+        await db.from("cotizacion_items" as any).delete().eq("cotizacion_id", editId);
       } else {
         // INSERT new
         cotData.numero_cotizacion = "";
         cotData.fecha_emision = format(new Date(), "yyyy-MM-dd");
         cotData.creado_por = user.id;
 
-        const { data: cotizacion, error: cotError } = await baseDatos
+        const { data: cotizacion, error: cotError } = await db
           .from("cotizaciones" as any)
           .insert(cotData)
           .select()
@@ -361,7 +361,7 @@ const CotizacionForm = ({ editId, onCancel, onSaved }: Props) => {
         orden: idx,
       }));
 
-      const { error: itemsError } = await baseDatos
+      const { error: itemsError } = await db
         .from("cotizacion_items" as any)
         .insert(itemsToInsert as any);
 
@@ -388,11 +388,11 @@ const CotizacionForm = ({ editId, onCancel, onSaved }: Props) => {
   const hasData = selectedCliente || items.length > 0 || observaciones;
 
   // Ítems editables: una celda, un dato; los inputs van dentro de la celda.
-  const columnasEdicion: ColumnaSimple<CotizacionItemDraft>[] = [
-    { id: "descripcion", titulo: "Descripción", celda: (i) => i.descripcion_servicio, principal: true },
+  const editColumns: SimpleColumn<CotizacionItemDraft>[] = [
+    { id: "description", title: "Descripción", cell: (i) => i.descripcion_servicio, primary: true },
     {
-      id: "cantidad", titulo: "Cant.", className: "w-28 text-center",
-      celda: (i) => (
+      id: "quantity", title: "Cant.", className: "w-28 text-center",
+      cell: (i) => (
         <div className="flex items-center justify-center gap-1">
           <Button type="button" variant="ghost" size="icon" className={botonPaso} aria-label={`Restar una unidad a ${i.descripcion_servicio}`}
             onClick={() => updateItem(i.tempId, "cantidad", Math.max(1, i.cantidad - 1))}>
@@ -407,23 +407,23 @@ const CotizacionForm = ({ editId, onCancel, onSaved }: Props) => {
       ),
     },
     {
-      id: "unitario", titulo: "V. unit.", className: "w-36",
-      celda: (i) => (
+      id: "unitPrice", title: "V. unit.", className: "w-36",
+      cell: (i) => (
         <Input type="number" min="0" aria-label={`Valor unitario de ${i.descripcion_servicio}`} className="h-8 text-right text-sm tabular-nums" value={i.valor_unitario}
           onChange={(e) => updateItem(i.tempId, "valor_unitario", parseFloat(e.target.value) || 0)} />
       ),
     },
     {
-      id: "descuento", titulo: "Dto. %", className: "w-24",
-      celda: (i) => (
+      id: "discount", title: "Dto. %", className: "w-24",
+      cell: (i) => (
         <Input type="number" min="0" max="100" aria-label={`Descuento de ${i.descripcion_servicio}`} className="h-8 text-right text-sm tabular-nums" value={i.descuento_porcentaje}
           onChange={(e) => updateItem(i.tempId, "descuento_porcentaje", parseFloat(e.target.value) || 0)} />
       ),
     },
-    { id: "total", titulo: "Total", celda: (i) => formatCurrency(i.valor_total), className: `w-32 font-medium text-foreground ${derecha}` },
+    { id: "total", title: "Total", cell: (i) => formatCurrency(i.valor_total), className: `w-32 font-medium text-foreground ${rightAligned}` },
     {
-      id: "quitar", titulo: <span className="sr-only">Quitar</span>, className: "w-11 text-center",
-      celda: (i) => (
+      id: "remove", title: <span className="sr-only">Quitar</span>, className: "w-11 text-center",
+      cell: (i) => (
         <Button type="button" variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive"
           aria-label={`Quitar ${i.descripcion_servicio}`} title="Quitar ítem" onClick={() => removeItem(i.tempId)}>
           <X className="h-4 w-4" />
@@ -432,12 +432,12 @@ const CotizacionForm = ({ editId, onCancel, onSaved }: Props) => {
     },
   ];
 
-  const columnasVista: ColumnaSimple<CotizacionItemDraft>[] = [
-    { id: "descripcion", titulo: "Descripción", celda: (i) => i.descripcion_servicio, principal: true },
-    { id: "cantidad", titulo: "Cant.", celda: (i) => i.cantidad, className: `w-14 ${derecha}` },
-    { id: "unitario", titulo: "V. unit.", celda: (i) => formatCurrency(i.valor_unitario), className: derecha },
-    { id: "descuento", titulo: "Dto. %", celda: (i) => (i.descuento_porcentaje > 0 ? `${i.descuento_porcentaje}%` : "—"), className: derecha },
-    { id: "total", titulo: "Total", celda: (i) => formatCurrency(i.valor_total), className: `font-medium text-foreground ${derecha}` },
+  const readOnlyColumns: SimpleColumn<CotizacionItemDraft>[] = [
+    { id: "description", title: "Descripción", cell: (i) => i.descripcion_servicio, primary: true },
+    { id: "quantity", title: "Cant.", cell: (i) => i.cantidad, className: `w-14 ${rightAligned}` },
+    { id: "unitPrice", title: "V. unit.", cell: (i) => formatCurrency(i.valor_unitario), className: rightAligned },
+    { id: "discount", title: "Dto. %", cell: (i) => (i.descuento_porcentaje > 0 ? `${i.descuento_porcentaje}%` : "—"), className: rightAligned },
+    { id: "total", title: "Total", cell: (i) => formatCurrency(i.valor_total), className: `font-medium text-foreground ${rightAligned}` },
   ];
 
   const handlePrint = () => window.print();
@@ -480,7 +480,7 @@ const CotizacionForm = ({ editId, onCancel, onSaved }: Props) => {
                     placeholder="Buscar por nombre o documento..."
                     value={clienteSearch}
                     onChange={(e) => setClienteSearch(e.target.value)}
-                    className="pl-10 h-10 bg-background/80 focus:ring-2 focus:ring-primary/20"
+                    className="pl-10 h-10 bg-background/80 focus-visible:ring-0"
                   />
                 </div>
 
@@ -575,7 +575,7 @@ const CotizacionForm = ({ editId, onCancel, onSaved }: Props) => {
                     placeholder="Buscar servicio por código o descripción..."
                     value={servicioSearch}
                     onChange={(e) => setServicioSearch(e.target.value)}
-                    className="pl-10 h-10 bg-background/80 focus:ring-2 focus:ring-primary/20"
+                    className="pl-10 h-10 bg-background/80 focus-visible:ring-0"
                   />
                 </div>
                 <Button variant="outline" size="sm" onClick={() => setShowManualService(true)} className="gap-1.5 h-10 text-xs shrink-0">
@@ -620,11 +620,11 @@ const CotizacionForm = ({ editId, onCancel, onSaved }: Props) => {
               )}
 
               {items.length > 0 && (
-                <TablaSimple
-                  columnas={columnasEdicion}
-                  filas={items}
-                  claveFila={(i) => i.tempId}
-                  pie={
+                <SimpleTable
+                  columns={editColumns}
+                  rows={items}
+                  rowKey={(i) => i.tempId}
+                  footer={
                     <div className="flex justify-end gap-3">
                       <span>Subtotal</span>
                       <span className="min-w-[96px] text-right font-medium text-foreground">{formatCurrency(subtotal)}</span>
@@ -772,12 +772,12 @@ const CotizacionForm = ({ editId, onCancel, onSaved }: Props) => {
 
               {/* Items table + summary */}
               {items.length > 0 && (
-                <TablaSimple
-                  columnas={columnasVista}
-                  filas={items}
-                  claveFila={(i) => i.tempId}
+                <SimpleTable
+                  columns={readOnlyColumns}
+                  rows={items}
+                  rowKey={(i) => i.tempId}
                   className="shadow-none"
-                  pie={
+                  footer={
                     <div className="ml-auto w-56 space-y-1.5 text-xs">
                       <div className="flex justify-between">
                         <span>Subtotal</span>

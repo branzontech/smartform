@@ -1,47 +1,47 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { EncabezadoModulo } from "@/components/kit/EncabezadoModulo";
-import { AccionesFila } from "@/components/kit/AccionesFila";
+import { ModuleHeader } from "@/components/kit/ModuleHeader";
+import { RowActions } from "@/components/kit/RowActions";
 import {
-  BarraTabla, CeldaEstado, TablaDatos, useTablaDatos,
-  type ColumnaTabla, type FiltroTabla, type SegmentoTabla, type TonoEstado,
-} from "@/components/kit/tabla";
+  TableToolbar, StatusCell, DataTable, useDataTable,
+  type TableColumn, type TableFilter, type TableSegment, type StatusTone,
+} from "@/components/kit/table";
 import { useToast } from "@/hooks/use-toast";
 import { getAllDoctors } from "@/utils/doctor-utils";
 import type { Doctor } from "@/types/patient-types";
 
-const TONO_ESTADO: Record<Doctor["status"], TonoEstado> = {
-  Activo: "exito",
-  Vacaciones: "aviso",
+const STATUS_TONE: Record<Doctor["status"], StatusTone> = {
+  Activo: "success",
+  Vacaciones: "warning",
   Inactivo: "error",
 };
 
 /** Una celda, un dato, una línea. Lo demás está en el perfil del profesional. */
-const COLUMNAS: ColumnaTabla<Doctor>[] = [
-  { id: "nombre", titulo: "Profesional", valor: (d) => d.name, principal: true, fija: true, className: "min-w-[220px]" },
-  { id: "especialidad", titulo: "Especialidad", valor: (d) => d.specialty },
-  { id: "registro", titulo: "Registro", valor: (d) => d.licenseNumber, className: "font-mono text-xs" },
-  { id: "documento", titulo: "Documento", valor: (d) => d.documentId, className: "font-mono text-xs", oculta: true },
-  { id: "telefono", titulo: "Teléfono", valor: (d) => d.contactNumber, className: "tabular-nums" },
-  { id: "correo", titulo: "Correo", valor: (d) => d.email, oculta: true },
+const COLUMNS: TableColumn<Doctor>[] = [
+  { id: "doctor", title: "Profesional", value: (d) => d.name, primary: true, alwaysVisible: true, className: "min-w-[220px]" },
+  { id: "specialty", title: "Especialidad", value: (d) => d.specialty },
+  { id: "license", title: "Registro", value: (d) => d.licenseNumber, className: "font-mono text-xs" },
+  { id: "document", title: "Documento", value: (d) => d.documentId, className: "font-mono text-xs", hidden: true },
+  { id: "phone", title: "Teléfono", value: (d) => d.contactNumber, className: "tabular-nums" },
+  { id: "email", title: "Correo", value: (d) => d.email, hidden: true },
   {
-    id: "estado", titulo: "Estado", valor: (d) => d.status, sinPadding: true,
-    celda: (d) => <CeldaEstado tono={TONO_ESTADO[d.status] ?? "neutro"} texto={d.status} />,
+    id: "status", title: "Estado", value: (d) => d.status, flush: true,
+    cell: (d) => <StatusCell tone={STATUS_TONE[d.status] ?? "neutral"} text={d.status} />,
   },
 ];
 
-const especialidades = (d: Doctor) => (d.specialties?.length ? d.specialties : [d.specialty]);
+const specialtiesOf = (d: Doctor) => (d.specialties?.length ? d.specialties : [d.specialty]);
 
-const FILTROS: FiltroTabla<Doctor>[] = [{ id: "especialidad", titulo: "Especialidad", valor: especialidades }];
+const FILTERS: TableFilter<Doctor>[] = [{ id: "specialty", title: "Especialidad", value: specialtiesOf }];
 
-const SEGMENTOS: SegmentoTabla<Doctor>[] = [
-  { id: "todos", titulo: "Todos", cumple: () => true },
-  { id: "activos", titulo: "Activos", cumple: (d) => d.status === "Activo" },
-  { id: "vacaciones", titulo: "En vacaciones", cumple: (d) => d.status === "Vacaciones" },
-  { id: "inactivos", titulo: "Inactivos", cumple: (d) => d.status === "Inactivo" },
+const SEGMENTS: TableSegment<Doctor>[] = [
+  { id: "all", title: "Todos", match: () => true },
+  { id: "active", title: "Activos", match: (d) => d.status === "Activo" },
+  { id: "onVacation", title: "En vacaciones", match: (d) => d.status === "Vacaciones" },
+  { id: "inactive", title: "Inactivos", match: (d) => d.status === "Inactivo" },
 ];
 
-const claveFila = (d: Doctor) => d.id;
+const rowKey = (d: Doctor) => d.id;
 
 /**
  * Médicos y profesionales. Fuente: getAllDoctors (datos simulados guardados en
@@ -50,17 +50,17 @@ const claveFila = (d: Doctor) => d.id;
 const DoctorList = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [medicos, setMedicos] = useState<Doctor[]>([]);
-  const [cargando, setCargando] = useState(true);
+  const [doctors, setDoctors] = useState<Doctor[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    let vigente = true;
+    let alive = true;
     (async () => {
       try {
         const data = await getAllDoctors();
-        if (vigente) setMedicos(data);
+        if (alive) setDoctors(data);
       } catch (error) {
-        if (vigente) {
+        if (alive) {
           toast({
             title: "No se pudieron cargar los profesionales",
             description: error instanceof Error ? error.message : undefined,
@@ -68,29 +68,29 @@ const DoctorList = () => {
           });
         }
       } finally {
-        if (vigente) setCargando(false);
+        if (alive) setLoading(false);
       }
     })();
-    return () => { vigente = false; };
+    return () => { alive = false; };
   }, [toast]);
 
-  const t = useTablaDatos({ id: "medicos.lista", filas: medicos, columnas: COLUMNAS, claveFila, filtros: FILTROS, segmentos: SEGMENTOS });
+  const t = useDataTable({ id: "doctors.list", rows: doctors, columns: COLUMNS, rowKey, filters: FILTERS, segments: SEGMENTS });
 
-  const ver = (d: Doctor) => navigate(`/app/medicos/${d.id}`);
+  const view = (d: Doctor) => navigate(`/app/medicos/${d.id}`);
 
   return (
     <div className="mx-auto max-w-7xl space-y-5 py-6">
-      <EncabezadoModulo
-        titulo="Médicos y profesionales"
-        primaria={{ titulo: "Nuevo profesional", onClick: () => navigate("/app/medicos/nuevo") }}
+      <ModuleHeader
+        title="Médicos y profesionales"
+        primary={{ title: "Nuevo profesional", onClick: () => navigate("/app/medicos/nuevo") }}
       />
-      <TablaDatos
+      <DataTable
         t={t}
-        cargando={cargando}
-        onFilaClick={ver}
-        barra={<BarraTabla t={t} nombre={["profesional", "profesionales"]} placeholder="Buscar por nombre o especialidad" nombreArchivo="profesionales" />}
-        acciones={(d) => <AccionesFila nombre={d.name} onVer={() => ver(d)} />}
-        vacio="Aún no hay profesionales. Registra uno con «Nuevo profesional»."
+        loading={loading}
+        onRowClick={view}
+        toolbar={<TableToolbar t={t} name={["profesional", "profesionales"]} placeholder="Buscar por nombre o especialidad" fileName="profesionales" />}
+        actions={(d) => <RowActions name={d.name} onView={() => view(d)} />}
+        empty="Aún no hay profesionales. Registra uno con «Nuevo profesional»."
       />
     </div>
   );

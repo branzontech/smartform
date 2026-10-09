@@ -38,6 +38,15 @@
 
     --radius: 0.5rem;
 
+    /* Lienzo de la app: las tarjetas blancas se separan por sombra (docs/ux-ui/sistema-diseno.md). */
+
+    --canvas: 228 33% 97%;
+    /* Fondo de los campos al diligenciar formatos (sistema-diseno.md §7). */
+    --field: 260 50% 98%;
+    /* Lima de marca (#A2F603) con violeta de marca encima: acento de acción y «hoy». */
+    --highlight: 84 98% 49%;
+    --highlight-foreground: 263 67% 35%;
+
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
     --sidebar-primary: 271 76% 53%;
@@ -79,6 +88,10 @@
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
     --ring: 271 76% 53%;
+    --canvas: 224 71% 3%;
+    --field: 262 22% 13%;
+    --highlight: 84 98% 49%;
+    --highlight-foreground: 263 67% 25%;
     
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
@@ -172,6 +185,22 @@
 }
 
 @layer components {
+  /* Diligenciamiento de formatos (docs/ux-ui/sistema-diseno.md §7) */
+  .kh-label {
+    @apply text-[15px] font-semibold leading-snug text-foreground;
+  }
+  .kh-help {
+    @apply text-[13px] text-muted-foreground;
+  }
+  .kh-field {
+    @apply w-full rounded-[14px] border-[1.5px] border-transparent bg-[hsl(var(--field))] px-4 py-3 text-base text-foreground transition-colors placeholder:text-muted-foreground/60 hover:border-border focus:border-primary focus:bg-card focus:outline-none disabled:opacity-60;
+  }
+  .kh-row {
+    @apply flex min-h-[52px] w-full items-center justify-between gap-3.5 rounded-[14px] border-[1.5px] border-border bg-card px-4 py-2.5 text-left text-base text-foreground transition-[background-color,border-color,transform] hover:border-primary hover:bg-primary/5 active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40;
+  }
+  .kh-row[aria-checked="true"] {
+    @apply border-primary bg-primary/[0.08];
+  }
   .form-card {
     @apply bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden transition-all duration-200 hover:shadow-lg;
   }

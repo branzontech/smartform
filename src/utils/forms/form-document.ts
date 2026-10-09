@@ -11,6 +11,8 @@ import {
 } from '../orders/header-builder';
 import { ORDER_DOCUMENT_STYLES } from '../orders/order-document';
 import type { QuestionData } from '@/components/forms/question/types';
+import { vitalReadings } from '@/components/forms/form-viewer/vitals-config';
+import { storedAnswer } from '@/components/forms/form-viewer/stored-answer';
 
 export interface FormDocumentEntry {
   id: string;
@@ -64,6 +66,17 @@ function renderAnswer(question: QuestionData, answer: any): string {
       if (Array.isArray(answer)) {
         return answer.map(renderItem).join(', ');
       }
+      const selectedIds = typeof answer === 'object' ? (answer as { selectedOptions?: unknown }).selectedOptions : undefined;
+      if (Array.isArray(selectedIds)) {
+        // Se guarda { score, selectedOptions: [ids] }: se imprime el texto de cada opción elegida.
+        const items = question.scoredItems ?? [];
+        return selectedIds
+          .map((id: string) => {
+            const item = items.find((i) => i.id === id);
+            return renderItem(item ? { text: item.text, score: item.score } : { text: id });
+          })
+          .join(', ') || '—';
+      }
       if (typeof answer === 'object') {
         return renderItem(answer);
       }
@@ -83,11 +96,10 @@ function renderAnswer(question: QuestionData, answer: any): string {
           if (v.bmi) parts.push(`IMC: ${escapeHtml(v.bmi)}`);
           return parts.join(' · ') || '—';
         }
-        // Generic vitals object: render key/value pairs
-        const entries = Object.entries(v).filter(([_, val]) => val !== '' && val !== null && val !== undefined);
-        return entries
-          .map(([k, val]) => `<div><span class="kv-label">${escapeHtml(k)}:</span> ${escapeHtml(val)}</div>`)
-          .join('');
+        // Signos vitales agrupados: etiqueta y unidad de cada uno, la tensión arterial en una sola lectura.
+        return vitalReadings(question, v)
+          .map((r) => `<div><span class="kv-label">${escapeHtml(r.label)}:</span> ${escapeHtml(r.value)} ${escapeHtml(r.unit)}</div>`)
+          .join('') || '—';
       }
       return escapeHtml(answer);
 
@@ -106,7 +118,8 @@ function renderAnswer(question: QuestionData, answer: any): string {
     case 'diagnosis':
       if (Array.isArray(answer)) {
         return answer
-          .map((d: any) => `<div>• <strong>${escapeHtml(d.code || '')}</strong> — ${escapeHtml(d.name || d.description || '')}</div>`)
+          // Se guarda como { codigo, descripcion } (CIE-10/11); los registros antiguos traen { code, name }.
+          .map((d: Record<string, unknown>, i: number) => `<div>• <strong>${escapeHtml(d.codigo || d.code || '')}</strong> — ${escapeHtml(d.descripcion || d.name || d.description || '')}${i === 0 ? ' <span class="muted">(principal)</span>' : ''}</div>`)
           .join('');
       }
       return escapeHtml(answer);
@@ -157,7 +170,7 @@ function renderAnswer(question: QuestionData, answer: any): string {
       if (typeof answer === 'object' && !Array.isArray(answer)) {
         const v: any = answer;
         const total = v.total ?? v.score ?? '';
-        const label = v.label || '';
+        const label = v.interpretation || v.label || '';
         return `<strong>Total: ${escapeHtml(total)}</strong>${label ? ` — ${escapeHtml(label)}` : ''}`;
       }
       return escapeHtml(answer);
@@ -181,7 +194,7 @@ function buildFormPage(
       if (q.type === 'section') {
         return `<h3 class="form-section-title">${escapeHtml(q.title)}</h3>`;
       }
-      const answer = entry.formData?.[q.id];
+      const answer = storedAnswer(q, entry.formData ?? {});
       return `
         <div class="form-q">
           <div class="form-q-label">${escapeHtml(q.title)}</div>

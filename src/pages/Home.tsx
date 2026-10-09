@@ -1,76 +1,69 @@
 import { motion } from "framer-motion";
-import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { ArrowRight, Sparkles } from "lucide-react";
-import { IconoModulo } from "@/components/ui/icono-modulo";
+import { ModuleCard } from "@/components/kit/surface";
 
 const quickActions = [
   {
-    icono: "atencion" as const,
+    icon: "atencion" as const,
     label: "Realizar atención",
     description: "Inicia una nueva consulta o atención médica",
     route: "/app/pacientes/nueva-consulta",
-    featured: true,
   },
   {
-    icono: "citas" as const,
+    icon: "citas" as const,
     label: "Agendar paciente",
     description: "Crea una nueva cita o admite un paciente",
     route: "/app/citas/nueva",
   },
   {
-    icono: "pacientes" as const,
+    icon: "pacientes" as const,
     label: "Consultar pacientes",
     description: "Busca y gestiona la información de tus pacientes",
     route: "/app/pacientes",
   },
   {
-    icono: "calidad" as const,
+    icon: "calidad" as const,
     label: "Realizar auditoría",
     description: "Revisa y audita los registros clínicos",
     route: "/app/informes",
   },
   {
-    icono: "informes" as const,
+    icon: "informes" as const,
     label: "Consultar estadísticas",
     description: "Visualiza métricas y reportes del sistema",
     route: "/app/pacientes/dashboard",
   },
   {
-    icono: "formularios" as const,
+    icon: "formularios" as const,
     label: "Formularios",
     description: "Crea y gestiona formularios clínicos",
     route: "/app/configuracion?tab=forms",
   },
   {
-    icono: "cotizaciones" as const,
-    label: "Cotizar Servicios",
+    icon: "cotizaciones" as const,
+    label: "Cotizar servicios",
     description: "Crea y gestiona cotizaciones de servicios",
     route: "/app/cotizaciones",
   },
   {
-    icono: "inventario" as const,
+    icon: "inventario" as const,
     label: "Inventario",
     description: "Gestiona stock, lotes y movimientos",
     route: "/app/inventario",
   },
 ];
 
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: { staggerChildren: 0.06, delayChildren: 0.15 },
-  },
+const listVariants = {
+  hidden: {},
+  visible: { transition: { staggerChildren: 0.03 } },
 };
 
 const itemVariants = {
-  hidden: { opacity: 0, y: 20, scale: 0.97 },
-  visible: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.5, type: "spring" as const, bounce: 0.3 } },
+  hidden: { opacity: 0, y: 8 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.2, ease: "easeOut" as const } },
 };
 
 const Home = () => {
-  const navigate = useNavigate();
   const { profile, user } = useAuth();
 
   const displayName = profile?.full_name || user?.email?.split("@")[0] || "Usuario";
@@ -80,85 +73,27 @@ const Home = () => {
   const greeting = hour < 12 ? "Buenos días" : hour < 18 ? "Buenas tardes" : "Buenas noches";
 
   return (
-    <div className="flex-1 flex flex-col items-center justify-center px-4 py-8 md:py-16 min-h-[75vh] relative overflow-hidden">
-      {/* Subtle background glow */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full bg-primary/[0.04] blur-[100px]" />
-        <div className="absolute bottom-0 right-1/4 w-[400px] h-[400px] rounded-full bg-secondary/[0.03] blur-[80px]" />
+    <div className="mx-auto w-full max-w-6xl space-y-6 py-6 md:py-8">
+      {/* Saludo: una línea; el espacio es para los módulos (docs/ux-ui/sistema-diseno.md) */}
+      <div className="space-y-1">
+        <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+          {greeting}, {firstName}
+        </h1>
+        <p className="text-sm text-muted-foreground">¿Qué deseas hacer hoy?</p>
       </div>
 
-      <motion.div
-        variants={containerVariants}
+      <motion.ul
+        variants={listVariants}
         initial="hidden"
         animate="visible"
-        className="w-full max-w-4xl space-y-12 relative z-10"
+        className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4"
       >
-        {/* Greeting */}
-        <motion.div variants={itemVariants} className="text-center space-y-3">
-          <motion.div
-            initial={{ scale: 0, rotate: -20 }}
-            animate={{ scale: 1, rotate: 0 }}
-            transition={{ delay: 0.3, type: "spring", bounce: 0.5 }}
-            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 text-primary text-xs font-medium mb-4"
-          >
-            <Sparkles className="w-3.5 h-3.5" />
-            Ker Hub
-          </motion.div>
-          <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-foreground">
-            {greeting},{" "}
-            <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-              {firstName}
-            </span>
-          </h1>
-          <p className="text-muted-foreground text-lg md:text-xl font-light max-w-md mx-auto">
-            ¿Qué deseas hacer hoy?
-          </p>
-        </motion.div>
-
-        {/* Quick Actions Grid */}
-        <motion.div
-          variants={containerVariants}
-          className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4"
-        >
-          {quickActions.map((action) => (
-            <motion.button
-              key={action.label}
-              variants={itemVariants}
-              whileHover={{ y: -4 }}
-              whileTap={{ scale: 0.97 }}
-              onClick={() => navigate(action.route)}
-              className={`
-                group relative flex flex-col items-start gap-4 p-5 md:p-6
-                rounded-2xl border border-border/60
-                bg-card/50 backdrop-blur-sm
-                hover:bg-card hover:border-primary/30
-                hover:shadow-xl hover:shadow-primary/[0.06]
-                transition-all duration-300 cursor-pointer
-                text-left overflow-hidden
-                ${action.featured ? "md:col-span-1" : ""}
-              `}
-            >
-              {/* Hover gradient overlay */}
-              <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.03] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-2xl" />
-
-              <IconoModulo
-                nombre={action.icono}
-                className="relative h-14 w-14 transition-transform duration-300 motion-safe:group-hover:-translate-y-0.5 motion-safe:group-hover:scale-105"
-              />
-
-              <div className="relative space-y-1.5 flex-1">
-                <span className="text-sm font-semibold text-foreground flex items-center gap-2">
-                  {action.label}
-                  <ArrowRight className="w-3.5 h-3.5 opacity-0 -translate-x-2 group-hover:opacity-60 group-hover:translate-x-0 transition-all duration-300 text-muted-foreground" />
-                </span>
-                <span className="text-xs text-muted-foreground/80 leading-relaxed hidden md:block">
-                  {action.description}
-                </span>
-              </div>
-            </motion.button>
-          ))}
-        </motion.div>
-      </motion.div>
+        {quickActions.map((action) => (
+          <motion.li key={action.route} variants={itemVariants}>
+            <ModuleCard icon={action.icon} title={action.label} description={action.description} to={action.route} />
+          </motion.li>
+        ))}
+      </motion.ul>
     </div>
   );
 };

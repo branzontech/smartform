@@ -1,38 +1,35 @@
 
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { Plus, FileText, Palette, SeparatorHorizontal, Save, X } from "lucide-react";
+import { Eye, EyeOff, Plus, SeparatorHorizontal, Save, X } from "lucide-react";
 import { nanoid } from "nanoid";
-import { baseDatos } from "@/integrations/datos/cliente";
+import { db } from "@/integrations/data/client";
 
 import { Question } from "@/components/ui/question";
-import { QuestionData, FormDesignOptions, defaultDesignOptions } from "@/components/forms/question/types";
+import { QuestionData } from "@/components/forms/question/types";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Form, DEFAULT_FORM_CATEGORIES } from "./FormsPage";
 import { BackButton } from "../App";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Select, SelectContent, SelectItem, SelectSeparator, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
+import { SectionedForm } from "@/components/forms/form-viewer/SectionedForm";
+import { cn } from "@/lib/utils";
+
+const PREVIEW_KEY = "kerhub.formCreator.preview";
+/** Opción de la lista de categorías que abre el campo para crear una nueva. */
+const NEW_CATEGORY = "__new_category__";
+
+/** La vista previa abierta o cerrada es una preferencia de cada usuario en su navegador. */
+const readPreviewPref = () => {
+  try { return localStorage.getItem(PREVIEW_KEY) !== "off"; } catch { return true; }
+};
 
 const defaultQuestion: Omit<QuestionData, "id"> = {
   type: "short",
   title: "",
   required: false,
 };
-
-// Predefined color schemes
-const colorSchemes = [
-  { name: "Default", primaryColor: "#0099ff", backgroundColor: "#ffffff", questionBackgroundColor: "#ffffff", questionTextColor: "#1f2937" },
-  { name: "Soothing Green", primaryColor: "#10b981", backgroundColor: "#f0fdf4", questionBackgroundColor: "#ffffff", questionTextColor: "#1f2937" },
-  { name: "Professional Blue", primaryColor: "#3b82f6", backgroundColor: "#f0f9ff", questionBackgroundColor: "#ffffff", questionTextColor: "#1f2937" },
-  { name: "Warm Orange", primaryColor: "#f97316", backgroundColor: "#fff7ed", questionBackgroundColor: "#ffffff", questionTextColor: "#1f2937" },
-  { name: "Elegant Purple", primaryColor: "#8b5cf6", backgroundColor: "#f5f3ff", questionBackgroundColor: "#ffffff", questionTextColor: "#1f2937" },
-  { name: "Medical Green", primaryColor: "#22c55e", backgroundColor: "#f0fdf4", questionBackgroundColor: "#ffffff", questionTextColor: "#1f2937" }
-];
 
 const DRAFT_KEY = "form-creator-draft";
 
@@ -56,7 +53,6 @@ const FormCreator = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [loading, setLoading] = useState(!!id);
-  const [activeTab, setActiveTab] = useState("content");
   
   // Intentar restaurar borrador
   const draft = !id ? loadDraft() : null;
@@ -64,14 +60,32 @@ const FormCreator = () => {
   const [title, setTitle] = useState(draft?.title || "Nuevo formulario Ker Hub");
   const [description, setDescription] = useState(draft?.description || "Formulario para registro de datos clínicos");
   const [formType, setFormType] = useState<string>(draft?.formType || "historia_clinica");
-  const [customCategory, setCustomCategory] = useState("");
+  const [creatingCategory, setCreatingCategory] = useState(false);
+  const [newCategory, setNewCategory] = useState("");
+  const cancelCategory = () => { setCreatingCategory(false); setNewCategory(""); };
+  const createCategory = () => {
+    const name = newCategory.trim();
+    if (!name) return;
+    setFormType(name.toLowerCase().replace(/s+/g, "_"));
+    cancelCategory();
+    toast({ title: "Categoría creada", description: `«${name}» quedó asignada a este formulario.` });
+  };
   const [questions, setQuestions] = useState<QuestionData[]>(
     draft?.questions || (!id ? [{ id: nanoid(), type: "short", title: "", required: false } as QuestionData] : [])
   );
   const [saving, setSaving] = useState(false);
+  // Uso del formato: con registros guardados, los cambios crean una versión nueva y los campos usados no se borran.
+  const [recordCount, setRecordCount] = useState(0);
+  const [currentVersion, setCurrentVersion] = useState(1);
+  const [usedIds, setUsedIds] = useState<Set<string>>(new Set());
+  const [showPreview, setShowPreview] = useState(readPreviewPref);
+  // Respuestas de prueba en la vista previa: nunca se guardan.
+  const [previewData, setPreviewData] = useState<Record<string, unknown>>({});
+  useEffect(() => {
+    try { localStorage.setItem(PREVIEW_KEY, showPreview ? "on" : "off"); } catch { /* sin almacenamiento: la preferencia no se recuerda */ }
+  }, [showPreview]);
   const [expandedQuestions, setExpandedQuestions] = useState<string[]>([]);
   const [activeQuestionId, setActiveQuestionId] = useState<string | null>(null);
-  const [designOptions, setDesignOptions] = useState<FormDesignOptions>(draft?.designOptions || defaultDesignOptions);
   const [draftRestored, setDraftRestored] = useState(!!draft);
 
   // Mostrar notificación si se restauró un borrador
@@ -86,16 +100,16 @@ const FormCreator = () => {
   useEffect(() => {
     if (id) return; // No guardar drafts si estamos editando uno existente
     const timeout = setTimeout(() => {
-      saveDraft({ title, description, formType, questions, designOptions });
+      saveDraft({ title, description, formType, questions });
     }, 500);
     return () => clearTimeout(timeout);
-  }, [id, title, description, formType, questions, designOptions]);
+  }, [id, title, description, formType, questions]);
 
   useEffect(() => {
     let vigente = true;
     if (id) {
       const loadForm = async () => {
-        const { data, error } = await baseDatos
+        const { data, error } = await db
           .from("formularios")
           .select("*")
           .eq("id", id)
@@ -107,9 +121,15 @@ const FormCreator = () => {
           setDescription(data.descripcion || "");
           setFormType(data.tipo || "historia_clinica");
           setQuestions((data.preguntas as any[]) || []);
-          if (data.opciones_diseno && Object.keys(data.opciones_diseno as object).length > 0) {
-            setDesignOptions(data.opciones_diseno as unknown as FormDesignOptions);
-          }
+          setCurrentVersion((data as { version?: number }).version ?? 1);
+          const { count } = await db
+            .from("respuestas_formularios")
+            .select("id", { count: "exact", head: true })
+            .eq("formulario_id", id);
+          if (!vigente) return;
+          setRecordCount(count ?? 0);
+          // Los campos guardados ya pueden tener respuestas: se protegen todos los de la versión cargada.
+          if (count) setUsedIds(new Set(((data.preguntas as { id: string }[]) || []).map((q) => q.id)));
           setLoading(false);
         } else {
           toast({
@@ -200,6 +220,7 @@ const FormCreator = () => {
   };
 
   const handleDeleteQuestion = (id: string) => {
+    if (questions.find((q) => q.id === id)?.locked || usedIds.has(id)) return;
     if (questions.length > 1) {
       setQuestions(questions.filter((q) => q.id !== id));
       // Eliminar del arreglo de expandidos si estaba ahí
@@ -228,26 +249,6 @@ const FormCreator = () => {
       [newQuestions[index], newQuestions[index + 1]] = [newQuestions[index + 1], newQuestions[index]];
       setQuestions(newQuestions);
     }
-  };
-
-  const handleColorSchemeChange = (schemeName: string) => {
-    const scheme = colorSchemes.find(s => s.name === schemeName);
-    if (scheme) {
-      setDesignOptions(prev => ({
-        ...prev,
-        primaryColor: scheme.primaryColor,
-        backgroundColor: scheme.backgroundColor,
-        questionBackgroundColor: scheme.questionBackgroundColor,
-        questionTextColor: scheme.questionTextColor
-      }));
-    }
-  };
-
-  const handleDesignOptionChange = (option: keyof FormDesignOptions, value: string) => {
-    setDesignOptions(prev => ({
-      ...prev,
-      [option]: value
-    }));
   };
 
   const saveForm = async () => {
@@ -280,14 +281,14 @@ const FormCreator = () => {
         descripcion: description,
         tipo: formType,
         preguntas: questions as any,
-        opciones_diseno: designOptions as any,
-        fhir_extensions: {} as any,
+        // fhir_extensions no se envía: al editar se perderían la marca de
+        // formulario base y los códigos LOINC de la historia clínica.
       };
       
       let formId = id;
       
       if (id) {
-        const { error } = await baseDatos
+        const { error } = await db
           .from("formularios")
           .update(formPayload)
           .eq("id", id);
@@ -299,7 +300,7 @@ const FormCreator = () => {
           description: "Los cambios han sido guardados",
         });
       } else {
-        const { data, error } = await baseDatos
+        const { data, error } = await db
           .from("formularios")
           .insert(formPayload)
           .select("id")
@@ -330,14 +331,6 @@ const FormCreator = () => {
     }
   };
 
-  const applyDesignToPreview = () => {
-    document.documentElement.style.setProperty('--form-primary', designOptions.primaryColor);
-    return {
-      backgroundColor: designOptions.backgroundColor,
-      fontFamily: designOptions.fontFamily,
-    };
-  };
-
   if (loading) {
     return (
       <div className="h-full flex items-center justify-center">
@@ -355,362 +348,213 @@ const FormCreator = () => {
   }
 
   return (
-    <div className="h-full flex flex-col overflow-hidden" style={applyDesignToPreview()}>
-      {/* Barra de acciones — FIJA, nunca se mueve */}
-      <div className="flex-shrink-0 flex items-center justify-between px-4 py-2 border-b border-border bg-background z-10">
+    <div className="flex h-full flex-col overflow-hidden">
+      {/* Encabezado en una sola franja sobre el lienzo: volver, nombre y descripción; a la derecha categoría, vista previa y acciones. */}
+      <div className="z-10 flex shrink-0 flex-wrap items-center gap-x-4 gap-y-2 py-3">
         <BackButton fallbackPath="/app/configuracion?tab=forms" />
-        <div className="flex items-center gap-2">
+        <div className="min-w-[220px] flex-1">
+          <input
+            type="text"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="Título del formulario"
+            aria-label="Título del formulario"
+            className="w-full truncate border-none bg-transparent text-base font-semibold text-foreground placeholder:text-muted-foreground focus:outline-none"
+          />
+          <textarea
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="Descripción (opcional)"
+            rows={1}
+            aria-label="Descripción del formulario"
+            className="block max-h-10 w-full resize-none border-none bg-transparent text-[13px] leading-5 text-muted-foreground [field-sizing:content] focus:outline-none"
+          />
+        </div>
+        <div className="flex shrink-0 flex-wrap items-center gap-2">
+          {/* Categoría: la lista trae al final «Nueva categoría…», que se escribe aquí mismo. */}
+          {creatingCategory ? (
+            <div className="flex items-center gap-1">
+              <Input
+                autoFocus
+                value={newCategory}
+                onChange={(e) => setNewCategory(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") createCategory();
+                  if (e.key === "Escape") cancelCategory();
+                }}
+                placeholder="Nombre de la categoría"
+                aria-label="Nombre de la nueva categoría"
+                className="h-8 w-44 text-[13px]"
+              />
+              <Button size="sm" className="h-8 text-[13px]" disabled={!newCategory.trim()} onClick={createCategory}>Crear</Button>
+              <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground" aria-label="Descartar nueva categoría" title="Descartar" onClick={cancelCategory}><X size={16} /></Button>
+            </div>
+          ) : (
+            <Select
+              value={formType}
+              onValueChange={(value: string) => {
+                if (value === NEW_CATEGORY) { setCreatingCategory(true); return; }
+                setFormType(value);
+              }}
+            >
+              <SelectTrigger id="form-type" aria-label="Categoría del formulario" className="h-8 w-44 text-[13px]">
+                <SelectValue placeholder="Selecciona una categoría" />
+              </SelectTrigger>
+              <SelectContent>
+                {DEFAULT_FORM_CATEGORIES.map((cat) => (
+                  <SelectItem key={cat.value} value={cat.value} className="text-[13px]">{cat.label}</SelectItem>
+                ))}
+                {!DEFAULT_FORM_CATEGORIES.find(c => c.value === formType) && formType && (
+                  <SelectItem value={formType} className="text-[13px]">{formType.replace(/_/g, " ")}</SelectItem>
+                )}
+                <SelectSeparator />
+                <SelectItem value={NEW_CATEGORY} className="text-[13px] text-primary">
+                  <span className="flex items-center gap-1.5"><Plus size={14} />Nueva categoría…</span>
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          )}
+          <span className="mx-1 hidden h-5 w-px bg-border md:block" />
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowPreview((v) => !v)}
+            aria-pressed={showPreview}
+            className={cn("hidden h-8 gap-1.5 text-[13px] md:inline-flex", showPreview ? "bg-primary/10 text-primary hover:bg-primary/15" : "text-muted-foreground")}
+          >
+            {showPreview ? <EyeOff size={16} /> : <Eye size={16} />}
+            Vista previa
+          </Button>
           <Button
             variant="ghost"
             size="sm"
             onClick={() => navigate("/app/configuracion?tab=forms")}
             disabled={saving}
-            className="text-muted-foreground"
+            className="h-8 text-[13px] text-muted-foreground"
           >
             <X size={16} className="mr-1" />
             Cancelar
           </Button>
-          <Button
-            size="sm"
-            onClick={saveForm}
-            disabled={saving}
-            style={{
-              backgroundColor: designOptions.primaryColor,
-              borderColor: designOptions.primaryColor
-            }}
-            className="text-white"
-          >
+          <Button size="sm" onClick={saveForm} disabled={saving} className="h-8 text-[13px]">
             <Save size={16} className="mr-1" />
             {saving ? "Guardando..." : "Guardar"}
           </Button>
         </div>
       </div>
 
-      {/* Contenido — ÚNICO elemento con scroll */}
-      <div className="flex-1 overflow-y-auto">
-          <div className="container mx-auto py-6 px-4">
-            <div className="max-w-3xl mx-auto relative">
-            <div className="form-card overflow-visible mb-3" style={{backgroundColor: designOptions.backgroundColor}}>
-              {/* Bloque compacto: título + descripción */}
-              <div className="px-4 pt-3 pb-1">
-                <input
-                  type="text"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  placeholder="Título del formulario"
-                  className="text-lg font-semibold w-full bg-transparent border-none focus:outline-none text-foreground placeholder:text-muted-foreground"
-                />
-                <input
-                  type="text"
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Descripción (opcional)"
-                  className="text-sm text-muted-foreground w-full bg-transparent border-none focus:outline-none mt-0.5"
-                />
-              </div>
-
-              {/* Tabs + categoría en la misma fila */}
-              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full px-4 pb-3">
-                <div className="flex items-center justify-between gap-3 mb-2">
-                  <TabsList className="h-8">
-                    <TabsTrigger value="content" className="text-xs px-3 py-1">Contenido</TabsTrigger>
-                    <TabsTrigger value="design" className="flex items-center gap-1 text-xs px-3 py-1">
-                      <Palette size={14} />
-                      <span>Diseño</span>
-                    </TabsTrigger>
-                  </TabsList>
-
-                  {/* Categoría inline */}
-                  <div className="flex items-center gap-1.5">
-                    <Select
-                        value={formType}
-                        onValueChange={(value: string) => {
-                          if (value === "__custom__") return;
-                          setFormType(value);
-                        }}
-                      >
-                        <SelectTrigger id="form-type" className="w-full max-w-xs">
-                          <SelectValue placeholder="Selecciona una categoría" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {DEFAULT_FORM_CATEGORIES.map((cat) => (
-                            <SelectItem key={cat.value} value={cat.value}>
-                              <div className="flex items-center">
-                                <FileText size={16} className="mr-2 text-primary" />
-                                <span>{cat.label}</span>
-                              </div>
-                            </SelectItem>
-                          ))}
-                          {!DEFAULT_FORM_CATEGORIES.find(c => c.value === formType) && formType && (
-                            <SelectItem value={formType}>
-                              <div className="flex items-center">
-                                <FileText size={16} className="mr-2 text-primary" />
-                                <span>{formType}</span>
-                              </div>
-                            </SelectItem>
-                          )}
-                        </SelectContent>
-                      </Select>
-                      
-                      {customCategory !== null && typeof customCategory === "string" && customCategory.length > 0 ? (
-                        <div className="flex items-center gap-1.5">
-                          <Input
-                            placeholder="Nueva categoría..."
-                            value={customCategory}
-                            onChange={(e) => setCustomCategory(e.target.value)}
-                            className="h-9 w-44 text-sm"
-                            autoFocus
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter" && customCategory.trim()) {
-                                const slug = customCategory.trim().toLowerCase().replace(/\s+/g, '_');
-                                setFormType(slug);
-                                setCustomCategory("");
-                                toast({ title: "Categoría creada", description: `"${customCategory.trim()}" establecida` });
-                              } else if (e.key === "Escape") {
-                                setCustomCategory("");
-                              }
-                            }}
-                          />
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                            disabled={!customCategory.trim()}
-                            onClick={() => {
-                              const slug = customCategory.trim().toLowerCase().replace(/\s+/g, '_');
-                              setFormType(slug);
-                              setCustomCategory("");
-                              toast({ title: "Categoría creada", description: `"${customCategory.trim()}" establecida` });
-                            }}
-                          >
-                            <Plus size={14} />
-                          </Button>
-                        </div>
-                      ) : (
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          className="h-9 w-9 text-muted-foreground hover:text-foreground"
-                          title="Nueva categoría"
-                          onClick={() => setCustomCategory(" ")}
-                        >
-                          <Plus size={16} />
-                        </Button>
-                      )}
-                  </div>
-                </div>
-                
-                <TabsContent value="content" className="hidden" />
-                
-                <TabsContent value="design" className="space-y-6">
-                  <div>
-                    <h3 className="text-lg font-medium mb-2">Esquema de colores predefinidos</h3>
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                      {colorSchemes.map((scheme) => (
-                        <div 
-                          key={scheme.name}
-                          className="flex flex-col items-center p-3 border rounded-md cursor-pointer hover:shadow-md transition-shadow"
-                          style={{
-                            backgroundColor: scheme.backgroundColor,
-                            borderColor: designOptions.primaryColor === scheme.primaryColor ? scheme.primaryColor : 'transparent',
-                          }}
-                          onClick={() => handleColorSchemeChange(scheme.name)}
-                        >
-                          <div 
-                            className="w-8 h-8 mb-2 rounded-full" 
-                            style={{ backgroundColor: scheme.primaryColor }}
-                          ></div>
-                          <span className="text-sm font-medium">{scheme.name}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                  
-                  <Separator />
-                  
-                  <div>
-                    <h3 className="text-lg font-medium mb-4">Personalización</h3>
-                    
-                    <div className="grid gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="primaryColor">Color principal</Label>
-                        <div className="flex items-center gap-2">
-                          <div 
-                            className="w-6 h-6 rounded-full border"
-                            style={{ backgroundColor: designOptions.primaryColor }}
-                          ></div>
-                          <Input 
-                            id="primaryColor"
-                            type="color"
-                            value={designOptions.primaryColor}
-                            onChange={(e) => handleDesignOptionChange('primaryColor', e.target.value)}
-                            className="w-12 h-8 p-0"
-                          />
-                          <Input 
-                            type="text"
-                            value={designOptions.primaryColor}
-                            onChange={(e) => handleDesignOptionChange('primaryColor', e.target.value)}
-                            className="w-28"
-                          />
-                        </div>
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <Label>Tipografía</Label>
-                        <Select
-                          value={designOptions.fontFamily}
-                          onValueChange={(value) => handleDesignOptionChange('fontFamily', value)}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecciona una tipografía" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="Inter, system-ui, sans-serif">Inter (Moderna)</SelectItem>
-                            <SelectItem value="'Playfair Display', serif">Playfair (Elegante)</SelectItem>
-                            <SelectItem value="'Roboto', sans-serif">Roboto (Profesional)</SelectItem>
-                            <SelectItem value="'Montserrat', sans-serif">Montserrat (Limpia)</SelectItem>
-                            <SelectItem value="'Poppins', sans-serif">Poppins (Amigable)</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <Label>Bordes</Label>
-                        <Select
-                          value={designOptions.borderRadius}
-                          onValueChange={(value) => handleDesignOptionChange('borderRadius', value)}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Estilo de bordes" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="none">Cuadrados</SelectItem>
-                            <SelectItem value="sm">Ligeramente redondeados</SelectItem>
-                            <SelectItem value="md">Redondeados</SelectItem>
-                            <SelectItem value="lg">Muy redondeados</SelectItem>
-                            <SelectItem value="xl">Completamente redondeados</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <Label>Espaciado entre preguntas</Label>
-                        <RadioGroup
-                          value={designOptions.questionSpacing}
-                          onValueChange={(value) => handleDesignOptionChange('questionSpacing', value)}
-                          className="flex space-x-4"
-                        >
-                          <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="compact" id="spacing-compact" />
-                            <Label htmlFor="spacing-compact">Compacto</Label>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="normal" id="spacing-normal" />
-                            <Label htmlFor="spacing-normal">Normal</Label>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="spacious" id="spacing-spacious" />
-                            <Label htmlFor="spacing-spacious">Espacioso</Label>
-                          </div>
-                        </RadioGroup>
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <Label>Estilo de botones</Label>
-                        <Select
-                          value={designOptions.buttonStyle}
-                          onValueChange={(value) => handleDesignOptionChange('buttonStyle', value)}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Estilo de botones" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="default">Estándar</SelectItem>
-                            <SelectItem value="outline">Con borde</SelectItem>
-                            <SelectItem value="rounded">Redondeados</SelectItem>
-                            <SelectItem value="pill">Forma de píldora</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="pt-4">
-                    <p className="text-sm text-muted-foreground italic">Los cambios se aplicarán automáticamente a la vista previa. Guarda el formulario para conservar estos cambios.</p>
-                  </div>
-                </TabsContent>
-              </Tabs>
-            </div>
-            
-            {/* Empty state when no questions */}
-            {questions.length === 0 && (
-              <div className="border-2 border-dashed border-muted-foreground/20 rounded-lg p-8 text-center mb-4">
-                <p className="text-sm text-muted-foreground mb-3">
-                  Agrega el primer campo para empezar a construir tu formulario
-                </p>
-                <div className="flex items-center justify-center gap-2">
-                  <Button variant="outline" onClick={handleAddQuestion} className="gap-1.5">
-                    <Plus size={16} /> Agregar pregunta
-                  </Button>
-                  <Button variant="outline" onClick={handleAddSection} className="gap-1.5">
-                    <SeparatorHorizontal size={16} /> Agregar sección
-                  </Button>
-                </div>
-              </div>
+      {/* Editor y vista previa: cada columna se desplaza sola; la página no hace scroll. */}
+      <div className={cn("grid min-h-0 flex-1 gap-4 pb-4", showPreview && "md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]")}>
+        <div className="min-h-0 overflow-y-auto">
+          {/* Margen derecho para la barra flotante de cada pregunta. */}
+          <div className={cn("mx-auto pb-6 pt-1 md:pr-12", showPreview ? "max-w-2xl" : "max-w-3xl")}>
+            {recordCount > 0 && (
+              <p className="mb-3 rounded-xl bg-primary/[0.06] px-4 py-2.5 text-[13px] leading-5 text-foreground">
+                <span className="font-semibold">
+                  {recordCount === 1 ? "1 registro usa" : `${recordCount} registros usan`} este formato (versión {currentVersion}).
+                </span>{" "}
+                <span className="text-muted-foreground">
+                  Al guardar cambios se crea la versión {currentVersion + 1} y solo aplica a registros nuevos; los anteriores se siguen viendo como se diligenciaron. Los campos ya usados no se borran ni cambian de tipo: se pueden desactivar.
+                </span>
+              </p>
             )}
-
-            {/* Questions list with inline floating toolbar */}
-            <div className="space-y-4 mb-8">
-              {questions.map((question, index) => (
-                <div
-                  key={question.id}
-                  className="flex gap-2 items-start"
-                  onMouseEnter={() => setActiveQuestionId(question.id)}
-                  onClick={() => setActiveQuestionId(question.id)}
-                >
-                  <div className="flex-1 min-w-0">
-                    <Question
-                      question={question}
-                      onUpdate={handleUpdateQuestion}
-                      onDelete={handleDeleteQuestion}
-                      onDuplicate={handleDuplicateQuestion}
-                      isExpanded={expandedQuestions.includes(question.id)}
-                      onToggleExpand={() => toggleQuestionExpansion(question.id)}
-                      onMoveUp={handleMoveQuestionUp}
-                      onMoveDown={handleMoveQuestionDown}
-                      isFirst={index === 0}
-                      isLast={index === questions.length - 1}
-                      designOptions={designOptions}
-                      allQuestions={questions}
-                    />
-                  </div>
-
-                  {/* Toolbar — solo visible en el campo activo */}
-                  <div className={`shrink-0 flex flex-col gap-1 bg-background border border-border rounded-lg shadow-sm p-1 transition-opacity duration-200 ${
-                    activeQuestionId === question.id ? 'opacity-100' : 'opacity-0 pointer-events-none'
-                  }`}>
-                    <button
-                      onClick={(e) => { e.stopPropagation(); handleAddQuestionAfter(question.id); }}
-                      className="p-1.5 rounded-md hover:bg-muted transition-colors group"
-                      title="Añadir pregunta"
-                    >
-                      <Plus size={18} className="text-muted-foreground group-hover:text-foreground" />
-                    </button>
-                    <button
-                      onClick={(e) => { e.stopPropagation(); handleAddSectionAfter(question.id); }}
-                      className="p-1.5 rounded-md hover:bg-muted transition-colors group"
-                      title="Añadir sección"
-                    >
-                      <SeparatorHorizontal size={18} className="text-muted-foreground group-hover:text-foreground" />
-                    </button>
-                  </div>
-                </div>
-              ))}
+        {/* Empty state when no questions */}
+        {questions.length === 0 && (
+          <div className="border-2 border-dashed border-muted-foreground/20 rounded-lg p-8 text-center mb-4">
+            <p className="text-sm text-muted-foreground mb-3">
+              Agrega el primer campo para empezar a construir tu formulario
+            </p>
+            <div className="flex items-center justify-center gap-2">
+              <Button variant="outline" onClick={handleAddQuestion} className="gap-1.5">
+                <Plus size={16} /> Agregar pregunta
+              </Button>
+              <Button variant="outline" onClick={handleAddSection} className="gap-1.5">
+                <SeparatorHorizontal size={16} /> Agregar sección
+              </Button>
             </div>
           </div>
+        )}
+
+        {/* Questions list with inline floating toolbar */}
+        <div className="mb-8 grid gap-2">
+          {questions.map((question, index) => (
+            <div
+              key={question.id}
+              className="relative"
+              onMouseEnter={() => setActiveQuestionId(question.id)}
+              onClick={() => setActiveQuestionId(question.id)}
+            >
+              <div className="min-w-0">
+                <Question
+                  question={question}
+                  onUpdate={handleUpdateQuestion}
+                  onDelete={handleDeleteQuestion}
+                  onDuplicate={handleDuplicateQuestion}
+                  isExpanded={expandedQuestions.includes(question.id)}
+                  onToggleExpand={() => toggleQuestionExpansion(question.id)}
+                  onMoveUp={handleMoveQuestionUp}
+                  onMoveDown={handleMoveQuestionDown}
+                  isFirst={index === 0}
+                  isLast={index === questions.length - 1}
+                  allQuestions={questions}
+                  used={usedIds.has(question.id)}
+                />
+              </div>
+
+              {/* Toolbar — solo visible en el campo activo */}
+              {/* Fuera de la tarjeta (a su derecha) para que todas las tarjetas midan lo mismo que el encabezado. */}
+              <div className={`absolute left-full top-0 ml-2 hidden flex-col gap-1 rounded-lg border border-border bg-background p-1 shadow-sm transition-opacity duration-200 md:flex ${
+                activeQuestionId === question.id ? 'opacity-100' : 'opacity-0 pointer-events-none'
+              }`}>
+                <button
+                  onClick={(e) => { e.stopPropagation(); handleAddQuestionAfter(question.id); }}
+                  className="p-1.5 rounded-md hover:bg-muted transition-colors group"
+                  title="Añadir pregunta"
+                >
+                  <Plus size={18} className="text-muted-foreground group-hover:text-foreground" />
+                </button>
+                <button
+                  onClick={(e) => { e.stopPropagation(); handleAddSectionAfter(question.id); }}
+                  className="p-1.5 rounded-md hover:bg-muted transition-colors group"
+                  title="Añadir sección"
+                >
+                  <SeparatorHorizontal size={18} className="text-muted-foreground group-hover:text-foreground" />
+                </button>
+              </div>
+            </div>
+          ))}
         </div>
+          </div>
+        </div>
+
+        {showPreview && (
+          <aside aria-label="Vista previa del formulario" className="hidden min-h-0 flex-col overflow-hidden rounded-card bg-[hsl(var(--canvas))] ring-1 ring-border md:flex">
+            <div className="flex shrink-0 items-center justify-between gap-2 border-b border-border bg-card px-4 py-2">
+              <div className="min-w-0">
+                <p className="text-[13px] font-semibold text-foreground">Vista previa</p>
+                <p className="truncate text-xs text-muted-foreground">Así lo verá el profesional. Prueba campos y cálculos.</p>
+              </div>
+              <Button variant="ghost" size="sm" className="h-8 shrink-0 text-[13px] text-muted-foreground" onClick={() => setPreviewData({})}>
+                Limpiar
+              </Button>
+            </div>
+            <div className="min-h-0 flex-1 overflow-y-auto p-4">
+              <div className="mb-4">
+                <h2 className="text-xl font-bold text-foreground">{title || "Formulario sin título"}</h2>
+                {description && <p className="mt-1 text-sm text-muted-foreground">{description}</p>}
+              </div>
+              {questions.length > 0 ? (
+                <SectionedForm
+                  questions={questions}
+                  formData={previewData}
+                  onChange={(qid, value) => setPreviewData((d) => ({ ...d, [qid]: value }))}
+                  errors={{}}
+                />
+              ) : (
+                <p className="py-12 text-center text-sm text-muted-foreground">Agrega preguntas para verlas aquí.</p>
+              )}
+            </div>
+          </aside>
+        )}
       </div>
     </div>
   );

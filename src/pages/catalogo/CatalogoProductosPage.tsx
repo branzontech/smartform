@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { baseDatos } from "@/integrations/datos/cliente";
+import { db } from "@/integrations/data/client";
 import { toast } from "sonner";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm, Controller, useFieldArray } from "react-hook-form";
@@ -17,12 +17,12 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import { EncabezadoModulo } from "@/components/kit/EncabezadoModulo";
-import { AccionesFila } from "@/components/kit/AccionesFila";
+import { ModuleHeader } from "@/components/kit/ModuleHeader";
+import { RowActions } from "@/components/kit/RowActions";
 import {
-  BarraTabla, CeldaEstado, TablaDatos, useTablaDatos,
-  type ColumnaTabla, type FiltroTabla, type SegmentoTabla,
-} from "@/components/kit/tabla";
+  TableToolbar, StatusCell, DataTable, useDataTable,
+  type TableColumn, type TableFilter, type TableSegment,
+} from "@/components/kit/table";
 import { cn } from "@/lib/utils";
 
 // ── Types ──────────────────────────────────────────────
@@ -61,7 +61,7 @@ const PAISES_REG = [
 ];
 
 /** Fila de public.catalogo_productos con lo que usan la lista y el formulario. */
-interface ProductoFila {
+interface ProductRow {
   id: string;
   codigo: string;
   nombre_generico: string;
@@ -76,40 +76,40 @@ interface ProductoFila {
   activo: boolean | null;
 }
 
-const tipoTexto = (p: ProductoFila) => TIPO_LABELS[p.tipo_producto] ?? p.tipo_producto;
-const siNo = (v: boolean | null) => (v ? "Sí" : "No");
+const productTypeLabel = (p: ProductRow) => TIPO_LABELS[p.tipo_producto] ?? p.tipo_producto;
+const yesNo = (v: boolean | null) => (v ? "Sí" : "No");
 
 /** Una celda, un dato, una línea. Lo demás está en la ficha del producto. */
-const COLUMNAS: ColumnaTabla<ProductoFila>[] = [
-  { id: "codigo", titulo: "Código", valor: (p) => p.codigo, className: "font-mono text-xs", fija: true },
-  { id: "nombre", titulo: "Nombre genérico", valor: (p) => p.nombre_generico, principal: true, className: "min-w-[220px]" },
-  { id: "comercial", titulo: "Nombre comercial", valor: (p) => p.nombre_comercial, oculta: true },
-  { id: "tipo", titulo: "Tipo", valor: tipoTexto },
-  { id: "principio", titulo: "Principio activo", valor: (p) => p.principio_activo },
-  { id: "atc", titulo: "ATC", valor: (p) => p.codigo_atc, className: "font-mono text-xs" },
-  { id: "fabricante", titulo: "Fabricante", valor: (p) => p.fabricante, oculta: true },
-  { id: "frio", titulo: "Cadena de frío", valor: (p) => siNo(p.requiere_cadena_frio), oculta: true },
-  { id: "controlado", titulo: "Controlado", valor: (p) => siNo(p.controlado), oculta: true },
+const COLUMNS: TableColumn<ProductRow>[] = [
+  { id: "code", title: "Código", value: (p) => p.codigo, className: "font-mono text-xs", alwaysVisible: true },
+  { id: "genericName", title: "Nombre genérico", value: (p) => p.nombre_generico, primary: true, className: "min-w-[220px]" },
+  { id: "brandName", title: "Nombre comercial", value: (p) => p.nombre_comercial, hidden: true },
+  { id: "type", title: "Tipo", value: productTypeLabel },
+  { id: "activeIngredient", title: "Principio activo", value: (p) => p.principio_activo },
+  { id: "atc", title: "ATC", value: (p) => p.codigo_atc, className: "font-mono text-xs" },
+  { id: "manufacturer", title: "Fabricante", value: (p) => p.fabricante, hidden: true },
+  { id: "coldChain", title: "Cadena de frío", value: (p) => yesNo(p.requiere_cadena_frio), hidden: true },
+  { id: "controlled", title: "Controlado", value: (p) => yesNo(p.controlado), hidden: true },
   {
-    id: "estado", titulo: "Estado", valor: (p) => (p.activo ? "Activo" : "Inactivo"), sinPadding: true, className: "w-28",
-    celda: (p) => <CeldaEstado tono={p.activo ? "exito" : "neutro"} texto={p.activo ? "Activo" : "Inactivo"} />,
+    id: "status", title: "Estado", value: (p) => (p.activo ? "Activo" : "Inactivo"), flush: true, className: "w-28",
+    cell: (p) => <StatusCell tone={p.activo ? "success" : "neutral"} text={p.activo ? "Activo" : "Inactivo"} />,
   },
 ];
 
-const FILTROS: FiltroTabla<ProductoFila>[] = [
-  { id: "tipo", titulo: "Tipo", valor: tipoTexto },
-  { id: "fabricante", titulo: "Fabricante", valor: (p) => p.fabricante },
-  { id: "frio", titulo: "Cadena de frío", valor: (p) => siNo(p.requiere_cadena_frio) },
-  { id: "controlado", titulo: "Controlado", valor: (p) => siNo(p.controlado) },
+const FILTERS: TableFilter<ProductRow>[] = [
+  { id: "type", title: "Tipo", value: productTypeLabel },
+  { id: "manufacturer", title: "Fabricante", value: (p) => p.fabricante },
+  { id: "coldChain", title: "Cadena de frío", value: (p) => yesNo(p.requiere_cadena_frio) },
+  { id: "controlled", title: "Controlado", value: (p) => yesNo(p.controlado) },
 ];
 
-const SEGMENTOS: SegmentoTabla<ProductoFila>[] = [
-  { id: "activos", titulo: "Activos", cumple: (p) => !!p.activo },
-  { id: "inactivos", titulo: "Inactivos", cumple: (p) => !p.activo },
-  { id: "todos", titulo: "Todos", cumple: () => true },
+const SEGMENTS: TableSegment<ProductRow>[] = [
+  { id: "active", title: "Activos", match: (p) => !!p.activo },
+  { id: "inactive", title: "Inactivos", match: (p) => !p.activo },
+  { id: "all", title: "Todos", match: () => true },
 ];
 
-const claveFila = (p: ProductoFila) => p.id;
+const rowKey = (p: ProductRow) => p.id;
 
 // ── Zod Schemas ────────────────────────────────────────
 const presentacionSchema = z.object({
@@ -177,16 +177,16 @@ const CatalogoProductosPage = () => {
 
   // ── Queries ────────────────────────────────────────
   // Se carga el catálogo completo: búsqueda, filtros y segmentos se resuelven en el cliente (kit de tablas).
-  const { data: productos = [], isLoading } = useQuery({
+  const { data: products = [], isLoading } = useQuery({
     queryKey: ["catalogo_productos"],
     queryFn: async () => {
-      const { data, error } = await baseDatos.from("catalogo_productos").select("*").order("nombre_generico");
+      const { data, error } = await db.from("catalogo_productos").select("*").order("nombre_generico");
       if (error) throw error;
-      return (data ?? []) as unknown as ProductoFila[];
+      return (data ?? []) as unknown as ProductRow[];
     },
   });
 
-  const t = useTablaDatos({ id: "catalogo.productos", filas: productos, columnas: COLUMNAS, claveFila, filtros: FILTROS, segmentos: SEGMENTOS });
+  const t = useDataTable({ id: "catalog.products", rows: products, columns: COLUMNS, rowKey, filters: FILTERS, segments: SEGMENTS });
 
   // ── Mutations ──────────────────────────────────────
   const saveMutation = useMutation({
@@ -209,10 +209,10 @@ const CatalogoProductosPage = () => {
       let productoId = editingId;
 
       if (editingId) {
-        const { error } = await baseDatos.from("catalogo_productos").update(productData).eq("id", editingId);
+        const { error } = await db.from("catalogo_productos").update(productData).eq("id", editingId);
         if (error) throw error;
       } else {
-        const { data, error } = await baseDatos.from("catalogo_productos").insert(productData).select("id").single();
+        const { data, error } = await db.from("catalogo_productos").insert(productData).select("id").single();
         if (error) throw error;
         productoId = data.id;
       }
@@ -220,7 +220,7 @@ const CatalogoProductosPage = () => {
       // Save presentaciones
       if (productoId) {
         // Delete existing then re-insert
-        await baseDatos.from("presentaciones_producto").delete().eq("producto_id", productoId);
+        await db.from("presentaciones_producto").delete().eq("producto_id", productoId);
         if (values.presentaciones.length > 0) {
           const presRows = values.presentaciones.map((p) => ({
             producto_id: productoId!,
@@ -231,14 +231,14 @@ const CatalogoProductosPage = () => {
             codigo_barras: p.codigo_barras || null,
             presentacion_comercial: p.presentacion_comercial || null,
           }));
-          const { error: pe } = await baseDatos.from("presentaciones_producto").insert(presRows);
+          const { error: pe } = await db.from("presentaciones_producto").insert(presRows);
           if (pe) throw pe;
         }
 
         // Save regulatorio
         if (values.reg_pais) {
           // Delete existing for this product
-          await baseDatos.from("catalogo_productos_regulatorio" as any).delete().eq("producto_id", productoId);
+          await db.from("catalogo_productos_regulatorio" as any).delete().eq("producto_id", productoId);
           const regRow = {
             producto_id: productoId,
             pais: values.reg_pais,
@@ -248,7 +248,7 @@ const CatalogoProductosPage = () => {
             fecha_vencimiento_registro: values.reg_fecha_vencimiento || null,
             datos_regulatorios: values.reg_datos || {},
           };
-          const { error: re } = await baseDatos.from("catalogo_productos_regulatorio" as any).insert(regRow);
+          const { error: re } = await db.from("catalogo_productos_regulatorio" as any).insert(regRow);
           if (re) throw re;
         }
       }
@@ -265,7 +265,7 @@ const CatalogoProductosPage = () => {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await baseDatos.from("catalogo_productos").delete().eq("id", id);
+      const { error } = await db.from("catalogo_productos").delete().eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -283,18 +283,18 @@ const CatalogoProductosPage = () => {
     setSheetOpen(true);
   };
 
-  const openEdit = async (product: ProductoFila) => {
+  const openEdit = async (product: ProductRow) => {
     setEditingId(product.id);
     setActiveTab("general");
 
     // Fetch presentaciones
-    const { data: pres } = await baseDatos
+    const { data: pres } = await db
       .from("presentaciones_producto")
       .select("*")
       .eq("producto_id", product.id);
 
     // Fetch regulatorio
-    const { data: regs } = await baseDatos
+    const { data: regs } = await db
       .from("catalogo_productos_regulatorio" as any)
       .select("*")
       .eq("producto_id", product.id);
@@ -352,25 +352,25 @@ const CatalogoProductosPage = () => {
   // ── Render ─────────────────────────────────────────
   return (
     <div className="mx-auto max-w-7xl space-y-5 py-6">
-      <EncabezadoModulo titulo="Catálogo de productos" primaria={{ titulo: "Nuevo producto", onClick: openNew }} />
+      <ModuleHeader title="Catálogo de productos" primary={{ title: "Nuevo producto", onClick: openNew }} />
 
-      <TablaDatos
+      <DataTable
         t={t}
-        cargando={isLoading}
-        onFilaClick={(p) => void openEdit(p)}
-        barra={<BarraTabla t={t} nombre={["producto", "productos"]} placeholder="Buscar por nombre, código o principio activo" nombreArchivo="catalogo-productos" />}
-        acciones={(p) => (
-          <AccionesFila
-            nombre={p.nombre_generico}
-            onVer={() => void openEdit(p)}
-            onEliminar={() => deleteMutation.mutate(p.id)}
-            confirmarEliminar={{
-              titulo: "¿Eliminar este producto?",
-              descripcion: `«${p.nombre_generico}» se eliminará del catálogo y no se podrá recuperar.`,
+        loading={isLoading}
+        onRowClick={(p) => void openEdit(p)}
+        toolbar={<TableToolbar t={t} name={["producto", "productos"]} placeholder="Buscar por nombre, código o principio activo" fileName="catalogo-productos" />}
+        actions={(p) => (
+          <RowActions
+            name={p.nombre_generico}
+            onView={() => void openEdit(p)}
+            onDelete={() => deleteMutation.mutate(p.id)}
+            deleteConfirmation={{
+              title: "¿Eliminar este producto?",
+              description: `«${p.nombre_generico}» se eliminará del catálogo y no se podrá recuperar.`,
             }}
           />
         )}
-        vacio="Aún no hay productos. Registra uno con «Nuevo producto»."
+        empty="Aún no hay productos. Registra uno con «Nuevo producto»."
       />
 
         {/* Sheet */}

@@ -1,25 +1,64 @@
 import { useState, type FormEvent } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { ArrowRight, Eye, EyeOff, Loader2, Lock, Mail } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
+import { ArrowRight, Eye, EyeOff, Loader2, Lock, Mail, Server } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { currentEnvironment, ENVIRONMENTS, selectEnvironment, type EnvironmentId } from "@/config/environments";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { AuthLayout } from "./AuthLayout";
+
+/**
+ * Ambiente al que se entra: decide a qué API y a qué base habla la web desde
+ * este mismo login. Solo aparece cuando hay más de uno (en local).
+ */
+function EnvironmentSelect({ value, onChange, disabled }: { value: EnvironmentId; onChange: (id: EnvironmentId) => void; disabled: boolean }) {
+  if (ENVIRONMENTS.length < 2) return null;
+  const selected = ENVIRONMENTS.find((e) => e.id === value) ?? ENVIRONMENTS[0];
+  return (
+    <div className="space-y-1.5">
+      <Label htmlFor="environment" className="text-[13px] font-medium text-muted-foreground">
+        Ambiente
+      </Label>
+      <div className="relative">
+        <Server className="pointer-events-none absolute left-3.5 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <Select value={value} onValueChange={(v) => onChange(v as EnvironmentId)} disabled={disabled}>
+          <SelectTrigger id="environment" className="campo-relleno h-11 pl-10 focus:ring-0 focus:ring-offset-0">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {ENVIRONMENTS.map((e) => (
+              <SelectItem key={e.id} value={e.id}>
+                {e.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      <p className={`text-[12px] ${selected.id === "produccion" ? "text-amber-700 dark:text-amber-400" : "text-muted-foreground"}`}>
+        {selected.description}
+      </p>
+    </div>
+  );
+}
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [environment, setEnvironment] = useState<EnvironmentId>(() => currentEnvironment().id);
+  const queryClient = useQueryClient();
   const { signIn } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
   // ProtectedRoute deja en `from` la ubicación que se intentaba abrir.
-  const desde = (location.state as { from?: { pathname?: string; search?: string } } | null)?.from;
-  const destino = desde?.pathname?.startsWith("/app") ? `${desde.pathname}${desde.search ?? ""}` : "/app/home";
+  const from = (location.state as { from?: { pathname?: string; search?: string } } | null)?.from;
+  const redirectTo = from?.pathname?.startsWith("/app") ? `${from.pathname}${from.search ?? ""}` : "/app/home";
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -28,21 +67,25 @@ const Login = () => {
       return;
     }
     setIsLoading(true);
+    selectEnvironment(environment);
     try {
       const { error } = await signIn(email.trim(), password);
       if (error) {
         toast({ title: "No pudimos iniciar sesión", description: "Verifica tu correo y contraseña.", variant: "destructive" });
         return;
       }
-      navigate(destino, { replace: true });
+      // Nada en caché de otro ambiente ni de otro usuario.
+      queryClient.clear();
+      navigate(redirectTo, { replace: true });
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <AuthLayout titulo="Bienvenido de nuevo" descripcion="Ingresa con tu correo para continuar.">
+    <AuthLayout title="Bienvenido de nuevo" description="Ingresa con tu correo para continuar.">
       <form onSubmit={handleSubmit} className="space-y-5" noValidate>
+        <EnvironmentSelect value={environment} onChange={setEnvironment} disabled={isLoading} />
         <div className="space-y-1.5">
           <Label htmlFor="email" className="text-[13px] font-medium text-muted-foreground">
             Correo electrónico

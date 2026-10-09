@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { baseDatos } from "@/integrations/datos/cliente";
+import { db } from "@/integrations/data/client";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { toast } from "sonner";
@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { FormHeaderPreview } from "@/components/forms/FormHeaderPreview";
-import { TablaSimple, type ColumnaSimple } from "@/components/kit/tabla";
+import { SimpleTable, type SimpleColumn } from "@/components/kit/table";
 import type { CotizacionItem, EstadoCotizacion } from "@/types/cotizacion-types";
 
 const estadoBadge: Record<EstadoCotizacion, { label: string; className: string }> = {
@@ -23,16 +23,16 @@ const estadoBadge: Record<EstadoCotizacion, { label: string; className: string }
 const formatCurrency = (val: number, moneda: string = "COP") =>
   new Intl.NumberFormat("es-CO", { style: "currency", currency: moneda, minimumFractionDigits: 0 }).format(val);
 
-const derecha = "text-right tabular-nums";
+const rightAligned = "text-right tabular-nums";
 
 /** Columnas de los ítems: una celda, un dato (el código del servicio va en su propia columna). */
-const columnasItems = (moneda: string): ColumnaSimple<CotizacionItem>[] => [
-  { id: "descripcion", titulo: "Descripción", celda: (i) => i.descripcion_servicio, principal: true },
-  { id: "codigo", titulo: "Código", celda: (i) => i.codigo_servicio || "—", className: "w-28 font-mono text-xs" },
-  { id: "cantidad", titulo: "Cant.", celda: (i) => i.cantidad, className: `w-16 ${derecha}` },
-  { id: "unitario", titulo: "V. unit.", celda: (i) => formatCurrency(Number(i.valor_unitario), moneda), className: `w-32 ${derecha}` },
-  { id: "descuento", titulo: "Dto. %", celda: (i) => (Number(i.descuento_porcentaje) > 0 ? `${i.descuento_porcentaje}%` : "—"), className: `w-20 ${derecha}` },
-  { id: "total", titulo: "Total", celda: (i) => formatCurrency(Number(i.valor_total), moneda), className: `w-32 font-medium text-foreground ${derecha}` },
+const itemColumns = (moneda: string): SimpleColumn<CotizacionItem>[] => [
+  { id: "description", title: "Descripción", cell: (i) => i.descripcion_servicio, primary: true },
+  { id: "code", title: "Código", cell: (i) => i.codigo_servicio || "—", className: "w-28 font-mono text-xs" },
+  { id: "quantity", title: "Cant.", cell: (i) => i.cantidad, className: `w-16 ${rightAligned}` },
+  { id: "unitPrice", title: "V. unit.", cell: (i) => formatCurrency(Number(i.valor_unitario), moneda), className: `w-32 ${rightAligned}` },
+  { id: "discount", title: "Dto. %", cell: (i) => (Number(i.descuento_porcentaje) > 0 ? `${i.descuento_porcentaje}%` : "—"), className: `w-20 ${rightAligned}` },
+  { id: "total", title: "Total", cell: (i) => formatCurrency(Number(i.valor_total), moneda), className: `w-32 font-medium text-foreground ${rightAligned}` },
 ];
 
 interface Props {
@@ -47,7 +47,7 @@ const CotizacionDetail = ({ cotizacionId, onBack, onEdit }: Props) => {
   const { data: cotizacion, isLoading } = useQuery({
     queryKey: ["cotizacion", cotizacionId],
     queryFn: async () => {
-      const { data, error } = await baseDatos
+      const { data, error } = await db
         .from("cotizaciones" as any)
         .select("*, clientes_cotizacion:cliente_cotizacion_id(*)")
         .eq("id", cotizacionId)
@@ -60,7 +60,7 @@ const CotizacionDetail = ({ cotizacionId, onBack, onEdit }: Props) => {
   const { data: items } = useQuery({
     queryKey: ["cotizacion-items", cotizacionId],
     queryFn: async () => {
-      const { data, error } = await baseDatos
+      const { data, error } = await db
         .from("cotizacion_items" as any)
         .select("*")
         .eq("cotizacion_id", cotizacionId)
@@ -73,7 +73,7 @@ const CotizacionDetail = ({ cotizacionId, onBack, onEdit }: Props) => {
   const { data: headerConfig } = useQuery({
     queryKey: ["configuracion-encabezado"],
     queryFn: async () => {
-      const { data, error } = await baseDatos
+      const { data, error } = await db
         .from("configuracion_encabezado")
         .select("*")
         .limit(1)
@@ -86,7 +86,7 @@ const CotizacionDetail = ({ cotizacionId, onBack, onEdit }: Props) => {
   const { data: config } = useQuery({
     queryKey: ["configuracion-cotizaciones"],
     queryFn: async () => {
-      const { data, error } = await baseDatos
+      const { data, error } = await db
         .from("configuracion_cotizaciones" as any)
         .select("*")
         .limit(1)
@@ -98,7 +98,7 @@ const CotizacionDetail = ({ cotizacionId, onBack, onEdit }: Props) => {
 
   const statusMutation = useMutation({
     mutationFn: async (newEstado: string) => {
-      const { error } = await baseDatos
+      const { error } = await db
         .from("cotizaciones" as any)
         .update({ estado: newEstado } as any)
         .eq("id", cotizacionId);
@@ -228,10 +228,10 @@ const CotizacionDetail = ({ cotizacionId, onBack, onEdit }: Props) => {
 
           {/* Items table */}
           {items && items.length > 0 && (
-            <TablaSimple
-              columnas={columnasItems(cotizacion.moneda)}
-              filas={items}
-              claveFila={(i) => i.id}
+            <SimpleTable
+              columns={itemColumns(cotizacion.moneda)}
+              rows={items}
+              rowKey={(i) => i.id}
               className="shadow-none print:rounded-none"
             />
           )}

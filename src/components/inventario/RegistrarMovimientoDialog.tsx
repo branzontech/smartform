@@ -3,7 +3,7 @@ import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { baseDatos } from "@/integrations/datos/cliente";
+import { db } from "@/integrations/data/client";
 import { useAuth } from '@/contexts/AuthContext';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -130,7 +130,7 @@ export const RegistrarMovimientoDialog: React.FC<Props> = ({ open, onOpenChange 
     queryKey: ['sedes-mov'],
     staleTime: 60_000,
     queryFn: async () => {
-      const { data } = await baseDatos.from('sedes').select('id, nombre').eq('activo', true).order('nombre');
+      const { data } = await db.from('sedes').select('id, nombre').eq('activo', true).order('nombre');
       return data || [];
     },
   });
@@ -140,7 +140,7 @@ export const RegistrarMovimientoDialog: React.FC<Props> = ({ open, onOpenChange 
     if (term.length < 2) { setProductResults([]); return; }
     setProductLoading(true);
     try {
-      const { data: prods } = await baseDatos
+      const { data: prods } = await db
         .from('catalogo_productos')
         .select('id, nombre_generico, tipo_producto')
         .eq('activo', true)
@@ -150,7 +150,7 @@ export const RegistrarMovimientoDialog: React.FC<Props> = ({ open, onOpenChange 
       if (!prods || prods.length === 0) { setProductResults([]); return; }
 
       const prodIds = prods.map(p => p.id);
-      const { data: pres } = await baseDatos
+      const { data: pres } = await db
         .from('presentaciones_producto')
         .select('id, producto_id, forma_farmaceutica, concentracion')
         .in('producto_id', prodIds)
@@ -201,7 +201,7 @@ export const RegistrarMovimientoDialog: React.FC<Props> = ({ open, onOpenChange 
     enabled: !!presentacionId && !!sedeId,
     queryFn: async () => {
       // First find the stock_id
-      const { data: stock } = await baseDatos
+      const { data: stock } = await db
         .from('inventario_stock')
         .select('id')
         .eq('presentacion_id', presentacionId)
@@ -210,7 +210,7 @@ export const RegistrarMovimientoDialog: React.FC<Props> = ({ open, onOpenChange 
 
       if (!stock) return [];
 
-      const { data: lots } = await baseDatos
+      const { data: lots } = await db
         .from('inventario_lotes')
         .select('id, numero_lote, cantidad, fecha_vencimiento')
         .eq('stock_id', stock.id)
@@ -226,7 +226,7 @@ export const RegistrarMovimientoDialog: React.FC<Props> = ({ open, onOpenChange 
       if (!user) throw new Error('No autenticado');
 
       // 1. Find or create inventario_stock
-      let { data: stock } = await baseDatos
+      let { data: stock } = await db
         .from('inventario_stock')
         .select('id, cantidad_disponible')
         .eq('presentacion_id', values.presentacion_id)
@@ -235,7 +235,7 @@ export const RegistrarMovimientoDialog: React.FC<Props> = ({ open, onOpenChange 
 
       if (!stock) {
         // Create stock entry with 0
-        const { data: newStock, error: stockErr } = await baseDatos
+        const { data: newStock, error: stockErr } = await db
           .from('inventario_stock')
           .insert({
             producto_id: values.producto_id,
@@ -258,7 +258,7 @@ export const RegistrarMovimientoDialog: React.FC<Props> = ({ open, onOpenChange 
         if (!values.fecha_vencimiento) throw new Error('Fecha de vencimiento es requerida');
         if (values.fecha_vencimiento <= new Date()) throw new Error('La fecha de vencimiento debe ser futura');
 
-        const { data: lote, error: loteErr } = await baseDatos
+        const { data: lote, error: loteErr } = await db
           .from('inventario_lotes')
           .insert({
             stock_id: stock.id,
@@ -281,7 +281,7 @@ export const RegistrarMovimientoDialog: React.FC<Props> = ({ open, onOpenChange 
       }
 
       // Insert movement (trigger handles stock update)
-      const { error } = await baseDatos.from('inventario_movimientos').insert({
+      const { error } = await db.from('inventario_movimientos').insert({
         stock_id: stock.id,
         lote_id: loteId,
         tipo_movimiento: values.tipo_movimiento,

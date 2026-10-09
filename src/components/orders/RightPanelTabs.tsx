@@ -9,15 +9,15 @@ import { MedicationOrderForm } from './MedicationOrderForm';
 import { ProcedureOrderForm } from './ProcedureOrderForm';
 import { OrderPreviewDialog } from './OrderPreviewDialog';
 import { shareOrderEmail, shareOrderWhatsApp } from '@/utils/orders/order-actions';
-import { baseDatos } from "@/integrations/datos/cliente";
+import { db } from "@/integrations/data/client";
 import { cn } from '@/lib/utils';
-import { TablaSimple, type ColumnaSimple } from '@/components/kit/tabla';
+import { SimpleTable, type SimpleColumn } from '@/components/kit/table';
 import type { OrdenProcedimientoItem } from '@/types/ordenes-procedimientos';
 import { useOrdenesProcedimientosByAdmision, useOrdenProcedimientoDetail } from '@/hooks/useOrdenesProcedimientos';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
-const ORDER_TYPES = [
+export const ORDER_TYPES = [
   { type: 'medicamento', label: 'Medicamentos', icon: Pill },
   { type: 'laboratorio', label: 'Laboratorio', icon: TestTube },
   { type: 'imagenologia', label: 'Imagenología', icon: Scan },
@@ -25,13 +25,13 @@ const ORDER_TYPES = [
   { type: 'procedimiento', label: 'Procedimientos', icon: Scissors },
 ];
 
-/* Detalle de una orden: tabla de ítems (TablaSimple). */
-const COLUMNAS_ITEMS_ORDEN: ColumnaSimple<OrdenProcedimientoItem>[] = [
-  { id: "codigo", titulo: "Código", celda: (i) => i.codigo_procedimiento, className: "font-mono text-xs" },
-  { id: "descripcion", titulo: "Descripción", celda: (i) => i.descripcion_procedimiento, principal: true, className: "max-w-[260px] truncate" },
-  { id: "cantidad", titulo: "Cant.", celda: (i) => i.cantidad, className: "w-14 text-right tabular-nums" },
-  { id: "dias", titulo: "Días", celda: (i) => i.dias, className: "w-14 text-right tabular-nums" },
-  { id: "notas", titulo: "Notas", celda: (i) => i.notas || "—", className: "max-w-[160px] truncate" },
+/* Detalle de una orden: tabla de ítems (SimpleTable). */
+const ORDER_ITEM_COLUMNS: SimpleColumn<OrdenProcedimientoItem>[] = [
+  { id: "code", title: "Código", cell: (i) => i.codigo_procedimiento, className: "font-mono text-xs" },
+  { id: "description", title: "Descripción", cell: (i) => i.descripcion_procedimiento, primary: true, className: "max-w-[260px] truncate" },
+  { id: "quantity", title: "Cant.", cell: (i) => i.cantidad, className: "w-14 text-right tabular-nums" },
+  { id: "days", title: "Días", cell: (i) => i.dias, className: "w-14 text-right tabular-nums" },
+  { id: "notes", title: "Notas", cell: (i) => i.notas || "—", className: "max-w-[160px] truncate" },
 ];
 
 /* ─── Procedimientos Tab Content ─── */
@@ -155,11 +155,11 @@ const ProcedimientosTabContent: React.FC<{
               </div>
               <div className="px-5 py-3">
                 <p className="text-[10px] uppercase font-semibold text-muted-foreground mb-2">Procedimientos</p>
-                <TablaSimple
-                  columnas={COLUMNAS_ITEMS_ORDEN}
-                  filas={ordenDetail.items_detalle ?? []}
-                  claveFila={(item) => item.id}
-                  vacio="La orden no tiene procedimientos."
+                <SimpleTable
+                  columns={ORDER_ITEM_COLUMNS}
+                  rows={ordenDetail.items_detalle ?? []}
+                  rowKey={(item) => item.id}
+                  empty="La orden no tiene procedimientos."
                 />
               </div>
             </div>
@@ -175,6 +175,26 @@ const ProcedimientosTabContent: React.FC<{
     </div>
   );
 };
+/* ─── Contenido de un tipo de orden (pestañas de la consulta) ─── */
+export const OrderTabContent: React.FC<{ type: string; patientId: string; admisionId: string | null }> = ({ type, patientId, admisionId }) => {
+  const activeType = ORDER_TYPES.find((t) => t.type === type);
+  if (!activeType) return null;
+  if (type === "medicamento") {
+    return <MedicationOrderForm admisionId={admisionId} pacienteId={patientId} onSaved={() => {}} onCancel={() => {}} />;
+  }
+  if (type === "procedimiento") {
+    return <ProcedimientosTabContent admisionId={admisionId} patientId={patientId} onOrderSaved={() => {}} />;
+  }
+  const Icon = activeType.icon;
+  return (
+    <div className="flex h-full flex-col items-center justify-center p-10 text-center">
+      <Icon className="mb-3 h-10 w-10 text-muted-foreground/40" />
+      <p className="mb-1 text-[15px] font-semibold">{activeType.label}</p>
+      <p className="text-[13px] text-muted-foreground">Próximamente</p>
+    </div>
+  );
+};
+
 /* ─── Main Component ─── */
 interface RightPanelTabsProps {
   patientId: string;
@@ -194,7 +214,7 @@ export const RightPanelTabs: React.FC<RightPanelTabsProps> = ({
 
   const fetchCount = useCallback(async () => {
     if (!admisionId) { setOrdersCount(0); return; }
-    const { count } = await baseDatos
+    const { count } = await db
       .from('ordenes_medicas')
       .select('id', { count: 'exact', head: true })
       .eq('admision_id', admisionId);

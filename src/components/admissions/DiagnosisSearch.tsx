@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { baseDatos } from "@/integrations/datos/cliente";
+import { db } from "@/integrations/data/client";
 import { cn } from "@/lib/utils";
 
 interface DiagnosticoCatalogo {
@@ -51,7 +51,7 @@ export const DiagnosisSearch: React.FC<DiagnosisSearchProps> = ({
     const timer = setTimeout(async () => {
       setLoading(true);
       try {
-        const { data } = await baseDatos
+        const { data } = await db
           .from("catalogo_diagnosticos")
           .select("*")
           .eq("sistema", sistema)

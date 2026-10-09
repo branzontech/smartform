@@ -26,8 +26,9 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { ExtendedPatient } from "../PatientPanel";
-import { baseDatos } from "@/integrations/datos/cliente";
+import { db } from "@/integrations/data/client";
 import { toast } from "sonner";
+import { BASE_CLINICAL_HISTORY_ID, useClinicalHistories } from "@/components/forms/clinical-histories";
 
 // ── Types ──────────────────────────────────────────────
 export interface AdmissionData {
@@ -38,6 +39,9 @@ export interface AdmissionData {
   servicio_codigo: string;
   servicio_valor: number;
   motivo_consulta: string;
+  /** Historia clínica que llevará el paciente en esta admisión. */
+  formulario_id: string;
+  formulario_nombre: string;
 }
 
 interface Contrato {
@@ -83,6 +87,9 @@ export const AdmissionStep: React.FC<AdmissionStepProps> = ({
   const [selectedContratoId, setSelectedContratoId] = useState(initialData?.contrato_id || "");
   const [selectedServicioId, setSelectedServicioId] = useState(initialData?.servicio_id || "");
   const [motivoConsulta, setMotivoConsulta] = useState(initialData?.motivo_consulta || "");
+  // Por defecto, la historia clínica general; el admisionista la cambia según el servicio.
+  const [historyId, setHistoryId] = useState(initialData?.formulario_id || BASE_CLINICAL_HISTORY_ID);
+  const { data: histories = [] } = useClinicalHistories();
 
   // ── Fetch active contracts with payer name ──
   useEffect(() => {
@@ -90,7 +97,7 @@ export const AdmissionStep: React.FC<AdmissionStepProps> = ({
     const fetchContratos = async () => {
       setLoadingContratos(true);
       try {
-        const { data, error } = await baseDatos
+        const { data, error } = await db
           .from("contratos")
           .select("id, nombre_convenio, tipo_contratacion, pagador_id, pagadores(nombre)")
           .eq("estado", "activo")
@@ -133,7 +140,7 @@ export const AdmissionStep: React.FC<AdmissionStepProps> = ({
       setLoadingServicios(true);
       try {
         // Get tarifario_id from the selected contract
-        const { data: contrato } = await baseDatos
+        const { data: contrato } = await db
           .from("contratos")
           .select("tarifario_id")
           .eq("id", selectedContratoId)
@@ -145,7 +152,7 @@ export const AdmissionStep: React.FC<AdmissionStepProps> = ({
           return;
         }
 
-        const { data, error } = await baseDatos
+        const { data, error } = await db
           .from("tarifarios_servicios")
           .select("id, codigo_servicio, descripcion_servicio, valor, activo")
           .eq("tarifario_id", contrato.tarifario_id)
@@ -197,6 +204,8 @@ export const AdmissionStep: React.FC<AdmissionStepProps> = ({
       servicio_codigo: servicio?.codigo_servicio || "",
       servicio_valor: servicio?.valor || 0,
       motivo_consulta: motivoConsulta.trim(),
+      formulario_id: historyId,
+      formulario_nombre: histories.find((h) => h.id === historyId)?.title || "Historia clínica general",
     };
 
     onComplete(admissionData);
@@ -437,6 +446,29 @@ export const AdmissionStep: React.FC<AdmissionStepProps> = ({
                         {selectedServicio.valor.toLocaleString()}
                       </p>
                     )}
+                  </div>
+
+                  {/* Historia clínica que llevará el paciente */}
+                  <div className="space-y-2">
+                    <Label htmlFor="admission-history" className="flex items-center gap-2 text-sm font-semibold">
+                      <FileText className="w-4 h-4 text-primary" />
+                      Historia clínica *
+                    </Label>
+                    <Select value={historyId} onValueChange={setHistoryId}>
+                      <SelectTrigger id="admission-history" className="h-12 rounded-xl">
+                        <SelectValue placeholder="Selecciona la historia clínica" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {histories.map((h) => (
+                          <SelectItem key={h.id} value={h.id}>
+                            {h.title}{h.isBase ? " (por defecto)" : ""}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground pl-1">
+                      Según el servicio que se le prestará. El profesional puede agregar escalas y formatos durante la atención.
+                    </p>
                   </div>
 
                   {/* Section 3: Motivo de la visita */}

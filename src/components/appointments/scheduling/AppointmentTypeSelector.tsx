@@ -158,7 +158,7 @@ export const AppointmentTypeSelector: React.FC<AppointmentTypeSelectorProps> = (
                 "p-4 rounded-2xl text-left transition-all border-2",
                 "hover:shadow-lg hover:scale-[1.02]",
                 selectedType === apt.type
-                  ? "ring-2 ring-primary ring-offset-2 border-primary"
+                  ? "ring-1 ring-primary border-primary"
                   : "border-border/30 hover:border-border/50",
                 apt.color
               )}

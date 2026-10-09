@@ -1,0 +1,295 @@
+<title>Contratos con pagadores</title>
+<style>
+/* Documento de propuesta: columna de lectura de 860 px; tablas y fichas por país en rejilla que se apila en celular. */
+:root{
+  --bg:#F5F6FB; --card:#FFFFFF; --soft:#F1E8FD; --field:#F8F6FE; --fg:#1B1530; --muted:#625E78; --line:#E6E2F0;
+  --primary:#8B35E9; --violet:#4C1D95; --lime:#A2F603; --ok:#15803D; --warn:#B45309; --bad:#B91C1C;
+  --font:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+  --mono:ui-monospace,"Cascadia Mono",Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0C0B13; --card:#16141F; --soft:#2A1E42; --field:#1D1A29; --fg:#EEEAF8; --muted:#A49EB9; --line:#2B2739;
+  --primary:#A66CF0; --violet:#C9B2F5; --ok:#4ADE80; --warn:#FBBF24; --bad:#F87171; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0C0B13; --card:#16141F; --soft:#2A1E42; --field:#1D1A29; --fg:#EEEAF8; --muted:#A49EB9; --line:#2B2739;
+  --primary:#A66CF0; --violet:#C9B2F5; --ok:#4ADE80; --warn:#FBBF24; --bad:#F87171; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--font);font-size:15px;line-height:1.6;padding-inline:16px;padding-block:28px 64px}
+.wrap{max-width:860px;margin:0 auto;display:grid;gap:36px}
+h1,h2,h3{margin:0;text-wrap:balance;line-height:1.25}
+h1{font-size:30px;font-weight:750;letter-spacing:-.015em}
+h2{font-size:20px;font-weight:700}
+h3{font-size:15.5px;font-weight:700}
+p{margin:0}
+.lead{color:var(--muted);max-width:70ch;margin-top:8px}
+.eyebrow{font-size:11.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--primary);font-weight:700}
+.top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap}
+.theme{border:1px solid var(--line);background:var(--card);color:var(--fg);border-radius:10px;height:34px;padding:0 12px;font:inherit;font-size:13px;cursor:pointer}
+section{display:grid;gap:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px 20px}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
+ul{margin:0;padding-left:18px;display:grid;gap:5px}
+li::marker{color:var(--primary)}
+.muted{color:var(--muted)}
+.small{font-size:13px}
+.tag{display:inline-block;font-size:11.5px;font-weight:700;padding:1px 8px;border-radius:999px;background:var(--soft);color:var(--violet)}
+.gap{color:var(--bad);font-weight:600}
+.table{overflow-x:auto;border:1px solid var(--line);border-radius:14px;background:var(--card)}
+table{border-collapse:collapse;width:100%;min-width:620px;font-size:13.5px}
+th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);background:var(--field)}
+tr:last-child td{border-bottom:0}
+.steps{display:grid;gap:10px;counter-reset:s}
+.step{display:grid;grid-template-columns:34px minmax(0,1fr);gap:12px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px}
+.step::before{counter-increment:s;content:counter(s);width:30px;height:30px;border-radius:50%;background:var(--soft);color:var(--violet);display:grid;place-items:center;font-weight:800;font-size:14px}
+.step h3{margin-bottom:4px}
+.flow{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:13px}
+.flow span{background:var(--card);border:1px solid var(--line);border-radius:999px;padding:4px 11px;font-weight:600}
+.flow i{font-style:normal;color:var(--muted)}
+.callout{background:var(--soft);border-radius:14px;padding:14px 18px}
+.phase{display:grid;grid-template-columns:72px minmax(0,1fr);gap:12px;padding:12px 0;border-top:1px solid var(--line)}
+.phase:first-child{border-top:0}
+.phase b{color:var(--primary)}
+.q{display:grid;gap:4px;padding:12px 0;border-top:1px solid var(--line)}
+.q:first-child{border-top:0}
+.q .rec{font-size:13.5px}
+.q .rec strong{color:var(--primary)}
+.src a{color:var(--primary);word-break:break-word}
+.src li{font-size:13px}
+@media (max-width:520px){h1{font-size:25px}.phase{grid-template-columns:1fr}}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div>
+      <div class="eyebrow">Propuesta · Facturación › Contratos</div>
+      <h1>Contratos con pagadores</h1>
+      <p class="lead">Qué debe llevar la creación de un contrato entre la IPS y sus pagadores (EPS, aseguradoras, entes territoriales, particulares) según las normas vigentes de Colombia, y cómo dejar listos México, Ecuador y Perú. Incluye lo que hay hoy en Ker Hub, el diseño propuesto, las fases y lo que necesito que decidas.</p>
+    </div>
+    <button class="theme" id="themeBtn" type="button">Modo oscuro</button>
+  </header>
+
+  <section aria-labelledby="hoy">
+    <h2 id="hoy">Lo que hay hoy</h2>
+    <div class="grid2">
+      <div class="card">
+        <h3>Ya existe</h3>
+        <ul class="small">
+          <li>Pagadores con identificación y país.</li>
+          <li>Contrato con nombre, tipo (evento, cápita, paquete, particular), fechas, estado, tarifario y notas.</li>
+          <li>Tarifarios con servicios y valores, clonables.</li>
+          <li>La admisión ofrece los contratos y los servicios del tarifario del contrato.</li>
+          <li>Catálogo CUPS y campos RIPS en los servicios.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>Falta o está mal</h3>
+        <ul class="small">
+          <li>Sin número de contrato, objeto, valor, fecha de firma, sedes, régimen ni población.</li>
+          <li>Sin nota técnica, ajuste de riesgo, indicadores, autorizaciones ni plazos de pago.</li>
+          <li>Las fechas no se validan (el fin puede quedar antes del inicio) y «vencido» no se calcula solo.</li>
+          <li>Sin otrosíes ni documentos firmados: un contrato se edita en su sitio.</li>
+          <li class="gap">Borrar un pagador borra en cascada sus contratos.</li>
+          <li>La facturación es de muestra: no guarda nada ni sabe de contratos, CUFE ni RIPS.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="normas">
+    <h2 id="normas">Lo que exigen las normas</h2>
+
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:baseline">
+        <h3>Colombia · Decreto 441 de 2022 (acuerdos de voluntades)</h3>
+        <span class="tag">Vigente</span>
+      </div>
+      <p class="small muted" style="margin-top:4px">Sustituyó el capítulo del Decreto 780 de 2016 sobre acuerdos entre entidades responsables de pago y prestadores. La Supersalud sanciona su incumplimiento.</p>
+      <p class="small" style="margin-top:10px"><strong>Contenido mínimo de todo contrato (art. 2.5.3.4.2.2):</strong></p>
+      <div class="table" style="margin-top:8px">
+        <table>
+          <thead><tr><th>Qué pide la norma</th><th>Cómo lo llevaría Ker Hub</th></tr></thead>
+          <tbody>
+            <tr><td>Objeto, plazo y lugar de prestación</td><td>Objeto, vigencia, sedes de la IPS</td></tr>
+            <tr><td>Base de datos georreferenciada de la población y su actualización</td><td>Población asignada (cápita y PGP): archivo cargado por periodo</td></tr>
+            <tr><td>Servicios habilitados y tecnologías en salud contratados; red registrada en REPS</td><td>Servicios del contrato con código CUPS / CUM y su sede habilitada</td></tr>
+            <tr><td>Modalidad(es) de pago y mecanismos de ajuste de riesgo</td><td>Una o varias modalidades por contrato; ajuste de riesgo obligatorio si es prospectiva</td></tr>
+            <tr><td>Nota técnica y tablas según la modalidad</td><td>Nota técnica estructurada (ver abajo)</td></tr>
+            <tr><td>Guías de práctica clínica, protocolos y RIAS</td><td>Lista de guías y rutas que aplica el contrato</td></tr>
+            <tr><td>Servicios que requieren autorización</td><td>Marca por servicio; la admisión pide el número de autorización</td></tr>
+            <tr><td>Referencia y contrarreferencia</td><td>Texto y contactos del pagador</td></tr>
+            <tr><td>Indicadores y proceso de seguimiento</td><td>Indicadores de calidad, gestión y resultados con línea base y periodicidad</td></tr>
+            <tr><td>Reportes obligatorios</td><td>Lista de reportes con su periodicidad</td></tr>
+            <tr><td>Plazos de pago (Leyes 1122, 1438 y 2024 de 2020)</td><td>Días para radicar, glosar, responder y pagar</td></tr>
+            <tr><td>Solución de conflictos; renovación, terminación y liquidación</td><td>Cláusulas del contrato y ciclo de vida en la app</td></tr>
+            <tr><td>Incentivos; frecuencias mínimas y descuentos</td><td>Reglas de incentivo y de descuento por incumplimiento</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="grid2" style="margin-top:14px">
+        <div>
+          <p class="small"><strong>Modalidades de pago (art. 2.5.3.4.2.3)</strong></p>
+          <ul class="small">
+            <li><strong>Evento</strong>: retrospectiva, valor por unidad prestada. Nota técnica recomendada.</li>
+            <li><strong>Capitación</strong>: valor fijo por usuario al mes, población identificada, baja complejidad.</li>
+            <li><strong>Pago global prospectivo (PGP)</strong>: suma fija por un grupo de personas y un periodo.</li>
+            <li><strong>Pago por caso, conjunto integral, paquete o canasta</strong>: suma fija por condición, con lo que incluye.</li>
+          </ul>
+          <p class="small muted" style="margin-top:6px">En las prospectivas (todas menos evento) la nota técnica y el ajuste de riesgo son obligatorios.</p>
+        </div>
+        <div>
+          <p class="small"><strong>Nota técnica (art. 2.5.3.4.2.4)</strong></p>
+          <ul class="small">
+            <li>Población objeto y susceptible, con su caracterización de riesgo.</li>
+            <li>Frecuencias de uso esperadas por servicio.</li>
+            <li>Costo acordado de cada servicio o tecnología.</li>
+            <li>Periodicidad de monitoreo, siempre menor que el plazo del contrato.</li>
+            <li>Códigos de las tablas oficiales (CUPS, CUM).</li>
+          </ul>
+        </div>
+      </div>
+      <div class="grid2" style="margin-top:14px">
+        <div>
+          <p class="small"><strong>Vigencia y cierre</strong></p>
+          <ul class="small">
+            <li>La renovación automática se permite, pero los valores se actualizan en cada vigencia.</li>
+            <li>En una prórroga, la nota técnica se actualiza antes de empezar.</li>
+            <li>Al terminar se liquida en el plazo pactado o, si no hay, en 4 meses, con acta.</li>
+            <li>Terminar antes un contrato con pacientes crónicos o de alto costo exige avisar al paciente con 30 días.</li>
+          </ul>
+        </div>
+        <div>
+          <p class="small"><strong>Facturación y glosas</strong></p>
+          <ul class="small">
+            <li>Res. 2284 de 2023: soportes de la factura electrónica de venta en salud (FEV) y Manual Único de Devoluciones, Glosas y Respuestas.</li>
+            <li>Res. 948 de 2026 (reemplazó a la 2275 de 2023): los RIPS son soporte de la FEV y se validan ante el Ministerio para obtener el CUV antes de radicar.</li>
+            <li>No se puede glosar por no estar en la BDUA si el paciente venía en la base que dio el pagador.</li>
+            <li>Tarifa de referencia frecuente: manual SOAT indexado a la UVB (Circular 047 de 2025 para 2026), pactado como «SOAT ± %».</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid2">
+      <div class="card">
+        <h3>Perú</h3>
+        <ul class="small" style="margin-top:6px">
+          <li>RS 004-2020-SUSALUD/S: cláusulas mínimas de los contratos entre IAFAS e IPRESS (17 artículos).</li>
+          <li>El contrato se registra ante SUSALUD (SITECON); los montos se pactan sin IGV.</li>
+          <li>La facturación al pagador viaja en TEDEF.</li>
+          <li>La IPRESS debe tener registrada su cartera de servicios según su categoría.</li>
+        </ul>
+        <p class="small muted" style="margin-top:8px">El detalle de las 17 cláusulas está en el PDF oficial, que no pude leer: lo verifico antes de construir lo de Perú.</p>
+      </div>
+      <div class="card">
+        <h3>Ecuador</h3>
+        <ul class="small" style="margin-top:6px">
+          <li>Acuerdo Ministerial 0091-2017: relación entre la Red Pública Integral de Salud y la Red Privada Complementaria.</li>
+          <li>El prestador privado se califica, firma convenio y recibe pacientes derivados.</li>
+          <li>Pago por prestación (procedimiento individual o paquete) según el Tarifario de Prestaciones del Sistema Nacional de Salud.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>México</h3>
+        <ul class="small" style="margin-top:6px">
+          <li>Sector privado: convenios de pago directo con aseguradoras de gastos médicos mayores (fuera de red, reembolso al paciente).</li>
+          <li>Sector público: subrogación del IMSS o ISSSTE por licitación (LAASSP).</li>
+          <li>Factura CFDI (Ker Hub ya trae claves SAT en los servicios).</li>
+        </ul>
+        <p class="small muted" style="margin-top:8px">No encontré cláusulas mínimas obligatorias como en Colombia o Perú: el contenido lo define cada aseguradora o licitación.</p>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="propuesta">
+    <h2 id="propuesta">Cómo se crearía un contrato</h2>
+    <p class="muted">Un asistente por pasos, como Nueva atención. Cada paso valida lo que la norma del país exige; lo que no aplica a la modalidad no aparece.</p>
+    <div class="steps">
+      <div class="step"><div><h3>Pagador</h3><p class="small">Tipo (EPS, aseguradora, ente territorial, ARL, SOAT, medicina prepagada, empresa, particular), identificación según el país y regímenes que cubre (contributivo, subsidiado, especial).</p></div></div>
+      <div class="step"><div><h3>Datos generales</h3><p class="small">Número de contrato, objeto, fecha de firma, vigencia, renovación automática y su fórmula de actualización, valor total o techo, sedes donde se presta y modalidad(es) de pago.</p></div></div>
+      <div class="step"><div><h3>Servicios y tarifas</h3><p class="small">Servicios contratados con código CUPS o CUM y su sede habilitada. Tarifa por regla («SOAT UVB − 10 %», «ISS 2001 + 30 %», «propio») y excepciones por código. Paquetes con lo que incluyen y excluyen. Marca de «requiere autorización» y topes.</p></div></div>
+      <div class="step"><div><h3>Según la modalidad</h3><p class="small">Capitación: población asignada y valor por usuario al mes. PGP: valor global del periodo y frecuencias esperadas. Paquete: valor por caso. En las prospectivas, la nota técnica (población, frecuencias, costos, monitoreo) y el ajuste de riesgo son obligatorios: sin ellos el contrato no se puede activar.</p></div></div>
+      <div class="step"><div><h3>Condiciones</h3><p class="small">Plazos de radicación, glosa, respuesta y pago. Indicadores de calidad, gestión y resultados con línea base. Reportes obligatorios, referencia y contrarreferencia, guías y RIAS, incentivos, descuentos y solución de conflictos.</p></div></div>
+      <div class="step"><div><h3>Documentos y firma</h3><p class="small">Contrato firmado, nota técnica y anexos. Un contrato firmado no se edita: cada cambio es un <strong>otrosí</strong> que crea una versión nueva, igual que los formularios.</p></div></div>
+    </div>
+
+    <div class="card">
+      <h3>Ciclo de vida</h3>
+      <div class="flow" style="margin-top:10px">
+        <span>Borrador</span><i>→</i><span>Vigente</span><i>→</i><span>Por vencer (45 días)</span><i>→</i><span>Terminado</span><i>→</i><span>En liquidación (máx. 4 meses)</span><i>→</i><span>Liquidado</span>
+      </div>
+      <p class="small muted" style="margin-top:10px">Los estados se calculan por fecha. Una prórroga crea una vigencia nueva con valores actualizados. Un contrato con atenciones no se borra.</p>
+    </div>
+
+    <div class="callout small">
+      <strong>Conexión con lo demás.</strong> La admisión solo ofrecerá contratos vigentes del pagador y del régimen del paciente, con los servicios de ese contrato. Avisará si el servicio requiere autorización y pedirá el número. Cada atención guardará el contrato y la tarifa aplicada en ese momento, que es la base para la factura FEV con RIPS (o CFDI, TEDEF y SRI en los otros países).
+    </div>
+
+    <div class="card">
+      <h3>Por país (perfil de configuración)</h3>
+      <div class="table" style="margin-top:10px">
+        <table>
+          <thead><tr><th>País</th><th>Modalidades</th><th>Tarifa de referencia</th><th>Impuesto</th><th>Factura y registro</th></tr></thead>
+          <tbody>
+            <tr><td>Colombia</td><td>Evento, capitación, PGP, paquete</td><td>SOAT (UVB), ISS 2001</td><td>Servicios de salud excluidos de IVA</td><td>FEV + RIPS; glosas por manual único</td></tr>
+            <tr><td>Perú</td><td>Por cláusulas de SUSALUD</td><td>Tarifas pactadas</td><td>IGV (montos pactados sin IGV)</td><td>TEDEF; contrato registrado en SITECON</td></tr>
+            <tr><td>Ecuador</td><td>Por prestación o paquete</td><td>Tarifario de Prestaciones del SNS</td><td>Por confirmar</td><td>Comprobante SRI; planilla del convenio</td></tr>
+            <tr><td>México</td><td>Pago directo, subrogación</td><td>Tabulador de la aseguradora</td><td>Por confirmar</td><td>CFDI</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="fases">
+    <h2 id="fases">Fases</h2>
+    <div class="card">
+      <div class="phase"><b>Fase 1</b><div><strong>Contrato completo de Colombia.</strong> <span class="small">Pagador con tipo y régimen; datos generales; modalidades; servicios con tarifa por regla (SOAT UVB ± %) y excepciones; autorizaciones; documentos; otrosíes y versiones; ciclo de vida por fechas; validaciones. Corregir el borrado en cascada de contratos.</span></div></div>
+      <div class="phase"><b>Fase 2</b><div><strong>Nota técnica, indicadores y seguimiento.</strong> <span class="small">Nota técnica estructurada y bloqueo de activación en modalidades prospectivas; población asignada; tablero de cumplimiento por periodo; liquidación con acta.</span></div></div>
+      <div class="phase"><b>Fase 3</b><div><strong>Admisión conectada.</strong> <span class="small">Solo contratos vigentes y servicios del contrato; número de autorización; topes y alertas; tarifa aplicada guardada en cada atención.</span></div></div>
+      <div class="phase"><b>Fase 4</b><div><strong>Facturación real.</strong> <span class="small">FEV con RIPS, radicación, glosas y respuestas según el manual único; cartera. Es el bloque más grande y depende de un proveedor tecnológico habilitado ante la DIAN.</span></div></div>
+      <div class="phase"><b>Después</b><div><strong>Perú, Ecuador y México</strong> <span class="small">sobre el mismo modelo, cambiando el perfil del país.</span></div></div>
+    </div>
+  </section>
+
+  <section aria-labelledby="decidir">
+    <h2 id="decidir">Para decidir</h2>
+    <div class="card">
+      <div class="q"><h3>1. ¿Con qué pagadores trabaja hoy la IPS?</h3><p class="small muted">EPS del contributivo o subsidiado, particulares, ARL, SOAT, medicina prepagada, entes territoriales.</p><p class="rec">Con esto defino qué tipos de pagador y qué campos aparecen primero.</p></div>
+      <div class="q"><h3>2. ¿Qué modalidades usan sus contratos?</h3><p class="small muted">Evento, capitación, PGP, paquetes.</p><p class="rec"><strong>Recomiendo empezar por evento y paquete</strong> (no exigen población ni nota técnica completa) y sumar cápita y PGP en la fase 2.</p></div>
+      <div class="q"><h3>3. ¿Cómo pactan las tarifas?</h3><p class="small muted">«SOAT UVB menos un porcentaje», ISS 2001 más un porcentaje, o tarifas propias por código.</p><p class="rec"><strong>Recomiendo la regla «manual base ± %» con excepciones por código</strong>, que cubre las tres.</p></div>
+      <div class="q"><h3>4. ¿Colombia primero?</h3><p class="small muted">México, Ecuador y Perú quedan preparados en el modelo, sin construir sus pantallas propias todavía.</p><p class="rec"><strong>Recomiendo Colombia primero.</strong></p></div>
+      <div class="q"><h3>5. ¿Hay un contrato modelo que pueda ver?</h3><p class="small muted">Un contrato real de la IPS, sin datos sensibles, me deja ajustar los campos a cómo lo hacen hoy.</p></div>
+    </div>
+  </section>
+
+  <section aria-labelledby="fuentes" class="src">
+    <h2 id="fuentes">Fuentes</h2>
+    <ul>
+      <li><a href="https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=184728">Decreto 441 de 2022 · Función Pública</a></li>
+      <li><a href="https://www.minsalud.gov.co/Normatividad_Nuevo/Decreto%20No.%20441%20de%202022.pdf">Decreto 441 de 2022 · Minsalud (PDF)</a></li>
+      <li><a href="https://www.minsalud.gov.co/sites/rid/Lists/BibliotecaDigital/RIDE/VP/socializacion-decreto-441-de-2022.pdf">Socialización del Decreto 441 · Minsalud</a></li>
+      <li><a href="https://www.minsalud.gov.co/Normatividad_Nuevo/Resolución No 2284 de 2023.pdf">Resolución 2284 de 2023 · Minsalud</a></li>
+      <li><a href="https://www.sos.com.co/wp-content/uploads/2025/02/Entrada-en-vigencia-Res2284_2275-Version-final-30_01_2025.pdf">Entrada en vigencia de las resoluciones 2284 y 2275</a></li>
+      <li><a href="https://www.minsalud.gov.co/sites/rid/Lists/BibliotecaDigital/RIDE/DE/DIJ/resolucion-0948-de-2026.pdf">Resolución 948 de 2026 · Minsalud (RIPS como soporte de la FEV)</a></li>
+      <li><a href="https://consultorsalud.com/manual-tarifario-soat-2026/">Manual tarifario SOAT 2026 indexado a la UVB (Circular 047 de 2025)</a></li>
+      <li><a href="https://www.gob.pe/institucion/susalud/normas-legales/455845-004-2020-susalud-s">RS 004-2020-SUSALUD/S · gob.pe</a></li>
+      <li><a href="https://busquedas.elperuano.pe/dispositivo/NL/1877904-1">Proyecto del modelo TEDEF-IP · El Peruano</a></li>
+      <li><a href="https://www.salud.gob.ec/direccion-nacional-de-articulacion-de-la-red-publica-y-complementaria-de-salud/">Red Pública y Complementaria · MSP Ecuador</a></li>
+      <li><a href="https://www.salud.gob.ec/wp-content/uploads/2026/01/Convocatoria-Prestadores-Externos-RPIS.pdf">Convocatoria a prestadores externos RPIS · MSP Ecuador</a></li>
+      <li><a href="https://www.mapfre.com.mx/media/Condiciones-Generales-GMMC.pdf">Condiciones generales de gastos médicos mayores (pago directo y reembolso)</a></li>
+      <li><a href="https://sdv.com.mx/compendio/ley-seguro-social/articulo-88/">Ley del Seguro Social, artículo 88 (subrogación)</a></li>
+    </ul>
+    <p class="small muted">Esto es una propuesta técnica basada en la norma publicada; no reemplaza la revisión del área jurídica de la IPS.</p>
+  </section>
+</div>
+
+<script>
+(function(){
+  var root=document.documentElement,b=document.getElementById('themeBtn');
+  function dark(){var t=root.getAttribute('data-theme');return t?t==='dark':matchMedia('(prefers-color-scheme: dark)').matches}
+  function sync(){b.textContent=dark()?'Modo claro':'Modo oscuro'}
+  root.setAttribute('data-theme','light');sync();
+  b.addEventListener('click',function(){root.setAttribute('data-theme',dark()?'light':'dark');sync()});
+})();
+</script>

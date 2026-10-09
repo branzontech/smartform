@@ -3,7 +3,7 @@ import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { baseDatos } from "@/integrations/datos/cliente";
+import { db } from "@/integrations/data/client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { DatePicker } from '@/components/ui/date-picker';
-import { TablaSimple, type ColumnaSimple } from '@/components/kit/tabla';
+import { SimpleTable, type SimpleColumn } from '@/components/kit/table';
 import { Loader2, Plus, X, Package } from 'lucide-react';
 import { toast } from 'sonner';
 import { nanoid } from 'nanoid';
@@ -107,7 +107,7 @@ export const ProductoDialog: React.FC<Props> = ({ open, onOpenChange, editProduc
   const { data: sedes = [] } = useQuery({
     queryKey: ['sedes-select'],
     queryFn: async () => {
-      const { data } = await baseDatos.from('sedes').select('id, nombre').eq('activo', true).order('nombre');
+      const { data } = await db.from('sedes').select('id, nombre').eq('activo', true).order('nombre');
       return data || [];
     },
   });
@@ -118,8 +118,8 @@ export const ProductoDialog: React.FC<Props> = ({ open, onOpenChange, editProduc
     enabled: !!editProductId && open,
     queryFn: async () => {
       const [{ data: prod }, { data: pres }] = await Promise.all([
-        baseDatos.from('catalogo_productos').select('*').eq('id', editProductId!).single(),
-        baseDatos.from('presentaciones_producto').select('*').eq('producto_id', editProductId!).eq('activo', true),
+        db.from('catalogo_productos').select('*').eq('id', editProductId!).single(),
+        db.from('presentaciones_producto').select('*').eq('producto_id', editProductId!).eq('activo', true),
       ]);
       return { prod, pres: pres || [] };
     },
@@ -181,12 +181,12 @@ export const ProductoDialog: React.FC<Props> = ({ open, onOpenChange, editProduc
 
   const mutation = useMutation({
     mutationFn: async (values: FormValues) => {
-      const { data: { user } } = await baseDatos.auth.getUser();
+      const { data: { user } } = await db.auth.getUser();
       if (!user) throw new Error('No autenticado');
 
       if (isEdit) {
         // Update product
-        const { error: prodErr } = await baseDatos.from('catalogo_productos').update({
+        const { error: prodErr } = await db.from('catalogo_productos').update({
           nombre_generico: values.nombre_generico,
           nombre_comercial: values.nombre_comercial || null,
           tipo_producto: values.tipo_producto,
@@ -204,13 +204,13 @@ export const ProductoDialog: React.FC<Props> = ({ open, onOpenChange, editProduc
         const toDelete = originalIds.filter(id => !existingIds.includes(id));
 
         if (toDelete.length > 0) {
-          const { error } = await baseDatos.from('presentaciones_producto').update({ activo: false }).in('id', toDelete);
+          const { error } = await db.from('presentaciones_producto').update({ activo: false }).in('id', toDelete);
           if (error) throw error;
         }
 
         for (const pres of values.presentaciones) {
           if (pres.id) {
-            const { error } = await baseDatos.from('presentaciones_producto').update({
+            const { error } = await db.from('presentaciones_producto').update({
               forma_farmaceutica: pres.forma_farmaceutica,
               concentracion: pres.concentracion || null,
               unidad_medida: pres.unidad_medida,
@@ -219,7 +219,7 @@ export const ProductoDialog: React.FC<Props> = ({ open, onOpenChange, editProduc
             }).eq('id', pres.id);
             if (error) throw error;
           } else {
-            const { error } = await baseDatos.from('presentaciones_producto').insert({
+            const { error } = await db.from('presentaciones_producto').insert({
               producto_id: editProductId!,
               forma_farmaceutica: pres.forma_farmaceutica,
               concentracion: pres.concentracion || null,
@@ -235,7 +235,7 @@ export const ProductoDialog: React.FC<Props> = ({ open, onOpenChange, editProduc
       } else {
         // Create product
         const codigo = `${values.tipo_producto === 'medicamento' ? 'MED' : values.tipo_producto === 'insumo' ? 'INS' : 'DIS'}-${nanoid(6).toUpperCase()}`;
-        const { data: prod, error: prodErr } = await baseDatos.from('catalogo_productos').insert({
+        const { data: prod, error: prodErr } = await db.from('catalogo_productos').insert({
           codigo,
           nombre_generico: values.nombre_generico,
           nombre_comercial: values.nombre_comercial || null,
@@ -254,7 +254,7 @@ export const ProductoDialog: React.FC<Props> = ({ open, onOpenChange, editProduc
         let loteInfo: { numero: string; cantidad: number; sede: string } | null = null;
 
         for (const p of values.presentaciones) {
-          const { data: presData, error: presErr } = await baseDatos.from('presentaciones_producto').insert({
+          const { data: presData, error: presErr } = await db.from('presentaciones_producto').insert({
             producto_id: prod.id,
             forma_farmaceutica: p.forma_farmaceutica,
             concentracion: p.concentracion || null,
@@ -268,7 +268,7 @@ export const ProductoDialog: React.FC<Props> = ({ open, onOpenChange, editProduc
           const lote = p.lote_inicial;
           if (lote && lote.sede_id && lote.numero_lote && lote.fecha_vencimiento && lote.cantidad_inicial && lote.cantidad_inicial > 0) {
             // Find or create stock record
-            let { data: stock } = await baseDatos
+            let { data: stock } = await db
               .from('inventario_stock')
               .select('id')
               .eq('presentacion_id', presData.id)
@@ -277,7 +277,7 @@ export const ProductoDialog: React.FC<Props> = ({ open, onOpenChange, editProduc
               .maybeSingle();
 
             if (!stock) {
-              const { data: newStock, error: stockErr } = await baseDatos
+              const { data: newStock, error: stockErr } = await db
                 .from('inventario_stock')
                 .insert({
                   producto_id: prod.id,
@@ -292,7 +292,7 @@ export const ProductoDialog: React.FC<Props> = ({ open, onOpenChange, editProduc
             }
 
             // Create lot
-            const { data: loteData, error: loteErr } = await baseDatos
+            const { data: loteData, error: loteErr } = await db
               .from('inventario_lotes')
               .insert({
                 stock_id: stock!.id,
@@ -305,7 +305,7 @@ export const ProductoDialog: React.FC<Props> = ({ open, onOpenChange, editProduc
             if (loteErr) throw loteErr;
 
             // Create movement (trigger updates stock + lote quantities)
-            const { error: movErr } = await baseDatos
+            const { error: movErr } = await db
               .from('inventario_movimientos')
               .insert({
                 stock_id: stock!.id,
@@ -352,13 +352,13 @@ export const ProductoDialog: React.FC<Props> = ({ open, onOpenChange, editProduc
     setOpenLotes(prev => { const n = { ...prev }; delete n[idx]; return n; });
   };
 
-  type FilaPresentacion = (typeof fields)[number];
+  type PresentationRow = (typeof fields)[number];
 
   // Una fila por presentación; los campos editables van dentro de cada celda.
-  const columnasPresentaciones: ColumnaSimple<FilaPresentacion>[] = [
+  const presentationColumns: SimpleColumn<PresentationRow>[] = [
     {
-      id: 'forma', titulo: 'Forma *',
-      celda: (_, idx) => (
+      id: 'form', title: 'Forma *',
+      cell: (_, idx) => (
         <Select
           value={form.watch(`presentaciones.${idx}.forma_farmaceutica`)}
           onValueChange={(v) => form.setValue(`presentaciones.${idx}.forma_farmaceutica`, v, { shouldValidate: true })}
@@ -373,12 +373,12 @@ export const ProductoDialog: React.FC<Props> = ({ open, onOpenChange, editProduc
       ),
     },
     {
-      id: 'concentracion', titulo: 'Concentración',
-      celda: (_, idx) => <Input {...form.register(`presentaciones.${idx}.concentracion`)} aria-label="Concentración" placeholder="500mg" className="h-8 text-xs min-w-[80px]" />,
+      id: 'strength', title: 'Concentración',
+      cell: (_, idx) => <Input {...form.register(`presentaciones.${idx}.concentracion`)} aria-label="Concentración" placeholder="500mg" className="h-8 text-xs min-w-[80px]" />,
     },
     {
-      id: 'unidad', titulo: 'Unidad *',
-      celda: (_, idx) => (
+      id: 'unit', title: 'Unidad *',
+      cell: (_, idx) => (
         <Select
           value={form.watch(`presentaciones.${idx}.unidad_medida`)}
           onValueChange={(v) => form.setValue(`presentaciones.${idx}.unidad_medida`, v, { shouldValidate: true })}
@@ -393,8 +393,8 @@ export const ProductoDialog: React.FC<Props> = ({ open, onOpenChange, editProduc
       ),
     },
     {
-      id: 'via', titulo: 'Vía',
-      celda: (_, idx) => (
+      id: 'route', title: 'Vía',
+      cell: (_, idx) => (
         <Select
           value={form.watch(`presentaciones.${idx}.via_administracion`) || ''}
           onValueChange={(v) => form.setValue(`presentaciones.${idx}.via_administracion`, v)}
@@ -409,13 +409,13 @@ export const ProductoDialog: React.FC<Props> = ({ open, onOpenChange, editProduc
       ),
     },
     {
-      id: 'comercial', titulo: 'Presentación comercial',
-      celda: (_, idx) => <Input {...form.register(`presentaciones.${idx}.presentacion_comercial`)} aria-label="Presentación comercial" placeholder="Caja x 30" className="h-8 text-xs min-w-[120px]" />,
+      id: 'brandPresentation', title: 'Presentación comercial',
+      cell: (_, idx) => <Input {...form.register(`presentaciones.${idx}.presentacion_comercial`)} aria-label="Presentación comercial" placeholder="Caja x 30" className="h-8 text-xs min-w-[120px]" />,
     },
     // El lote inicial solo se registra al crear el producto.
     ...(!isEdit ? [{
-      id: 'lote', titulo: 'Lote inicial', className: 'whitespace-nowrap',
-      celda: (_: FilaPresentacion, idx: number) => (
+      id: 'batch', title: 'Lote inicial', className: 'whitespace-nowrap',
+      cell: (_: PresentationRow, idx: number) => (
         <Button type="button" variant="ghost" size="sm" aria-pressed={!!openLotes[idx]} className="h-7 gap-1 px-2 text-[11px] text-primary/80 hover:text-primary" onClick={() => toggleLote(idx)}>
           <Package className="w-3 h-3" />
           {openLotes[idx] ? 'Quitar lote' : 'Agregar lote'}
@@ -423,8 +423,8 @@ export const ProductoDialog: React.FC<Props> = ({ open, onOpenChange, editProduc
       ),
     }] : []),
     {
-      id: 'quitar', titulo: <span className="sr-only">Quitar</span>, className: 'w-11 text-center',
-      celda: (_, idx) => fields.length > 1 && (
+      id: 'remove', title: <span className="sr-only">Quitar</span>, className: 'w-11 text-center',
+      cell: (_, idx) => fields.length > 1 && (
         <Button type="button" variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive" aria-label={`Quitar presentación ${idx + 1}`} title="Quitar presentación" onClick={() => quitarPresentacion(idx)}>
           <X className="w-3.5 h-3.5" />
         </Button>
@@ -521,12 +521,12 @@ export const ProductoDialog: React.FC<Props> = ({ open, onOpenChange, editProduc
               {form.formState.errors.presentaciones?.root && (
                 <p className="text-[10px] text-destructive mb-2">{form.formState.errors.presentaciones.root.message}</p>
               )}
-              <TablaSimple
-                columnas={columnasPresentaciones}
-                filas={fields}
-                claveFila={(f) => f.id}
+              <SimpleTable
+                columns={presentationColumns}
+                rows={fields}
+                rowKey={(f) => f.id}
                 className="shadow-none"
-                vacio="Agrega al menos una presentación."
+                empty="Agrega al menos una presentación."
               />
 
               {/* Lote inicial de cada presentación (solo al crear el producto) */}

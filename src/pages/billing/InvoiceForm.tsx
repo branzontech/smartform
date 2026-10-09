@@ -3,8 +3,8 @@ import { useParams, useNavigate } from "react-router-dom";
 import { Plus, Save, X } from "lucide-react";
 import { nanoid } from "nanoid";
 import { toast } from "sonner";
-import { EncabezadoModulo } from "@/components/kit/EncabezadoModulo";
-import { TablaSimple, botonBarra, type ColumnaSimple } from "@/components/kit/tabla";
+import { ModuleHeader } from "@/components/kit/ModuleHeader";
+import { SimpleTable, toolbarButtonClass, type SimpleColumn } from "@/components/kit/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,13 +13,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { DatePicker } from "@/components/ui/date-picker";
 import { Textarea } from "@/components/ui/textarea";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { formatoMoneda } from "@/components/billing/facturas";
+import { formatMoney } from "@/components/billing/invoices";
 import { cn } from "@/lib/utils";
 import { mockInvoices } from "@/utils/billing-utils";
 import type { InvoiceStatus, PaymentMethod } from "@/types/billing-types";
 
 /** Línea editable de la factura (antes de guardar). */
-interface ItemFormulario {
+interface DraftItem {
   id: string;
   description: string;
   quantity: number;
@@ -27,7 +27,7 @@ interface ItemFormulario {
   total: number;
 }
 
-const derecha = "text-right tabular-nums";
+const rightAligned = "text-right tabular-nums";
 
 /**
  * Crear o editar una factura. Datos simulados: al editar se cargan de
@@ -89,12 +89,12 @@ const InvoiceForm = () => {
       const total = subtotal + tax - (prev.discount || 0);
       
       // Sin cambios: se devuelve el mismo estado para no volver a disparar el efecto
-      const sinCambios =
+      const unchanged =
         subtotal === prev.subtotal &&
         tax === prev.tax &&
         total === prev.total &&
         items.every((item, i) => item.total === prev.items[i].total);
-      if (sinCambios) return prev;
+      if (unchanged) return prev;
       
       return {
         ...prev,
@@ -164,10 +164,10 @@ const InvoiceForm = () => {
     navigate("/app/facturacion");
   };
 
-  const columnasItems: ColumnaSimple<ItemFormulario>[] = [
+  const itemColumns: SimpleColumn<DraftItem>[] = [
     {
-      id: "descripcion", titulo: "Descripción", principal: true,
-      celda: (item, index) => (
+      id: "description", title: "Descripción", primary: true,
+      cell: (item, index) => (
         <Input
           aria-label={`Descripción del ítem ${index + 1}`}
           value={item.description}
@@ -178,8 +178,8 @@ const InvoiceForm = () => {
       ),
     },
     {
-      id: "cantidad", titulo: "Cantidad", className: "w-28",
-      celda: (item, index) => (
+      id: "quantity", title: "Cantidad", className: "w-28",
+      cell: (item, index) => (
         <Input
           aria-label={`Cantidad del ítem ${index + 1}`}
           type="number"
@@ -191,8 +191,8 @@ const InvoiceForm = () => {
       ),
     },
     {
-      id: "precio", titulo: "Precio unitario", className: "w-40",
-      celda: (item, index) => (
+      id: "unitPrice", title: "Precio unitario", className: "w-40",
+      cell: (item, index) => (
         <div className="relative">
           <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
           <Input
@@ -207,11 +207,11 @@ const InvoiceForm = () => {
         </div>
       ),
     },
-    { id: "total", titulo: "Total", className: cn(derecha, "w-36 font-medium text-foreground"), celda: (item) => formatoMoneda(item.total) },
+    { id: "total", title: "Total", className: cn(rightAligned, "w-36 font-medium text-foreground"), cell: (item) => formatMoney(item.total) },
     {
       // Quitar una línea del borrador (no borra ningún registro guardado).
-      id: "quitar", titulo: <span className="sr-only">Quitar</span>, className: "w-px px-2 text-right",
-      celda: (_item, index) => (
+      id: "remove", title: <span className="sr-only">Quitar</span>, className: "w-px px-2 text-right",
+      cell: (_item, index) => (
         <Button
           variant="ghost"
           size="icon"
@@ -226,12 +226,12 @@ const InvoiceForm = () => {
     },
   ];
 
-  const fila = "flex items-center justify-between gap-6";
-  const totales = (
+  const rowClass = "flex items-center justify-between gap-6";
+  const totals = (
     <div className="ml-auto w-full max-w-xs space-y-1.5">
-      <div className={fila}><span>Subtotal</span><span>{formatoMoneda(invoice.subtotal)}</span></div>
-      <div className={fila}><span>IVA (16%)</span><span>{formatoMoneda(invoice.tax)}</span></div>
-      <div className={fila}>
+      <div className={rowClass}><span>Subtotal</span><span>{formatMoney(invoice.subtotal)}</span></div>
+      <div className={rowClass}><span>IVA (16%)</span><span>{formatMoney(invoice.tax)}</span></div>
+      <div className={rowClass}>
         <Label htmlFor="discount" className="text-[13px] font-normal">Descuento</Label>
         <div className="relative">
           <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
@@ -246,18 +246,18 @@ const InvoiceForm = () => {
           />
         </div>
       </div>
-      <div className={cn(fila, "border-t border-border pt-1.5 text-base font-semibold text-foreground")}>
-        <span>Total</span><span>{formatoMoneda(invoice.total)}</span>
+      <div className={cn(rowClass, "border-t border-border pt-1.5 text-base font-semibold text-foreground")}>
+        <span>Total</span><span>{formatMoney(invoice.total)}</span>
       </div>
     </div>
   );
 
   return (
     <div className="mx-auto max-w-7xl space-y-5 py-6">
-      <EncabezadoModulo
-        titulo={isEditing ? `Editar factura ${invoice.invoiceNumber}`.trim() : "Nueva factura"}
-        secundarias={[{ titulo: "Cancelar", icono: X, onClick: () => setIsConfirmDialogOpen(true) }]}
-        primaria={{ titulo: "Guardar", icono: Save, onClick: handleSaveInvoice }}
+      <ModuleHeader
+        title={isEditing ? `Editar factura ${invoice.invoiceNumber}`.trim() : "Nueva factura"}
+        secondary={[{ title: "Cancelar", icon: X, onClick: () => setIsConfirmDialogOpen(true) }]}
+        primary={{ title: "Guardar", icon: Save, onClick: handleSaveInvoice }}
       />
 
       <Card className="rounded-2xl">
@@ -351,17 +351,17 @@ const InvoiceForm = () => {
 
       <section className="space-y-2">
         <h2 className="text-base font-semibold">Ítems de la factura</h2>
-        <TablaSimple
-          columnas={columnasItems}
-          filas={invoice.items}
-          claveFila={(item) => item.id}
-          barra={
-            <Button variant="ghost" size="sm" className={botonBarra} onClick={addItem}>
+        <SimpleTable
+          columns={itemColumns}
+          rows={invoice.items}
+          rowKey={(item) => item.id}
+          toolbar={
+            <Button variant="ghost" size="sm" className={toolbarButtonClass} onClick={addItem}>
               <Plus className="h-4 w-4" />
               Agregar ítem
             </Button>
           }
-          pie={totales}
+          footer={totals}
         />
       </section>
 

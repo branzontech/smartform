@@ -11,59 +11,59 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { useNavigate } from "react-router-dom";
 import { useTenant } from "@/contexts/TenantContext";
 import { toast } from "@/hooks/use-toast";
-import { TablaSimple, type ColumnaSimple } from "@/components/kit/tabla";
+import { SimpleTable, type SimpleColumn } from "@/components/kit/table";
 
-type ValorPlan = string | boolean;
+type PlanValue = string | boolean;
 
-interface FilaComparacion {
-  caracteristica: string;
-  ayuda?: string;
-  basico: ValorPlan;
-  profesional: ValorPlan;
-  institucional: ValorPlan;
+interface ComparisonRow {
+  feature: string;
+  help?: string;
+  basic: PlanValue;
+  professional: PlanValue;
+  institutional: PlanValue;
 }
 
-const COMPARACION: FilaComparacion[] = [
-  { caracteristica: "Límite de pacientes", ayuda: "Número máximo de perfiles de pacientes que se pueden crear", basico: "100", profesional: "Ilimitados", institucional: "Ilimitados" },
-  { caracteristica: "Usuarios", basico: "1", profesional: "Hasta 3", institucional: "Hasta 10" },
-  { caracteristica: "Formularios personalizados", basico: "5", profesional: "Ilimitados", institucional: "Ilimitados" },
-  { caracteristica: "Telemedicina", basico: false, profesional: true, institucional: true },
-  { caracteristica: "Facturación electrónica", basico: false, profesional: true, institucional: true },
-  { caracteristica: "Almacenamiento", basico: "500 MB", profesional: "5 GB", institucional: "25 GB" },
-  { caracteristica: "Soporte", basico: "Correo", profesional: "Correo y chat", institucional: "Correo, chat y teléfono" },
-  { caracteristica: "Personalización de marca", basico: false, profesional: "Básica", institucional: "Completa" },
-  { caracteristica: "Reportes avanzados", basico: false, profesional: true, institucional: true },
-  { caracteristica: "API para integraciones", basico: false, profesional: false, institucional: true },
+const COMPARISON_ROWS: ComparisonRow[] = [
+  { feature: "Límite de pacientes", help: "Número máximo de perfiles de pacientes que se pueden crear", basic: "100", professional: "Ilimitados", institutional: "Ilimitados" },
+  { feature: "Usuarios", basic: "1", professional: "Hasta 3", institutional: "Hasta 10" },
+  { feature: "Formularios personalizados", basic: "5", professional: "Ilimitados", institutional: "Ilimitados" },
+  { feature: "Telemedicina", basic: false, professional: true, institutional: true },
+  { feature: "Facturación electrónica", basic: false, professional: true, institutional: true },
+  { feature: "Almacenamiento", basic: "500 MB", professional: "5 GB", institutional: "25 GB" },
+  { feature: "Soporte", basic: "Correo", professional: "Correo y chat", institutional: "Correo, chat y teléfono" },
+  { feature: "Personalización de marca", basic: false, professional: "Básica", institutional: "Completa" },
+  { feature: "Reportes avanzados", basic: false, professional: true, institutional: true },
+  { feature: "API para integraciones", basic: false, professional: false, institutional: true },
 ];
 
-function ValorComparacion({ valor }: { valor: ValorPlan }) {
-  if (valor === true) return <><Check aria-hidden className="mx-auto h-4 w-4 text-[hsl(var(--success))]" /><span className="sr-only">Incluido</span></>;
-  if (valor === false) return <><X aria-hidden className="mx-auto h-4 w-4 text-muted-foreground/60" /><span className="sr-only">No incluido</span></>;
-  return <>{valor}</>;
+function ComparisonValue({ value }: { value: PlanValue }) {
+  if (value === true) return <><Check aria-hidden className="mx-auto h-4 w-4 text-[hsl(var(--success))]" /><span className="sr-only">Incluido</span></>;
+  if (value === false) return <><X aria-hidden className="mx-auto h-4 w-4 text-muted-foreground/60" /><span className="sr-only">No incluido</span></>;
+  return <>{value}</>;
 }
 
-const COLUMNAS_COMPARACION: ColumnaSimple<FilaComparacion>[] = [
+const COMPARISON_COLUMNS: SimpleColumn<ComparisonRow>[] = [
   {
-    id: "caracteristica", titulo: "Característica", principal: true,
-    celda: (f) => (
+    id: "feature", title: "Característica", primary: true,
+    cell: (f) => (
       <span className="inline-flex items-center gap-1">
-        {f.caracteristica}
-        {f.ayuda && (
+        {f.feature}
+        {f.help && (
           <TooltipProvider>
             <Tooltip>
-              <TooltipTrigger aria-label={f.ayuda}>
+              <TooltipTrigger aria-label={f.help}>
                 <HelpCircle className="h-4 w-4 text-muted-foreground" />
               </TooltipTrigger>
-              <TooltipContent>{f.ayuda}</TooltipContent>
+              <TooltipContent>{f.help}</TooltipContent>
             </Tooltip>
           </TooltipProvider>
         )}
       </span>
     ),
   },
-  { id: "basico", titulo: "Básico", celda: (f) => <ValorComparacion valor={f.basico} />, className: "text-center" },
-  { id: "profesional", titulo: "Profesional", celda: (f) => <ValorComparacion valor={f.profesional} />, className: "text-center" },
-  { id: "institucional", titulo: "Institucional", celda: (f) => <ValorComparacion valor={f.institucional} />, className: "text-center" },
+  { id: "basic", title: "Básico", cell: (f) => <ComparisonValue value={f.basic} />, className: "text-center" },
+  { id: "professional", title: "Profesional", cell: (f) => <ComparisonValue value={f.professional} />, className: "text-center" },
+  { id: "institutional", title: "Institucional", cell: (f) => <ComparisonValue value={f.institutional} />, className: "text-center" },
 ];
 
 const PricingPage = () => {
@@ -269,11 +269,11 @@ const PricingPage = () => {
         </div>
         
         {showComparison && (
-          <TablaSimple
+          <SimpleTable
             className="mb-12"
-            columnas={COLUMNAS_COMPARACION}
-            filas={COMPARACION}
-            claveFila={(f) => f.caracteristica}
+            columns={COMPARISON_COLUMNS}
+            rows={COMPARISON_ROWS}
+            rowKey={(f) => f.feature}
           />
         )}
 

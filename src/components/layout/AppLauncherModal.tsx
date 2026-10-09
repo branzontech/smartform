@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X, Search } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { mainNavItems } from "@/config/navigation";
-import { IconoModulo, iconoDeRuta } from "@/components/ui/icono-modulo";
+import { ModuleIcon, iconForRoute } from "@/components/ui/module-icon";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
 
@@ -125,7 +125,7 @@ export const AppLauncherModal = ({ isOpen, onClose }: AppLauncherModalProps) => 
                 {filteredItems.map((item, index) => {
                   const IconComponent = item.icon;
                   // Módulos principales: ícono 3D. Acciones y subsecciones: ícono actual.
-                  const icono3d = iconoDeRuta(item.path);
+                  const moduleIcon = iconForRoute(item.path);
                   return (
                     <motion.button
                       key={item.path}
@@ -135,8 +135,8 @@ export const AppLauncherModal = ({ isOpen, onClose }: AppLauncherModalProps) => 
                       onClick={() => handleItemClick(item.path)}
                       className="group flex flex-col items-center gap-3 p-4 rounded-2xl hover:bg-primary/10 transition-all duration-200 hover:scale-105"
                     >
-                      {icono3d ? (
-                        <IconoModulo nombre={icono3d} className="h-14 w-14 shrink-0" />
+                      {moduleIcon ? (
+                        <ModuleIcon name={moduleIcon} className="h-14 w-14 shrink-0" />
                       ) : (
                         <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center group-hover:from-primary/30 group-hover:to-primary/10 transition-all duration-200 shadow-lg group-hover:shadow-xl">
                           <IconComponent className="h-7 w-7 text-primary" />

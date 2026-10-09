@@ -8,7 +8,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { ZoneMap, ZoneSidebar, CreateZoneModal, DistanceCalculator } from '@/components/zones';
 import { useGoogleMaps } from '@/hooks/useGoogleMaps';
 import { Zone, GeocodedLocation, LatLng, DrawingMode } from '@/types/zone-types';
-import { baseDatos } from "@/integrations/datos/cliente";
+import { db } from "@/integrations/data/client";
 import {
   ResizablePanelGroup,
   ResizablePanel,
@@ -114,7 +114,7 @@ const ZonesPage: React.FC = () => {
     let vigente = true;
     const fetchApiKey = async () => {
       try {
-        const response = await baseDatos.functions.invoke('get-maps-config');
+        const response = await db.functions.invoke('get-maps-config');
         if (vigente && response.data?.apiKey) {
           setApiKey(response.data.apiKey);
         }
@@ -131,7 +131,7 @@ const ZonesPage: React.FC = () => {
     const loadZones = async () => {
       setIsLoading(true);
       try {
-        const { data, error } = await baseDatos
+        const { data, error } = await db
           .from('zones')
           .select('*')
           .order('created_at', { ascending: false });
@@ -196,7 +196,7 @@ const ZonesPage: React.FC = () => {
       };
 
       // Save to database
-      const { data: savedZone, error } = await baseDatos
+      const { data: savedZone, error } = await db
         .from('zones')
         .insert([newZoneData])
         .select()
@@ -226,7 +226,7 @@ const ZonesPage: React.FC = () => {
 
   const handleDeleteZone = async (zoneId: string) => {
     try {
-      const { error } = await baseDatos
+      const { error } = await db
         .from('zones')
         .delete()
         .eq('id', zoneId);

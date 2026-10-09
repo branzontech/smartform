@@ -2,8 +2,8 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Calendar, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { AccionesFila } from "@/components/kit/AccionesFila";
-import { BarraTabla, TablaDatos, botonPrimario, useTablaDatos, type ColumnaTabla, type FiltroTabla, type SegmentoTabla } from "@/components/kit/tabla";
+import { RowActions } from "@/components/kit/RowActions";
+import { TableToolbar, DataTable, primaryButtonClass, useDataTable, type TableColumn, type TableFilter, type TableSegment } from "@/components/kit/table";
 import { useToast } from "@/hooks/use-toast";
 import type { Patient } from "@/types/patient-types";
 import { getDoctorPatients } from "@/utils/doctor-utils";
@@ -12,35 +12,35 @@ interface DoctorPatientsProps {
   doctorId: string;
 }
 
-function edad(fecha: string): number | null {
-  const n = new Date(fecha);
+function ageOf(date: string): number | null {
+  const n = new Date(date);
   if (Number.isNaN(n.getTime())) return null;
-  const hoy = new Date();
-  let anios = hoy.getFullYear() - n.getFullYear();
-  if (hoy.getMonth() < n.getMonth() || (hoy.getMonth() === n.getMonth() && hoy.getDate() < n.getDate())) anios--;
-  return anios;
+  const today = new Date();
+  let years = today.getFullYear() - n.getFullYear();
+  if (today.getMonth() < n.getMonth() || (today.getMonth() === n.getMonth() && today.getDate() < n.getDate())) years--;
+  return years;
 }
 
-const derecha = "text-right tabular-nums";
+const rightAligned = "text-right tabular-nums";
 
-const COLUMNAS: ColumnaTabla<Patient>[] = [
-  { id: "nombre", titulo: "Paciente", valor: (p) => p.name, principal: true, fija: true, className: "min-w-[220px]" },
-  { id: "documento", titulo: "Documento", valor: (p) => p.documentId, className: "font-mono text-xs" },
-  { id: "edad", titulo: "Edad", valor: (p) => edad(p.dateOfBirth), celda: (p) => edad(p.dateOfBirth) ?? "—", className: derecha },
-  { id: "genero", titulo: "Género", valor: (p) => p.gender },
-  { id: "telefono", titulo: "Teléfono", valor: (p) => p.contactNumber, className: "tabular-nums" },
-  { id: "correo", titulo: "Correo", valor: (p) => p.email, oculta: true },
+const COLUMNS: TableColumn<Patient>[] = [
+  { id: "patient", title: "Paciente", value: (p) => p.name, primary: true, alwaysVisible: true, className: "min-w-[220px]" },
+  { id: "document", title: "Documento", value: (p) => p.documentId, className: "font-mono text-xs" },
+  { id: "age", title: "Edad", value: (p) => ageOf(p.dateOfBirth), cell: (p) => ageOf(p.dateOfBirth) ?? "—", className: rightAligned },
+  { id: "gender", title: "Género", value: (p) => p.gender },
+  { id: "phone", title: "Teléfono", value: (p) => p.contactNumber, className: "tabular-nums" },
+  { id: "email", title: "Correo", value: (p) => p.email, hidden: true },
 ];
 
-const FILTROS: FiltroTabla<Patient>[] = [{ id: "genero", titulo: "Género", valor: (p) => p.gender }];
+const FILTERS: TableFilter<Patient>[] = [{ id: "gender", title: "Género", value: (p) => p.gender }];
 
-const SEGMENTOS: SegmentoTabla<Patient>[] = [
-  { id: "todos", titulo: "Todos", cumple: () => true },
-  { id: "menores", titulo: "Menores de edad", cumple: (p) => (edad(p.dateOfBirth) ?? 99) < 18 },
-  { id: "mayores", titulo: "Adultos mayores", cumple: (p) => (edad(p.dateOfBirth) ?? 0) >= 60 },
+const SEGMENTS: TableSegment<Patient>[] = [
+  { id: "all", title: "Todos", match: () => true },
+  { id: "minors", title: "Menores de edad", match: (p) => (ageOf(p.dateOfBirth) ?? 99) < 18 },
+  { id: "seniors", title: "Adultos mayores", match: (p) => (ageOf(p.dateOfBirth) ?? 0) >= 60 },
 ];
 
-const claveFila = (p: Patient) => p.id;
+const rowKey = (p: Patient) => p.id;
 
 /**
  * Pacientes asignados a un profesional (pestaña del detalle del médico).
@@ -49,17 +49,17 @@ const claveFila = (p: Patient) => p.id;
 const DoctorPatients = ({ doctorId }: DoctorPatientsProps) => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [pacientes, setPacientes] = useState<Patient[]>([]);
-  const [cargando, setCargando] = useState(true);
+  const [patients, setPatients] = useState<Patient[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    let vigente = true;
+    let alive = true;
     (async () => {
       try {
         const data = await getDoctorPatients(doctorId);
-        if (vigente) setPacientes(data);
+        if (alive) setPatients(data);
       } catch (error) {
-        if (vigente) {
+        if (alive) {
           toast({
             title: "No se pudieron cargar los pacientes",
             description: error instanceof Error ? error.message : undefined,
@@ -67,43 +67,43 @@ const DoctorPatients = ({ doctorId }: DoctorPatientsProps) => {
           });
         }
       } finally {
-        if (vigente) setCargando(false);
+        if (alive) setLoading(false);
       }
     })();
-    return () => { vigente = false; };
+    return () => { alive = false; };
   }, [doctorId, toast]);
 
-  const t = useTablaDatos({ id: "medicos.pacientes", filas: pacientes, columnas: COLUMNAS, claveFila, filtros: FILTROS, segmentos: SEGMENTOS });
+  const t = useDataTable({ id: "doctors.patients", rows: patients, columns: COLUMNS, rowKey, filters: FILTERS, segments: SEGMENTS });
 
-  const ver = (p: Patient) => navigate(`/app/pacientes/${p.id}`);
-  const asignar = () => navigate(`/app/admisiones?doctorId=${doctorId}`);
+  const view = (p: Patient) => navigate(`/app/pacientes/${p.id}`);
+  const assign = () => navigate(`/app/admisiones?doctorId=${doctorId}`);
 
   return (
-    <TablaDatos
+    <DataTable
       t={t}
-      cargando={cargando}
-      onFilaClick={ver}
-      barra={
-        <BarraTabla
+      loading={loading}
+      onRowClick={view}
+      toolbar={
+        <TableToolbar
           t={t}
-          nombre={["paciente", "pacientes"]}
+          name={["paciente", "pacientes"]}
           placeholder="Buscar por nombre o documento"
-          nombreArchivo="pacientes-asignados"
-          acciones={
-            <Button size="sm" className={botonPrimario} onClick={asignar}>
+          fileName="pacientes-asignados"
+          actions={
+            <Button size="sm" className={primaryButtonClass} onClick={assign}>
               <UserPlus className="h-4 w-4" /> Asignar paciente
             </Button>
           }
         />
       }
-      acciones={(p) => (
-        <AccionesFila
-          nombre={p.name}
-          onVer={() => ver(p)}
-          menu={[{ titulo: "Nueva cita", icono: Calendar, onClick: () => navigate(`/app/citas/nueva?patientId=${p.id}&doctorId=${doctorId}`) }]}
+      actions={(p) => (
+        <RowActions
+          name={p.name}
+          onView={() => view(p)}
+          menu={[{ title: "Nueva cita", icon: Calendar, onClick: () => navigate(`/app/citas/nueva?patientId=${p.id}&doctorId=${doctorId}`) }]}
         />
       )}
-      vacio="Este profesional aún no tiene pacientes asignados. Usa «Asignar paciente»."
+      empty="Este profesional aún no tiene pacientes asignados. Usa «Asignar paciente»."
     />
   );
 };

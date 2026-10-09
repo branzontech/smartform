@@ -46,7 +46,7 @@ const questionTypeGroups = [
 // Flat list for lookups
 export const questionTypes = questionTypeGroups.flatMap((g) => g.types);
 
-export const QuestionType = ({ selected, onChange }: QuestionTypeProps) => {
+export const QuestionType = ({ selected, onChange, disabled = false }: QuestionTypeProps) => {
   const [open, setOpen] = useState(false);
   const selectedType = questionTypes.find((t) => t.id === selected);
 
@@ -65,9 +65,11 @@ export const QuestionType = ({ selected, onChange }: QuestionTypeProps) => {
       <button
         type="button"
         onClick={() => setOpen(true)}
+        disabled={disabled}
+        title={disabled ? "Ya hay registros con este campo: su tipo no se puede cambiar" : undefined}
         className={cn(
           "flex items-center justify-between gap-2 px-3 py-2 rounded-md text-sm border transition-colors w-56",
-          "border-border bg-background hover:bg-muted"
+          "border-border bg-background hover:bg-muted disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:bg-background"
         )}
       >
         <span className="flex items-center gap-2">

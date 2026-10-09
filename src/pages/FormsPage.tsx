@@ -10,12 +10,12 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FileText, PieChart } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { FormDesignOptions } from "@/components/forms/question/types";
-import { baseDatos } from "@/integrations/datos/cliente";
+import { db } from "@/integrations/data/client";
 
 export const DEFAULT_FORM_CATEGORIES = [
   { value: "historia_clinica", label: "Historia clínica" },
   { value: "escala", label: "Escala" },
+  { value: "formato", label: "Formato" },
   { value: "encuesta", label: "Encuesta" },
 ];
 
@@ -28,7 +28,10 @@ export interface Form {
   updatedAt: Date;
   responseCount: number;
   formType: string;
-  designOptions?: FormDesignOptions;
+  /** Versión vigente de las preguntas (sube al editar un formato ya usado). */
+  version?: number;
+  /** Formulario base del sistema (historia clínica): no se elimina. */
+  isBase?: boolean;
 }
 
 const Home = () => {
@@ -42,7 +45,7 @@ const Home = () => {
   const loadForms = async () => {
     setLoading(true);
     try {
-      const { data, error } = await baseDatos
+      const { data, error } = await db
         .from("formularios")
         .select("*")
         .eq("estado", "activo")
@@ -58,7 +61,7 @@ const Home = () => {
           updatedAt: new Date(f.updated_at),
           responseCount: f.respuestas_count || 0,
           formType: f.tipo || "historia_clinica",
-          designOptions: f.opciones_diseno as unknown as FormDesignOptions | undefined,
+          isBase: (f.fhir_extensions as { base?: boolean } | null)?.base === true,
         }));
         setForms(mapped);
       }
@@ -93,12 +96,16 @@ const Home = () => {
   };
 
   const handleDeleteForm = (id: string) => {
+    if (forms.find((f) => f.id === id)?.isBase) {
+      uiToast({ title: "La historia clínica base no se puede eliminar", description: "Puedes agregarle campos desde Editar." });
+      return;
+    }
     setFormToDelete(id);
   };
 
   const confirmDeleteForm = async () => {
     if (formToDelete) {
-      const { error } = await baseDatos
+      const { error } = await db
         .from("formularios")
         .delete()
         .eq("id", formToDelete);
@@ -107,6 +114,13 @@ const Home = () => {
         setForms(forms.filter(form => form.id !== formToDelete));
         toast("Formulario eliminado", {
           description: "El formulario ha sido eliminado exitosamente",
+        });
+      } else {
+        // La base impide borrar un formulario con registros clínicos (antes los borraba en cascada).
+        uiToast({
+          title: "No se puede eliminar",
+          description: "Este formulario ya tiene registros clínicos. Puedes editarlo: los cambios crean una versión nueva y los registros anteriores se conservan.",
+          variant: "destructive",
         });
       }
       setFormToDelete(null);

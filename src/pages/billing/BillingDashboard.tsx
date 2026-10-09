@@ -1,8 +1,8 @@
 import { useEffect, useState, type ComponentType } from "react";
 import { useNavigate } from "react-router-dom";
-import { EncabezadoModulo } from "@/components/kit/EncabezadoModulo";
-import { PestanasCarpeta, type PestanaCarpeta } from "@/components/kit/pestanas/PestanasCarpeta";
-import { unaDe, useEstadoPersistente } from "@/components/kit/tabla";
+import { ModuleHeader } from "@/components/kit/ModuleHeader";
+import { FolderTabs, type FolderTab } from "@/components/kit/tabs/FolderTabs";
+import { oneOf, usePersistentState } from "@/components/kit/table";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import InvoiceList from "@/components/billing/InvoiceList";
 import PendingPayments from "@/components/billing/PendingPayments";
@@ -13,7 +13,7 @@ import ContractsPage from "./ContractsPage";
 import PriceLists from "./PriceLists";
 
 /** Resumen del módulo: es la única vista con indicadores (KPI), como un dashboard. */
-function ResumenFacturacion() {
+function BillingSummary() {
   return (
     <div className="space-y-6">
       <BillingStats />
@@ -41,28 +41,28 @@ function ResumenFacturacion() {
   );
 }
 
-const VISTAS = {
-  facturas: InvoiceList,
-  pendientes: PendingPayments,
-  convenios: () => <ContractsPage embebido />,
-  tarifarios: () => <PriceLists embebido />,
-  reportes: BillingReports,
-  resumen: ResumenFacturacion,
-  generar: InvoiceGenerator,
+const VIEWS = {
+  invoices: InvoiceList,
+  pending: PendingPayments,
+  contracts: () => <ContractsPage embedded />,
+  priceLists: () => <PriceLists embedded />,
+  reports: BillingReports,
+  summary: BillingSummary,
+  generate: InvoiceGenerator,
 } satisfies Record<string, ComponentType>;
-type Vista = keyof typeof VISTAS;
+type View = keyof typeof VIEWS;
 
-const PESTANAS: PestanaCarpeta<Vista>[] = [
-  { id: "facturas", titulo: "Facturas", fija: true },
-  { id: "pendientes", titulo: "Pagos pendientes" },
-  { id: "convenios", titulo: "Convenios" },
-  { id: "tarifarios", titulo: "Tarifarios" },
-  { id: "reportes", titulo: "Reportes" },
-  { id: "resumen", titulo: "Resumen" },
-  { id: "generar", titulo: "Generar" },
+const TABS: FolderTab<View>[] = [
+  { id: "invoices", title: "Facturas", pinned: true },
+  { id: "pending", title: "Pagos pendientes" },
+  { id: "contracts", title: "Convenios" },
+  { id: "priceLists", title: "Tarifarios" },
+  { id: "reports", title: "Reportes" },
+  { id: "summary", title: "Resumen" },
+  { id: "generate", title: "Generar" },
 ];
-const IDS = PESTANAS.map((p) => p.id);
-const VISIBLES_INICIALES: Vista[] = ["facturas", "pendientes", "convenios", "tarifarios", "reportes"];
+const IDS = TABS.map((p) => p.id);
+const INITIAL_VISIBLE: View[] = ["invoices", "pending", "contracts", "priceLists", "reports"];
 
 /**
  * Facturación con la convención de páginas de módulo: encabezado estándar y
@@ -72,32 +72,32 @@ const VISIBLES_INICIALES: Vista[] = ["facturas", "pendientes", "convenios", "tar
  */
 const BillingDashboard = () => {
   const navigate = useNavigate();
-  const [activa, setActiva] = useEstadoPersistente<Vista>("facturacion.vista", "facturas", unaDe(IDS));
-  const [abiertas, setAbiertas] = useState<Set<Vista>>(() => new Set([activa]));
+  const [active, setActive] = usePersistentState<View>("billing.view", "invoices", oneOf(IDS));
+  const [opened, setOpened] = useState<Set<View>>(() => new Set([active]));
 
   useEffect(() => {
-    setAbiertas((prev) => (prev.has(activa) ? prev : new Set(prev).add(activa)));
-  }, [activa]);
+    setOpened((prev) => (prev.has(active) ? prev : new Set(prev).add(active)));
+  }, [active]);
 
   return (
     <div className="mx-auto max-w-7xl space-y-5 py-6">
-      <EncabezadoModulo
-        titulo="Facturación"
-        primaria={{ titulo: "Nueva factura", onClick: () => navigate("/app/facturacion/nueva") }}
+      <ModuleHeader
+        title="Facturación"
+        primary={{ title: "Nueva factura", onClick: () => navigate("/app/facturacion/nueva") }}
       />
-      <PestanasCarpeta
-        id="facturacion.pestanas"
-        etiqueta="Vistas de facturación"
-        pestanas={PESTANAS}
-        activa={activa}
-        onCambio={setActiva}
-        visiblesIniciales={VISIBLES_INICIALES}
+      <FolderTabs
+        id="billing.tabs"
+        label="Vistas de facturación"
+        tabs={TABS}
+        active={active}
+        onChange={setActive}
+        initialVisible={INITIAL_VISIBLE}
       />
-      {[...abiertas].map((v) => {
-        const Vista = VISTAS[v];
+      {[...opened].map((v) => {
+        const ViewComponent = VIEWS[v];
         return (
-          <div key={v} role="tabpanel" hidden={v !== activa}>
-            <Vista />
+          <div key={v} role="tabpanel" hidden={v !== active}>
+            <ViewComponent />
           </div>
         );
       })}

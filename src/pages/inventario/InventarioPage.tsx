@@ -1,40 +1,40 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { baseDatos } from "@/integrations/datos/cliente";
+import { db } from "@/integrations/data/client";
 import { PackagePlus } from 'lucide-react';
 import { ProductoDialog } from '@/components/inventario/ProductoDialog';
 import { RegistrarMovimientoDialog } from '@/components/inventario/RegistrarMovimientoDialog';
 import { Button } from '@/components/ui/button';
-import { EncabezadoModulo } from '@/components/kit/EncabezadoModulo';
-import { AccionesFila } from '@/components/kit/AccionesFila';
-import { PestanasCarpeta, type PestanaCarpeta } from '@/components/kit/pestanas/PestanasCarpeta';
+import { ModuleHeader } from '@/components/kit/ModuleHeader';
+import { RowActions } from '@/components/kit/RowActions';
+import { FolderTabs, type FolderTab } from '@/components/kit/tabs/FolderTabs';
 import {
-  BarraTabla, CeldaEstado, TablaDatos, botonPrimario, tonoPlazo, unaDe, useEstadoPersistente, useTablaDatos,
-  type ColumnaTabla, type FiltroTabla, type SegmentoTabla, type TonoEstado,
-} from '@/components/kit/tabla';
+  TableToolbar, StatusCell, DataTable, primaryButtonClass, deadlineTone, oneOf, usePersistentState, useDataTable,
+  type TableColumn, type TableFilter, type TableSegment, type StatusTone,
+} from '@/components/kit/table';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
 /*
  * Inventario con la convención de tablas de Ker Hub: vistas del módulo como
- * pestañas de carpeta, cada una con su TablaDatos. Sin tarjetas KPI ni
+ * pestañas de carpeta, cada una con su DataTable. Sin tarjetas KPI ni
  * alertas sueltas: lo urgente (stock bajo, agotado, por vencer) son segmentos
  * con conteo de la tabla de stock.
  */
 
-const tipoLabel: Record<string, string> = {
+const PRODUCT_TYPE_LABEL: Record<string, string> = {
   medicamento: 'Medicamento',
   insumo: 'Insumo',
   dispositivo_medico: 'Dispositivo',
 };
-const tipoTexto = (tipo: string) => tipoLabel[tipo] || tipo;
+const productTypeLabel = (type: string) => PRODUCT_TYPE_LABEL[type] || type;
 
-const derecha = 'text-right tabular-nums';
-const DIA_MS = 86_400_000;
+const rightAligned = 'text-right tabular-nums';
+const DAY_MS = 86_400_000;
 /** Días de anticipación con que un lote cuenta como «por vencer». */
-const UMBRAL_VENCIMIENTO = 90;
+const EXPIRY_THRESHOLD_DAYS = 90;
 
-const fechaCorta = (f: string) => format(new Date(f), 'd MMM yyyy', { locale: es });
+const shortDate = (f: string) => format(new Date(f), 'd MMM yyyy', { locale: es });
 
 // ─── Stock por sede ─────────────────────────────────────────
 
@@ -50,26 +50,26 @@ interface StockRow {
   proxima_vencimiento: string | null;
 }
 
-type EstadoStock = 'Agotado' | 'Bajo' | 'Disponible';
+type StockStatus = 'Agotado' | 'Bajo' | 'Disponible';
 
-const estadoStock = (r: StockRow): EstadoStock =>
+const stockStatusOf = (r: StockRow): StockStatus =>
   r.cantidad_disponible === 0
     ? 'Agotado'
     : r.cantidad_minima > 0 && r.cantidad_disponible <= r.cantidad_minima
       ? 'Bajo'
       : 'Disponible';
 
-const TONO_STOCK: Record<EstadoStock, TonoEstado> = { Agotado: 'error', Bajo: 'aviso', Disponible: 'exito' };
+const STOCK_TONE: Record<StockStatus, StatusTone> = { Agotado: 'error', Bajo: 'warning', Disponible: 'success' };
 
-const diasParaVencer = (r: StockRow) =>
-  r.proxima_vencimiento ? Math.floor((new Date(r.proxima_vencimiento).getTime() - Date.now()) / DIA_MS) : null;
+const daysUntilExpiry = (r: StockRow) =>
+  r.proxima_vencimiento ? Math.floor((new Date(r.proxima_vencimiento).getTime() - Date.now()) / DAY_MS) : null;
 
 function useStockData() {
   return useQuery<StockRow[]>({
     queryKey: ['inventario-stock-table'],
     staleTime: 30_000,
     queryFn: async () => {
-      const { data: stocks, error } = await baseDatos
+      const { data: stocks, error } = await db
         .from('inventario_stock')
         .select('id, producto_id, presentacion_id, sede_id, cantidad_disponible, cantidad_minima, cantidad_maxima')
         .order('created_at', { ascending: false })
@@ -83,10 +83,10 @@ function useStockData() {
       const stockIds = stocks.map(s => s.id);
 
       const [{ data: prods }, { data: pres }, { data: sedes }, { data: lots }] = await Promise.all([
-        baseDatos.from('catalogo_productos').select('id, nombre_generico, tipo_producto').in('id', prodIds),
-        baseDatos.from('presentaciones_producto').select('id, forma_farmaceutica, concentracion').in('id', presIds),
-        baseDatos.from('sedes').select('id, nombre').in('id', sedeIds),
-        baseDatos.from('inventario_lotes')
+        db.from('catalogo_productos').select('id, nombre_generico, tipo_producto').in('id', prodIds),
+        db.from('presentaciones_producto').select('id, forma_farmaceutica, concentracion').in('id', presIds),
+        db.from('sedes').select('id, nombre').in('id', sedeIds),
+        db.from('inventario_lotes')
           .select('stock_id, fecha_vencimiento')
           .in('stock_id', stockIds)
           .eq('estado', 'disponible')
@@ -122,70 +122,70 @@ function useStockData() {
   });
 }
 
-const COLUMNAS_STOCK: ColumnaTabla<StockRow>[] = [
-  { id: 'producto', titulo: 'Producto', valor: (r) => r.producto_nombre, principal: true, fija: true, className: 'min-w-[200px]' },
-  { id: 'tipo', titulo: 'Tipo', valor: (r) => tipoTexto(r.tipo_producto) },
-  { id: 'presentacion', titulo: 'Presentación', valor: (r) => r.presentacion },
-  { id: 'sede', titulo: 'Sede', valor: (r) => r.sede_nombre },
-  { id: 'disponible', titulo: 'Disponible', valor: (r) => r.cantidad_disponible, className: derecha },
-  { id: 'minimo', titulo: 'Mínimo', valor: (r) => r.cantidad_minima, className: derecha, oculta: true },
-  { id: 'maximo', titulo: 'Máximo', valor: (r) => r.cantidad_maxima, className: derecha, oculta: true },
+const STOCK_COLUMNS: TableColumn<StockRow>[] = [
+  { id: 'product', title: 'Producto', value: (r) => r.producto_nombre, primary: true, alwaysVisible: true, className: 'min-w-[200px]' },
+  { id: 'type', title: 'Tipo', value: (r) => productTypeLabel(r.tipo_producto) },
+  { id: 'presentation', title: 'Presentación', value: (r) => r.presentacion },
+  { id: 'site', title: 'Sede', value: (r) => r.sede_nombre },
+  { id: 'available', title: 'Disponible', value: (r) => r.cantidad_disponible, className: rightAligned },
+  { id: 'minimum', title: 'Mínimo', value: (r) => r.cantidad_minima, className: rightAligned, hidden: true },
+  { id: 'maximum', title: 'Máximo', value: (r) => r.cantidad_maxima, className: rightAligned, hidden: true },
   {
-    id: 'estado', titulo: 'Estado', valor: estadoStock, sinPadding: true, className: 'w-28',
-    celda: (r) => <CeldaEstado tono={TONO_STOCK[estadoStock(r)]} texto={estadoStock(r)} />,
+    id: 'status', title: 'Estado', value: stockStatusOf, flush: true, className: 'w-28',
+    cell: (r) => <StatusCell tone={STOCK_TONE[stockStatusOf(r)]} text={stockStatusOf(r)} />,
   },
   {
-    id: 'vencimiento', titulo: 'Próx. vencimiento', valor: (r) => r.proxima_vencimiento, className: 'tabular-nums',
-    celda: (r) => r.proxima_vencimiento
-      ? <span className={tonoPlazo(diasParaVencer(r), UMBRAL_VENCIMIENTO)}>{fechaCorta(r.proxima_vencimiento)}</span>
+    id: 'nextExpiry', title: 'Próx. vencimiento', value: (r) => r.proxima_vencimiento, className: 'tabular-nums',
+    cell: (r) => r.proxima_vencimiento
+      ? <span className={deadlineTone(daysUntilExpiry(r), EXPIRY_THRESHOLD_DAYS)}>{shortDate(r.proxima_vencimiento)}</span>
       : '—',
   },
 ];
 
-const FILTROS_STOCK: FiltroTabla<StockRow>[] = [
-  { id: 'sede', titulo: 'Sede', valor: (r) => r.sede_nombre },
-  { id: 'tipo', titulo: 'Tipo', valor: (r) => tipoTexto(r.tipo_producto) },
-  { id: 'estado', titulo: 'Estado', valor: estadoStock },
+const STOCK_FILTERS: TableFilter<StockRow>[] = [
+  { id: 'site', title: 'Sede', value: (r) => r.sede_nombre },
+  { id: 'type', title: 'Tipo', value: (r) => productTypeLabel(r.tipo_producto) },
+  { id: 'status', title: 'Estado', value: stockStatusOf },
 ];
 
-const SEGMENTOS_STOCK: SegmentoTabla<StockRow>[] = [
-  { id: 'todos', titulo: 'Todos', cumple: () => true },
-  { id: 'bajo', titulo: 'Stock bajo', cumple: (r) => estadoStock(r) === 'Bajo' },
-  { id: 'agotado', titulo: 'Agotados', cumple: (r) => estadoStock(r) === 'Agotado' },
-  { id: 'por-vencer', titulo: 'Por vencer', cumple: (r) => { const d = diasParaVencer(r); return d !== null && d <= UMBRAL_VENCIMIENTO; } },
+const STOCK_SEGMENTS: TableSegment<StockRow>[] = [
+  { id: 'all', title: 'Todos', match: () => true },
+  { id: 'lowStock', title: 'Stock bajo', match: (r) => stockStatusOf(r) === 'Bajo' },
+  { id: 'outOfStock', title: 'Agotados', match: (r) => stockStatusOf(r) === 'Agotado' },
+  { id: 'expiring', title: 'Por vencer', match: (r) => { const d = daysUntilExpiry(r); return d !== null && d <= EXPIRY_THRESHOLD_DAYS; } },
 ];
 
-const claveStock = (r: StockRow) => r.id;
+const stockKey = (r: StockRow) => r.id;
 
-function StockVista({ onRegistrarMovimiento }: { onRegistrarMovimiento: () => void }) {
+function StockView({ onRegisterMovement }: { onRegisterMovement: () => void }) {
   const { data = [], isLoading } = useStockData();
-  const t = useTablaDatos({ id: 'inventario.stock', filas: data, columnas: COLUMNAS_STOCK, claveFila: claveStock, filtros: FILTROS_STOCK, segmentos: SEGMENTOS_STOCK });
+  const t = useDataTable({ id: 'inventory.stock', rows: data, columns: STOCK_COLUMNS, rowKey: stockKey, filters: STOCK_FILTERS, segments: STOCK_SEGMENTS });
   return (
-    <TablaDatos
+    <DataTable
       t={t}
-      cargando={isLoading}
-      barra={
-        <BarraTabla
+      loading={isLoading}
+      toolbar={
+        <TableToolbar
           t={t}
-          nombre={['registro', 'registros']}
+          name={['registro', 'registros']}
           placeholder="Buscar producto, presentación o sede"
-          nombreArchivo="inventario-stock"
-          acciones={
-            <Button className={botonPrimario} onClick={onRegistrarMovimiento}>
+          fileName="inventario-stock"
+          actions={
+            <Button className={primaryButtonClass} onClick={onRegisterMovement}>
               <PackagePlus className="h-4 w-4" />
               Registrar movimiento
             </Button>
           }
         />
       }
-      vacio="Aún no hay stock. Aparecerá cuando se registren movimientos de inventario."
+      empty="Aún no hay stock. Aparecerá cuando se registren movimientos de inventario."
     />
   );
 }
 
 // ─── Catálogo ───────────────────────────────────────────────
 
-interface CatalogoRow {
+interface CatalogRow {
   id: string;
   codigo: string;
   nombre_generico: string;
@@ -197,107 +197,107 @@ interface CatalogoRow {
   requiere_cadena_frio: boolean | null;
 }
 
-const siNo = (v: boolean | null) => (v ? 'Sí' : 'No');
+const yesNo = (v: boolean | null) => (v ? 'Sí' : 'No');
 
-const COLUMNAS_CATALOGO: ColumnaTabla<CatalogoRow>[] = [
-  { id: 'codigo', titulo: 'Código', valor: (r) => r.codigo, className: 'font-mono text-xs', fija: true },
-  { id: 'nombre', titulo: 'Nombre genérico', valor: (r) => r.nombre_generico, principal: true, className: 'min-w-[200px]' },
-  { id: 'comercial', titulo: 'Comercial', valor: (r) => r.nombre_comercial },
-  { id: 'tipo', titulo: 'Tipo', valor: (r) => tipoTexto(r.tipo_producto) },
-  { id: 'principio', titulo: 'Principio activo', valor: (r) => r.principio_activo },
-  { id: 'fabricante', titulo: 'Fabricante', valor: (r) => r.fabricante },
-  { id: 'controlado', titulo: 'Controlado', valor: (r) => siNo(r.controlado), oculta: true },
-  { id: 'frio', titulo: 'Cadena de frío', valor: (r) => siNo(r.requiere_cadena_frio), oculta: true },
+const CATALOG_COLUMNS: TableColumn<CatalogRow>[] = [
+  { id: 'code', title: 'Código', value: (r) => r.codigo, className: 'font-mono text-xs', alwaysVisible: true },
+  { id: 'genericName', title: 'Nombre genérico', value: (r) => r.nombre_generico, primary: true, className: 'min-w-[200px]' },
+  { id: 'brandName', title: 'Comercial', value: (r) => r.nombre_comercial },
+  { id: 'type', title: 'Tipo', value: (r) => productTypeLabel(r.tipo_producto) },
+  { id: 'activeIngredient', title: 'Principio activo', value: (r) => r.principio_activo },
+  { id: 'manufacturer', title: 'Fabricante', value: (r) => r.fabricante },
+  { id: 'controlled', title: 'Controlado', value: (r) => yesNo(r.controlado), hidden: true },
+  { id: 'coldChain', title: 'Cadena de frío', value: (r) => yesNo(r.requiere_cadena_frio), hidden: true },
 ];
 
-const FILTROS_CATALOGO: FiltroTabla<CatalogoRow>[] = [
-  { id: 'tipo', titulo: 'Tipo', valor: (r) => tipoTexto(r.tipo_producto) },
-  { id: 'fabricante', titulo: 'Fabricante', valor: (r) => r.fabricante },
+const CATALOG_FILTERS: TableFilter<CatalogRow>[] = [
+  { id: 'type', title: 'Tipo', value: (r) => productTypeLabel(r.tipo_producto) },
+  { id: 'manufacturer', title: 'Fabricante', value: (r) => r.fabricante },
 ];
 
-const SEGMENTOS_CATALOGO: SegmentoTabla<CatalogoRow>[] = [
-  { id: 'todos', titulo: 'Todos', cumple: () => true },
-  { id: 'controlados', titulo: 'Controlados', cumple: (r) => !!r.controlado },
-  { id: 'frio', titulo: 'Cadena de frío', cumple: (r) => !!r.requiere_cadena_frio },
+const CATALOG_SEGMENTS: TableSegment<CatalogRow>[] = [
+  { id: 'all', title: 'Todos', match: () => true },
+  { id: 'controlled', title: 'Controlados', match: (r) => !!r.controlado },
+  { id: 'coldChain', title: 'Cadena de frío', match: (r) => !!r.requiere_cadena_frio },
 ];
 
-const claveCatalogo = (r: CatalogoRow) => r.id;
+const catalogKey = (r: CatalogRow) => r.id;
 
-function CatalogoVista({ onEdit }: { onEdit: (id: string) => void }) {
+function CatalogView({ onEdit }: { onEdit: (id: string) => void }) {
   // Se cargan los productos activos y la búsqueda se resuelve en el cliente (kit de tablas).
-  const { data = [], isLoading } = useQuery<CatalogoRow[]>({
+  const { data = [], isLoading } = useQuery<CatalogRow[]>({
     queryKey: ['catalogo-productos'],
     staleTime: 30_000,
     queryFn: async () => {
-      const { data: filas, error } = await baseDatos
+      const { data: rows, error } = await db
         .from('catalogo_productos')
         .select('id, codigo, nombre_generico, nombre_comercial, tipo_producto, principio_activo, fabricante, controlado, requiere_cadena_frio')
         .eq('activo', true)
         .order('nombre_generico');
       if (error) throw error;
-      return (filas || []) as CatalogoRow[];
+      return (rows || []) as CatalogRow[];
     },
   });
-  const t = useTablaDatos({ id: 'inventario.catalogo', filas: data, columnas: COLUMNAS_CATALOGO, claveFila: claveCatalogo, filtros: FILTROS_CATALOGO, segmentos: SEGMENTOS_CATALOGO });
+  const t = useDataTable({ id: 'inventory.catalog', rows: data, columns: CATALOG_COLUMNS, rowKey: catalogKey, filters: CATALOG_FILTERS, segments: CATALOG_SEGMENTS });
   return (
-    <TablaDatos
+    <DataTable
       t={t}
-      cargando={isLoading}
-      onFilaClick={(r) => onEdit(r.id)}
-      barra={<BarraTabla t={t} nombre={['producto', 'productos']} placeholder="Buscar por nombre, código o principio activo" nombreArchivo="inventario-catalogo" />}
-      acciones={(r) => <AccionesFila nombre={r.nombre_generico} onVer={() => onEdit(r.id)} />}
-      vacio="Aún no hay productos en el catálogo. Registra uno con «Nuevo producto»."
+      loading={isLoading}
+      onRowClick={(r) => onEdit(r.id)}
+      toolbar={<TableToolbar t={t} name={['producto', 'productos']} placeholder="Buscar por nombre, código o principio activo" fileName="inventario-catalogo" />}
+      actions={(r) => <RowActions name={r.nombre_generico} onView={() => onEdit(r.id)} />}
+      empty="Aún no hay productos en el catálogo. Registra uno con «Nuevo producto»."
     />
   );
 }
 
 // ─── Vistas pendientes ──────────────────────────────────────
 
-const Proximamente = ({ titulo }: { titulo: string }) => (
+const ComingSoon = ({ title }: { title: string }) => (
   <div className="rounded-2xl border border-border bg-card px-6 py-16 text-center shadow-sm">
-    <p className="text-sm font-medium text-foreground">{titulo}</p>
+    <p className="text-sm font-medium text-foreground">{title}</p>
     <p className="mt-0.5 text-[13px] text-muted-foreground">Próximamente</p>
   </div>
 );
 
 // ─── Página ─────────────────────────────────────────────────
 
-const VISTAS = ['stock', 'catalogo', 'lotes', 'movimientos'] as const;
-type Vista = (typeof VISTAS)[number];
+const VIEWS = ['stock', 'catalog', 'batches', 'movements'] as const;
+type View = (typeof VIEWS)[number];
 
-const PESTANAS: PestanaCarpeta<Vista>[] = [
-  { id: 'stock', titulo: 'Stock por sede', fija: true },
-  { id: 'catalogo', titulo: 'Catálogo' },
-  { id: 'lotes', titulo: 'Lotes' },
-  { id: 'movimientos', titulo: 'Movimientos' },
+const TABS: FolderTab<View>[] = [
+  { id: 'stock', title: 'Stock por sede', pinned: true },
+  { id: 'catalog', title: 'Catálogo' },
+  { id: 'batches', title: 'Lotes' },
+  { id: 'movements', title: 'Movimientos' },
 ];
 
-const esVista = unaDe(VISTAS);
+const isView = oneOf(VIEWS);
 
 const InventarioPage: React.FC = () => {
-  const [vista, setVista] = useEstadoPersistente<Vista>('inventario.vista', 'stock', esVista);
+  const [view, setView] = usePersistentState<View>('inventory.view', 'stock', isView);
   const [showNewProduct, setShowNewProduct] = useState(false);
   const [editProductId, setEditProductId] = useState<string | null>(null);
   const [showMovement, setShowMovement] = useState(false);
 
-  const editar = (id: string) => { setEditProductId(id); setShowNewProduct(true); };
+  const edit = (id: string) => { setEditProductId(id); setShowNewProduct(true); };
 
   return (
     <div className="mx-auto max-w-7xl space-y-5 py-6">
-      <EncabezadoModulo titulo="Inventario" primaria={{ titulo: 'Nuevo producto', onClick: () => setShowNewProduct(true) }} />
+      <ModuleHeader title="Inventario" primary={{ title: 'Nuevo producto', onClick: () => setShowNewProduct(true) }} />
 
-      <PestanasCarpeta
-        id="inventario.pestanas"
-        etiqueta="Vistas de inventario"
-        pestanas={PESTANAS}
-        activa={vista}
-        onCambio={setVista}
-        visiblesIniciales={['stock', 'catalogo', 'lotes', 'movimientos']}
+      <FolderTabs
+        id="inventory.tabs"
+        label="Vistas de inventario"
+        tabs={TABS}
+        active={view}
+        onChange={setView}
+        initialVisible={['stock', 'catalog', 'batches', 'movements']}
       />
-      {vista === 'stock' && <StockVista onRegistrarMovimiento={() => setShowMovement(true)} />}
-      {vista === 'catalogo' && <CatalogoVista onEdit={editar} />}
-      {vista === 'lotes' && <Proximamente titulo="Gestión de lotes" />}
-      {vista === 'movimientos' && <Proximamente titulo="Historial de movimientos" />}
+      {view === 'stock' && <StockView onRegisterMovement={() => setShowMovement(true)} />}
+      {view === 'catalog' && <CatalogView onEdit={edit} />}
+      {view === 'batches' && <ComingSoon title="Gestión de lotes" />}
+      {view === 'movements' && <ComingSoon title="Historial de movimientos" />}
 
       <ProductoDialog
         open={showNewProduct}

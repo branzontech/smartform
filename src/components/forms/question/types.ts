@@ -112,6 +112,10 @@ export interface QuestionData {
   type: string;
   title: string;
   required: boolean;
+  /** Campo de un formulario base (p. ej. la historia clínica): no se borra, mueve ni cambia. */
+  locked?: boolean;
+  /** Desactivado: un campo ya usado no se borra; deja de pedirse en registros nuevos y se conserva en los viejos. */
+  inactive?: boolean;
   options?: string[];
   formula?: string;
   min?: number;
@@ -158,6 +162,8 @@ export interface QuestionProps {
 export interface QuestionTypeProps {
   selected: string;
   onChange: (type: string) => void;
+  /** Campo ya usado en registros: su tipo no se puede cambiar. */
+  disabled?: boolean;
 }
 
 export interface ContentComponentProps {
@@ -171,26 +177,3 @@ export interface QuestionContentProps {
   onUpdate: (data: Partial<QuestionData>) => void;
   readOnly?: boolean;
 }
-
-// Nuevos tipos para la personalización del diseño
-export interface FormDesignOptions {
-  primaryColor: string;
-  fontFamily: string;
-  borderRadius: string;
-  backgroundColor: string;
-  questionSpacing: string;
-  questionBackgroundColor: string;
-  questionTextColor: string;
-  buttonStyle: string;
-}
-
-export const defaultDesignOptions: FormDesignOptions = {
-  primaryColor: "#0099ff",
-  fontFamily: "Inter, system-ui, sans-serif",
-  borderRadius: "md",
-  backgroundColor: "#ffffff",
-  questionSpacing: "normal",
-  questionBackgroundColor: "#ffffff",
-  questionTextColor: "#1f2937",
-  buttonStyle: "default"
-};

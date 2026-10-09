@@ -2,7 +2,7 @@ import { z } from "zod";
 import { QuestionData } from '@/components/forms/question/types';
 import { Form } from '@/pages/FormsPage';
 import { FormResponse, FormWithUsage } from "@/types/form-types";
-import { baseDatos } from "@/integrations/datos/cliente";
+import { db } from "@/integrations/data/client";
 
 // Ejemplo de formulario para desarrollo (solo se usa si no se encuentra el formulario en localStorage)
 export const mockForm = {
@@ -77,7 +77,7 @@ export const createDynamicSchema = (questions: QuestionData[]) => {
 };
 
 export const fetchFormById = async (formId: string) => {
-  const { data, error } = await baseDatos
+  const { data, error } = await db
     .from("formularios")
     .select("*")
     .eq("id", formId)
@@ -93,15 +93,16 @@ export const fetchFormById = async (formId: string) => {
       updatedAt: new Date(data.updated_at),
       responseCount: data.respuestas_count || 0,
       formType: (data.tipo as string) || "historia_clinica",
+      version: (data as { version?: number }).version ?? 1,
     };
     return { form, error: null, source: 'database' };
   }
 
-  console.error('Form not found:', formId, error);
+  // Nunca un formulario de ejemplo: el profesional guardaría datos clínicos en él.
   return {
-    form: mockForm,
-    error: "El formulario solicitado no existe",
-    source: 'mock'
+    form: null,
+    error: error ? "No se pudo cargar el formulario. Intenta de nuevo." : "El formulario solicitado no existe",
+    source: 'database'
   };
 };
 

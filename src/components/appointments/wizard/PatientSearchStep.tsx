@@ -30,7 +30,7 @@ import {
 import { cn } from "@/lib/utils";
 import { ExtendedPatient, DOCUMENT_TYPES } from "../PatientPanel";
 import { PatientStatusBadge } from "@/components/patients/PatientStatusBadge";
-import { baseDatos } from "@/integrations/datos/cliente";
+import { db } from "@/integrations/data/client";
 import { toast } from "sonner";
 
 // Using shared DynamicFieldConfig type from DynamicFieldConfigurator
@@ -64,7 +64,7 @@ export const PatientSearchStep: React.FC<PatientSearchStepProps> = ({
   // Load dynamic field config
   useEffect(() => {
     const fetchDynamicFields = async () => {
-      const { data, error } = await baseDatos
+      const { data, error } = await db
         .from("configuracion_campos_paciente")
         .select("*")
         .order("orden", { ascending: true });
@@ -84,7 +84,7 @@ export const PatientSearchStep: React.FC<PatientSearchStepProps> = ({
 
     const timer = setTimeout(async () => {
       setIsSearching(true);
-      const { data, error } = await baseDatos
+      const { data, error } = await db
         .from("pacientes")
         .select("*")
         .or(`numero_documento.ilike.%${searchTerm}%,nombres.ilike.%${searchTerm}%,apellidos.ilike.%${searchTerm}%`)
@@ -139,7 +139,7 @@ export const PatientSearchStep: React.FC<PatientSearchStepProps> = ({
         fhirExtensions.companion = companionData;
       }
 
-      const { data, error } = await baseDatos
+      const { data, error } = await db
         .from("pacientes")
         .insert({
           nombres: newPatient.firstName,
@@ -262,7 +262,7 @@ export const PatientSearchStep: React.FC<PatientSearchStepProps> = ({
                   setSearchTerm(e.target.value);
                   setShowCreateForm(false);
                 }}
-                className="pl-12 h-12 text-base bg-background/50 border-border/50 rounded-xl focus:ring-2 focus:ring-primary/20"
+                className="pl-12 h-12 text-base bg-background/50 border-border/50 rounded-xl focus-visible:ring-0"
               />
               {isSearching && (
                 <Loader2 className="absolute right-4 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { baseDatos } from "@/integrations/datos/cliente";
+import { db } from "@/integrations/data/client";
 import { Badge } from "@/components/ui/badge";
 import { ClipboardList, Clock, Calendar, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -37,7 +37,7 @@ export const AdmissionHistorySection: React.FC<Props> = ({ patientId }) => {
     const fetch = async () => {
       setLoading(true);
       try {
-        const { data } = await baseDatos
+        const { data } = await db
           .from("admisiones")
           .select("*, tipo_admision:tipos_admision(nombre)")
           .eq("paciente_id", patientId)

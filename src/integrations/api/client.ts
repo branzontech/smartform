@@ -1,16 +1,22 @@
+import { currentEnvironment } from "@/config/environments";
+
 /**
  * Cliente HTTP de la API propia (smartform-backend). Fuera de este archivo
  * nadie escribe `fetch` contra la API ni conoce la URL base.
  *
  * Por defecto la API está en el mismo origen que la web, bajo /api: en local
  * lo resuelve el proxy de Vite y en Railway el servidor de la web. Así la
- * cookie de sesión es de primera parte. VITE_API_URL solo hace falta si la
- * API se sirve en otro dominio.
+ * cookie de sesión es de primera parte. El ambiente elegido en el login añade
+ * su prefijo (p. ej. /env/produccion). VITE_API_URL solo hace falta si la API
+ * se sirve en otro dominio.
  */
-export const API_BASE_URL: string = ((import.meta.env.VITE_API_URL as string | undefined) ?? "").replace(/\/$/, "");
+export function apiBaseUrl(): string {
+  const fixed = ((import.meta.env.VITE_API_URL as string | undefined) ?? "").replace(/\/$/, "");
+  return fixed || currentEnvironment().apiBase;
+}
 
 /** Evento: el servidor respondió 401 (sesión caducada o cerrada en otro lado). */
-export const SESION_CADUCADA = "kerhub:sesion-caducada";
+export const SESSION_EXPIRED = "kerhub:session-expired";
 
 export class ApiError extends Error {
   status: number;
@@ -39,19 +45,19 @@ export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise
   if (init.body && !(init.body instanceof FormData) && !headers.has("Content-Type")) {
     headers.set("Content-Type", "application/json");
   }
-  const res = await fetch(`${API_BASE_URL}${path}`, { ...init, headers, credentials: "include" });
-  if (res.status === 401 && !path.startsWith("/api/auth/")) window.dispatchEvent(new CustomEvent(SESION_CADUCADA));
+  const res = await fetch(`${apiBaseUrl()}${path}`, { ...init, headers, credentials: "include" });
+  if (res.status === 401 && !path.startsWith("/api/auth/")) window.dispatchEvent(new CustomEvent(SESSION_EXPIRED));
   if (res.status === 204) return undefined as T;
   const text = await res.text();
   const body = text ? safeJson(text) : null;
   if (!res.ok) {
-    const conError = body && typeof body === "object" && "error" in body ? (body as { error: unknown }).error : null;
-    throw new ApiError(res.status, typeof conError === "string" ? conError : `Error ${res.status}`, body);
+    const errorText = body && typeof body === "object" && "error" in body ? (body as { error: unknown }).error : null;
+    throw new ApiError(res.status, typeof errorText === "string" ? errorText : `Error ${res.status}`, body);
   }
   return body as T;
 }
 
 /** URL pública de un archivo servido por la API (logo, avatar, firma). */
-export function urlArchivo(bucket: string, ruta: string): string {
-  return `${API_BASE_URL}/api/archivos/${bucket}/${ruta.split("/").map(encodeURIComponent).join("/")}`;
+export function fileUrl(bucket: string, path: string): string {
+  return `${apiBaseUrl()}/api/files/${bucket}/${path.split("/").map(encodeURIComponent).join("/")}`;
 }

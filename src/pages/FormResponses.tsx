@@ -12,7 +12,7 @@ import { FormatDocumentView } from "@/components/forms/responses/format-document
 import { FormSummaryTabs } from "@/components/forms/responses/form-summary-tabs";
 import { printFormResponse } from "@/utils/print-utils";
 import { FormResponse } from "@/types/form-types";
-import { baseDatos } from "@/integrations/datos/cliente";
+import { db } from "@/integrations/data/client";
 
 const FormResponses = () => {
   const { id } = useParams();
@@ -32,7 +32,7 @@ const FormResponses = () => {
       setLoading(true);
       try {
         // Load form metadata
-        const { data: formRow, error: formErr } = await baseDatos
+        const { data: formRow, error: formErr } = await db
           .from("formularios")
           .select("*")
           .eq("id", id)
@@ -57,7 +57,7 @@ const FormResponses = () => {
         });
 
         // Load responses (incluye anuladas/superseded para preservar contexto clínico)
-        const { data: respRows } = await baseDatos
+        const { data: respRows } = await db
           .from("respuestas_formularios")
           .select("*")
           .eq("formulario_id", id)
@@ -73,7 +73,7 @@ const FormResponses = () => {
           { activityType: any; agentNombreCompleto: string; recordedAt: string }
         > = {};
         if (recordIds.length > 0) {
-          const { data: provRows } = await baseDatos
+          const { data: provRows } = await db
             .from("provenance_clinico")
             .select(
               "target_record_id, activity_type, agent_nombre_completo, recorded_at"

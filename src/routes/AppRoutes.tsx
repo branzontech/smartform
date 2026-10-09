@@ -15,7 +15,6 @@ import AppointmentList from "@/pages/appointments/AppointmentList";
 import AppointmentDetail from "@/pages/appointments/AppointmentDetail";
 import AppointmentForm from "@/pages/appointments/AppointmentForm";
 import AdmissionPage from "@/pages/admissions/AdmissionPage";
-import AIAssistant from "@/components/ai-assistant/AIAssistant";
 import TelemedicinePage from "@/pages/telemedicine/TelemedicinePage";
 import PricingPage from "@/pages/pricing/PricingPage";
 import UserPortalPage from "@/pages/user-portal/UserPortalPage";
@@ -36,6 +35,7 @@ import DoctorProfile from "@/pages/doctors/DoctorProfile";
 import DoctorForm from "@/pages/doctors/DoctorForm";
 import BillingDashboard from "@/pages/billing/BillingDashboard";
 import ContractsPage from "@/pages/billing/ContractsPage";
+import ContractEditorPage from "@/pages/billing/ContractEditorPage";
 import PriceLists from "@/pages/billing/PriceLists";
 import InvoiceDetail from "@/pages/billing/InvoiceDetail";
 import InvoiceForm from "@/pages/billing/InvoiceForm";
@@ -106,6 +106,8 @@ const AppRoutes = () => {
         <Route path="locations/map" element={<SiteListPage />} />
         <Route path="facturacion" element={<BillingDashboard />} />
         <Route path="facturacion/convenios" element={<ContractsPage />} />
+        <Route path="facturacion/convenios/nuevo" element={<ContractEditorPage />} />
+        <Route path="facturacion/convenios/:id" element={<ContractEditorPage />} />
         <Route path="facturacion/tarifarios" element={<PriceLists />} />
         <Route path="facturacion/:id" element={<InvoiceDetail />} />
         <Route path="facturacion/nueva" element={<InvoiceForm />} />
@@ -121,7 +123,7 @@ const AppRoutes = () => {
         <Route path="portal-usuario" element={<UserPortalPage />} />
         <Route path="perfil" element={<MyProfilePage />} />
       </Routes>
-      <AIAssistant />
+      {/* Asistente IA flotante desactivado por ahora: el componente sigue en components/ai-assistant. */}
     </>
   );
 };

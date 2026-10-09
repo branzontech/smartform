@@ -1,30 +1,30 @@
 import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { baseDatos } from "@/integrations/datos/cliente";
+import { db } from "@/integrations/data/client";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { toast } from "sonner";
 import { Copy, Pencil, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-picker";
-import { EncabezadoModulo } from "@/components/kit/EncabezadoModulo";
-import { AccionesFila } from "@/components/kit/AccionesFila";
+import { ModuleHeader } from "@/components/kit/ModuleHeader";
+import { RowActions } from "@/components/kit/RowActions";
 import {
-  BarraTabla, CeldaEstado, TablaDatos, useTablaDatos,
-  type ColumnaTabla, type FiltroTabla, type SegmentoTabla, type TonoEstado,
-} from "@/components/kit/tabla";
+  TableToolbar, StatusCell, DataTable, useDataTable,
+  type TableColumn, type TableFilter, type TableSegment, type StatusTone,
+} from "@/components/kit/table";
 import type { ClienteCotizacion, EstadoCotizacion } from "@/types/cotizacion-types";
 
-const ESTADOS: Record<EstadoCotizacion, { label: string; tono: TonoEstado }> = {
-  borrador: { label: "Borrador", tono: "neutro" },
-  enviada: { label: "Enviada", tono: "info" },
-  aceptada: { label: "Aceptada", tono: "exito" },
-  rechazada: { label: "Rechazada", tono: "error" },
-  vencida: { label: "Vencida", tono: "aviso" },
+const QUOTE_STATUS: Record<EstadoCotizacion, { label: string; tone: StatusTone }> = {
+  borrador: { label: "Borrador", tone: "neutral" },
+  enviada: { label: "Enviada", tone: "info" },
+  aceptada: { label: "Aceptada", tone: "success" },
+  rechazada: { label: "Rechazada", tone: "error" },
+  vencida: { label: "Vencida", tone: "warning" },
 };
 
 /** Fila de public.cotizaciones con el cliente y el nombre de quien la hizo. */
-interface CotizacionFila {
+interface QuoteRow {
   id: string;
   numero_cotizacion: string;
   fecha_emision: string;
@@ -34,45 +34,45 @@ interface CotizacionFila {
   moneda: string;
   creado_por: string | null;
   clientes_cotizacion?: Pick<ClienteCotizacion, "nombre_razon_social"> | null;
-  creador: string;
+  creatorName: string;
 }
 
-const estadoDe = (c: CotizacionFila) => ESTADOS[c.estado] ?? ESTADOS.borrador;
-const fechaCorta = (f: string) => format(new Date(f), "dd MMM yyyy", { locale: es });
+const statusOf = (c: QuoteRow) => QUOTE_STATUS[c.estado] ?? QUOTE_STATUS.borrador;
+const shortDate = (f: string) => format(new Date(f), "dd MMM yyyy", { locale: es });
 const formatCurrency = (val: number, moneda: string = "COP") =>
   new Intl.NumberFormat("es-CO", { style: "currency", currency: moneda, minimumFractionDigits: 0 }).format(val);
 
 /** Una celda, un dato, una línea. */
-const COLUMNAS: ColumnaTabla<CotizacionFila>[] = [
-  { id: "numero", titulo: "N° cotización", valor: (c) => c.numero_cotizacion, className: "font-mono text-xs", fija: true },
-  { id: "cliente", titulo: "Cliente", valor: (c) => c.clientes_cotizacion?.nombre_razon_social, principal: true, className: "min-w-[220px]" },
-  { id: "creador", titulo: "Realizada por", valor: (c) => c.creador },
-  { id: "emision", titulo: "Fecha emisión", valor: (c) => c.fecha_emision, celda: (c) => fechaCorta(c.fecha_emision), className: "tabular-nums" },
-  { id: "validez", titulo: "Validez", valor: (c) => c.fecha_validez, celda: (c) => fechaCorta(c.fecha_validez), className: "tabular-nums" },
-  { id: "moneda", titulo: "Moneda", valor: (c) => c.moneda, oculta: true },
+const COLUMNS: TableColumn<QuoteRow>[] = [
+  { id: "number", title: "N° cotización", value: (c) => c.numero_cotizacion, className: "font-mono text-xs", alwaysVisible: true },
+  { id: "customer", title: "Cliente", value: (c) => c.clientes_cotizacion?.nombre_razon_social, primary: true, className: "min-w-[220px]" },
+  { id: "creator", title: "Realizada por", value: (c) => c.creatorName },
+  { id: "issueDate", title: "Fecha emisión", value: (c) => c.fecha_emision, cell: (c) => shortDate(c.fecha_emision), className: "tabular-nums" },
+  { id: "validUntil", title: "Validez", value: (c) => c.fecha_validez, cell: (c) => shortDate(c.fecha_validez), className: "tabular-nums" },
+  { id: "currency", title: "Moneda", value: (c) => c.moneda, hidden: true },
   {
-    id: "total", titulo: "Total", valor: (c) => Number(c.total), className: "text-right tabular-nums",
-    celda: (c) => formatCurrency(Number(c.total), c.moneda),
+    id: "total", title: "Total", value: (c) => Number(c.total), className: "text-right tabular-nums",
+    cell: (c) => formatCurrency(Number(c.total), c.moneda),
   },
   {
-    id: "estado", titulo: "Estado", valor: (c) => estadoDe(c).label, sinPadding: true, className: "w-28",
-    celda: (c) => <CeldaEstado tono={estadoDe(c).tono} texto={estadoDe(c).label} />,
+    id: "status", title: "Estado", value: (c) => statusOf(c).label, flush: true, className: "w-28",
+    cell: (c) => <StatusCell tone={statusOf(c).tone} text={statusOf(c).label} />,
   },
 ];
 
-const FILTROS: FiltroTabla<CotizacionFila>[] = [
-  { id: "creador", titulo: "Realizada por", valor: (c) => c.creador },
-  { id: "moneda", titulo: "Moneda", valor: (c) => c.moneda },
+const FILTERS: TableFilter<QuoteRow>[] = [
+  { id: "creator", title: "Realizada por", value: (c) => c.creatorName },
+  { id: "currency", title: "Moneda", value: (c) => c.moneda },
 ];
 
-const SEGMENTOS: SegmentoTabla<CotizacionFila>[] = [
-  { id: "todos", titulo: "Todas", cumple: () => true },
-  ...(Object.keys(ESTADOS) as EstadoCotizacion[]).map((e) => ({
-    id: e, titulo: ESTADOS[e].label, cumple: (c: CotizacionFila) => c.estado === e,
+const SEGMENTS: TableSegment<QuoteRow>[] = [
+  { id: "all", title: "Todas", match: () => true },
+  ...(Object.keys(QUOTE_STATUS) as EstadoCotizacion[]).map((e) => ({
+    id: e, title: QUOTE_STATUS[e].label, match: (c: QuoteRow) => c.estado === e,
   })),
 ];
 
-const claveFila = (c: CotizacionFila) => c.id;
+const rowKey = (c: QuoteRow) => c.id;
 
 interface Props {
   onNewClick: () => void;
@@ -83,27 +83,27 @@ interface Props {
 const CotizacionList = ({ onNewClick, onView, onEdit }: Props) => {
   const queryClient = useQueryClient();
   // El rango de fechas define qué se consulta (va al inicio de la barra); el resto se filtra en el cliente.
-  const [fechaDesde, setFechaDesde] = useState<Date | undefined>();
-  const [fechaHasta, setFechaHasta] = useState<Date | undefined>();
+  const [dateFrom, setDateFrom] = useState<Date | undefined>();
+  const [dateTo, setDateTo] = useState<Date | undefined>();
 
   const { data: cotizaciones, isLoading } = useQuery({
-    queryKey: ["cotizaciones", fechaDesde, fechaHasta],
+    queryKey: ["cotizaciones", dateFrom, dateTo],
     queryFn: async () => {
-      let query = baseDatos
+      let query = db
         .from("cotizaciones" as any)
         .select("*, clientes_cotizacion:cliente_cotizacion_id(*)")
         .order("created_at", { ascending: false });
 
-      if (fechaDesde) {
-        query = query.gte("fecha_emision", format(fechaDesde, "yyyy-MM-dd"));
+      if (dateFrom) {
+        query = query.gte("fecha_emision", format(dateFrom, "yyyy-MM-dd"));
       }
-      if (fechaHasta) {
-        query = query.lte("fecha_emision", format(fechaHasta, "yyyy-MM-dd"));
+      if (dateTo) {
+        query = query.lte("fecha_emision", format(dateTo, "yyyy-MM-dd"));
       }
 
       const { data, error } = await query;
       if (error) throw error;
-      return (data ?? []) as unknown as Omit<CotizacionFila, "creador">[];
+      return (data ?? []) as unknown as Omit<QuoteRow, "creatorName">[];
     },
   });
 
@@ -117,7 +117,7 @@ const CotizacionList = ({ onNewClick, onView, onEdit }: Props) => {
     queryKey: ["profiles-map", creatorIds],
     queryFn: async () => {
       if (creatorIds.length === 0) return {};
-      const { data, error } = await baseDatos
+      const { data, error } = await db
         .from("profiles")
         .select("user_id, full_name")
         .in("user_id", creatorIds);
@@ -131,17 +131,17 @@ const CotizacionList = ({ onNewClick, onView, onEdit }: Props) => {
     enabled: creatorIds.length > 0,
   });
 
-  const filas = useMemo<CotizacionFila[]>(
-    () => (cotizaciones ?? []).map((c) => ({ ...c, creador: (c.creado_por && profilesMap?.[c.creado_por]) || "—" })),
+  const rows = useMemo<QuoteRow[]>(
+    () => (cotizaciones ?? []).map((c) => ({ ...c, creatorName: (c.creado_por && profilesMap?.[c.creado_por]) || "—" })),
     [cotizaciones, profilesMap],
   );
 
-  const t = useTablaDatos({ id: "cotizaciones.lista", filas, columnas: COLUMNAS, claveFila, filtros: FILTROS, segmentos: SEGMENTOS });
+  const t = useDataTable({ id: "quotes.list", rows, columns: COLUMNS, rowKey, filters: FILTERS, segments: SEGMENTS });
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      await baseDatos.from("cotizacion_items" as any).delete().eq("cotizacion_id", id);
-      const { error } = await baseDatos.from("cotizaciones" as any).delete().eq("id", id);
+      await db.from("cotizacion_items" as any).delete().eq("cotizacion_id", id);
+      const { error } = await db.from("cotizaciones" as any).delete().eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -155,7 +155,7 @@ const CotizacionList = ({ onNewClick, onView, onEdit }: Props) => {
 
   const duplicateMutation = useMutation({
     mutationFn: async (cotId: string) => {
-      const { data: original, error: fetchErr } = await baseDatos
+      const { data: original, error: fetchErr } = await db
         .from("cotizaciones" as any)
         .select("*")
         .eq("id", cotId)
@@ -163,14 +163,14 @@ const CotizacionList = ({ onNewClick, onView, onEdit }: Props) => {
       if (fetchErr) throw fetchErr;
       const orig = original as any;
 
-      const { data: origItems, error: itemsErr } = await baseDatos
+      const { data: origItems, error: itemsErr } = await db
         .from("cotizacion_items" as any)
         .select("*")
         .eq("cotizacion_id", cotId)
         .order("orden", { ascending: true });
       if (itemsErr) throw itemsErr;
 
-      const { data: newCot, error: insertErr } = await baseDatos
+      const { data: newCot, error: insertErr } = await db
         .from("cotizaciones" as any)
         .insert({
           numero_cotizacion: "",
@@ -206,7 +206,7 @@ const CotizacionList = ({ onNewClick, onView, onEdit }: Props) => {
           valor_total: item.valor_total,
           orden: item.orden,
         }));
-        await baseDatos.from("cotizacion_items" as any).insert(newItems as any);
+        await db.from("cotizacion_items" as any).insert(newItems as any);
       }
     },
     onSuccess: () => {
@@ -218,18 +218,18 @@ const CotizacionList = ({ onNewClick, onView, onEdit }: Props) => {
     },
   });
 
-  const rangoFechas = (
+  const dateRange = (
     <div className="flex items-center gap-1.5">
-      <DatePicker value={fechaDesde as Date} onChange={setFechaDesde} placeholder="Desde" className="h-8 w-[130px] rounded-lg text-[13px]" />
-      <DatePicker value={fechaHasta as Date} onChange={setFechaHasta} placeholder="Hasta" className="h-8 w-[130px] rounded-lg text-[13px]" />
-      {(fechaDesde || fechaHasta) && (
+      <DatePicker value={dateFrom as Date} onChange={setDateFrom} placeholder="Desde" className="h-8 w-[130px] rounded-lg text-[13px]" />
+      <DatePicker value={dateTo as Date} onChange={setDateTo} placeholder="Hasta" className="h-8 w-[130px] rounded-lg text-[13px]" />
+      {(dateFrom || dateTo) && (
         <Button
           variant="ghost"
           size="icon"
           aria-label="Quitar rango de fechas"
           title="Quitar fechas"
           className="h-8 w-8 rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground"
-          onClick={() => { setFechaDesde(undefined); setFechaHasta(undefined); }}
+          onClick={() => { setDateFrom(undefined); setDateTo(undefined); }}
         >
           <X className="h-4 w-4" />
         </Button>
@@ -239,36 +239,36 @@ const CotizacionList = ({ onNewClick, onView, onEdit }: Props) => {
 
   return (
     <div className="mx-auto max-w-7xl space-y-5 py-6">
-      <EncabezadoModulo titulo="Cotizaciones" primaria={{ titulo: "Nueva cotización", onClick: onNewClick }} />
-      <TablaDatos
+      <ModuleHeader title="Cotizaciones" primary={{ title: "Nueva cotización", onClick: onNewClick }} />
+      <DataTable
         t={t}
-        cargando={isLoading}
-        onFilaClick={(c) => onView(c.id)}
-        barra={
-          <BarraTabla
+        loading={isLoading}
+        onRowClick={(c) => onView(c.id)}
+        toolbar={
+          <TableToolbar
             t={t}
-            nombre={["cotización", "cotizaciones"]}
+            name={["cotización", "cotizaciones"]}
             placeholder="Buscar por cliente o número"
-            nombreArchivo="cotizaciones"
-            inicio={rangoFechas}
+            fileName="cotizaciones"
+            leading={dateRange}
           />
         }
-        acciones={(c) => (
-          <AccionesFila
-            nombre={c.numero_cotizacion || "cotización"}
-            onVer={() => onView(c.id)}
+        actions={(c) => (
+          <RowActions
+            name={c.numero_cotizacion || "cotización"}
+            onView={() => onView(c.id)}
             menu={[
-              { titulo: "Editar", icono: Pencil, onClick: () => onEdit(c.id) },
-              { titulo: "Duplicar", icono: Copy, onClick: () => { if (!duplicateMutation.isPending) duplicateMutation.mutate(c.id); } },
+              { title: "Editar", icon: Pencil, onClick: () => onEdit(c.id) },
+              { title: "Duplicar", icon: Copy, onClick: () => { if (!duplicateMutation.isPending) duplicateMutation.mutate(c.id); } },
             ]}
-            onEliminar={() => deleteMutation.mutate(c.id)}
-            confirmarEliminar={{
-              titulo: "¿Eliminar cotización?",
-              descripcion: "Esta acción no se puede deshacer. Se eliminará la cotización y todos sus ítems permanentemente.",
+            onDelete={() => deleteMutation.mutate(c.id)}
+            deleteConfirmation={{
+              title: "¿Eliminar cotización?",
+              description: "Esta acción no se puede deshacer. Se eliminará la cotización y todos sus ítems permanentemente.",
             }}
           />
         )}
-        vacio="Aún no hay cotizaciones. Crea una con «Nueva cotización»."
+        empty="Aún no hay cotizaciones. Crea una con «Nueva cotización»."
       />
     </div>
   );

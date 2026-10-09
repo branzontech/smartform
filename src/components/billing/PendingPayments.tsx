@@ -1,31 +1,31 @@
 import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { DollarSign } from "lucide-react";
-import { AccionesFila } from "@/components/kit/AccionesFila";
-import { BarraTabla, TablaDatos, useTablaDatos, type FiltroTabla, type SegmentoTabla } from "@/components/kit/tabla";
+import { RowActions } from "@/components/kit/RowActions";
+import { TableToolbar, DataTable, useDataTable, type TableFilter, type TableSegment } from "@/components/kit/table";
 import type { Invoice } from "@/types/billing-types";
 import { mockInvoices } from "@/utils/billing-utils";
-import { COLUMNAS_FACTURA, claveFactura } from "./facturas";
-import { ListaCompactaFacturas } from "./ListaCompactaFacturas";
+import { INVOICE_COLUMNS, invoiceKey } from "./invoices";
+import { CompactInvoiceList } from "./CompactInvoiceList";
 
 interface PendingPaymentsProps {
   limit?: number;
   compact?: boolean;
 }
 
-const FILTROS: FiltroTabla<Invoice>[] = [
-  { id: "paciente", titulo: "Paciente", valor: (f) => f.patientName },
-  { id: "medico", titulo: "Médico", valor: (f) => f.doctorName },
+const FILTERS: TableFilter<Invoice>[] = [
+  { id: "patient", title: "Paciente", value: (f) => f.patientName },
+  { id: "doctor", title: "Médico", value: (f) => f.doctorName },
 ];
 
-const SEGMENTOS: SegmentoTabla<Invoice>[] = [
-  { id: "todas", titulo: "Por cobrar", cumple: () => true },
-  { id: "vencidas", titulo: "Vencidas", cumple: (f) => f.status === "overdue" },
-  { id: "pendientes", titulo: "Pendientes", cumple: (f) => f.status === "pending" },
+const SEGMENTS: TableSegment<Invoice>[] = [
+  { id: "all", title: "Por cobrar", match: () => true },
+  { id: "overdue", title: "Vencidas", match: (f) => f.status === "overdue" },
+  { id: "pending", title: "Pendientes", match: (f) => f.status === "pending" },
 ];
 
 /** Vencidas primero y luego por fecha de vencimiento, como la lista original. */
-const porUrgencia = (a: Invoice, b: Invoice) => {
+const byUrgency = (a: Invoice, b: Invoice) => {
   if (a.status === "overdue" && b.status !== "overdue") return -1;
   if (a.status !== "overdue" && b.status === "overdue") return 1;
   return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
@@ -37,27 +37,27 @@ const porUrgencia = (a: Invoice, b: Invoice) => {
  */
 const PendingPayments = ({ limit, compact = false }: PendingPaymentsProps) => {
   const navigate = useNavigate();
-  const pendientes = useMemo(() => mockInvoices.filter((f) => f.status === "pending" || f.status === "overdue").sort(porUrgencia), []);
-  const t = useTablaDatos({ id: "facturacion.pendientes", filas: pendientes, columnas: COLUMNAS_FACTURA, claveFila: claveFactura, filtros: FILTROS, segmentos: SEGMENTOS });
+  const receivables = useMemo(() => mockInvoices.filter((f) => f.status === "pending" || f.status === "overdue").sort(byUrgency), []);
+  const t = useDataTable({ id: "billing.pending", rows: receivables, columns: INVOICE_COLUMNS, rowKey: invoiceKey, filters: FILTERS, segments: SEGMENTS });
 
-  const ver = (f: Invoice) => navigate(`/app/facturacion/${f.id}`);
-  const pagar = (f: Invoice) => navigate(`/app/facturacion/${f.id}?pagar=1`);
+  const view = (f: Invoice) => navigate(`/app/facturacion/${f.id}`);
+  const pay = (f: Invoice) => navigate(`/app/facturacion/${f.id}?pay=1`);
 
-  if (compact) return <ListaCompactaFacturas facturas={pendientes.slice(0, limit ?? 5)} onVer={ver} vacio="No hay pagos pendientes." />;
+  if (compact) return <CompactInvoiceList invoices={receivables.slice(0, limit ?? 5)} onView={view} empty="No hay pagos pendientes." />;
 
   return (
-    <TablaDatos
+    <DataTable
       t={t}
-      onFilaClick={ver}
-      barra={<BarraTabla t={t} nombre={["factura", "facturas"]} placeholder="Buscar por número o paciente" nombreArchivo="pagos-pendientes" />}
-      acciones={(f) => (
-        <AccionesFila
-          nombre={`factura ${f.invoiceNumber}`}
-          onVer={() => ver(f)}
-          menu={[{ titulo: "Registrar pago", icono: DollarSign, onClick: () => pagar(f) }]}
+      onRowClick={view}
+      toolbar={<TableToolbar t={t} name={["factura", "facturas"]} placeholder="Buscar por número o paciente" fileName="pagos-pendientes" />}
+      actions={(f) => (
+        <RowActions
+          name={`factura ${f.invoiceNumber}`}
+          onView={() => view(f)}
+          menu={[{ title: "Registrar pago", icon: DollarSign, onClick: () => pay(f) }]}
         />
       )}
-      vacio="No hay pagos pendientes."
+      empty="No hay pagos pendientes."
     />
   );
 };

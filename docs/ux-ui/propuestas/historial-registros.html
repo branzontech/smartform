@@ -1,0 +1,385 @@
+<title>Historial de registros</title>
+<style>
+/* Maestro-detalle: lista de registros a la izquierda (360 px), vista previa a la derecha; una sola franja de herramientas del kit arriba de la lista. */
+:root{
+  --canvas:#F5F6FB; --card:#FFFFFF; --field:#F8F6FE; --fg:#1B1530; --muted:#6B6880; --line:#E7E4F0;
+  --primary:#8B35E9; --primary-soft:#F1E8FD; --violet:#4C1D95; --lime:#A2F603; --lime-fg:#3B1580;
+  --ok:#15803D; --warn:#B45309; --shadow:0 1px 2px rgba(40,20,90,.05),0 8px 24px -12px rgba(40,20,90,.14);
+  --font:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --mono:ui-monospace,"Cascadia Mono","SF Mono",Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --canvas:#0B0A12; --card:#15131F; --field:#1C1929; --fg:#EEEAF8; --muted:#A39DB8; --line:#2A2638;
+  --primary:#A66CF0; --primary-soft:#2A1E42; --violet:#C9B2F5; --lime:#A2F603; --lime-fg:#2A0F5E;
+  --ok:#4ADE80; --warn:#FBBF24; --shadow:none; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --canvas:#0B0A12; --card:#15131F; --field:#1C1929; --fg:#EEEAF8; --muted:#A39DB8; --line:#2A2638;
+  --primary:#A66CF0; --primary-soft:#2A1E42; --violet:#C9B2F5; --lime:#A2F603; --lime-fg:#2A0F5E;
+  --ok:#4ADE80; --warn:#FBBF24; --shadow:none; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--canvas);color:var(--fg);font-family:var(--font);font-size:14px;line-height:1.5;padding-inline:16px;padding-block:24px 48px}
+.wrap{max-width:1180px;margin:0 auto;display:grid;gap:28px}
+h1,h2,h3{text-wrap:balance;margin:0}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+.top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px}
+.top h1{font-size:26px;font-weight:700;letter-spacing:-.01em}
+.top p{margin:4px 0 0;color:var(--muted);max-width:68ch}
+.theme{border:1px solid var(--line);background:var(--card);border-radius:10px;height:34px;padding:0 12px;font-size:13px}
+
+/* Antes y después */
+.compare{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}
+.box{background:var(--card);border-radius:18px;padding:18px 20px;box-shadow:var(--shadow);border:1px solid transparent}
+.box h2{font-size:15px;font-weight:650;margin-bottom:10px}
+.box ul{margin:0;padding-left:18px;display:grid;gap:6px;color:var(--muted)}
+.box li b{color:var(--fg);font-weight:600}
+.label{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600}
+
+/* Maqueta */
+.frame{background:var(--card);border-radius:22px;box-shadow:var(--shadow);border:1px solid transparent;overflow:hidden}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .frame,:root:not([data-theme="light"]) .box{border-color:var(--line)}}
+:root[data-theme="dark"] .frame,:root[data-theme="dark"] .box{border-color:var(--line)}
+.tabs{display:flex;gap:4px;padding:10px 16px 0;background:var(--canvas);overflow-x:auto}
+.tab{padding:9px 16px;border-radius:12px 12px 0 0;color:var(--muted);font-size:13.5px;white-space:nowrap;border:0;background:transparent}
+.tab.on{background:var(--card);color:var(--fg);font-weight:600}
+.md{display:grid;grid-template-columns:360px minmax(0,1fr);height:640px}
+.list{border-right:1px solid var(--line);display:flex;flex-direction:column;min-width:0}
+.bar{display:flex;align-items:center;gap:6px;padding:12px 12px 10px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.seg{display:flex;gap:2px;background:var(--field);border-radius:10px;padding:2px}
+.seg button{border:0;background:transparent;height:28px;padding:0 10px;border-radius:8px;font-size:13px;color:var(--muted);display:flex;gap:6px;align-items:center}
+.seg button.on{background:var(--card);color:var(--fg);font-weight:600;box-shadow:0 1px 2px rgba(0,0,0,.08)}
+.seg .n{font-size:11px;font-variant-numeric:tabular-nums;color:var(--muted)}
+.seg button.on .n{color:var(--primary)}
+.tools{margin-left:auto;display:flex;align-items:center;gap:2px;position:relative}
+.ib{width:32px;height:32px;border:0;background:transparent;border-radius:9px;display:grid;place-items:center;color:var(--muted);position:relative}
+.ib:hover,.ib.on{background:var(--field);color:var(--fg)}
+.ib svg{width:17px;height:17px}
+.dot-count{position:absolute;top:1px;right:1px;min-width:15px;height:15px;border-radius:8px;background:var(--primary);color:#fff;font-size:10px;display:grid;place-items:center;padding:0 3px}
+.search{display:none;padding:8px 12px;border-bottom:1px solid var(--line)}
+.search.open{display:block}
+.search input{width:100%;height:34px;border-radius:10px;border:1px solid transparent;background:var(--field);padding:0 12px;color:var(--fg);font-size:13.5px}
+.search input:focus{border-color:var(--primary);outline:none}
+.active-filters{display:flex;flex-wrap:wrap;gap:6px;padding:0 12px}
+.active-filters:not(:empty){padding:8px 12px 0}
+.af{display:inline-flex;align-items:center;gap:4px;border:1px solid var(--line);border-radius:999px;padding:1px 4px 1px 9px;font-size:11.5px;background:var(--card)}
+.af span{color:var(--muted)}
+.af button{border:0;background:transparent;width:18px;height:18px;border-radius:9px;color:var(--muted)}
+.scroll{overflow-y:auto;flex:1;padding:6px 8px 12px}
+.group{font-size:11.5px;color:var(--muted);padding:12px 8px 6px;display:flex;justify-content:space-between;gap:8px}
+.group b{color:var(--fg);font-weight:600}
+.item{width:100%;text-align:left;border:0;background:transparent;border-radius:12px;padding:10px;display:grid;grid-template-columns:34px minmax(0,1fr) auto;gap:10px;align-items:center}
+.item:hover{background:var(--field)}
+.item.on{background:var(--primary-soft)}
+.ico{width:34px;height:34px;border-radius:10px;background:var(--field);display:grid;place-items:center;color:var(--primary)}
+.item.on .ico{background:var(--card)}
+.ico svg{width:17px;height:17px}
+.t{font-weight:600;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.s{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.r{text-align:right;font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.r .sc{display:block;font-weight:650;color:var(--fg);font-size:12.5px}
+.empty{padding:40px 16px;text-align:center;color:var(--muted)}
+
+/* Vista previa */
+.prev{overflow-y:auto;min-width:0}
+.ph{position:sticky;top:0;background:var(--card);padding:18px 24px 14px;border-bottom:1px solid var(--line);display:flex;gap:12px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;z-index:1}
+.ph h3{font-size:19px;font-weight:700}
+.meta{display:flex;flex-wrap:wrap;gap:4px 14px;color:var(--muted);font-size:12.5px;margin-top:4px}
+.state{font-weight:600;color:var(--ok)}
+.state.fix{color:var(--warn)}
+.acts{display:flex;gap:6px;align-items:center}
+.btn{height:34px;border-radius:10px;border:1px solid var(--line);background:var(--card);padding:0 12px;font-size:13px;display:inline-flex;align-items:center;gap:6px}
+.btn:hover{background:var(--field)}
+.btn svg{width:15px;height:15px}
+.btn.ghost{border-color:transparent}
+.body{padding:8px 24px 28px;display:grid;gap:4px}
+.sec{padding:16px 0;border-bottom:1px solid var(--line);display:grid;gap:12px}
+.sec:last-child{border-bottom:0}
+.sec h4{margin:0;font-size:12px;letter-spacing:.07em;text-transform:uppercase;color:var(--violet);font-weight:650}
+.kv{display:grid;grid-template-columns:minmax(140px,220px) minmax(0,1fr);gap:4px 18px;margin:0}
+.kv dt{color:var(--muted);font-size:13px}
+.kv dd{margin:0;font-size:14px}
+.vit{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px}
+.v{background:var(--field);border-radius:12px;padding:10px 12px}
+.v .k{font-size:11.5px;color:var(--muted)}
+.v .x{font-size:18px;font-weight:650;font-variant-numeric:tabular-nums}
+.v .u{font-size:11.5px;color:var(--muted);font-weight:400;margin-left:2px}
+.dx{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
+.code{font-family:var(--mono);font-size:12.5px;background:var(--field);padding:2px 7px;border-radius:6px;color:var(--violet)}
+.score{display:flex;align-items:baseline;gap:10px}
+.score .big{font-size:44px;font-weight:750;letter-spacing:-.02em;font-variant-numeric:tabular-nums;line-height:1}
+.score .of{font-size:18px;color:var(--muted)}
+.score .int{font-weight:650;color:var(--ok)}
+.score .int.mid{color:var(--warn)}
+.sign{height:62px;border-radius:12px;background:var(--field);display:flex;align-items:center;padding:0 14px;color:var(--muted);font-size:12.5px;gap:10px}
+.sign svg{width:120px;height:40px;color:var(--fg)}
+.ev{display:grid;grid-template-columns:96px minmax(0,1fr);gap:10px;padding:7px 0;font-size:13px;border-top:1px solid var(--line)}
+.ev:first-child{border-top:0}
+.ev time{color:var(--muted);font-variant-numeric:tabular-nums}
+.ev b{font-weight:600}
+.back{display:none}
+
+/* Filtrar (ventana) */
+.pop{position:absolute;top:38px;right:0;width:280px;background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:0 16px 40px -12px rgba(30,10,70,.3);padding:14px;display:grid;gap:12px;z-index:5}
+.pop label{font-size:12px;color:var(--muted);display:grid;gap:5px}
+.pop select,.pop input{height:34px;border-radius:10px;border:1px solid transparent;background:var(--field);padding:0 10px;color:var(--fg);font-size:13px;width:100%}
+.pop select:focus,.pop input:focus{border-color:var(--primary);outline:none}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.radios{display:grid;gap:2px}
+.radios button{border:0;background:transparent;text-align:left;padding:6px 8px;border-radius:8px;display:flex;align-items:center;gap:8px;font-size:13px;color:var(--fg)}
+.radios button:hover{background:var(--field)}
+.radios i{width:16px;height:16px;border-radius:50%;border:1.5px solid var(--line);display:grid;place-items:center}
+.radios button.on i{border-color:var(--primary)}
+.radios button.on i::after{content:"";width:8px;height:8px;border-radius:50%;background:var(--primary)}
+.pop .foot{display:flex;justify-content:space-between}
+.link{border:0;background:transparent;color:var(--primary);font-size:13px;font-weight:600;padding:4px 2px}
+
+/* Decisiones */
+.dec{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:16px}
+.dec .box p{margin:6px 0 0;color:var(--muted)}
+.dec .box h3{font-size:14.5px;font-weight:650}
+.dec .rec{margin-top:10px;font-size:13px;color:var(--fg)}
+.dec .rec b{color:var(--primary)}
+kbd{font-family:var(--mono);font-size:11.5px;border:1px solid var(--line);border-bottom-width:2px;border-radius:6px;padding:0 5px;background:var(--card)}
+.note{font-size:12.5px;color:var(--muted);margin:0}
+
+@media (max-width:820px){
+  .md{grid-template-columns:1fr;height:auto}
+  .list{border-right:0;height:600px}
+  .prev{display:none}
+  .md.detail .list{display:none}
+  .md.detail .prev{display:block}
+  .back{display:inline-flex;margin:0 0 6px -8px}
+  .kv{grid-template-columns:1fr}
+  .ph,.body{padding-inline:16px}
+}
+@media (prefers-reduced-motion:no-preference){.item,.ib,.btn,.seg button{transition:background-color .15s,color .15s}}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div>
+      <div class="label">Propuesta · Consulta › Historial de registros</div>
+      <h1>Historial de registros en dos columnas</h1>
+      <p>A la izquierda, la lista de registros del paciente con la barra de filtros del kit. A la derecha, la vista previa del registro seleccionado, sin salir de la consulta. La maqueta usa los registros de la prueba que acabamos de hacer con el paciente demo.</p>
+    </div>
+    <button class="theme" id="themeBtn" type="button">Modo oscuro</button>
+  </header>
+
+  <section class="compare" aria-label="Antes y después">
+    <div class="box">
+      <div class="label">Hoy</div>
+      <h2>Lo que no funciona</h2>
+      <ul>
+        <li><b>Filtros sueltos</b> sobre la lista: buscador, selector de profesional, dos fechas y un contador, fuera de la convención del kit.</li>
+        <li><b>«Imprimir todo»</b> ocupa una fila propia.</li>
+        <li><b>La vista previa queda debajo</b> de la lista: hay que bajar para leer y volver a subir para cambiar de registro.</li>
+        <li>El profesional sale como <b>«—»</b> y todo cae en <b>«Sin ingreso vinculado»</b>: falta resolver el nombre y agrupar por atención.</li>
+      </ul>
+    </div>
+    <div class="box">
+      <div class="label">Propuesta</div>
+      <h2>Lo que cambia</h2>
+      <ul>
+        <li><b>Lista y vista previa lado a lado</b>; cada columna se desplaza sola y la página no hace scroll, así que nunca hay doble scroll.</li>
+        <li><b>Barra del kit en una línea</b>: segmentos con conteo, Filtrar en ventana, Ordenar y búsqueda desplegable.</li>
+        <li><b>Agrupado por atención</b>, con fecha y profesional; las escalas muestran su puntaje en la misma fila.</li>
+        <li><b>Actividad</b> al final de la vista previa: quién creó y quién modificó, a partir de la bitácora nueva.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="frame" aria-label="Maqueta interactiva">
+    <nav class="tabs" aria-label="Pestañas de la consulta">
+      <button class="tab" type="button">Historia clínica</button>
+      <button class="tab on" type="button">Historial de registros</button>
+      <button class="tab" type="button">Antecedentes</button>
+      <button class="tab" type="button">Medicamentos</button>
+      <button class="tab" type="button">Más ▾</button>
+    </nav>
+    <div class="md" id="md">
+      <div class="list">
+        <div class="bar">
+          <div class="seg" role="tablist" aria-label="Tipo de registro" id="seg"></div>
+          <div class="tools">
+            <button class="ib" id="filterBtn" type="button" aria-label="Filtrar" aria-expanded="false">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 5h18M6 12h12M10 19h4"/></svg>
+            </button>
+            <button class="ib" id="sortBtn" type="button" aria-label="Ordenar: más recientes primero" title="Más recientes primero">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M7 4v16M3 16l4 4 4-4M17 20V4M13 8l4-4 4 4"/></svg>
+            </button>
+            <button class="ib" id="searchBtn" type="button" aria-label="Buscar">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+            </button>
+            <button class="ib" type="button" aria-label="Más acciones" title="Imprimir lo filtrado · Exportar">
+              <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg>
+            </button>
+            <div class="pop" id="pop" hidden>
+              <label for="fPro">Profesional
+                <select id="fPro"><option value="">Todos</option><option>Administrador de prueba</option></select>
+              </label>
+              <div class="row2">
+                <label for="fFrom">Desde<input type="date" id="fFrom"></label>
+                <label for="fTo">Hasta<input type="date" id="fTo"></label>
+              </div>
+              <div>
+                <div class="label" style="margin-bottom:4px">Estado</div>
+                <div class="radios" id="fState">
+                  <button type="button" data-v="" class="on"><i></i>Todos</button>
+                  <button type="button" data-v="Vigente"><i></i>Vigentes</button>
+                  <button type="button" data-v="Corregido"><i></i>Corregidos</button>
+                </div>
+              </div>
+              <div class="foot">
+                <button class="link" id="fClear" type="button">Limpiar</button>
+                <button class="link" id="fClose" type="button">Listo</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="search" id="search"><input id="q" type="search" placeholder="Buscar en registros, diagnósticos o texto…" aria-label="Buscar en registros"></div>
+        <div class="active-filters" id="af"></div>
+        <div class="scroll" id="list" role="listbox" aria-label="Registros" tabindex="0"></div>
+      </div>
+      <article class="prev" id="prev" aria-live="polite"></article>
+    </div>
+  </section>
+  <p class="note">Prueba la maqueta: cambia de registro con un clic o con <kbd>↑</kbd> <kbd>↓</kbd>, abre Filtrar y busca «lumbar» o «Glasgow». En celular la lista ocupa la pantalla y la vista previa se abre encima, con botón para volver.</p>
+
+  <section aria-label="Decisiones">
+    <div class="label" style="margin-bottom:10px">Para decidir antes de construir</div>
+    <div class="dec">
+      <div class="box">
+        <h3>1. ¿Cómo se agrupa la lista?</h3>
+        <p>Por atención (cada consulta con sus formatos juntos) o una lista plana por fecha.</p>
+        <div class="rec"><b>Recomiendo por atención:</b> el médico piensa en «la consulta del 7 de octubre», no en formatos sueltos.</div>
+      </div>
+      <div class="box">
+        <h3>2. ¿Qué abre al entrar?</h3>
+        <p>El registro más reciente seleccionado, o la lista sola hasta que el médico elija.</p>
+        <div class="rec"><b>Recomiendo el más reciente:</b> la columna derecha nunca queda vacía.</div>
+      </div>
+      <div class="box">
+        <h3>3. ¿Dónde va «Imprimir todo»?</h3>
+        <p>En el menú «…» de la barra, e imprime solo lo que esté filtrado. «Imprimir» y «Corregir» de un registro van en su vista previa.</p>
+        <div class="rec"><b>Recomiendo el menú «…»</b> para no sumar otra fila de botones.</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="box" aria-label="Cómo se construye">
+    <h2>Cómo se construye</h2>
+    <ul>
+      <li>Pieza nueva del kit, <b>MasterDetail</b>: reutiliza el estado de <b>useDataTable</b> (búsqueda, filtros, orden y segmentos) y la barra <b>TableToolbar</b>, pero pinta una lista en vez de una tabla. Sirve también para Antecedentes y Órdenes.</li>
+      <li>Datos con <b>React Query</b>: respuestas del paciente, nombres de profesionales (hoy sale «—» porque el médico se busca por el id equivocado) y la bitácora del registro seleccionado.</li>
+      <li>Agrupación por <b>consulta</b> o por admisión; sin ninguna de las dos, por día.</li>
+      <li>La vista previa reemplaza a <b>ReadOnlyFormView</b>, que hoy muestra «[object Object]» en algunos campos: cada tipo de pregunta tendrá su forma de lectura (signos vitales en baldosas, diagnósticos con código, escalas con puntaje).</li>
+      <li>Teclado: <kbd>↑</kbd> <kbd>↓</kbd> para moverse y <kbd>Enter</kbd> para abrir el registro completo.</li>
+    </ul>
+  </section>
+</div>
+
+<script>
+(function(){
+  var root=document.documentElement, themeBtn=document.getElementById('themeBtn');
+  function isDark(){var t=root.getAttribute('data-theme');return t?t==='dark':matchMedia('(prefers-color-scheme: dark)').matches}
+  function syncTheme(){themeBtn.textContent=isDark()?'Modo claro':'Modo oscuro'}
+  root.setAttribute('data-theme','light');syncTheme();
+  themeBtn.addEventListener('click',function(){root.setAttribute('data-theme',isDark()?'light':'dark');syncTheme()});
+
+  var PRO='Administrador de prueba';
+  var ICON={hc:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h4"/></svg>',
+    esc:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>'};
+  var HC_BODY=[
+    {h:'Anamnesis',kv:[['Motivo de consulta','Dolor lumbar de 2 semanas (E2E-2)'],['Alergias','No refiere · Niega alergias conocidas (E2E-2)']]},
+    {h:'Examen físico',vit:[['FC','78','lpm'],['FR','16','rpm'],['TA','120/78','mmHg'],['Temp.','36.6','°C'],['SaO2','97','%'],['Peso','74','kg'],['Talla','172','cm'],['IMC','25.0','']],kv:[['Estado general','Alerta, orientado, hidratado, marcha antálgica']]},
+    {h:'Análisis y diagnóstico',kv:[['Análisis','Lumbalgia mecánica sin signos de alarma'],['Tipo de diagnóstico','Confirmado nuevo']],dx:['M54.5','Dolor en la región lumbar','Principal']},
+    {h:'Plan de manejo',kv:[['Plan','Fisioterapia 10 sesiones, analgesia'],['Recomendaciones','Pausas activas, calor local, control en 2 semanas']]},
+    {h:'Cierre',sign:true}
+  ];
+  var RECS=[
+    {id:'hc2',kind:'hc',title:'Historia clínica general',group:'Consulta · 7 oct 2026',date:'2026-10-07',time:'12:51',state:'Vigente',body:HC_BODY,dxText:'M54.5 lumbar dolor',
+      log:[['12:51','Creado','6 campos'],['13:05','Actualizado','5 campos'],['13:05','Actualizado','12 campos'],['13:06','Actualizado','2 campos'],['13:06','Actualizado','firma']]},
+    {id:'bar',kind:'esc',title:'Índice de Barthel',group:'Consulta · 7 oct 2026',date:'2026-10-07',time:'12:54',state:'Vigente',score:['100','100','Independiente',''],
+      log:[['12:54','Creado','11 campos']]},
+    {id:'gla',kind:'esc',title:'Escala de Coma de Glasgow',group:'Consulta · 7 oct 2026',date:'2026-10-07',time:'12:55',state:'Vigente',score:['11','15','Moderado','mid'],
+      log:[['12:55','Creado','4 campos'],['12:55','Actualizado','2 campos']]},
+    {id:'hc1',kind:'hc',title:'Historia clínica general',group:'Prueba anterior · 7 oct 2026',date:'2026-10-07',time:'12:54',state:'Corregido',body:HC_BODY.slice(0,1),
+      log:[['12:54','Creado','4 campos'],['12:58','Corregido','reemplazado por un registro nuevo']]}
+  ];
+  var SEGS=[['all','Todos'],['hc','Historias'],['esc','Escalas']];
+  var st={seg:'all',q:'',pro:'',from:'',to:'',state:'',asc:false,sel:'hc2'};
+
+  function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+  function text(r){return [r.title,r.group,PRO,r.dxText||'',JSON.stringify(r.body||'')].join(' ').toLowerCase()}
+  function base(){return RECS.filter(function(r){
+    if(st.pro&&st.pro!==PRO)return false;
+    if(st.from&&r.date<st.from)return false;
+    if(st.to&&r.date>st.to)return false;
+    if(st.state&&r.state!==st.state)return false;
+    if(st.q&&text(r).indexOf(st.q.toLowerCase())<0)return false;
+    return true})}
+  function visible(){return base().filter(function(r){return st.seg==='all'||r.kind===st.seg})
+    .sort(function(a,b){if(a.group!==b.group)return a.group.indexOf('Prueba')-b.group.indexOf('Prueba');var x=(a.date+a.time).localeCompare(b.date+b.time);return st.asc?x:-x})}
+
+  function renderSeg(){var b=base();document.getElementById('seg').innerHTML=SEGS.map(function(s){
+    var n=b.filter(function(r){return s[0]==='all'||r.kind===s[0]}).length;
+    return '<button type="button" role="tab" aria-selected="'+(st.seg===s[0])+'" class="'+(st.seg===s[0]?'on':'')+'" data-s="'+s[0]+'">'+s[1]+'<span class="n">'+n+'</span></button>'}).join('')}
+  function renderAF(){var a=[];
+    if(st.pro)a.push(['pro','Profesional',st.pro]);
+    if(st.from)a.push(['from','Desde',st.from]);
+    if(st.to)a.push(['to','Hasta',st.to]);
+    if(st.state)a.push(['state','Estado',st.state]);
+    document.getElementById('af').innerHTML=a.map(function(f){return '<span class="af"><span>'+f[1]+':</span>'+esc(f[2])+'<button type="button" aria-label="Quitar filtro '+f[1]+'" data-k="'+f[0]+'">×</button></span>'}).join('');
+    var fb=document.getElementById('filterBtn');fb.classList.toggle('on',a.length>0);
+    var old=fb.querySelector('.dot-count');if(old)old.remove();
+    if(a.length){var c=document.createElement('span');c.className='dot-count';c.textContent=a.length;fb.appendChild(c)}}
+  function renderList(){var rows=visible(),html='',g='';
+    if(!rows.length){document.getElementById('list').innerHTML='<div class="empty">Ningún registro coincide con la búsqueda o los filtros.</div>';return rows}
+    rows.forEach(function(r){
+      if(r.group!==g){g=r.group;var n=rows.filter(function(x){return x.group===g}).length;html+='<div class="group"><b>'+esc(g)+'</b><span>'+n+(n===1?' registro':' registros')+'</span></div>'}
+      var right=r.score?'<span class="sc">'+r.score[0]+'/'+r.score[1]+'</span>'+r.time:'<span class="sc">'+r.time+'</span>'+(r.state==='Corregido'?'Corregido':'');
+      html+='<button type="button" role="option" aria-selected="'+(r.id===st.sel)+'" class="item'+(r.id===st.sel?' on':'')+'" data-id="'+r.id+'"><span class="ico">'+ICON[r.kind]+'</span><span style="min-width:0"><span class="t" style="display:block">'+esc(r.title)+'</span><span class="s" style="display:block">'+PRO+'</span></span><span class="r">'+right+'</span></button>'});
+    document.getElementById('list').innerHTML=html;return rows}
+  function renderPrev(){var r=RECS.find(function(x){return x.id===st.sel});var p=document.getElementById('prev');
+    if(!r){p.innerHTML='<div class="empty">Selecciona un registro para verlo aquí.</div>';return}
+    var body='';
+    if(r.score){body+='<section class="sec"><h4>Resultado</h4><div class="score"><span class="big">'+r.score[0]+'</span><span class="of">/ '+r.score[1]+'</span><span class="int '+r.score[3]+'">'+r.score[2]+'</span></div></section>'}
+    (r.body||[]).forEach(function(s){body+='<section class="sec"><h4>'+esc(s.h)+'</h4>';
+      if(s.vit)body+='<div class="vit">'+s.vit.map(function(v){return '<div class="v"><div class="k">'+v[0]+'</div><div class="x">'+v[1]+'<span class="u">'+v[2]+'</span></div></div>'}).join('')+'</div>';
+      if(s.dx)body+='<div class="dx"><span class="code">'+s.dx[0]+'</span><span>'+esc(s.dx[1])+'</span><span class="s">'+s.dx[2]+'</span></div>';
+      if(s.kv)body+='<dl class="kv">'+s.kv.map(function(k){return '<dt>'+esc(k[0])+'</dt><dd>'+esc(k[1])+'</dd>'}).join('')+'</dl>';
+      if(s.sign)body+='<div class="sign"><svg viewBox="0 0 120 40" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 18 C 30 30, 46 34, 56 32 S 92 10, 112 6"/></svg>Firmado por '+PRO+'</div>';
+      body+='</section>'});
+    body+='<section class="sec"><h4>Actividad</h4><div>'+r.log.map(function(e){return '<div class="ev"><time>7 oct · '+e[0]+'</time><span><b>'+e[1]+'</b> por '+PRO+' · '+esc(e[2])+'</span></div>'}).join('')+'</div></section>';
+    p.innerHTML='<header class="ph"><div style="min-width:0"><button class="btn ghost back" id="backBtn" type="button">← Registros</button><h3>'+esc(r.title)+'</h3><div class="meta"><span>'+esc(r.group)+' · '+r.time+'</span><span>'+PRO+'</span><span class="state'+(r.state==='Corregido'?' fix':'')+'">'+r.state+'</span></div></div>'+
+      '<div class="acts"><button class="btn" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V3h12v6M6 18H4v-7h16v7h-2M8 14h8v7H8z"/></svg>Imprimir</button><button class="btn" type="button">Corregir</button><button class="btn ghost" type="button" aria-label="Más acciones">⋯</button></div></header><div class="body">'+body+'</div>';
+    var bb=document.getElementById('backBtn');if(bb)bb.addEventListener('click',function(){document.getElementById('md').classList.remove('detail')})}
+  function render(){renderSeg();renderAF();var rows=renderList();
+    if(rows.length&&!rows.some(function(r){return r.id===st.sel})){st.sel=rows[0].id;renderList()}
+    if(!rows.length)st.sel=null;renderPrev()}
+
+  document.getElementById('seg').addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;st.seg=b.dataset.s;render()});
+  document.getElementById('list').addEventListener('click',function(e){var b=e.target.closest('.item');if(!b)return;st.sel=b.dataset.id;renderList();renderPrev();document.getElementById('md').classList.add('detail')});
+  document.getElementById('list').addEventListener('keydown',function(e){if(e.key!=='ArrowDown'&&e.key!=='ArrowUp')return;e.preventDefault();
+    var rows=visible(),i=rows.findIndex(function(r){return r.id===st.sel});i=Math.max(0,Math.min(rows.length-1,i+(e.key==='ArrowDown'?1:-1)));
+    if(rows[i]){st.sel=rows[i].id;renderList();renderPrev();var el=document.querySelector('.item.on');if(el)el.scrollIntoView({block:'nearest'})}});
+  var pop=document.getElementById('pop'),fb=document.getElementById('filterBtn');
+  fb.addEventListener('click',function(){pop.hidden=!pop.hidden;fb.setAttribute('aria-expanded',String(!pop.hidden))});
+  document.getElementById('fClose').addEventListener('click',function(){pop.hidden=true;fb.setAttribute('aria-expanded','false')});
+  document.getElementById('fPro').addEventListener('change',function(e){st.pro=e.target.value;render()});
+  document.getElementById('fFrom').addEventListener('change',function(e){st.from=e.target.value;render()});
+  document.getElementById('fTo').addEventListener('change',function(e){st.to=e.target.value;render()});
+  document.getElementById('fState').addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;st.state=b.dataset.v;
+    [].forEach.call(this.children,function(c){c.classList.toggle('on',c===b)});render()});
+  function clearKey(k){st[k]='';if(k==='pro')document.getElementById('fPro').value='';if(k==='from')document.getElementById('fFrom').value='';if(k==='to')document.getElementById('fTo').value='';
+    if(k==='state')[].forEach.call(document.getElementById('fState').children,function(c){c.classList.toggle('on',c.dataset.v==='')})}
+  document.getElementById('fClear').addEventListener('click',function(){['pro','from','to','state'].forEach(clearKey);render()});
+  document.getElementById('af').addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;clearKey(b.dataset.k);render()});
+  document.getElementById('sortBtn').addEventListener('click',function(){st.asc=!st.asc;this.title=st.asc?'Más antiguos primero':'Más recientes primero';this.setAttribute('aria-label','Ordenar: '+this.title.toLowerCase());render()});
+  var sb=document.getElementById('searchBtn'),sw=document.getElementById('search'),q=document.getElementById('q');
+  sb.addEventListener('click',function(){var o=!sw.classList.contains('open');sw.classList.toggle('open',o);sb.classList.toggle('on',o);if(o)q.focus();else{q.value='';st.q='';render()}});
+  q.addEventListener('input',function(){st.q=q.value.trim();render()});
+  q.addEventListener('keydown',function(e){if(e.key==='Escape'){q.value='';st.q='';sw.classList.remove('open');sb.classList.remove('on');render()}});
+  render();
+})();
+</script>

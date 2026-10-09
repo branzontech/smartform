@@ -1,16 +1,16 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Calendar, Edit, MessageCircle } from "lucide-react";
-import { AccionesFila } from "@/components/kit/AccionesFila";
+import { RowActions } from "@/components/kit/RowActions";
 import {
-  BarraTabla, CeldaEstado, TablaDatos, useTablaDatos,
-  type ColumnaTabla, type FiltroTabla, type SegmentoTabla, type TonoEstado,
-} from "@/components/kit/tabla";
+  TableToolbar, StatusCell, DataTable, useDataTable,
+  type TableColumn, type TableFilter, type TableSegment, type StatusTone,
+} from "@/components/kit/table";
 import { useToast } from "@/hooks/use-toast";
 import type { Customer } from "@/types/customer-types";
 
 // DATOS SIMULADOS: el módulo de clientes aún no tiene tabla ni API; esta lista es de ejemplo.
-const CLIENTES_SIMULADOS: Customer[] = [
+const MOCK_CUSTOMERS: Customer[] = [
   {
     id: "1",
     name: "Ana García Martínez",
@@ -91,88 +91,88 @@ const CLIENTES_SIMULADOS: Customer[] = [
   },
 ];
 
-const TONO_ESTADO: Record<Customer["status"], TonoEstado> = {
-  Activo: "exito",
+const STATUS_TONE: Record<Customer["status"], StatusTone> = {
+  Activo: "success",
   Inactivo: "error",
   Potencial: "info",
-  Lead: "primario",
+  Lead: "primary",
 };
 
-const fechaCorta = new Intl.DateTimeFormat("es-CO", { day: "2-digit", month: "short", year: "numeric" });
-const numero = new Intl.NumberFormat("es-CO");
-const derecha = "text-right tabular-nums";
+const shortDate = new Intl.DateTimeFormat("es-CO", { day: "2-digit", month: "short", year: "numeric" });
+const numberFormat = new Intl.NumberFormat("es-CO");
+const rightAligned = "text-right tabular-nums";
 
 /** Una celda, un dato, una línea. Lo demás está en el detalle del cliente. */
-const COLUMNAS: ColumnaTabla<Customer>[] = [
-  { id: "cliente", titulo: "Cliente", valor: (c) => c.name, principal: true, fija: true, className: "min-w-[220px]" },
-  { id: "correo", titulo: "Correo", valor: (c) => c.email },
-  { id: "telefono", titulo: "Teléfono", valor: (c) => c.phone, className: "tabular-nums" },
+const COLUMNS: TableColumn<Customer>[] = [
+  { id: "customer", title: "Cliente", value: (c) => c.name, primary: true, alwaysVisible: true, className: "min-w-[220px]" },
+  { id: "email", title: "Correo", value: (c) => c.email },
+  { id: "phone", title: "Teléfono", value: (c) => c.phone, className: "tabular-nums" },
   {
-    id: "estado", titulo: "Estado", valor: (c) => c.status, sinPadding: true,
-    celda: (c) => <CeldaEstado tono={TONO_ESTADO[c.status]} texto={c.status} />,
+    id: "status", title: "Estado", value: (c) => c.status, flush: true,
+    cell: (c) => <StatusCell tone={STATUS_TONE[c.status]} text={c.status} />,
   },
-  { id: "frecuencia", titulo: "Frecuencia", valor: (c) => c.frequency },
-  { id: "fidelizacion", titulo: "Fidelización", valor: (c) => c.loyalty, oculta: true },
-  { id: "citas", titulo: "Citas", valor: (c) => c.appointmentCount, className: derecha, oculta: true },
-  { id: "total", titulo: "Total gastado", valor: (c) => c.totalSpent, celda: (c) => numero.format(c.totalSpent), className: derecha, oculta: true },
+  { id: "frequency", title: "Frecuencia", value: (c) => c.frequency },
+  { id: "loyalty", title: "Fidelización", value: (c) => c.loyalty, hidden: true },
+  { id: "appointments", title: "Citas", value: (c) => c.appointmentCount, className: rightAligned, hidden: true },
+  { id: "total", title: "Total gastado", value: (c) => c.totalSpent, cell: (c) => numberFormat.format(c.totalSpent), className: rightAligned, hidden: true },
   {
-    id: "ultimaVisita", titulo: "Última visita", valor: (c) => c.lastAppointment?.getTime(),
-    celda: (c) => (c.lastAppointment ? fechaCorta.format(c.lastAppointment) : "Sin visitas"), className: "tabular-nums",
+    id: "lastVisit", title: "Última visita", value: (c) => c.lastAppointment?.getTime(),
+    cell: (c) => (c.lastAppointment ? shortDate.format(c.lastAppointment) : "Sin visitas"), className: "tabular-nums",
   },
   {
-    id: "desde", titulo: "Cliente desde", valor: (c) => c.createdAt.getTime(),
-    celda: (c) => fechaCorta.format(c.createdAt), className: "tabular-nums", oculta: true,
+    id: "customerSince", title: "Cliente desde", value: (c) => c.createdAt.getTime(),
+    cell: (c) => shortDate.format(c.createdAt), className: "tabular-nums", hidden: true,
   },
 ];
 
-const FILTROS: FiltroTabla<Customer>[] = [
-  { id: "frecuencia", titulo: "Frecuencia", valor: (c) => c.frequency },
-  { id: "fidelizacion", titulo: "Fidelización", valor: (c) => c.loyalty },
-  { id: "etiqueta", titulo: "Etiqueta", valor: (c) => c.tags ?? [] },
+const FILTERS: TableFilter<Customer>[] = [
+  { id: "frequency", title: "Frecuencia", value: (c) => c.frequency },
+  { id: "loyalty", title: "Fidelización", value: (c) => c.loyalty },
+  { id: "tag", title: "Etiqueta", value: (c) => c.tags ?? [] },
 ];
 
-const SEGMENTOS: SegmentoTabla<Customer>[] = [
-  { id: "todos", titulo: "Todos", cumple: () => true },
-  { id: "activos", titulo: "Activos", cumple: (c) => c.status === "Activo" },
-  { id: "potenciales", titulo: "Potenciales", cumple: (c) => c.status === "Potencial" || c.status === "Lead" },
-  { id: "inactivos", titulo: "Inactivos", cumple: (c) => c.status === "Inactivo" },
+const SEGMENTS: TableSegment<Customer>[] = [
+  { id: "all", title: "Todos", match: () => true },
+  { id: "active", title: "Activos", match: (c) => c.status === "Activo" },
+  { id: "prospects", title: "Potenciales", match: (c) => c.status === "Potencial" || c.status === "Lead" },
+  { id: "inactive", title: "Inactivos", match: (c) => c.status === "Inactivo" },
 ];
 
-const claveFila = (c: Customer) => c.id;
+const rowKey = (c: Customer) => c.id;
 
 /** Listado de clientes con la convención de tablas de Ker Hub. */
 export const CustomerTable = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [clientes, setClientes] = useState<Customer[]>(CLIENTES_SIMULADOS);
-  const t = useTablaDatos({ id: "clientes.lista", filas: clientes, columnas: COLUMNAS, claveFila, filtros: FILTROS, segmentos: SEGMENTOS });
+  const [customers, setCustomers] = useState<Customer[]>(MOCK_CUSTOMERS);
+  const t = useDataTable({ id: "customers.list", rows: customers, columns: COLUMNS, rowKey, filters: FILTERS, segments: SEGMENTS });
 
-  const ver = (c: Customer) => navigate(`/app/clientes/${c.id}`);
+  const view = (c: Customer) => navigate(`/app/clientes/${c.id}`);
 
   // Datos simulados: eliminar solo lo quita de la lista en pantalla.
-  const eliminar = (c: Customer) => {
-    setClientes((lista) => lista.filter((x) => x.id !== c.id));
+  const remove = (c: Customer) => {
+    setCustomers((list) => list.filter((x) => x.id !== c.id));
     toast({ title: "Cliente eliminado", description: c.name });
   };
 
   return (
-    <TablaDatos
+    <DataTable
       t={t}
-      onFilaClick={ver}
-      barra={<BarraTabla t={t} nombre={["cliente", "clientes"]} placeholder="Buscar por nombre, correo o teléfono" nombreArchivo="clientes" />}
-      acciones={(c) => (
-        <AccionesFila
-          nombre={c.name}
-          onVer={() => ver(c)}
+      onRowClick={view}
+      toolbar={<TableToolbar t={t} name={["cliente", "clientes"]} placeholder="Buscar por nombre, correo o teléfono" fileName="clientes" />}
+      actions={(c) => (
+        <RowActions
+          name={c.name}
+          onView={() => view(c)}
           menu={[
-            { titulo: "Editar", icono: Edit, onClick: () => navigate(`/app/clientes/editar/${c.id}`) },
-            { titulo: "Enviar mensaje", icono: MessageCircle, onClick: () => navigate(`/app/clientes/notificaciones/nueva?id=${c.id}`) },
-            { titulo: "Agendar cita", icono: Calendar, onClick: () => navigate(`/app/citas/nueva?clienteId=${c.id}`) },
+            { title: "Editar", icon: Edit, onClick: () => navigate(`/app/clientes/editar/${c.id}`) },
+            { title: "Enviar mensaje", icon: MessageCircle, onClick: () => navigate(`/app/clientes/notificaciones/nueva?id=${c.id}`) },
+            { title: "Agendar cita", icon: Calendar, onClick: () => navigate(`/app/citas/nueva?clienteId=${c.id}`) },
           ]}
-          onEliminar={() => eliminar(c)}
+          onDelete={() => remove(c)}
         />
       )}
-      vacio="Aún no hay clientes. Registra uno con «Nuevo cliente»."
+      empty="Aún no hay clientes. Registra uno con «Nuevo cliente»."
     />
   );
 };
