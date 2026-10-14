@@ -53,6 +53,8 @@ const ICON_BY_ROUTE: Record<string, ModuleIconName> = {
   "/app/admisiones": "admisiones",
   "/app/portal-usuario": "portal-usuario",
   "/app/medicos": "medicos",
+  "/app/profesionales": "medicos",
+  "/app/mi-dia": "citas",
   "/app/inventario": "inventario",
   "/app/locations/sites": "sedes",
   "/app/facturacion": "facturacion",

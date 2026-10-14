@@ -13,8 +13,9 @@ import PatientDashboard from "@/pages/patients/PatientDashboard";
 import { SettingsPage } from "@/components/config/settings";
 import PlatformCompaniesPage from "@/pages/platform/PlatformCompaniesPage";
 import PlatformCompanyPage from "@/pages/platform/PlatformCompanyPage";
-import AppointmentList from "@/pages/appointments/AppointmentList";
-import AppointmentDetail from "@/pages/appointments/AppointmentDetail";
+import AgendaPage from "@/pages/agenda/AgendaPage";
+import CitaDetailPage from "@/pages/agenda/CitaDetailPage";
+import MyDayPage from "@/pages/agenda/MyDayPage";
 import AppointmentForm from "@/pages/appointments/AppointmentForm";
 import AdmissionPage from "@/pages/admissions/AdmissionPage";
 import TelemedicinePage from "@/pages/telemedicine/TelemedicinePage";
@@ -32,9 +33,8 @@ import InventoryDetail from "@/pages/inventory/InventoryDetail";
 import SiteListPage from "@/pages/locations/SiteListPage";
 import SiteDetailPage from "@/pages/locations/SiteDetailPage";
 import OfficeListPage from "@/pages/locations/OfficeListPage";
-import DoctorList from "@/pages/doctors/DoctorList";
-import DoctorProfile from "@/pages/doctors/DoctorProfile";
-import DoctorForm from "@/pages/doctors/DoctorForm";
+import ProfessionalsPage from "@/pages/professionals/ProfessionalsPage";
+import ProfessionalPage from "@/pages/professionals/ProfessionalPage";
 import BillingDashboard from "@/pages/billing/BillingDashboard";
 import ContractsPage from "@/pages/billing/ContractsPage";
 import ContractEditorPage from "@/pages/billing/ContractEditorPage";
@@ -47,9 +47,6 @@ import NotificationForm from "@/pages/customers/NotificationForm";
 import NotificationCenter from "@/pages/notifications/NotificationCenter";
 import ReportsPage from "@/pages/reports/ReportsPage";
 import CreateReportPage from "@/pages/reports/CreateReportPage";
-import ShiftManagement from "@/pages/shifts/ShiftManagement";
-import ShiftAssignment from "@/pages/shifts/ShiftAssignment";
-import ShiftModification from "@/pages/shifts/ShiftModification";
 import WorkflowPage from "@/pages/workflow/WorkflowPage";
 import ZonesPage from "@/pages/zones/ZonesPage";
 import CotizacionesPage from "@/pages/cotizaciones/CotizacionesPage";
@@ -74,10 +71,11 @@ const AppRoutes = () => {
         <Route path="pacientes/:id" element={<PatientDetail />} />
         <Route path="pacientes/nueva-consulta" element={<NewConsultation />} />
         <Route path="consulta-multiple" element={<Navigate to="/app" replace />} />
-        <Route path="citas" element={<AppointmentList />} />
-        <Route path="citas/:id" element={<AppointmentDetail />} />
+        <Route path="citas" element={<AgendaPage />} />
         <Route path="citas/nueva" element={<AppointmentForm />} />
-        <Route path="citas/editar/:id" element={<AppointmentForm />} />
+        <Route path="citas/:id" element={<CitaDetailPage />} />
+        <Route path="citas/editar/:id" element={<Navigate to="/app/citas" replace />} />
+        <Route path="mi-dia" element={<MyDayPage />} />
         <Route path="configuracion" element={<SettingsPage />} />
         <Route path="plataforma/empresas" element={<PlatformCompaniesPage />} />
         <Route path="plataforma/empresas/:id" element={<PlatformCompanyPage />} />
@@ -88,12 +86,11 @@ const AppRoutes = () => {
         <Route path="informes" element={<ReportsPage />} />
         <Route path="informes/crear" element={<CreateReportPage />} />
         <Route path="informes/plantillas" element={<ReportsPage />} />
-        <Route path="turnos" element={<ShiftManagement />} />
-        <Route path="turnos/asignar" element={<ShiftAssignment />} />
-        <Route path="turnos/modificar" element={<ShiftModification />} />
-        <Route path="medicos" element={<DoctorList />} />
-        <Route path="medicos/nuevo" element={<DoctorForm />} />
-        <Route path="medicos/:id" element={<DoctorProfile />} />
+        {/* Turnos se fusionó en el horario de cada profesional; Médicos pasó a Profesionales. */}
+        <Route path="turnos/*" element={<Navigate to="/app/profesionales" replace />} />
+        <Route path="medicos/*" element={<Navigate to="/app/profesionales" replace />} />
+        <Route path="profesionales" element={<ProfessionalsPage />} />
+        <Route path="profesionales/:id" element={<ProfessionalPage />} />
         <Route path="especialidades/cirujano" element={<CirujanoPage />} />
         <Route path="especialidades/psicologo" element={<PsicologoPage />} />
         <Route path="especialidades/nutricionista" element={<NutricionistaPage />} />

@@ -106,13 +106,13 @@ export const mainNavItems: SubmenuItem[] = [
         icon: Calendar,
       },
       {
-        title: "Nueva Cita",
+        title: "Nueva cita",
         path: "/app/citas/nueva",
         icon: CalendarCheck,
       },
       {
-        title: "Turnos",
-        path: "/app/turnos",
+        title: "Mi día",
+        path: "/app/mi-dia",
         icon: CalendarRange,
       },
     ],
@@ -167,8 +167,8 @@ export const mainNavItems: SubmenuItem[] = [
     icon: Stethoscope,
     items: [
       {
-        title: "Médicos",
-        path: "/app/medicos",
+        title: "Profesionales",
+        path: "/app/profesionales",
         icon: Stethoscope,
       },
       {

@@ -51,7 +51,7 @@ const floatingMenuItems = [
     items: [
       { id: "calendar", icon: <Calendar size={18} />, path: "/app/citas", label: "Agenda" },
       { id: "new-appointment", icon: <Plus size={18} />, path: "/app/citas/nueva", label: "Nueva Cita" },
-      { id: "shifts", icon: <Calendar size={18} />, path: "/app/turnos", label: "Turnos" },
+      { id: "my-day", icon: <Calendar size={18} />, path: "/app/mi-dia", label: "Mi día" },
     ]
   },
   { 
@@ -85,7 +85,7 @@ const floatingMenuItems = [
     label: "Personal & Admin",
     isActive: false,
     items: [
-      { id: "doctors", icon: <Stethoscope size={18} />, path: "/app/medicos", label: "Médicos" },
+      { id: "doctors", icon: <Stethoscope size={18} />, path: "/app/profesionales", label: "Profesionales" },
       { id: "inventory", icon: <Database size={18} />, path: "/app/inventario/articulos", label: "Inventario" },
       { id: "offices", icon: <FileText size={18} />, path: "/app/locations/sites", label: "Consultorios" },
     ]

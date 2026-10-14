@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Check, User, ClipboardList, Calendar, MapPin, MessageSquare, Bell, FileText, CheckCircle, XCircle, RefreshCw, Ban, Eye, ArrowLeft, ArrowRight } from "lucide-react";
+import { Check, User, ClipboardList, Calendar, MapPin, MessageSquare, Bell, FileText, ArrowLeft, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { ExtendedPatient } from "../PatientPanel";
@@ -9,7 +9,7 @@ import { PatientDetailStep } from "./PatientDetailStep";
 import { AdmissionStep, AdmissionData } from "./AdmissionStep";
 import { SchedulingStep, SchedulingData } from "./SchedulingStep";
 import { MapPanelDrawer } from "./MapPanelDrawer";
-import { Dock, DockItem, DockActionItem } from "@/components/ui/dock";
+import { Dock, DockItem } from "@/components/ui/dock";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { db } from "@/integrations/data/client";
 import { toast } from "sonner";
@@ -21,9 +21,9 @@ export interface WizardData {
 }
 
 interface AppointmentWizardProps {
-  onComplete: (data: WizardData) => void;
+  /** Guarda la cita; mientras la promesa no termina, el botón de agendar queda ocupado. */
+  onComplete: (data: WizardData) => Promise<void> | void;
   initialPatients?: ExtendedPatient[];
-  existingAppointments?: any[];
 }
 
 const steps = [
@@ -36,7 +36,6 @@ const steps = [
 export const AppointmentWizard: React.FC<AppointmentWizardProps> = ({
   onComplete,
   initialPatients = [],
-  existingAppointments = []
 }) => {
   const [currentStep, setCurrentStep] = useState(1);
   const [wizardData, setWizardData] = useState<WizardData>({
@@ -90,10 +89,17 @@ export const AppointmentWizard: React.FC<AppointmentWizardProps> = ({
     goToStep(4);
   };
 
-  const handleSchedulingComplete = (scheduling: SchedulingData) => {
+  const [saving, setSaving] = useState(false);
+
+  const handleSchedulingComplete = async (scheduling: SchedulingData) => {
     const finalData = { ...wizardData, scheduling };
     setWizardData(finalData);
-    onComplete(finalData);
+    setSaving(true);
+    try {
+      await onComplete(finalData);
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleBack = () => {
@@ -153,37 +159,6 @@ export const AppointmentWizard: React.FC<AppointmentWizardProps> = ({
       disabled: true,
     },
   ];
-
-  // Contextual action items for step 3 (Agenda)
-  const schedulingActions: DockActionItem[] = useMemo(() => [
-    {
-      id: "confirm",
-      label: "Confirmar",
-      icon: CheckCircle,
-      variant: "success",
-      onClick: () => {
-        toast.info("Acción: Confirmar cita", { description: "Esta función estará disponible pronto" });
-      },
-    },
-    {
-      id: "reschedule",
-      label: "Reprogramar",
-      icon: RefreshCw,
-      variant: "warning",
-      onClick: () => {
-        toast.info("Acción: Reprogramar", { description: "Esta función estará disponible pronto" });
-      },
-    },
-    {
-      id: "cancel",
-      label: "Cancelar",
-      icon: Ban,
-      variant: "danger",
-      onClick: () => {
-        toast.info("Acción: Cancelar cita", { description: "Esta función estará disponible pronto" });
-      },
-    },
-  ], []);
 
   // Header: 84px + Stepper: ~40px + Gap: 10px = 134px
   // Reducido para acercar el contenido al stepper
@@ -361,9 +336,9 @@ export const AppointmentWizard: React.FC<AppointmentWizardProps> = ({
                 {currentStep === 4 && wizardData.patient && (
                   <SchedulingStep
                     patient={wizardData.patient}
-                    existingAppointments={existingAppointments}
                     onComplete={handleSchedulingComplete}
                     onBack={handleBack}
+                    saving={saving}
                   />
                 )}
               </motion.div>
@@ -375,8 +350,6 @@ export const AppointmentWizard: React.FC<AppointmentWizardProps> = ({
         {/* Dock - Always visible with contextual actions on step 3 */}
         <Dock 
           items={dockItems} 
-          actionItems={schedulingActions}
-          showActions={currentStep === 4}
           magnification={56} 
           baseSize={42} 
         />

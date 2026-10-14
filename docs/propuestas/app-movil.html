@@ -1,0 +1,286 @@
+<title>Ker Hub Móvil</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Documento de propuesta: índice fijo a la izquierda en escritorio, una columna en el celular. */
+:root {
+  --bg: #f6f5f9;
+  --surface: #ffffff;
+  --ink: #17151f;
+  --muted: #5f5b6e;
+  --line: #e4e1ec;
+  --accent: #7b2fd6;
+  --accent-soft: #f1e9fc;
+  --lime: #4f7d06;
+  --warn: #9a5b00;
+  --display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --body: "Instrument Sans", "Segoe UI", system-ui, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "Cascadia Code", monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #131119; --surface: #1c1924; --ink: #ece9f4; --muted: #a39fb3; --line: #2e2a3a;
+    --accent: #b585f5; --accent-soft: #2a1f3d; --lime: #b8e05c; --warn: #f0b35a;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #131119; --surface: #1c1924; --ink: #ece9f4; --muted: #a39fb3; --line: #2e2a3a;
+  --accent: #b585f5; --accent-soft: #2a1f3d; --lime: #b8e05c; --warn: #f0b35a;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font: 15.5px/1.65 var(--body); }
+.wrap { max-width: 1180px; margin: 0 auto; padding-inline: 20px; padding-block: 40px 80px; display: grid; gap: 48px; grid-template-columns: 210px minmax(0, 1fr); }
+@media (max-width: 900px) { .wrap { grid-template-columns: minmax(0, 1fr); gap: 24px; padding-block: 24px 56px; } nav.toc { display: none; } }
+nav.toc { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 24px); align-self: start; display: grid; gap: 2px; font-size: 13.5px; }
+nav.toc p { margin: 0 0 8px; font-size: 11.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+nav.toc a { color: var(--muted); text-decoration: none; padding: 5px 10px; border-radius: 8px; }
+nav.toc a:hover, nav.toc a:focus-visible { color: var(--ink); background: var(--surface); outline: none; }
+main { min-width: 0; display: grid; gap: 56px; }
+header.hero { display: grid; gap: 14px; }
+.kicker { font: 500 12.5px/1 var(--mono); color: var(--accent); letter-spacing: .02em; }
+h1 { font: 700 clamp(34px, 5vw, 50px)/1.05 var(--display); letter-spacing: -.02em; margin: 0; text-wrap: balance; }
+h2 { font: 700 26px/1.15 var(--display); letter-spacing: -.01em; margin: 0 0 6px; text-wrap: balance; }
+h3 { font: 600 16.5px/1.3 var(--body); margin: 0; }
+p { margin: 0; max-width: 68ch; }
+.lead { font-size: 18px; color: var(--muted); max-width: 62ch; }
+section { display: grid; gap: 18px; scroll-margin-top: 24px; }
+.sub { color: var(--muted); }
+.grid { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+.card { background: var(--surface); border-radius: 14px; padding: 18px 20px; display: grid; gap: 8px; align-content: start; }
+.card p { font-size: 14.5px; color: var(--muted); }
+.card .tag { font: 500 11.5px/1 var(--mono); color: var(--accent); }
+ul { margin: 0; padding-left: 18px; display: grid; gap: 6px; max-width: 70ch; }
+.verdict { background: var(--surface); border-radius: 16px; padding: 22px 24px; display: grid; gap: 10px; }
+.verdict strong { color: var(--accent); }
+.table-wrap { overflow-x: auto; background: var(--surface); border-radius: 14px; }
+table { border-collapse: collapse; width: 100%; min-width: 640px; font-size: 14px; }
+th, td { text-align: left; padding: 11px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-weight: 600; color: var(--muted); font-size: 12.5px; }
+tr:last-child td { border-bottom: 0; }
+td.yes { color: var(--lime); font-weight: 600; }
+td.mid { color: var(--warn); font-weight: 600; }
+td.no { color: var(--muted); }
+tbody tr.pick td { background: var(--accent-soft); }
+pre.mermaid { background: var(--surface); border-radius: 14px; padding: 18px; margin: 0; overflow-x: auto; }
+ol.phases { list-style: none; padding: 0; margin: 0; display: grid; gap: 12px; }
+ol.phases li { background: var(--surface); border-radius: 14px; padding: 18px 20px; display: grid; grid-template-columns: 54px minmax(0, 1fr); gap: 4px 16px; }
+ol.phases .n { grid-row: span 3; font: 700 28px/1 var(--display); color: var(--accent); }
+ol.phases p { color: var(--muted); font-size: 14.5px; }
+ol.phases .out { color: var(--ink); font-size: 14px; }
+.decisions { display: grid; gap: 10px; }
+.decision { background: var(--surface); border-radius: 14px; padding: 16px 20px; display: grid; gap: 6px; }
+.decision p { color: var(--muted); font-size: 14.5px; }
+.decision .rec { font-size: 14px; color: var(--lime); font-weight: 600; }
+.note { font-size: 13.5px; color: var(--muted); }
+footer { font-size: 13px; color: var(--muted); border-top: 1px solid var(--line); padding-top: 18px; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+</style>
+
+<div class="wrap">
+  <nav class="toc" aria-label="Contenido">
+    <p>Contenido</p>
+    <a href="#resumen">Resumen</a>
+    <a href="#tecnologia">Tecnología</a>
+    <a href="#sin-doble-cambio">Sin doble cambio</a>
+    <a href="#offline">Sin internet</a>
+    <a href="#nativo">Funciones del celular</a>
+    <a href="#profesional">App Profesional</a>
+    <a href="#paciente">App Paciente</a>
+    <a href="#integraciones">Otros sistemas</a>
+    <a href="#seguridad">Seguridad y norma</a>
+    <a href="#prerrequisitos">Antes de empezar</a>
+    <a href="#fases">Fases</a>
+    <a href="#decisiones">Decisiones</a>
+  </nav>
+
+  <main>
+    <header class="hero">
+      <span class="kicker">Propuesta · Ker Hub · octubre de 2026</span>
+      <h1>Ker Hub Móvil</h1>
+      <p class="lead">Dos aplicaciones nativas para Android y iPhone construidas sobre Ker Hub: una para el profesional que atiende en casa y otra para el paciente. Funcionan sin internet, usan el GPS, la cámara y las notificaciones del teléfono, y se actualizan solas cuando cambia Ker Hub.</p>
+    </header>
+
+    <section id="resumen">
+      <h2>Resumen</h2>
+      <div class="grid">
+        <div class="card"><span class="tag">Profesional</span><h3>Atender en ruta</h3><p>Pacientes del día, ruta con mapa, llegada registrada por ubicación y atención con los mismos formatos de Ker Hub, con fotos y firma del paciente, todo sin señal.</p></div>
+        <div class="card"><span class="tag">Paciente</span><h3>Saber quién viene y cuándo</h3><p>Sus citas, el profesional asignado y su llegada en tiempo real, su historial y la información de su IPS: servicios, sedes y cultura.</p></div>
+        <div class="card"><span class="tag">Ker Hub</span><h3>Una sola fuente de verdad</h3><p>Formatos, contenido de la IPS, permisos y licencias se administran en Ker Hub. Las apps los descargan; no hay que cambiar nada dos veces.</p></div>
+      </div>
+      <div class="verdict">
+        <p><strong>Recomendación:</strong> React Native con Expo en un repositorio compartido con Ker Hub, sincronización sin conexión con PowerSync sobre la misma base de Neon, y dos apps del mismo código. Es el único camino que cumple a la vez las cuatro exigencias: misma estética y lenguaje que Ker Hub, funciones nativas completas, trabajo sin internet y actualizaciones sin pasar por las tiendas.</p>
+      </div>
+    </section>
+
+    <section id="tecnologia">
+      <h2>Tecnología</h2>
+      <p class="sub">Comparación con lo que pediste como criterio.</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Criterio</th><th>React Native + Expo</th><th>Flutter</th><th>Nativo (Swift y Kotlin)</th><th>PWA (web instalable)</th></tr></thead>
+          <tbody>
+            <tr class="pick"><td>Mismo lenguaje que Ker Hub (TypeScript)</td><td class="yes">Sí: se comparte código</td><td class="no">No (Dart)</td><td class="no">No, dos lenguajes</td><td class="yes">Sí</td></tr>
+            <tr><td>GPS en segundo plano y seguimiento en vivo</td><td class="yes">Sí</td><td class="yes">Sí</td><td class="yes">Sí</td><td class="no">No en iPhone</td></tr>
+            <tr><td>Sin internet con base local cifrada</td><td class="yes">Sí</td><td class="yes">Sí</td><td class="yes">Sí</td><td class="mid">Limitado</td></tr>
+            <tr><td>Cámara, firma, biometría, notificaciones</td><td class="yes">Sí</td><td class="yes">Sí</td><td class="yes">Sí</td><td class="mid">Parcial en iPhone</td></tr>
+            <tr><td>Actualizar sin pasar por las tiendas</td><td class="yes">Sí (EAS Update)</td><td class="mid">Con terceros</td><td class="no">No</td><td class="yes">Sí</td></tr>
+            <tr><td>Un solo equipo para Android y iPhone</td><td class="yes">Sí</td><td class="yes">Sí</td><td class="no">Dos equipos</td><td class="yes">Sí</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="note">Ya tenemos experiencia propia en este camino: la app de IPS Cuidado Seguro en Casa usa Expo y el mismo sistema de estilos (Tailwind), y la PWA de rutas de rehabilitación ya resuelve Google Routes, el estilo de mapa y los íconos 3D. Las dos se reutilizan.</p>
+    </section>
+
+    <section id="sin-doble-cambio">
+      <h2>Sin doble cambio</h2>
+      <p>Tres mecanismos evitan repetir en las apps lo que se cambia en Ker Hub.</p>
+      <div class="grid">
+        <div class="card"><span class="tag">Código compartido</span><h3>Un repositorio, paquetes comunes</h3><p>Reglas del negocio, validaciones, cliente de la API, motor de formatos y diseño (colores, tipografía, espaciado) viven en paquetes que usan Ker Hub y las dos apps.</p></div>
+        <div class="card"><span class="tag">Contenido servido</span><h3>La app dibuja lo que Ker Hub define</h3><p>Los formatos ya están versionados en Ker Hub: la app descarga la versión vigente y la pinta. Un campo nuevo aparece en el celular sin publicar otra versión. Lo mismo con servicios, sedes y la portada de la IPS.</p></div>
+        <div class="card"><span class="tag">Actualización al instante</span><h3>EAS Update</h3><p>Los cambios de pantallas y lógica llegan a los teléfonos en minutos, sin revisión de Apple ni Google. Solo un cambio nativo, como un permiso nuevo, exige una versión en la tienda.</p></div>
+      </div>
+<pre class="mermaid">
+flowchart LR
+  subgraph repo["Repositorio Ker Hub"]
+    web["Ker Hub web"]
+    pro["App Profesional"]
+    pac["App Paciente"]
+    subgraph pk["Paquetes compartidos"]
+      dom["dominio: tipos y reglas"]
+      api["cliente API tipado"]
+      fmt["motor de formatos"]
+      ds["diseño: tokens y componentes"]
+      syn["sincronización"]
+    end
+  end
+  web --> pk
+  pro --> pk
+  pac --> pk
+  pk --> back["API Ker Hub + Neon"]
+</pre>
+    </section>
+
+    <section id="offline">
+      <h2>Sin internet</h2>
+      <p>El profesional trabaja con la información guardada en el teléfono y todo se sincroniza solo cuando hay señal. El paciente consulta sus citas e historial aunque no tenga datos.</p>
+<pre class="mermaid">
+flowchart LR
+  tel["Teléfono: base local cifrada"] <-->|"cambios cuando hay señal"| ps["Servicio de sincronización"]
+  ps <--> db["Neon: base de Ker Hub"]
+  tel -->|"fotos y firmas en cola aparte"| api["API de archivos de Ker Hub"]
+</pre>
+      <ul>
+        <li><strong>Qué baja al teléfono:</strong> solo lo que ese profesional necesita: sus pacientes de hoy y de los próximos días, con sus formatos y antecedentes relevantes. Las mismas reglas de empresa y rol que ya aplica Ker Hub deciden qué se sincroniza.</li>
+        <li><strong>Conflictos casi nulos:</strong> cada atención es un registro nuevo, firmado y con su hora; nunca se sobrescribe otro. Las correcciones siguen el camino de anulación que ya existe en Ker Hub.</li>
+        <li><strong>Fotos y firmas:</strong> se guardan cifradas y se suben en una cola propia con reintentos, para no frenar la sincronización de los datos.</li>
+        <li><strong>Alternativa propia:</strong> una cola de cambios en el teléfono y un servicio de sincronización hecho por nosotros. No paga licencia, pero toma más trabajo y concentra el riesgo en nosotros. La decisión está al final.</li>
+      </ul>
+    </section>
+
+    <section id="nativo">
+      <h2>Funciones del celular</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Función</th><th>Para qué</th><th>Cómo</th></tr></thead>
+          <tbody>
+            <tr><td>GPS en segundo plano</td><td>Seguimiento en tiempo real del profesional en ruta, visto en Ker Hub y por el paciente</td><td>Ubicación por lotes mientras la ruta está iniciada; se guarda sin señal y se envía después</td></tr>
+            <tr><td>Geocercas</td><td>Registrar llegada y salida de la casa del paciente como evidencia de la atención</td><td>Círculo alrededor de la dirección geocodificada; marca automática que confirma el profesional</td></tr>
+            <tr><td>Mapas y rutas</td><td>Orden de visitas, tiempos estimados y navegación</td><td>Google Routes, ya integrado en la PWA de rutas; la navegación se abre en Waze o Google Maps</td></tr>
+            <tr><td>Cámara</td><td>Heridas, evolución, documentos y fórmulas</td><td>Foto comprimida y cifrada, adjunta al registro de la atención</td></tr>
+            <tr><td>Firma en pantalla</td><td>Consentimientos y constancia de la visita</td><td>Firma del paciente o del acudiente, guardada con el registro</td></tr>
+            <tr><td>Biometría</td><td>Entrar rápido sin exponer la contraseña</td><td>Huella o rostro del teléfono; la sesión real sigue en Ker Hub</td></tr>
+            <tr><td>Notificaciones</td><td>Cambios de ruta, citas, profesional en camino</td><td>Push desde Ker Hub a cada app</td></tr>
+            <tr><td>Lector de códigos</td><td>Medicamentos e insumos entregados</td><td>La cámara como lector, contra el catálogo de productos</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="note">Apple y Google revisan con lupa la ubicación en segundo plano: hay que justificarla en la ficha de la tienda y mostrarle al profesional cuándo se está registrando. La ubicación solo se toma con la ruta iniciada, nunca fuera del turno.</p>
+    </section>
+
+    <section id="profesional">
+      <h2>App Profesional</h2>
+      <div class="grid">
+        <div class="card"><h3>Mi día</h3><p>Pacientes asignados con dirección, hora, servicio y alertas clínicas. Funciona sin señal desde que se abre.</p></div>
+        <div class="card"><h3>Ruta</h3><p>Orden sugerido de visitas, iniciar la ruta, navegación y llegada registrada por ubicación.</p></div>
+        <div class="card"><h3>Atención</h3><p>Los mismos formatos de Ker Hub, con su versión, escalas y signos vitales; fotos, firma y cierre de la visita.</p></div>
+        <div class="card"><h3>Seguimiento</h3><p>Coordinación ve en Ker Hub a cada profesional en el mapa, su avance en la ruta y los retrasos.</p></div>
+      </div>
+    </section>
+
+    <section id="paciente">
+      <h2>App Paciente</h2>
+      <div class="grid">
+        <div class="card"><h3>Mis citas</h3><p>Próximas visitas y quién lo atiende (foto, nombre, profesión). El día de la cita, el profesional en camino con hora estimada de llegada.</p></div>
+        <div class="card"><h3>Mi historial</h3><p>Resumen de atenciones, órdenes e indicaciones que la IPS decida mostrar, descargables. El paciente tiene derecho a su historia clínica; qué se publica en la app lo define la IPS.</p></div>
+        <div class="card"><h3>Mi IPS</h3><p>Portada, servicios, sedes con mapa, cultura y novedades, administradas desde Ker Hub con la marca de cada IPS.</p></div>
+        <div class="card"><h3>Acceso</h3><p>La IPS invita al paciente desde Ker Hub con el mismo mecanismo de invitación blindada que ya está en producción.</p></div>
+      </div>
+    </section>
+
+    <section id="integraciones">
+      <h2>Otros sistemas</h2>
+      <p>Las apps solo hablan con Ker Hub. Cuando una IPS trabaja con otro sistema (su HIS, un agendador, el sistema de la EPS), Ker Hub se conecta con él y las apps no cambian.</p>
+<pre class="mermaid">
+flowchart LR
+  apps["Apps Profesional y Paciente"] --> kh["API Ker Hub"]
+  kh --> fhir["FHIR R4, ya disponible"]
+  kh --> ad["Adaptadores por cliente: REST, HL7, archivos"]
+  fhir --> ext["Sistemas de terceros"]
+  ad --> ext
+</pre>
+      <p class="note">Ker Hub ya expone pacientes, atenciones, formatos y respuestas en FHIR R4. Cada integración nueva es un adaptador del lado del servidor, no una versión nueva de las apps.</p>
+    </section>
+
+    <section id="seguridad">
+      <h2>Seguridad y norma</h2>
+      <ul>
+        <li><strong>Datos personales y de salud:</strong> tratamiento conforme a la Ley 1581 de 2012 (habeas data), con consentimiento y finalidad explícitos para la ubicación del profesional y del paciente.</li>
+        <li><strong>Historia clínica:</strong> registros inmutables, con autor, hora y versión del formato, igual que en Ker Hub (Resolución 1995 de 1999).</li>
+        <li><strong>En el teléfono:</strong> base local cifrada, bloqueo por inactividad, biometría, sin capturas de pantalla en vistas clínicas en Android y borrado remoto de los datos cuando se suspende al usuario o a la empresa.</li>
+        <li><strong>Licencias:</strong> las apps respetan las mismas licencias, sillas y suspensiones que Ker Hub: una empresa vencida o suspendida deja de sincronizar.</li>
+        <li><strong>Auditoría:</strong> cada consulta y cada cambio quedan trazados por usuario, empresa y dispositivo.</li>
+      </ul>
+    </section>
+
+    <section id="prerrequisitos">
+      <h2>Antes de empezar</h2>
+      <p>Piezas de Ker Hub que las apps necesitan y que hoy faltan o están incompletas:</p>
+      <ul>
+        <li>Contrato de la API publicado (OpenAPI), para generar el cliente tipado.</li>
+        <li>Agenda real en la base: hoy citas, consultas y seguimientos todavía viven en el navegador.</li>
+        <li>Asignación de pacientes a profesionales y rutas guardadas en Ker Hub, trayendo lo de la PWA de rutas.</li>
+        <li>Cuentas de paciente vinculadas a su registro y a su empresa.</li>
+        <li>Módulo de contenido de la IPS: portada, servicios, sedes y cultura.</li>
+        <li>Servicio de notificaciones y recepción de ubicaciones.</li>
+      </ul>
+    </section>
+
+    <section id="fases">
+      <h2>Fases</h2>
+      <ol class="phases">
+        <li><span class="n">0</span><h3>Base compartida</h3><p>Repositorio común, paquetes de dominio, API tipada, motor de formatos y diseño, más los prerrequisitos de Ker Hub.</p><p class="out">Resultado: Ker Hub ya usa los paquetes compartidos, sin cambios para el usuario.</p></li>
+        <li><span class="n">1</span><h3>App Profesional</h3><p>Mi día, atención con formatos sin internet, fotos, firma y sincronización.</p><p class="out">Resultado: piloto con una IPS de atención domiciliaria.</p></li>
+        <li><span class="n">2</span><h3>Ruta y seguimiento</h3><p>Ruta del día, navegación, GPS en segundo plano, geocercas y mapa de coordinación en Ker Hub.</p><p class="out">Resultado: llegada y salida registradas como evidencia de cada visita.</p></li>
+        <li><span class="n">3</span><h3>App Paciente</h3><p>Citas, profesional en camino, historial publicado e información de la IPS.</p><p class="out">Resultado: publicación en App Store y Google Play.</p></li>
+        <li><span class="n">4</span><h3>Integraciones y marca propia</h3><p>Adaptadores con sistemas de terceros y versión con la marca de cada IPS en las tiendas.</p><p class="out">Resultado: Ker Hub Móvil se puede vender a IPS que usan otros sistemas.</p></li>
+      </ol>
+      <p class="note">Cada fase se aprueba antes de pasar a la siguiente. Los tiempos se estiman cuando se cierren las decisiones de abajo.</p>
+    </section>
+
+    <section id="decisiones">
+      <h2>Decisiones</h2>
+      <div class="decisions">
+        <div class="decision"><h3>¿Una app o dos?</h3><p>Una sola app con dos modos es más barata de publicar; dos apps separan permisos, revisión de tiendas y riesgos (la del paciente nunca carga datos de otros pacientes).</p><p class="rec">Recomendado: dos apps del mismo código.</p></div>
+        <div class="decision"><h3>¿PowerSync o sincronización propia?</h3><p>PowerSync es un servicio maduro sobre Postgres, con costo mensual. La propia no paga licencia, pero toma más tiempo y el riesgo queda en nosotros.</p><p class="rec">Recomendado: PowerSync para salir rápido y revisar a los 12 meses.</p></div>
+        <div class="decision"><h3>¿Marca propia de cada IPS en las tiendas?</h3><p>Una app «Ker Hub» con la marca de la IPS adentro es una sola publicación. Una app con el nombre de la IPS exige una cuenta de desarrollador por cliente o publicar a su nombre.</p><p class="rec">Recomendado: Ker Hub con marca interna; la marca propia, como plan superior.</p></div>
+        <div class="decision"><h3>¿Qué ve el paciente de su historia?</h3><p>Desde resúmenes e indicaciones hasta la historia completa descargable.</p><p class="rec">Recomendado: que lo decida cada IPS en Ker Hub, empezando por resúmenes e indicaciones.</p></div>
+        <div class="decision"><h3>¿Teleconsulta en esta etapa?</h3><p>Agrega video, consentimiento específico y requisitos de telesalud.</p><p class="rec">Recomendado: dejarla para después de la fase 3.</p></div>
+      </div>
+    </section>
+
+    <footer>Propuesta de Branzon Tech para Ker Hub. Se apoya en lo que ya está en producción: multiempresa con licencias, formatos versionados, FHIR R4 e invitaciones blindadas.</footer>
+  </main>
+</div>
