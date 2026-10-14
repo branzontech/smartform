@@ -11,6 +11,8 @@ import NewConsultation from "@/pages/patients/NewConsultation";
 
 import PatientDashboard from "@/pages/patients/PatientDashboard";
 import { SettingsPage } from "@/components/config/settings";
+import PlatformCompaniesPage from "@/pages/platform/PlatformCompaniesPage";
+import PlatformCompanyPage from "@/pages/platform/PlatformCompanyPage";
 import AppointmentList from "@/pages/appointments/AppointmentList";
 import AppointmentDetail from "@/pages/appointments/AppointmentDetail";
 import AppointmentForm from "@/pages/appointments/AppointmentForm";
@@ -77,6 +79,8 @@ const AppRoutes = () => {
         <Route path="citas/nueva" element={<AppointmentForm />} />
         <Route path="citas/editar/:id" element={<AppointmentForm />} />
         <Route path="configuracion" element={<SettingsPage />} />
+        <Route path="plataforma/empresas" element={<PlatformCompaniesPage />} />
+        <Route path="plataforma/empresas/:id" element={<PlatformCompanyPage />} />
         <Route path="telemedicina" element={<TelemedicinePage />} />
         <Route path="chat" element={<ChatPage />} />
         <Route path="workflows" element={<WorkflowPage />} />

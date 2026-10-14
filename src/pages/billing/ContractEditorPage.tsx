@@ -47,7 +47,7 @@ export default function ContractEditorPage() {
   const id = routeId && routeId !== "nuevo" ? routeId : null;
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { hasRole } = useAuth();
+  const { hasRole, isPlatformAdmin } = useAuth();
   const canEdit = hasRole("admin");
   const [confirm, confirmDialog] = useConfirm();
 
@@ -234,7 +234,7 @@ export default function ContractEditorPage() {
             <PayerSection form={form} set={set} payers={payersQuery.data ?? []} newPayer={newPayer} setNewPayer={setNewPayer} locked={!isDraft} />
             <GeneralSection form={form} set={set} sites={sitesQuery.data ?? []} />
             <TariffSection
-              form={form} set={set} manuals={manualsQuery.data ?? []} year={YEAR} uvb={uvbQuery.data ?? null} canEditUvb={canEdit}
+              form={form} set={set} manuals={manualsQuery.data ?? []} year={YEAR} uvb={uvbQuery.data ?? null} canEditUvb={isPlatformAdmin}
               onSaveUvb={async (value, source) => {
                 try {
                   await saveUvb(YEAR, value, source);

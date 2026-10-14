@@ -4,7 +4,7 @@ import {
   ArrowLeft, FileText, Palette, Bell, Save, User, Shield, Plus, HelpCircle,
   Trash2, SlidersHorizontal, ClipboardList, Loader2, Eye, Edit, BarChart,
   Building2, UserCog, Stethoscope, FlaskConical, Search, ChevronLeft,
-  ChevronRight, Building, Handshake, Calculator, Package, MapPin, Settings,
+  ChevronRight, Building, Handshake, Calculator, Package, MapPin, Settings, Users,
 } from "lucide-react";
 import { Header } from "@/components/layout/header";
 import { ServiciosClinicosConfig } from "@/components/config/ServiciosClinicosConfig";
@@ -14,6 +14,7 @@ import { PatientFieldsConfig } from "@/components/config/PatientFieldsConfig";
 import { AdmissionFieldsConfig } from "@/components/config/AdmissionFieldsConfig";
 import { PatientHeaderConfig } from "@/components/config/PatientHeaderConfig";
 import { FormsSettings } from "@/components/config/FormsSettings";
+import { CompanyUsers } from "@/components/tenancy/CompanyUsers";
 import { db } from "@/integrations/data/client";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -31,6 +32,7 @@ const settingsSections = [
     label: "General",
     items: [
       { id: "general", label: "Institución", icon: Building2 },
+      { id: "users", label: "Usuarios y permisos", icon: Users },
       { id: "header", label: "Encabezado clínico", icon: FileText },
       { id: "patient-header", label: "Encabezado paciente", icon: UserCog },
       { id: "appearance", label: "Apariencia y tema", icon: Palette },
@@ -331,6 +333,8 @@ export const SettingsPage = () => {
                 </div>
               </div>
             )}
+
+            {activeCategory === "users" && <CompanyUsers />}
 
             {activeCategory === "header" && <InstitutionHeaderConfig />}
 

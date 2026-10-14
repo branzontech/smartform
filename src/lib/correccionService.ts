@@ -1,3 +1,4 @@
+import { apiFetch } from "@/integrations/api/client";
 import { z } from "zod";
 import { db } from "@/integrations/data/client";
 import type {
@@ -48,12 +49,8 @@ function obtenerUserAgent(): string {
 async function obtenerDatosAgente(
   userId: string
 ): Promise<{ role: string; nombre: string }> {
-  const { data: roleData } = await db
-    .from("user_roles")
-    .select("role")
-    .eq("user_id", userId)
-    .limit(1)
-    .maybeSingle();
+  // El rol es por empresa: lo resuelve la API para la empresa activa.
+  const me = await apiFetch<{ roles: string[] }>("/api/me").catch(() => ({ roles: [] as string[] }));
 
   const { data: profileData } = await db
     .from("profiles")
@@ -62,7 +59,7 @@ async function obtenerDatosAgente(
     .maybeSingle();
 
   return {
-    role: (roleData?.role as string) ?? "user",
+    role: me.roles[0] ?? "user",
     nombre: profileData?.full_name ?? "Usuario sin nombre",
   };
 }

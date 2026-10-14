@@ -77,6 +77,8 @@ const FormCreator = () => {
   // Uso del formato: con registros guardados, los cambios crean una versión nueva y los campos usados no se borran.
   const [recordCount, setRecordCount] = useState(0);
   const [currentVersion, setCurrentVersion] = useState(1);
+  /** Formato global de Ker Hub (HC base, escalas): no se modifica; guardar crea una copia de la empresa. */
+  const [isGlobal, setIsGlobal] = useState(false);
   const [usedIds, setUsedIds] = useState<Set<string>>(new Set());
   const [showPreview, setShowPreview] = useState(readPreviewPref);
   // Respuestas de prueba en la vista previa: nunca se guardan.
@@ -122,6 +124,7 @@ const FormCreator = () => {
           setFormType(data.tipo || "historia_clinica");
           setQuestions((data.preguntas as any[]) || []);
           setCurrentVersion((data as { version?: number }).version ?? 1);
+          setIsGlobal((data as { empresa_id?: string | null }).empresa_id === null);
           const { count } = await db
             .from("respuestas_formularios")
             .select("id", { count: "exact", head: true })
@@ -287,6 +290,20 @@ const FormCreator = () => {
       
       let formId = id;
       
+      if (id && isGlobal) {
+        // La base es de todas las empresas y no se toca: se guarda como formato propio.
+        const { data, error } = await db
+          .from("formularios")
+          .insert({ ...formPayload, titulo: `${title} (propio)` })
+          .select("id")
+          .single();
+        if (error) throw error;
+        clearDraft();
+        toast({ title: "Se creó tu copia propia", description: "El formato base de Ker Hub no se modifica; tus cambios quedaron en una copia de tu empresa." });
+        navigate(`/app/editar/${(data as { id: string }).id}`, { replace: true });
+        return;
+      }
+
       if (id) {
         const { error } = await db
           .from("formularios")
@@ -447,7 +464,15 @@ const FormCreator = () => {
         <div className="min-h-0 overflow-y-auto">
           {/* Margen derecho para la barra flotante de cada pregunta. */}
           <div className={cn("mx-auto pb-6 pt-1 md:pr-12", showPreview ? "max-w-2xl" : "max-w-3xl")}>
-            {recordCount > 0 && (
+            {isGlobal && (
+              <p className="mb-3 rounded-xl bg-primary/[0.06] px-4 py-2.5 text-[13px] leading-5 text-foreground">
+                <span className="font-semibold">Formato base de Ker Hub.</span>{" "}
+                <span className="text-muted-foreground">
+                  Lo comparten todas las empresas y no se modifica. Al guardar se crea una copia propia de tu empresa con tus cambios.
+                </span>
+              </p>
+            )}
+            {!isGlobal && recordCount > 0 && (
               <p className="mb-3 rounded-xl bg-primary/[0.06] px-4 py-2.5 text-[13px] leading-5 text-foreground">
                 <span className="font-semibold">
                   {recordCount === 1 ? "1 registro usa" : `${recordCount} registros usan`} este formato (versión {currentVersion}).

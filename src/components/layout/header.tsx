@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ChevronDown, Menu, Stethoscope, Moon, Sun, Search, Bell, UserCircle, LogOut, LayoutGrid } from "lucide-react";
+import { ChevronDown, Menu, Stethoscope, Moon, Sun, Search, Bell, UserCircle, LogOut, LayoutGrid, Building2, ArrowLeftRight } from "lucide-react";
 import { AppLauncherModal } from "./AppLauncherModal";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useAuth } from "@/contexts/AuthContext";
@@ -42,7 +42,7 @@ export const Header = (props: HeaderProps) => (useContext(DentroDeLayout) ? null
 const HeaderBase = ({ showCreate = true }: HeaderProps) => {
   const isMobile = useIsMobile();
   const navigate = useNavigate();
-  const { profile, user, signOut } = useAuth();
+  const { profile, user, signOut, company, companies, isPlatformAdmin, switchCompany } = useAuth();
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -184,6 +184,7 @@ const HeaderBase = ({ showCreate = true }: HeaderProps) => {
               <img src="/kerhub-logo-color.png" alt="Ker Hub" className="h-7 w-auto" />
             </button>
             {ENVIRONMENTS.length > 1 && <EnvironmentLabel />}
+            <LicenseNotice />
             <button
               onClick={() => setAppLauncherOpen(true)}
               className="p-2 rounded-full hover:bg-white/10 transition-colors"
@@ -299,7 +300,22 @@ const HeaderBase = ({ showCreate = true }: HeaderProps) => {
                   <span className="hidden md:block text-sm font-medium text-white whitespace-nowrap">{userName}</span>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56" sideOffset={8}>
+              <DropdownMenuContent align="end" className="w-64" sideOffset={8}>
+                {company && (
+                  <div className="px-2 py-1.5">
+                    <p className="text-[11px] text-muted-foreground">Empresa</p>
+                    <p className="truncate text-sm font-medium">{company.nombre}</p>
+                  </div>
+                )}
+                {companies
+                  .filter((c) => c.id !== company?.id)
+                  .map((c) => (
+                    <DropdownMenuItem key={c.id} className="flex items-center gap-2" onClick={() => void switchCompany(c.id)}>
+                      <ArrowLeftRight className="h-4 w-4" />
+                      <span className="truncate">Cambiar a {c.nombre}</span>
+                    </DropdownMenuItem>
+                  ))}
+                {company && <DropdownMenuSeparator />}
                 <DropdownMenuItem
                   className="flex items-center gap-2"
                   onClick={() => navigate("/app/perfil")}
@@ -307,6 +323,12 @@ const HeaderBase = ({ showCreate = true }: HeaderProps) => {
                   <UserCircle className="h-4 w-4" />
                   <span>Mi perfil</span>
                 </DropdownMenuItem>
+                {isPlatformAdmin && (
+                  <DropdownMenuItem className="flex items-center gap-2" onClick={() => navigate("/app/plataforma/empresas")}>
+                    <Building2 className="h-4 w-4" />
+                    <span>Empresas de la plataforma</span>
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem 
                   className="flex items-center gap-2 text-red-600 dark:text-red-400 focus:text-red-700 dark:focus:text-red-300"
@@ -392,4 +414,19 @@ function EnvironmentLabel() {
       {environment.label}
     </span>
   );
+}
+
+const noticeDate = new Intl.DateTimeFormat("es-CO", { day: "numeric", month: "short", timeZone: "UTC" });
+
+/** Una línea discreta cuando la licencia de la empresa está por vencer o ya en periodo de gracia. */
+function LicenseNotice() {
+  const { company } = useAuth();
+  const license = company?.licencia;
+  if (!license) return null;
+  const day = (d?: string | null) => (d ? noticeDate.format(new Date(`${d}T00:00:00Z`)) : "");
+  let text: string | null = null;
+  if (license.estado === "en_gracia") text = `Licencia vencida · acceso hasta el ${day(license.graciaHasta)}`;
+  else if (license.estado === "por_vencer") text = `La licencia vence el ${day(company?.licenciaFin)}`;
+  if (!text) return null;
+  return <span className="hidden whitespace-nowrap text-[12px] font-medium text-amber-200 lg:inline">{text}</span>;
 }

@@ -103,6 +103,9 @@ export function TariffSection({ form, set, manuals, year, uvb, canEditUvb, onSav
       </div>
       <PriceExample manual={medManual} pct={form.ajuste_medicamentos_pct} uvb={uvb} year={year} />
       {needsUvb && canEditUvb && <UvbForm year={year} onSave={onSaveUvb} />}
+      {needsUvb && !canEditUvb && !uvb && (
+        <p className="text-[13px] text-muted-foreground">La UVB de {year} aún no está registrada. La registra el equipo de Ker Hub con el valor oficial del año.</p>
+      )}
 
       <div className="grid gap-3 border-t border-border pt-5">
         <div className="flex items-baseline justify-between gap-3">

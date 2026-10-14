@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 import { RowActions } from "@/components/kit/RowActions";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   TableToolbar, StatusCell, DataTable, primaryButtonClass, useDataTable,
   type TableColumn, type TableFilter, type TableSegment,
@@ -355,6 +356,8 @@ function GestionarProcedimientosDialog({ servicio, onClose }: { servicio: Servic
 
 // ========== CATÁLOGO PROCEDIMIENTOS TAB ==========
 function CatalogoProcedimientosTab() {
+  // El catálogo (CUPS y demás) es nacional y lo comparten todas las empresas: solo lo edita la plataforma.
+  const { isPlatformAdmin } = useAuth();
   const { data: procs, isLoading } = useAllCatalogoProcedimientos("");
   const createMut = useCreateProcedimiento();
   const updateMut = useUpdateProcedimiento();
@@ -421,10 +424,10 @@ function CatalogoProcedimientosTab() {
             name={["procedimiento", "procedimientos"]}
             placeholder="Buscar por código o descripción"
             fileName="catalogo-procedimientos"
-            actions={<Button className={primaryButtonClass} onClick={openCreate}><Plus className="h-4 w-4" /> Nuevo procedimiento</Button>}
+            actions={isPlatformAdmin ? <Button className={primaryButtonClass} onClick={openCreate}><Plus className="h-4 w-4" /> Nuevo procedimiento</Button> : undefined}
           />
         }
-        actions={(p) => (
+        actions={isPlatformAdmin ? (p) => (
           <RowActions
             name={p.descripcion}
             menu={[
@@ -432,8 +435,8 @@ function CatalogoProcedimientosTab() {
               { title: p.activo ? "Desactivar" : "Activar", icon: Power, onClick: () => toggleMut.mutate({ id: p.id, activo: !p.activo }) },
             ]}
           />
-        )}
-        empty="Aún no hay procedimientos en el catálogo. Crea uno con «Nuevo procedimiento»."
+        ) : undefined}
+        empty={isPlatformAdmin ? "Aún no hay procedimientos en el catálogo. Crea uno con «Nuevo procedimiento»." : "Aún no hay procedimientos en el catálogo. Lo administra el equipo de Ker Hub."}
       />
 
       {/* Dialog crear/editar procedimiento */}

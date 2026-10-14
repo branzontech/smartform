@@ -1,4 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { apiFetch, ApiError, SESSION_EXPIRED } from "@/integrations/api/client";
 import { getAuthClient } from "@/integrations/auth/client";
 
@@ -22,6 +24,22 @@ interface Profile {
   license_number: string | null;
 }
 
+/** Empresa (IPS, consultorio) a la que pertenece el usuario, con su rol en ella. */
+export interface Company {
+  id: string;
+  nombre: string;
+  rol: string;
+  /** Solo en la empresa activa: estado de su licencia. */
+  licencia?: { estado: string; acceso: boolean; graciaHasta?: string } | null;
+  licenciaFin?: string | null;
+}
+
+/** Empresa a la que pertenece pero no puede entrar, y por qué. */
+export interface CompanyBlock {
+  nombre: string;
+  estado: "pendiente" | "suspendida" | "por_iniciar" | "vencida" | string;
+}
+
 interface AuthContextType {
   user: AuthUser | null;
   session: { user: AuthUser } | null;
@@ -35,12 +53,25 @@ interface AuthContextType {
   updatePassword: (password: string, token: string) => Promise<{ error: Error | null }>;
   hasRole: (role: string) => boolean;
   refreshProfile: () => Promise<void>;
+  /** Empresa activa: todos los datos que se ven y se escriben son de ella. */
+  company: Company | null;
+  companies: Company[];
+  /** Sin empresa con acceso: las empresas del usuario que están bloqueadas. */
+  blocks: CompanyBlock[];
+  /** Dueño de la plataforma (Branzon): gestiona empresas e invitaciones. */
+  isPlatformAdmin: boolean;
+  /** Cambia de empresa y recarga la app para no mezclar datos en pantalla. */
+  switchCompany: (companyId: string) => Promise<void>;
 }
 
 interface Me {
   user: AuthUser;
   profile: Profile | null;
   roles: string[];
+  empresa: Company | null;
+  empresas: Company[];
+  bloqueos?: CompanyBlock[];
+  isPlatformAdmin: boolean;
 }
 
 const notMounted = async () => ({ error: new Error("AuthProvider no está montado") });
@@ -57,6 +88,11 @@ const defaultAuthContext: AuthContextType = {
   updatePassword: notMounted,
   hasRole: () => false,
   refreshProfile: async () => {},
+  company: null,
+  companies: [],
+  blocks: [],
+  isPlatformAdmin: false,
+  switchCompany: async () => {},
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -66,6 +102,7 @@ export const useAuth = () => useContext(AuthContext) ?? defaultAuthContext;
 const toError = (e: unknown) => (e instanceof Error ? e : new Error(String(e)));
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
+  const queryClient = useQueryClient();
   const [me, setMe] = useState<Me | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -85,13 +122,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (alive) setIsLoading(false);
     });
     // Si la API dice que la sesión murió (caducó o se cerró en otro lado), se olvida aquí también.
-    const onExpired = () => setMe(null);
+    // Nada en caché de una sesión a otra: el siguiente usuario puede ser de otra empresa.
+    const onExpired = () => {
+      queryClient.clear();
+      setMe(null);
+    };
     window.addEventListener(SESSION_EXPIRED, onExpired);
     return () => {
       alive = false;
       window.removeEventListener(SESSION_EXPIRED, onExpired);
     };
-  }, [loadMe]);
+  }, [loadMe, queryClient]);
 
   const signIn = useCallback(
     async (email: string, password: string) => {
@@ -111,9 +152,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       try {
         Object.keys(localStorage).filter((k) => k.startsWith("kerhub-draft-")).forEach((k) => localStorage.removeItem(k));
       } catch { /* almacenamiento no disponible */ }
+      queryClient.clear();
       setMe(null);
     }
-  }, []);
+  }, [queryClient]);
 
   const resetPassword = useCallback(async (email: string) => {
     try {
@@ -136,6 +178,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
+  const switchCompany = useCallback(async (companyId: string) => {
+    try {
+      await apiFetch("/api/me/empresa", { method: "POST", body: JSON.stringify({ empresaId: companyId }) });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "No se pudo cambiar de empresa.");
+      return;
+    }
+    // Recarga completa: nada en memoria (caché, formularios abiertos) de la empresa anterior.
+    window.location.assign("/app/home");
+  }, []);
+
   const value = useMemo<AuthContextType>(() => {
     const roles = me?.roles ?? [];
     return {
@@ -150,8 +203,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       updatePassword,
       hasRole: (role: string) => roles.includes(role),
       refreshProfile: loadMe,
+      company: me?.empresa ?? null,
+      companies: me?.empresas ?? [],
+      blocks: me?.bloqueos ?? [],
+      isPlatformAdmin: !!me?.isPlatformAdmin,
+      switchCompany,
     };
-  }, [me, isLoading, signIn, signOut, resetPassword, updatePassword, loadMe]);
+  }, [me, isLoading, signIn, signOut, resetPassword, updatePassword, loadMe, switchCompany]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

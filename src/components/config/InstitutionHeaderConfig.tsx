@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 import { Loader2, Upload, X, Plus, Trash2, Eye } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { FormHeaderPreview } from "@/components/forms/FormHeaderPreview";
@@ -56,6 +57,7 @@ const emptyConfig: HeaderConfig = {
 
 export const InstitutionHeaderConfig = () => {
   const { toast } = useToast();
+  const { company } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [config, setConfig] = useState<HeaderConfig>(emptyConfig);
   const [loading, setLoading] = useState(true);
@@ -124,7 +126,12 @@ export const InstitutionHeaderConfig = () => {
     setUploading(true);
     try {
       const ext = file.name.split(".").pop();
-      const filePath = `logos/institution-logo.${ext}`;
+      if (!company) {
+        toast({ title: "Sin empresa activa", description: "No hay una empresa activa para guardar el logo.", variant: "destructive" });
+        return;
+      }
+      // Cada empresa guarda su logo en su propia carpeta: dos empresas no se pisan el archivo.
+      const filePath = `${company.id}/logos/institution-logo.${ext}`;
       const { error: uploadError } = await db.storage
         .from("institution-assets")
         .upload(filePath, file, { upsert: true });

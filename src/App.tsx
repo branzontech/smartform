@@ -14,6 +14,7 @@ import { HelmetProvider } from "react-helmet-async";
 import { MotionConfig } from "framer-motion";
 
 import Login from "./pages/auth/Login";
+import AcceptInvitation from "./pages/auth/AcceptInvitation";
 import ForgotPassword from "./pages/auth/ForgotPassword";
 import ResetPassword from "./pages/auth/ResetPassword";
 import AppRoutes from "./routes/AppRoutes";
@@ -63,6 +64,7 @@ function App() {
                     <Route path="/app/register" element={<Navigate to="/app/login" replace />} />
                     <Route path="/app/forgot-password" element={<ForgotPassword />} />
                     <Route path="/app/reset-password" element={<ResetPassword />} />
+                    <Route path="/app/invitacion" element={<AcceptInvitation />} />
 
                     {/* Protected app routes */}
                     <Route path="/app/*" element={

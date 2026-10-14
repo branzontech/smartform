@@ -97,7 +97,7 @@ const Home = () => {
 
   const handleDeleteForm = (id: string) => {
     if (forms.find((f) => f.id === id)?.isBase) {
-      uiToast({ title: "La historia clínica base no se puede eliminar", description: "Puedes agregarle campos desde Editar." });
+      uiToast({ title: "La historia clínica base no se puede eliminar", description: "Si la editas, tus cambios se guardan en una copia propia de tu empresa." });
       return;
     }
     setFormToDelete(id);
