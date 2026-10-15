@@ -12,7 +12,7 @@ import { colors, toneColor } from '@/theme';
 const capitalize = (s: string) => s.charAt(0).toLocaleUpperCase('es') + s.slice(1);
 
 export default function MiDia() {
-  const { me, signOut } = useAuth();
+  const { me, environment, signOut } = useAuth();
   const navigation = useNavigation();
   const [day, setDay] = useState(today());
   const query = useQuery({ queryKey: ['agenda', 'mi-dia', day], queryFn: () => agenda.fetchMyDay(day) });
@@ -42,7 +42,12 @@ export default function MiDia() {
       refreshControl={<RefreshControl refreshing={query.isRefetching} onRefresh={() => query.refetch()} tintColor={colors.primary} />}
       ListHeaderComponent={
         <View style={styles.header}>
-          {me?.empresa && <Text style={styles.company}>{me.empresa.nombre}</Text>}
+          {me?.empresa && (
+            <Text style={styles.company}>
+              {me.empresa.nombre}
+              {environment.id === 'desarrollo' ? ' · Desarrollo' : ''}
+            </Text>
+          )}
           <View style={styles.dayRow}>
             <Pressable accessibilityLabel="Día anterior" onPress={() => setDay(addDays(day, -1))} style={styles.navBtn}>
               <Text style={styles.navText}>‹</Text>

@@ -1,14 +1,15 @@
 import { useState } from 'react';
-import { KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useAuth } from '@/lib/auth';
+import { ENVIRONMENTS } from '@/lib/config';
 import { errorMessage } from '@/lib/api';
 import { Button } from '@/components/ui';
 import { colors, radius } from '@/theme';
 
 export default function Login() {
-  const { signIn } = useAuth();
+  const { signIn, environment, selectEnvironment } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
@@ -40,6 +41,27 @@ export default function Login() {
         <View style={styles.card}>
           <Text style={styles.title}>Bienvenido</Text>
           <Text style={styles.hint}>Entra con tu cuenta de Ker Hub.</Text>
+          {ENVIRONMENTS.length > 1 && (
+            <View style={styles.envs} accessibilityRole="radiogroup">
+              {ENVIRONMENTS.map((e) => {
+                const active = e.id === environment.id;
+                return (
+                  <Pressable
+                    key={e.id}
+                    accessibilityRole="radio"
+                    accessibilityState={{ selected: active }}
+                    onPress={() => {
+                      setError(null);
+                      void selectEnvironment(e.id);
+                    }}
+                    style={[styles.env, active && styles.envActive]}>
+                    <Text style={[styles.envLabel, active && { color: colors.primary }]}>{e.label}</Text>
+                    <Text style={styles.envHint}>{e.description}</Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          )}
           <TextInput
             style={styles.input}
             placeholder="Correo electrónico"
@@ -83,4 +105,9 @@ const styles = StyleSheet.create({
   hint: { fontSize: 14, color: colors.muted, marginBottom: 4 },
   input: { height: 50, borderRadius: radius.control, backgroundColor: colors.canvas, paddingHorizontal: 14, fontSize: 16, color: colors.ink },
   error: { color: colors.danger, fontSize: 13 },
+  envs: { flexDirection: 'row', gap: 8 },
+  env: { flex: 1, borderRadius: radius.control, backgroundColor: colors.canvas, padding: 12, gap: 2 },
+  envActive: { backgroundColor: colors.primarySoft },
+  envLabel: { fontSize: 14, fontWeight: '700', color: colors.ink },
+  envHint: { fontSize: 12, color: colors.muted },
 });

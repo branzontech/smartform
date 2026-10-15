@@ -1,6 +1,5 @@
 import { createAgendaApi, type Fetcher } from '@kerhub/core/agenda';
-import { API_URL } from './config';
-import { clearToken, readToken, saveToken } from './session';
+import { clearToken, currentEnvironment, readToken, saveToken } from './session';
 
 export class ApiError extends Error {
   constructor(
@@ -33,7 +32,7 @@ export const fetcher: Fetcher = async <T,>(path: string, init: RequestInit = {})
   const headers = new Headers(init.headers);
   if (init.body && !headers.has('Content-Type')) headers.set('Content-Type', 'application/json');
   if (token) headers.set('Authorization', `Bearer ${token}`);
-  const res = await fetch(`${API_URL}${path}`, { ...init, headers });
+  const res = await fetch(`${currentEnvironment().url}${path}`, { ...init, headers });
   const body = await parse(res);
   if (res.status === 401 && !path.startsWith('/api/auth/')) {
     await clearToken();
@@ -58,14 +57,22 @@ export const fetchMe = () => fetcher<Me>('/api/me');
 
 /** Entra con correo y contraseña; el servidor devuelve el token en la cabecera set-auth-token. */
 export async function signIn(email: string, password: string): Promise<void> {
-  const res = await fetch(`${API_URL}/api/auth/sign-in/email`, {
+  let res: Response;
+  try {
+    res = await fetch(`${currentEnvironment().url}/api/auth/sign-in/email`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ email: email.trim().toLowerCase(), password }),
   });
+  } catch {
+    throw new ApiError(0, `No hay conexión con ${currentEnvironment().label}. Revisa que el teléfono y el computador estén en la misma red.`);
+  }
   const token = res.headers.get('set-auth-token');
   if (!res.ok || !token) {
-    throw new ApiError(res.status, res.status === 401 ? 'Correo o contraseña incorrectos.' : 'No pudimos iniciar sesión. Intenta de nuevo.');
+    throw new ApiError(
+      res.status,
+      res.status === 401 ? `Correo o contraseña incorrectos en ${currentEnvironment().label}.` : 'No pudimos iniciar sesión. Intenta de nuevo.',
+    );
   }
   await saveToken(token);
 }
