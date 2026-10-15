@@ -8,7 +8,7 @@ import {
 
 /** Claves de React Query de la agenda de profesionales. */
 export const professionalKeys = {
-  list: ["agenda", "professionals"] as const,
+  list: ["agenda", "profesionales"] as const,
   detail: (id: string) => ["agenda", "professional", id] as const,
   appointments: (id: string, from: string, to: string) => ["agenda", "citas", { profesionalId: id, from, to }] as const,
 };

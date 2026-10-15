@@ -39,6 +39,7 @@ const AppointmentForm = () => {
       });
       navigate(`/app/citas/${id}`);
     } catch (error) {
+      void queryClient.invalidateQueries({ queryKey: ["agenda", "cupos"] });
       // Otra persona pudo tomar el cupo mientras tanto: el servidor lo dice y se elige otra hora.
       toast.error(error instanceof ApiError || error instanceof Error ? error.message : "No se pudo agendar la cita.");
     }

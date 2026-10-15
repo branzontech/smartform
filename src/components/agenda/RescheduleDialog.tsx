@@ -45,8 +45,9 @@ function RescheduleForm({ cita, onClose }: { cita: Cita; onClose: () => void }) 
   const duration = durationMin(cita);
 
   const slots = useQuery({
-    queryKey: ["agenda", "slots", cita.profesionalId, day, duration, cita.modalidad],
-    queryFn: () => fetchSlots({ profesionalId: cita.profesionalId, fecha: day, duracionMin: duration, modalidad: cita.modalidad }),
+    queryKey: ["agenda", "cupos", cita.profesionalId, day, duration, cita.modalidad, cita.id],
+    // La cita actual no cuenta como ocupada: se puede correr unos minutos sobre su propio horario.
+    queryFn: () => fetchSlots({ profesionalId: cita.profesionalId, fecha: day, duracionMin: duration, modalidad: cita.modalidad, excludeCitaId: cita.id }),
     enabled: isDay(day),
   });
 
@@ -128,8 +129,8 @@ function RescheduleForm({ cita, onClose }: { cita: Cita; onClose: () => void }) 
                   aria-checked={isSelected}
                   onClick={() => setSelected(slot.inicio)}
                   className={cn(
-                    "h-10 rounded-lg text-sm tabular-nums transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
-                    isSelected ? "bg-primary font-medium text-primary-foreground" : "bg-muted/60 text-foreground hover:bg-muted",
+                    "h-10 rounded-xl px-3 text-left text-sm tabular-nums transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
+                    isSelected ? "bg-primary/10 font-semibold ring-1 ring-primary/40" : "text-foreground hover:bg-muted",
                   )}
                 >
                   {slot.hora}

@@ -3,8 +3,10 @@ import { cn } from "@/lib/utils";
 import { MODALITY_LABEL, STATE_LABEL, localDay, localTime, type Cita, type CitaState } from "./agenda-api";
 import { tint } from "./agenda-ui";
 
-const GRID_START_HOUR = 6;
-const GRID_END_HOUR = 20;
+// Día completo: un horario nocturno o una cita de madrugada nunca queda fuera ni encima de otra.
+// La rejilla abre desplazada a DEFAULT_SCROLL_HOUR.
+const GRID_START_HOUR = 0;
+const GRID_END_HOUR = 24;
 const SLOT_MINUTES = 30;
 const SLOT_HEIGHT = 44;
 const PX_PER_MIN = SLOT_HEIGHT / SLOT_MINUTES;

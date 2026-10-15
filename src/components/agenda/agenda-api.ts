@@ -201,7 +201,7 @@ export const addUnavailability = (id: string, input: { inicio: string; fin: stri
   apiFetch<{ id: string }>(`/api/agenda/profesionales/${id}/bloqueos`, json("POST", input));
 export const removeUnavailability = (id: string) => apiFetch(`/api/agenda/bloqueos/${id}`, json("DELETE"));
 
-export const fetchSlots = (params: { profesionalId: string; fecha: string; duracionMin?: number; modalidad?: Modality | null }) =>
+export const fetchSlots = (params: { profesionalId: string; fecha: string; duracionMin?: number; modalidad?: Modality | null; excludeCitaId?: string | null }) =>
   apiFetch<{ fecha: string; duracionMin: number; sinHorario: boolean; slots: Slot[] }>(`/api/agenda/disponibilidad?${qs(params)}`);
 
 export const fetchCitas = (params: { desde: string; hasta: string; profesionalId?: string | null; pacienteId?: string | null }) =>

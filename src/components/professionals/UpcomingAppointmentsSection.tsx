@@ -1,3 +1,4 @@
+import { ACTIVE_STATES } from "@/components/agenda/agenda-api";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -22,10 +23,11 @@ const initialRange = () => {
 export function UpcomingAppointmentsSection({ professionalId }: { professionalId: string }) {
   const navigate = useNavigate();
   const [range] = useState(initialRange);
-  const { data: citas = [], isLoading, error } = useQuery({
+  const { data: allCitas = [], isLoading, error } = useQuery({
     queryKey: professionalKeys.appointments(professionalId, range.from, range.to),
     queryFn: () => fetchCitas({ desde: range.from, hasta: range.to, profesionalId: professionalId }),
   });
+  const citas = allCitas.filter((c) => ACTIVE_STATES.includes(c.estado));
   const open = (c: Cita) => navigate(`/app/citas/${c.id}`);
 
   const columns: SimpleColumn<Cita>[] = [
