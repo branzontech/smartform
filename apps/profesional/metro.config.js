@@ -1,0 +1,8 @@
+// Metro de la app: además de la app, vigila ../../packages (código compartido con Ker Hub web).
+const path = require('path');
+const { getDefaultConfig } = require('expo/metro-config');
+
+const config = getDefaultConfig(__dirname);
+config.watchFolders = [path.resolve(__dirname, '../../packages')];
+
+module.exports = config;

@@ -5,6 +5,8 @@
     "noUnusedLocals": false,
     "noUnusedParameters": false,
     "paths": {
+      "@kerhub/core/*": ["./packages/core/src/*"],
+      "@kerhub/core": ["./packages/core/src/index.ts"],
       "@/*": [
         "./src/*"
       ]

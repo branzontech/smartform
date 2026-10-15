@@ -43,6 +43,7 @@ export default defineConfig(({ mode }) => ({
   ].filter(Boolean),
   resolve: {
     alias: {
+      "@kerhub/core": path.resolve(__dirname, "./packages/core/src"),
       "@": path.resolve(__dirname, "./src"),
     },
   },
