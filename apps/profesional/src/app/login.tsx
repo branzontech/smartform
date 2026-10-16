@@ -22,7 +22,7 @@ export default function Login() {
     setError(null);
     try {
       await signIn(email, password);
-      router.replace('/mi-dia');
+      router.replace('/inicio');
     } catch (e) {
       setError(errorMessage(e));
     } finally {

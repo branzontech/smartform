@@ -1,5 +1,6 @@
 import { createAgendaApi, type Fetcher } from '@kerhub/core/agenda';
 import { createAttentionApi } from '@kerhub/core/forms';
+import { CONTENT_BUCKET, apiFileUrl, createContentApi } from '@kerhub/core/contenido';
 import { clearToken, currentEnvironment, readToken, saveToken } from './session';
 
 export class ApiError extends Error {
@@ -48,6 +49,21 @@ export const fetcher: Fetcher = async <T,>(path: string, init: RequestInit = {})
 
 export const agenda = createAgendaApi(fetcher);
 export const attention = createAttentionApi(fetcher);
+export const content = createContentApi(fetcher);
+
+/** Imagen de una publicación, servida por la API del ambiente activo. */
+export const contentImageUrl = (path: string) => apiFileUrl(currentEnvironment().url, CONTENT_BUCKET, path);
+
+/**
+ * Logo de la institución. La web lo guarda con la dirección de la API desde la que se subió;
+ * se toma solo la ruta del archivo para servirlo desde el ambiente activo.
+ */
+export function institutionLogoUrl(url: string | null | undefined): string | null {
+  if (!url) return null;
+  const at = url.indexOf('/api/files/');
+  if (at >= 0) return `${currentEnvironment().url}${url.slice(at)}`;
+  return url.startsWith('https://') ? url : null;
+}
 
 export interface Me {
   user: { id: string; email: string; name: string };

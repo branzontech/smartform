@@ -3,25 +3,25 @@ import { StyleSheet, Text, View } from 'react-native';
 import { colors } from '@/theme';
 
 /** Braulio, la mascota de Ker Hub, recortado sin fondo en cuatro poses. */
-const POSES = {
-  formato: require('../../assets/braulio/formato.png'),
-  maletin: require('../../assets/braulio/maletin.png'),
-  medicamento: require('../../assets/braulio/medicamento.png'),
-  historial: require('../../assets/braulio/historial.png'),
+export const BRAULIO_POSES = {
+  formato: require('../../assets/braulio/formato.webp'),
+  maletin: require('../../assets/braulio/maletin.webp'),
+  medicamento: require('../../assets/braulio/medicamento.webp'),
+  historial: require('../../assets/braulio/historial.webp'),
 } as const;
 
 /** Relación ancho / alto de cada recorte, para reservar el espacio exacto. */
 const RATIO: Record<BraulioPose, number> = { formato: 0.62, maletin: 0.62, medicamento: 0.65, historial: 0.86 };
 
-export type BraulioPose = keyof typeof POSES;
+export type BraulioPose = keyof typeof BRAULIO_POSES;
 
 export function Braulio({ pose, height }: { pose: BraulioPose; height: number }) {
   return (
     <Image
-      source={POSES[pose]}
+      source={BRAULIO_POSES[pose]}
       style={{ height, width: height * RATIO[pose] }}
       contentFit="contain"
-      transition={250}
+      cachePolicy="memory"
       accessibilityIgnoresInvertColors
       accessible={false}
     />

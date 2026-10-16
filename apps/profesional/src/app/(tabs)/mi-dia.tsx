@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
-import SegmentedControl from '@react-native-segmented-control/segmented-control';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQuery } from '@tanstack/react-query';
@@ -11,6 +10,7 @@ import { useAuth } from '@/lib/auth';
 import { BraulioEmpty } from '@/components/Braulio';
 import { CitaCard } from '@/components/CitaCard';
 import { ScreenTitle } from '@/components/ScreenTitle';
+import { SegmentedTabs } from '@/components/SegmentedTabs';
 import { MonthCalendar } from '@/components/agenda/MonthCalendar';
 import { PeriodNav } from '@/components/agenda/PeriodNav';
 import { PeriodSummary } from '@/components/agenda/PeriodSummary';
@@ -19,8 +19,11 @@ import { WeekStrip } from '@/components/agenda/WeekStrip';
 import { colors } from '@/theme';
 
 type Mode = 'dia' | 'semana' | 'mes';
-const MODES: Mode[] = ['dia', 'semana', 'mes'];
-const MODE_LABELS = ['Día', 'Semana', 'Mes'];
+const MODE_OPTIONS: { value: Mode; label: string }[] = [
+  { value: 'dia', label: 'Día' },
+  { value: 'semana', label: 'Semana' },
+  { value: 'mes', label: 'Mes' },
+];
 
 const capitalize = (s: string) => s.charAt(0).toLocaleUpperCase('es') + s.slice(1);
 
@@ -72,16 +75,7 @@ export default function MiDia() {
       refreshControl={<RefreshControl refreshing={active.isRefetching} onRefresh={() => active.refetch()} tintColor={colors.primary} />}>
       <ScreenTitle title="Mi día" subtitle={me?.empresa ? `${me.empresa.nombre}${environment.id === 'desarrollo' ? ' · Desarrollo' : ''}` : null} />
 
-      <SegmentedControl
-        values={MODE_LABELS}
-        selectedIndex={MODES.indexOf(mode)}
-        onChange={(e) => setMode(MODES[e.nativeEvent.selectedSegmentIndex])}
-        tintColor={colors.primary}
-        backgroundColor={colors.surface}
-        fontStyle={{ color: colors.ink, fontSize: 14 }}
-        activeFontStyle={{ color: '#ffffff', fontWeight: '600', fontSize: 14 }}
-        style={{ height: 36 }}
-      />
+      <SegmentedTabs options={MODE_OPTIONS} value={mode} onChange={setMode} />
 
       <PeriodNav label={label} hint={away ? 'Toca para volver a hoy' : undefined} onPrev={() => step(-1)} onNext={() => step(1)} onToday={() => setDay(now)} />
 

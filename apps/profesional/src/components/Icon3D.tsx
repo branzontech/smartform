@@ -4,7 +4,8 @@ import { Image } from 'expo-image';
  * Íconos 3D de Ker Hub. Son los mismos archivos de la web (public/iconos):
  * si allá cambia un ícono, la app lo toma sin copiar nada.
  */
-const ICONS = {
+export const ICONS_3D = {
+  inicio: require('../../../../public/iconos/inicio.webp'),
   citas: require('../../../../public/iconos/citas.webp'),
   atencion: require('../../../../public/iconos/atencion.webp'),
   'atencion-domiciliaria': require('../../../../public/iconos/atencion-domiciliaria.webp'),
@@ -19,10 +20,10 @@ const ICONS = {
   seguridad: require('../../../../public/iconos/seguridad.webp'),
 } as const;
 
-export type Icon3DName = keyof typeof ICONS;
+export type Icon3DName = keyof typeof ICONS_3D;
 
 export function Icon3D({ name, size = 40 }: { name: Icon3DName; size?: number }) {
-  return <Image source={ICONS[name]} style={{ width: size, height: size }} contentFit="contain" accessible={false} />;
+  return <Image source={ICONS_3D[name]} style={{ width: size, height: size }} contentFit="contain" cachePolicy="memory" accessible={false} />;
 }
 
 /** Ícono de cada modalidad de atención. */

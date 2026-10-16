@@ -5,6 +5,13 @@ import { colors } from '@/theme';
 export default function TabsLayout() {
   return (
     <NativeTabs tintColor={colors.primary}>
+      <NativeTabs.Trigger name="inicio">
+        <NativeTabs.Trigger.Icon
+          src={{ default: require('../../../assets/tabs/inicio-off.png'), selected: require('../../../assets/tabs/inicio.png') }}
+          renderingMode="original"
+        />
+        <NativeTabs.Trigger.Label>Inicio</NativeTabs.Trigger.Label>
+      </NativeTabs.Trigger>
       <NativeTabs.Trigger name="mi-dia">
         <NativeTabs.Trigger.Icon
           src={{ default: require('../../../assets/tabs/citas-off.png'), selected: require('../../../assets/tabs/citas.png') }}
