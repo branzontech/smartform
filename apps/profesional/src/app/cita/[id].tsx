@@ -1,9 +1,11 @@
-import { ActivityIndicator, Linking, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { useLocalSearchParams } from 'expo-router';
+import { ActivityIndicator, Linking, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { MODALITY_LABEL, STATE_LABEL, STATE_TONE, formatLongDay, localDay, localTime } from '@kerhub/core/agenda';
 import { agenda, errorMessage } from '@/lib/api';
+import { showsClinicalRecord } from '@kerhub/core/cita-actions';
 import { CitaActions } from '@/components/CitaActions';
+import { Icon3D, MODALITY_ICON } from '@/components/Icon3D';
 import { Button, Card } from '@/components/ui';
 import { colors, toneColor } from '@/theme';
 
@@ -38,8 +40,13 @@ export default function CitaDetail() {
   return (
     <ScrollView contentContainerStyle={styles.page}>
       <Card>
-        <Text style={[styles.state, { color: toneColor[STATE_TONE[c.estado]] }]}>{STATE_LABEL[c.estado]}</Text>
-        <Text style={styles.patient}>{c.paciente}</Text>
+        <View style={styles.headRow}>
+          <View style={{ flex: 1, gap: 2 }}>
+            <Text style={[styles.state, { color: toneColor[STATE_TONE[c.estado]] }]}>{STATE_LABEL[c.estado]}</Text>
+            <Text style={styles.patient}>{c.paciente}</Text>
+          </View>
+          <Icon3D name={MODALITY_ICON[c.modalidad] ?? 'citas'} size={56} />
+        </View>
         <Text style={styles.meta}>
           {c.tipoDocumento} {c.documento}
         </Text>
@@ -56,6 +63,19 @@ export default function CitaDetail() {
         {c.motivoCancelacion && <Text style={styles.body}>Motivo de cierre: {c.motivoCancelacion}</Text>}
         <CitaActions cita={c} />
       </Card>
+
+      {showsClinicalRecord(c.estado) && (
+        <Pressable onPress={() => router.push({ pathname: '/atencion/[id]', params: { id: c.id } })} accessibilityRole="button">
+          <Card style={styles.attention}>
+            <Icon3D name="formularios" size={48} />
+            <View style={{ flex: 1, gap: 2 }}>
+              <Text style={styles.attentionTitle}>{c.estado === 'atendida' ? 'Ver atención' : 'Diligenciar atención'}</Text>
+              <Text style={styles.meta}>Historia clínica de esta cita</Text>
+            </View>
+            <Text style={styles.chevron}>›</Text>
+          </Card>
+        </Pressable>
+      )}
 
       {(c.direccion || c.telefono) && (
         <Card>
@@ -98,4 +118,8 @@ const styles = StyleSheet.create({
   body: { fontSize: 15, color: colors.ink },
   label: { fontSize: 13, fontWeight: '600', color: colors.muted },
   event: { gap: 2, paddingVertical: 6, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.line },
+  headRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  attention: { flexDirection: 'row', alignItems: 'center', gap: 14 },
+  attentionTitle: { fontSize: 17, fontWeight: '700', color: colors.ink },
+  chevron: { fontSize: 26, color: colors.primary, marginTop: -3 },
 });

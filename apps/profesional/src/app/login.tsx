@@ -6,6 +6,7 @@ import { useAuth } from '@/lib/auth';
 import { ENVIRONMENTS } from '@/lib/config';
 import { errorMessage } from '@/lib/api';
 import { Button } from '@/components/ui';
+import { Braulio } from '@/components/Braulio';
 import { colors, radius } from '@/theme';
 
 export default function Login() {
@@ -33,6 +34,7 @@ export default function Login() {
     <SafeAreaView style={styles.safe}>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.wrap}>
         <View style={styles.brand}>
+          <Braulio pose="maletin" height={150} />
           <Text style={styles.logo}>
             Ker<Text style={{ color: colors.lime }}>Hub</Text>
           </Text>
@@ -96,7 +98,7 @@ export default function Login() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.primary },
-  wrap: { flex: 1, justifyContent: 'center', padding: 20, gap: 28 },
+  wrap: { flex: 1, justifyContent: 'center', padding: 20, gap: 20 },
   brand: { alignItems: 'center', gap: 2 },
   logo: { fontSize: 40, fontWeight: '800', color: '#fff', letterSpacing: -1 },
   subtitle: { color: 'rgba(255,255,255,0.8)', fontSize: 15 },

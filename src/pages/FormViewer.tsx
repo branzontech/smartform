@@ -18,6 +18,7 @@ import { z } from "zod";
 import { SectionedForm } from "@/components/forms/form-viewer/SectionedForm";
 import { hasPartialAnswer, isAnswerable, missingRequired } from "@/components/forms/form-viewer/answers";
 import { QuestionData } from '@/components/forms/question/types';
+import { processFormValues } from '@kerhub/core/forms/process';
 import { FormTitle } from '@/components/ui/form-title';
 import { BackButton } from '@/App';
 import { Check, Link as LinkIcon, Printer, AlertTriangle, CalendarIcon, ClipboardList, PanelRightClose, PanelRightOpen, GripVertical, MoreHorizontal, ArrowLeft, Save, Plus, Search, CheckCircle, Loader2, AlertCircle, Clock, XCircle, Circle, CalendarDays, Eye, Repeat } from 'lucide-react';
@@ -800,42 +801,6 @@ const FormViewer = () => {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, []);
-
-  const processFormValues = (qs: QuestionData[], fd: FormData, rawValues: any) => {
-    const processedValues = { ...rawValues };
-    qs.forEach(question => {
-      if (question.type === "vitals") {
-        const predefined = question.predefinedVitals;
-        if (predefined) {
-          const vitalsData: Record<string, any> = {};
-          Object.entries(predefined).forEach(([key, v]) => {
-            if (v.enabled) {
-              vitalsData[key] = fd[`${question.id}_${key}`] || "";
-            }
-          });
-          (question.customVitals || []).forEach(cv => {
-            vitalsData[`custom_${cv.id}`] = fd[`${question.id}_custom_${cv.id}`] || "";
-          });
-          processedValues[question.id] = vitalsData;
-        } else if (question.vitalType === "TA") {
-          processedValues[question.id] = { sys: fd[`${question.id}_sys`], dia: fd[`${question.id}_dia`] };
-        } else if (question.vitalType === "IMC") {
-          processedValues[question.id] = { weight: fd[`${question.id}_weight`], height: fd[`${question.id}_height`], bmi: fd[`${question.id}_bmi`] };
-        }
-      } else if (question.type === "clinical") {
-        processedValues[question.id] = { title: fd[`${question.id}_title`], detail: fd[`${question.id}_detail`] };
-      } else if (question.type === "multifield" && question.multifields) {
-        const multifieldValues: Record<string, string> = {};
-        question.multifields.forEach(field => {
-          multifieldValues[field.id] = fd[`${question.id}_${field.id}`] || '';
-        });
-        processedValues[question.id] = multifieldValues;
-      } else if (question.type === "scored_checkbox" || question.type === "score_total") {
-        processedValues[question.id] = fd[question.id] || { score: 0 };
-      }
-    });
-    return processedValues;
-  };
 
   // ── "Completar atención" handler ──
   const handleCompleteAttention = async () => {

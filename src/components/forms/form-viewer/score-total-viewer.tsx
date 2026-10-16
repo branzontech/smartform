@@ -1,6 +1,9 @@
 import React, { useMemo, useEffect } from "react";
+import { scoreSummary } from "@kerhub/core/forms/scoring";
 import { cn } from "@/lib/utils";
 import { QuestionData, ScoringRange } from "../question/types";
+
+export { maxScoreOf } from "@kerhub/core/forms/scoring";
 
 /** Color de texto por rango (claro y oscuro); el color va en el texto, nunca en puntos. */
 export const RANGE_TEXT: Record<string, string> = {
@@ -21,34 +24,12 @@ interface ScoreTotalViewerProps {
   allQuestions?: QuestionData[];
 }
 
-/** Puntaje máximo de una pregunta con puntaje: la mejor opción, o la suma si es de selección múltiple. */
-export function maxScoreOf(q: QuestionData | undefined): number {
-  if (!q) return 0;
-  const scores = (q.scoredItems ?? q.scoredOptions?.map((o) => ({ score: o.score })) ?? []).map((i) => i.score);
-  if (!scores.length) return 0;
-  const multiple = (q.selectionMode || q.scoredSelectionMode) === "multiple";
-  return multiple ? scores.filter((s) => s > 0).reduce((a, b) => a + b, 0) : Math.max(...scores);
-}
-
 export const ScoreTotalViewer: React.FC<ScoreTotalViewerProps> = ({ question, formData, onChange, allQuestions }) => {
   const sourceIds = question.sourceQuestionIds || [];
 
-  const totalScore = useMemo(() => {
-    return sourceIds.reduce((sum: number, qId: string) => sum + (formData[qId]?.score || 0), 0);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sourceIds.join(","), ...sourceIds.map((id: string) => JSON.stringify(formData[id]))]);
-
-  const answered = sourceIds.filter((id) => (formData[id]?.selectedOptions?.length ?? 0) > 0).length;
-  const complete = sourceIds.length > 0 && answered === sourceIds.length;
-  const maxScore = allQuestions ? sourceIds.reduce((sum, id) => sum + maxScoreOf(allQuestions.find((q) => q.id === id)), 0) : null;
-
+  const summary = useMemo(() => scoreSummary(question, formData, allQuestions), [question, formData, allQuestions]);
+  const { total: totalScore, answered, complete, maxScore, range: matchedRange, interpretation } = summary;
   const scoring = question.scoring;
-  const matchedRange: ScoringRange | null = useMemo(() => {
-    if (!scoring?.enabled || !scoring.ranges?.length) return null;
-    return scoring.ranges.find((r: ScoringRange) => totalScore >= r.min && totalScore <= r.max) || null;
-  }, [scoring, totalScore]);
-
-  const interpretation = matchedRange?.label || "";
 
   // Solo guarda cuando hay algo respondido: abrir el formato no debe marcarlo como modificado.
   useEffect(() => {

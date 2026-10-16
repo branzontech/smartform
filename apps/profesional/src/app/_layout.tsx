@@ -21,8 +21,9 @@ export default function RootLayout() {
           }}>
           <Stack.Screen name="index" options={{ headerShown: false }} />
           <Stack.Screen name="login" options={{ headerShown: false }} />
-          <Stack.Screen name="mi-dia" options={{ title: 'Mi día', headerBackVisible: false }} />
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           <Stack.Screen name="cita/[id]" options={{ title: 'Cita', headerBackTitle: 'Mi día' }} />
+          <Stack.Screen name="atencion/[id]" options={{ title: 'Atención', headerBackTitle: 'Cita' }} />
         </Stack>
       </AuthProvider>
     </QueryClientProvider>

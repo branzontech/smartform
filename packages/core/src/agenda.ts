@@ -217,6 +217,9 @@ export function createAgendaApi(fetcher: Fetcher) {
   fetcher<Cita[]>(`/api/agenda/citas?${qs(params)}`),
     fetchCita: (id: string) => fetcher<Cita & { eventos: CitaEvent[] }>(`/api/agenda/citas/${id}`),
     fetchMyDay: (fecha?: string) => fetcher<{ fecha: string; citas: Cita[] }>(`/api/agenda/mi-dia${fecha ? `?fecha=${fecha}` : ""}`),
+    /** Citas del profesional en sesión entre dos días incluidos (máx. 62 días). */
+    fetchMyAgenda: (desde: string, hasta: string) =>
+      fetcher<{ desde: string; hasta: string; citas: Cita[] }>(`/api/agenda/mi-agenda?${qs({ desde, hasta })}`),
     createCita: (input: NewCita) => fetcher<{ id: string }>("/api/agenda/citas", json("POST", input)),
     changeCitaState: (id: string, input: { estado: CitaState; motivo?: string | null; latitud?: number | null; longitud?: number | null }) =>
   fetcher(`/api/agenda/citas/${id}/estado`, json("POST", input)),

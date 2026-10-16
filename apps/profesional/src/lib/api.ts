@@ -1,4 +1,5 @@
 import { createAgendaApi, type Fetcher } from '@kerhub/core/agenda';
+import { createAttentionApi } from '@kerhub/core/forms';
 import { clearToken, currentEnvironment, readToken, saveToken } from './session';
 
 export class ApiError extends Error {
@@ -46,6 +47,7 @@ export const fetcher: Fetcher = async <T,>(path: string, init: RequestInit = {})
 };
 
 export const agenda = createAgendaApi(fetcher);
+export const attention = createAttentionApi(fetcher);
 
 export interface Me {
   user: { id: string; email: string; name: string };

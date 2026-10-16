@@ -4,7 +4,8 @@ import { FormControl, FormField, FormItem, FormMessage } from "@/components/ui/f
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { SignaturePad } from "@/components/ui/question-types";
-import { QuestionData, ScoredOption } from "../question/types";
+import { QuestionData } from "../question/types";
+import { multifieldTotal, scoredItemsOf, selectionModeOf, toggleScored } from "@kerhub/core/forms/scoring";
 import { Check, FileUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScoreTotalViewer } from "./score-total-viewer";
@@ -289,28 +290,8 @@ export const QuestionRenderer = ({ question, formData, onChange, allQuestions, o
 
     case "multifield": {
       const isCalc = question.isCalculated || false;
-      const calcType = question.calculationType || "sum";
       const numType = question.numberType || "decimal";
-
-      const computeTotal = () => {
-        const values = (question.multifields || []).map(f => {
-          const raw = formData[`${question.id}_${f.id}`];
-          return parseFloat(raw) || 0;
-        });
-        if (values.length === 0) return 0;
-        let result = values[0];
-        for (let i = 1; i < values.length; i++) {
-          switch (calcType) {
-            case "sum": result += values[i]; break;
-            case "subtract": result -= values[i]; break;
-            case "multiply": result *= values[i]; break;
-            case "divide": result = values[i] !== 0 ? result / values[i] : 0; break;
-          }
-        }
-        return numType === "integer" ? Math.round(result) : parseFloat(result.toFixed(4));
-      };
-
-      const totalValue = isCalc ? computeTotal() : null;
+      const totalValue = isCalc ? multifieldTotal(question, formData) : null;
 
       return (
         <Field>
@@ -421,26 +402,12 @@ export const QuestionRenderer = ({ question, formData, onChange, allQuestions, o
       );
 
     case "scored_checkbox": {
-      const items: ScoredOption[] = question.scoredItems ||
-        (question.scoredOptions?.map((o, i) => ({ id: `opt${i}`, text: o.label, score: o.score })) || []);
-      const mode = question.selectionMode || question.scoredSelectionMode || "single";
+      const items = scoredItemsOf(question);
+      const mode = selectionModeOf(question);
       const current = formData[question.id] || { selectedOptions: [], score: 0 };
       const selectedIds: string[] = current.selectedOptions || [];
 
-      const handleToggle = (optId: string) => {
-        let next: string[];
-        if (mode === "single") {
-          next = selectedIds.includes(optId) ? [] : [optId];
-        } else {
-          next = selectedIds.includes(optId)
-            ? selectedIds.filter((id: string) => id !== optId)
-            : [...selectedIds, optId];
-        }
-        const totalScore = items
-          .filter((it) => next.includes(it.id))
-          .reduce((sum, it) => sum + it.score, 0);
-        onChange(question.id, { selectedOptions: next, score: totalScore });
-      };
+      const handleToggle = (optId: string) => onChange(question.id, toggleScored(question, current, optId));
 
       return (
         <Field>

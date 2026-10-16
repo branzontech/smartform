@@ -2,24 +2,30 @@ import React, { useMemo, useCallback, useEffect } from "react";
 import { QuestionData, PredefinedVital, CustomVital } from "../question/types";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
-import { DEFAULT_PREDEFINED_VITALS, VITAL_ORDER } from "./vitals-config";
+import {
+  DEFAULT_PREDEFINED_VITALS,
+  VITAL_ORDER,
+  bloodPressureState as bpState,
+  bmiClassification,
+  calculateVitals,
+  vitalDecimals,
+  vitalRangeState,
+  type VitalState,
+} from "@kerhub/core/forms/vitals";
 
-// BMI classification (WHO)
-const BMI_RANGES = [
-  { max: 18.5, label: "Bajo peso", color: "text-blue-600" },
-  { max: 24.9, label: "Normal", color: "text-green-600" },
-  { max: 29.9, label: "Sobrepeso", color: "text-yellow-600" },
-  { max: 34.9, label: "Obesidad grado I", color: "text-orange-600" },
-  { max: 39.9, label: "Obesidad grado II", color: "text-red-600" },
-  { max: Infinity, label: "Obesidad grado III", color: "text-red-700" },
-];
+/** Color del texto de la clasificación del IMC (OMS); la regla vive en el core. */
+const BMI_TEXT: Record<string, string> = {
+  blue: "text-blue-600",
+  green: "text-green-600",
+  yellow: "text-yellow-600",
+  orange: "text-orange-600",
+  red: "text-red-600",
+  darkred: "text-red-700",
+};
 
 function getBmiClassification(bmi: number): { label: string; color: string } | null {
-  if (!bmi || bmi <= 0) return null;
-  for (const r of BMI_RANGES) {
-    if (bmi <= r.max) return r;
-  }
-  return null;
+  const r = bmiClassification(bmi);
+  return r ? { label: r.label, color: BMI_TEXT[r.color] } : null;
 }
 
 interface VitalsViewerProps {
@@ -28,31 +34,12 @@ interface VitalsViewerProps {
   onChange: (id: string, value: any) => void;
 }
 
-/** Rangos de referencia en adultos: el estado se muestra en texto, nunca en puntos. */
-const VITAL_RANGES: Record<string, { lo: number; hi: number }> = {
-  heart_rate: { lo: 60, hi: 100 },
-  respiratory_rate: { lo: 12, hi: 20 },
-  temperature: { lo: 36, hi: 37.5 },
-  oxygen_saturation: { lo: 94, hi: 100 },
-};
-
+/** Estado frente al rango de referencia (regla en el core): se muestra en texto, nunca en puntos. */
 const STATE_CLASS = { ok: "text-green-700 dark:text-green-400", warn: "text-orange-700 dark:text-orange-400", bad: "text-red-700 dark:text-red-400" };
 
-function rangeState(key: string, value: number): { label: string; cls: string } | null {
-  const r = VITAL_RANGES[key];
-  if (!r || !value) return null;
-  if (value < r.lo) return { label: "Baja", cls: STATE_CLASS.warn };
-  if (value > r.hi) return { label: "Alta", cls: STATE_CLASS.bad };
-  return { label: "Normal", cls: STATE_CLASS.ok };
-}
-
-function bloodPressureState(sys: number, dia: number): { label: string; cls: string } | null {
-  if (!sys || !dia) return null;
-  if (sys >= 140 || dia >= 90) return { label: "Elevada", cls: STATE_CLASS.bad };
-  if (sys >= 130 || dia >= 85) return { label: "Limítrofe", cls: STATE_CLASS.warn };
-  if (sys < 90 || dia < 60) return { label: "Baja", cls: STATE_CLASS.warn };
-  return { label: "Normal", cls: STATE_CLASS.ok };
-}
+const withClass = (s: VitalState | null) => (s ? { label: s.label, cls: STATE_CLASS[s.tone] } : null);
+const rangeState = (key: string, value: number) => withClass(vitalRangeState(key, value));
+const bloodPressureState = (sys: number, dia: number) => withClass(bpState(sys, dia));
 
 const Tile = ({ label, children, state, calculated }: { label: string; children: React.ReactNode; state?: { label: string; cls: string } | null; calculated?: boolean }) => (
   <div className={cn(
@@ -78,23 +65,10 @@ export const VitalsViewer: React.FC<VitalsViewerProps> = ({ question, formData, 
     return parseFloat(formData[`${qId}_${key}`]) || 0;
   }, [formData, qId]);
 
-  // Calculados. La talla se configura en metros, pero si llega en centímetros (> 3) se convierte.
-  const calculatedValues = useMemo(() => {
-    const vals: Record<string, number | null> = {};
-    const w = getVal("weight");
-    const rawH = getVal("height");
-    const h = rawH > 3 ? rawH / 100 : rawH;
-    if (predefinedVitals.bmi?.enabled && w > 0 && h > 0) vals.bmi = w / (h * h);
-    const sys = getVal("systolic_bp");
-    const dia = getVal("diastolic_bp");
-    if (predefinedVitals.mean_arterial_pressure?.enabled && sys > 0 && dia > 0) vals.mean_arterial_pressure = (sys + 2 * dia) / 3;
-    if (predefinedVitals.body_surface_area?.enabled && w > 0 && h > 0) {
-      vals.body_surface_area = 0.007184 * Math.pow(w, 0.425) * Math.pow(h * 100, 0.725);
-    }
-    return vals;
-  }, [getVal, predefinedVitals]);
+  // Calculados (IMC, TAM, superficie corporal): la fórmula vive en el core.
+  const calculatedValues = useMemo(() => calculateVitals(predefinedVitals, getVal), [getVal, predefinedVitals]);
 
-  const decimalsOf = (key: string) => (key === "bmi" ? 1 : key === "body_surface_area" ? 3 : 0);
+  const decimalsOf = vitalDecimals;
 
   // Los calculados se guardan con la respuesta (antes quedaban vacíos).
   useEffect(() => {

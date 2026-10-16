@@ -1,0 +1,33 @@
+import { Image } from 'expo-image';
+
+/**
+ * Íconos 3D de Ker Hub. Son los mismos archivos de la web (public/iconos):
+ * si allá cambia un ícono, la app lo toma sin copiar nada.
+ */
+const ICONS = {
+  citas: require('../../../../public/iconos/citas.webp'),
+  atencion: require('../../../../public/iconos/atencion.webp'),
+  'atencion-domiciliaria': require('../../../../public/iconos/atencion-domiciliaria.webp'),
+  sedes: require('../../../../public/iconos/sedes.webp'),
+  telemedicina: require('../../../../public/iconos/telemedicina.webp'),
+  'historia-clinica': require('../../../../public/iconos/historia-clinica.webp'),
+  formularios: require('../../../../public/iconos/formularios.webp'),
+  pacientes: require('../../../../public/iconos/pacientes.webp'),
+  medicos: require('../../../../public/iconos/medicos.webp'),
+  zonas: require('../../../../public/iconos/zonas.webp'),
+  notificaciones: require('../../../../public/iconos/notificaciones.webp'),
+  seguridad: require('../../../../public/iconos/seguridad.webp'),
+} as const;
+
+export type Icon3DName = keyof typeof ICONS;
+
+export function Icon3D({ name, size = 40 }: { name: Icon3DName; size?: number }) {
+  return <Image source={ICONS[name]} style={{ width: size, height: size }} contentFit="contain" accessible={false} />;
+}
+
+/** Ícono de cada modalidad de atención. */
+export const MODALITY_ICON: Record<string, Icon3DName> = {
+  domicilio: 'atencion-domiciliaria',
+  sede: 'sedes',
+  telemedicina: 'telemedicina',
+};

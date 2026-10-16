@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Alert, Modal, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { router } from 'expo-router';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { ACTION_LABEL, LOCATION_STATES, REASON_REQUIRED, SUCCESS_LABEL, primaryNext, secondaryNext } from '@kerhub/core/cita-actions';
 import type { Cita, CitaState } from '@kerhub/core/agenda';
@@ -26,7 +27,9 @@ export function CitaActions({ cita, compact = false }: { cita: Pick<Cita, 'id' |
       void queryClient.invalidateQueries({ queryKey: ['agenda'] });
       setReasonFor(null);
       setReason('');
-      Alert.alert(SUCCESS_LABEL[estado] ?? 'Listo');
+      // Al iniciar la atención se abre el formato, como en la web.
+      if (estado === 'en_atencion') router.push({ pathname: '/atencion/[id]', params: { id: cita.id } });
+      else Alert.alert(SUCCESS_LABEL[estado] ?? 'Listo');
     },
     onError: (e) => Alert.alert('No se pudo', errorMessage(e)),
   });
