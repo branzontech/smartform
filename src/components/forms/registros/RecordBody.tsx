@@ -6,6 +6,7 @@ import { vitalReadings, type VitalReading } from "../form-viewer/vitals-config";
 import { storedAnswer } from "../form-viewer/stored-answer";
 import { RANGE_TEXT } from "../form-viewer/score-total-viewer";
 import type { ScoreSummary } from "./types";
+import { ClampText, LONG_TEXT_CHARS } from "./ClampText";
 
 type Data = Record<string, unknown>;
 
@@ -130,14 +131,59 @@ export function ScoreResult({ score, className }: { score: ScoreSummary; classNa
   );
 }
 
+interface AnsweredSection {
+  key: string;
+  title?: string | null;
+  answers: { q: QuestionData; node: ReactNode }[];
+}
+
+/** Variante apilada: secciones en minúscula de oración, título encima y textos largos recortados. */
+function StackedBody({ sections, data, score }: { sections: AnsweredSection[]; data: Data; score: ScoreSummary | null }) {
+  return (
+    <div className="grid gap-5">
+      {score && <ScoreResult score={score} />}
+      {sections.map((g) => (
+        <section key={g.key} aria-label={g.title ?? "Datos"} className="grid gap-3">
+          {g.title && <h5 className="text-[13px] font-semibold text-primary">{g.title}</h5>}
+          <dl className="grid gap-3">
+            {g.answers.map(({ q, node }) => {
+              const raw = data[q.id];
+              const long = typeof raw === "string" && raw.length > LONG_TEXT_CHARS && !raw.startsWith("data:");
+              return (
+                <div key={q.id} className="grid gap-0.5">
+                  <dt className="text-[12.5px] text-muted-foreground">{q.title}</dt>
+                  <dd className="min-w-0 max-w-3xl text-[15px] leading-relaxed text-foreground">{long ? <ClampText text={raw} /> : node}</dd>
+                </div>
+              );
+            })}
+          </dl>
+        </section>
+      ))}
+      {sections.length === 0 && !score && <p className="text-sm text-muted-foreground">Este registro no tiene respuestas.</p>}
+    </div>
+  );
+}
+
 /**
  * Contenido de un registro guardado: secciones con solo lo diligenciado,
  * signos vitales en baldosas, diagnósticos con su código y escalas con su puntaje.
  */
-export function RecordBody({ questions, data, score }: { questions: QuestionData[]; data: Data; score: ScoreSummary | null }) {
+export function RecordBody({
+  questions,
+  data,
+  score,
+  layout = "table",
+}: {
+  questions: QuestionData[];
+  data: Data;
+  score: ScoreSummary | null;
+  /** «stacked»: título encima de la respuesta y textos largos recortados (ficha del paciente). */
+  layout?: "table" | "stacked";
+}) {
   const sections = groupBySection(questions)
     .map((g) => ({ ...g, answers: g.questions.map((q) => ({ q, node: answerOf(q, data) })).filter((a) => a.node !== null) }))
     .filter((g) => g.answers.length > 0);
+  if (layout === "stacked") return <StackedBody sections={sections} data={data} score={score} />;
   const answerable = questions.filter((q) => !["section", "medication", "score_total", "calculation"].includes(q.type)).length;
   // Los cálculos no se diligencian: no cuentan ni como pendientes ni como respondidos.
   const answered = sections.reduce((n, g) => n + g.answers.filter((a) => a.q.type !== "calculation").length, 0);

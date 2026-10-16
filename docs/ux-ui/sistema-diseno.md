@@ -115,3 +115,21 @@ diseño por formato. Prototipo de referencia: artefacto «Ker Hub · Diligenciar
   IMC y TAM calculados en baldosas propias.
 - **Acciones:** barra flotante inferior en píldora con el anillo de avance, «Guardar» y
   «Completar atención» (deshabilitado hasta completar los obligatorios).
+
+## 8. Ficha de un registro principal (paciente y similares) — aprobado el 2026-10-16
+
+Tomado de Epic (Storyboard), Elation (perfil clínico), athenaOne, HubSpot y Attio. Prototipo de referencia:
+artefacto «Ker Hub · Ficha del paciente». Implementación: `src/pages/patients/PatientDetail.tsx` y
+`src/components/patients/chart/`.
+
+- **La página no se desplaza**: cada columna tiene su propio scroll (`h-full overflow-hidden` dentro del layout).
+- **Nada de encabezado gigante**: una línea con «← Volver», acciones fantasma y una sola primaria en lima.
+- **Panel izquierdo fijo de 300 px** con lo esencial siempre a la vista (identificación, alertas en rojo,
+  diagnósticos recientes, últimos signos con su estado en texto, próxima cita). Se pliega a 64 px; plegado,
+  el nombre y el documento pasan a la línea superior. Lo demás va en una hoja lateral «Ficha completa y edición».
+- **A la derecha, pestañas de carpeta** (`FolderTabs`) sobre una tarjeta con dos columnas: la línea de tiempo
+  (340 px, agrupada por mes, fechas en baldosa, búsqueda desplegable y Filtrar en panel anclado al botón) y el
+  detalle de lo elegido.
+- **Detalle**: encabezado con fecha, profesional, servicio y estado; índice horizontal para saltar a cada
+  formato y a las órdenes; cada formato con su estructura (secciones en minúscula de oración, título encima de
+  la respuesta, signos en baldosas) y textos largos recortados a 3 líneas con «Ver todo».

@@ -1,144 +1,155 @@
+import { useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { BarTabs } from "@/components/kit/table";
-import { db } from "@/integrations/data/client";
-import { fetchPatientCitas } from "@/components/agenda/agenda-api";
+import { FolderTabs, type FolderTab } from "@/components/kit/tabs/FolderTabs";
+import { usePersistentState } from "@/components/kit/table/usePersistentState";
 import { errorMessage } from "@/components/agenda/agenda-ui";
-import { PatientSummary, type AdmissionSummaryRow } from "@/components/patients/PatientSummary";
-import type { EditablePatientRow } from "@/components/patients/PatientEditForm";
-import { PatientAttentions } from "@/components/patients/PatientAttentions";
-import { RecordsHistory } from "@/components/forms/registros/RecordsHistory";
-import { useRecordsHistory } from "@/components/forms/registros/useRecordsHistory";
+import { printRecords } from "@/components/forms/registros/print";
+import { PatientRail, ageOf, fullName } from "@/components/patients/chart/PatientRail";
+import { PatientProfileSheet } from "@/components/patients/chart/PatientProfileSheet";
+import { ChartList } from "@/components/patients/chart/ChartList";
+import { ChartDetail } from "@/components/patients/chart/ChartDetail";
+import { usePatientChart } from "@/components/patients/chart/usePatientChart";
+import { CHART_VIEWS, type ChartView } from "@/components/patients/chart/chart-model";
+import { cn } from "@/lib/utils";
 
-type Tab = "atenciones" | "registros";
-
-const patientKey = (id: string) => ["patient", id] as const;
-
-async function fetchPatient(id: string): Promise<EditablePatientRow | null> {
-  const { data, error } = await db.from("pacientes").select("*").eq("id", id).maybeSingle();
-  if (error) throw error;
-  return (data ?? null) as EditablePatientRow | null;
-}
-
-async function fetchAdmissions(id: string): Promise<AdmissionSummaryRow[]> {
-  const { data, error } = await db
-    .from("admisiones")
-    .select("id, estado, fecha_inicio, motivo, diagnostico_principal")
-    .eq("paciente_id", id)
-    .order("fecha_inicio", { ascending: false });
-  if (error) throw error;
-  return (data ?? []) as AdmissionSummaryRow[];
-}
+const TABS: FolderTab<ChartView>[] = [
+  { id: "atenciones", title: "Atenciones", pinned: true },
+  { id: "registros", title: "Registros", pinned: true },
+  { id: "ordenes", title: "Órdenes", pinned: true },
+];
+const isBool = (v: unknown): v is boolean => typeof v === "boolean";
+const card = "rounded-card bg-card shadow-card dark:border dark:border-border dark:shadow-none";
+/** Estados en que una cita ya tiene algo que leer: se abre primero la más reciente así. */
+const WITH_RECORDS = new Set(["en_atencion", "atendida"]);
 
 function BackLink() {
   return (
-    <Link to="/app/pacientes" className="inline-flex items-center gap-1.5 rounded-lg text-[13px] text-muted-foreground transition-colors hover:text-foreground">
+    <Link to="/app/pacientes" className="inline-flex h-8 items-center gap-1.5 rounded-lg pr-2 text-[13px] text-muted-foreground transition-colors hover:text-foreground">
       <ArrowLeft className="h-4 w-4" aria-hidden />
       Pacientes
     </Link>
   );
 }
 
-/** Pestaña pedida en la URL (los enlaces viejos usan ?tab=consultations). */
-const tabOf = (value: string | null): Tab => (value === "registros" ? "registros" : "atenciones");
-
 /**
- * Ficha del paciente con datos reales: quién es (con edición), sus atenciones
- * (cada cita con los formatos diligenciados y las órdenes, lo mismo que se hace
- * desde la app) y el historial completo de registros clínicos.
+ * Ficha del paciente (convención aprobada el 2026-10-16, tomada de Epic, Elation,
+ * athenaOne, HubSpot y Attio): la página no se desplaza; a la izquierda lo
+ * esencial del paciente, plegable; a la derecha pestañas de carpeta con la línea
+ * de tiempo (atenciones, registros u órdenes) y el detalle de lo elegido.
  */
 export default function PatientDetail() {
   const { id = "" } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
   const [params, setParams] = useSearchParams();
-  const tab = tabOf(params.get("tab"));
+  const chart = usePatientChart(id);
+  const [collapsed, setCollapsed] = usePersistentState<boolean>("patient.chart.railCollapsed", false, isBool);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [showDetail, setShowDetail] = useState(!!params.get("cita"));
+  const [picked, setPicked] = useState<Partial<Record<ChartView, string>>>(() => ({ atenciones: params.get("cita") ?? undefined }));
 
-  const patientQuery = useQuery({ queryKey: patientKey(id), queryFn: () => fetchPatient(id), enabled: !!id });
-  const admissionsQuery = useQuery({ queryKey: ["patient", id, "admisiones"], queryFn: () => fetchAdmissions(id), enabled: !!id });
-  const citasQuery = useQuery({ queryKey: ["agenda", "paciente", id], queryFn: () => fetchPatientCitas(id), enabled: !!id });
-  const { records, isLoading: recordsLoading } = useRecordsHistory(id);
+  const tab = params.get("tab");
+  const view: ChartView = CHART_VIEWS.includes(tab as ChartView) ? (tab as ChartView) : "atenciones";
+  const setView = (next: ChartView) => {
+    setShowDetail(false);
+    setParams((prev) => { const p = new URLSearchParams(prev); p.set("tab", next); p.delete("cita"); return p; }, { replace: true });
+  };
 
-  const setTab = (next: Tab) =>
-    setParams(
-      (prev) => {
-        const p = new URLSearchParams(prev);
-        p.set("tab", next);
-        p.delete("cita");
-        return p;
-      },
-      { replace: true },
-    );
-
-  if (patientQuery.isLoading) {
+  const patient = chart.patientQuery.data;
+  if (chart.patientQuery.isLoading) {
     return (
-      <div className="mx-auto max-w-7xl space-y-5 py-6" aria-busy="true">
-        <BackLink />
-        <Skeleton className="h-44 rounded-card" />
-        <Skeleton className="h-[480px] rounded-card" />
+      <div className="flex h-full gap-3.5 overflow-hidden py-4" aria-busy="true">
+        <Skeleton className="w-[300px] rounded-card" />
+        <Skeleton className="flex-1 rounded-card" />
       </div>
     );
   }
-
-  const patient = patientQuery.data;
-  if (patientQuery.isError || !patient) {
+  if (chart.patientQuery.isError || !patient) {
     return (
-      <div className="mx-auto max-w-7xl space-y-4 py-6">
+      <div className="mx-auto max-w-3xl space-y-4 py-6">
         <BackLink />
-        <div className="rounded-card bg-card px-6 py-12 text-center shadow-card">
-          <h1 className="text-lg font-semibold text-foreground">{patientQuery.isError ? "No se pudo cargar el paciente" : "Paciente no encontrado"}</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {patientQuery.isError ? errorMessage(patientQuery.error) : "No existe o no pertenece a tu institución."}
-          </p>
+        <div className={cn(card, "px-6 py-12 text-center")}>
+          <h1 className="text-lg font-semibold text-foreground">{chart.patientQuery.isError ? "No se pudo cargar el paciente" : "Paciente no encontrado"}</h1>
+          <p className="mt-1 text-sm text-muted-foreground">{chart.patientQuery.isError ? errorMessage(chart.patientQuery.error) : "No existe o no pertenece a tu institución."}</p>
         </div>
       </div>
     );
   }
 
-  const citas = citasQuery.data ?? [];
+  const defaults: Record<ChartView, string | undefined> = {
+    atenciones: (chart.citas.find((c) => WITH_RECORDS.has(c.estado)) ?? chart.citas[0])?.id,
+    registros: chart.records[0]?.id,
+    ordenes: chart.orders[0]?.id,
+  };
+  const selectedId = picked[view] ?? defaults[view] ?? null;
+  const age = ageOf(patient.fecha_nacimiento);
+  const activeRecords = chart.records.filter((r) => r.state === "active");
 
   return (
-    <div className="mx-auto max-w-7xl space-y-5 py-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <BackLink />
-        <Button size="sm" className="rounded-lg" onClick={() => navigate(`/app/pacientes/nueva-consulta?patientId=${patient.id}`)}>
-          Nueva atención
-        </Button>
-      </div>
-
-      <PatientSummary
-        patient={patient}
-        admissions={admissionsQuery.data ?? []}
-        onUpdated={(updated) => queryClient.setQueryData<EditablePatientRow | null>(patientKey(id), updated)}
-      />
-
-      <div className="space-y-3">
-        <BarTabs
-          label="Historia del paciente"
-          tabs={[
-            { id: "atenciones", title: "Atenciones", count: citasQuery.isLoading ? undefined : citas.length },
-            { id: "registros", title: "Registros clínicos", count: recordsLoading ? undefined : records.length },
-          ]}
-          active={tab}
-          onChange={setTab}
-        />
-        <div className="overflow-hidden rounded-card bg-card shadow-card dark:border dark:border-border dark:shadow-none md:h-[calc(100vh-180px)] md:min-h-[520px]">
-          {tab === "registros" ? (
-            <RecordsHistory patientId={patient.id} />
-          ) : citasQuery.isLoading ? (
-            <div className="grid gap-2 p-4" aria-busy="true">
-              {[0, 1, 2].map((i) => <Skeleton key={i} className="h-16 rounded-xl" />)}
-            </div>
-          ) : citasQuery.isError ? (
-            <p className="px-6 py-16 text-center text-sm text-destructive">No se pudieron cargar las atenciones: {errorMessage(citasQuery.error)}</p>
-          ) : (
-            <PatientAttentions citas={citas} records={records} recordsLoading={recordsLoading} initialCitaId={params.get("cita")} />
+    <div className="flex h-full flex-col gap-3 overflow-y-auto pb-5 pt-3 md:overflow-hidden">
+      <header className="flex shrink-0 flex-wrap items-center justify-between gap-3">
+        <div className="flex min-w-0 items-center gap-3">
+          <BackLink />
+          {collapsed && (
+            <span className="truncate text-sm font-semibold text-foreground animate-in fade-in">
+              {fullName(patient)}
+              <span className="font-normal text-muted-foreground">{age !== null ? ` · ${age} años` : ""} · {patient.tipo_documento} {patient.numero_documento}</span>
+            </span>
           )}
         </div>
+        <div className="flex items-center gap-1">
+          <Button variant="ghost" size="sm" disabled={activeRecords.length === 0} onClick={() => void printRecords(activeRecords, { patientId: patient.id })} className="h-8 gap-1.5 rounded-lg px-2.5 text-[13px] text-muted-foreground hover:text-foreground">
+            <Printer className="h-4 w-4" />Imprimir historia
+          </Button>
+          <Button size="sm" onClick={() => navigate(`/app/pacientes/nueva-consulta?patientId=${patient.id}`)} className="ml-1 h-[34px] rounded-[11px] bg-highlight px-3.5 font-semibold text-highlight-foreground hover:bg-highlight/90 active:scale-[.97]">
+            Nueva atención
+          </Button>
+        </div>
+      </header>
+
+      <div className="flex flex-col gap-3.5 md:min-h-0 md:flex-1 md:flex-row">
+        <aside aria-label="Paciente" className={cn(card, "shrink-0 overflow-hidden transition-[width] duration-300 ease-[cubic-bezier(.32,.72,0,1)]", collapsed ? "md:w-16" : "md:w-[300px]")}>
+          <PatientRail patient={patient} snapshot={chart.snapshot} next={chart.next} collapsed={collapsed} onToggle={() => setCollapsed(!collapsed)} onOpenProfile={() => setProfileOpen(true)} />
+        </aside>
+
+        <section aria-label="Historia del paciente" className="flex min-w-0 flex-col md:min-h-0 md:flex-1">
+          <div className="mb-3 shrink-0">
+            <FolderTabs id="patient.chart.tabs" label="Historia del paciente" tabs={TABS} active={view} onChange={setView} initialVisible={CHART_VIEWS} />
+          </div>
+          <div className={cn(card, "grid h-[72vh] overflow-hidden md:h-auto md:min-h-0 md:flex-1 md:grid-cols-[340px_minmax(0,1fr)]")}>
+            <div className={cn("min-h-0 md:border-r md:border-border", showDetail && "hidden md:block")}>
+              <ChartList
+                view={view}
+                citas={chart.citas}
+                records={chart.records}
+                orders={chart.orders}
+                summaryOf={chart.summaryOf}
+                selectedId={selectedId}
+                onSelect={(sel) => { setPicked((p) => ({ ...p, [view]: sel })); setShowDetail(true); }}
+              />
+            </div>
+            <div className={cn("min-h-0 min-w-0", !showDetail && "hidden md:block")}>
+              <ChartDetail
+                view={view}
+                patientId={patient.id}
+                selectedId={selectedId}
+                citas={chart.citas}
+                records={chart.records}
+                orders={chart.orders}
+                provenanceByRecord={chart.provenanceByRecord}
+                recordsLoading={chart.recordsLoading}
+                recordsOf={chart.recordsOf}
+                onRecordsChanged={chart.refreshRecords}
+                onBack={() => setShowDetail(false)}
+              />
+            </div>
+          </div>
+        </section>
       </div>
+
+      <PatientProfileSheet patient={patient} open={profileOpen} onOpenChange={setProfileOpen} onUpdated={chart.setPatient} />
     </div>
   );
 }

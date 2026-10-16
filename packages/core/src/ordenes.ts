@@ -98,6 +98,8 @@ export interface Order {
   propia: boolean;
   especialidad: string | null;
   fecha: string;
+  /** Atención a la que pertenece (null en órdenes sueltas antiguas). */
+  admisionId: string | null;
 }
 
 export interface CatalogProcedure {
@@ -130,6 +132,8 @@ const send = (method: string, body?: unknown): RequestInit => ({ method, body: b
 export function createOrdersApi(fetcher: Fetcher) {
   return {
     fetchAdmissionOrders: (admisionId: string) => fetcher<Order[]>(`/api/ordenes/admisiones/${admisionId}`),
+    /** Órdenes del paciente en todas sus atenciones, de la más reciente a la más antigua (las últimas 300). */
+    fetchPatientOrders: (pacienteId: string) => fetcher<Order[]>(`/api/ordenes/pacientes/${pacienteId}`),
     searchProcedures: (tipo: "laboratorio" | "imagenologia" | "procedimiento", q: string) =>
       fetcher<CatalogProcedure[]>(`/api/ordenes/catalogo/procedimientos?tipo=${tipo}&q=${encodeURIComponent(q)}`),
     searchMedications: (q: string) => fetcher<CatalogMedication[]>(`/api/ordenes/catalogo/medicamentos?q=${encodeURIComponent(q)}`),

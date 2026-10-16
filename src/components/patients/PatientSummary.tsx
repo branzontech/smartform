@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils";
 export const PATIENT_CUSTOM_FIELDS_KEY = ["config", "patient-custom-fields"] as const;
 
 /** Configuración de public.configuracion_campos_paciente, en orden. */
-async function fetchPatientCustomFields(): Promise<DynamicFieldConfig[]> {
+export async function fetchPatientCustomFields(): Promise<DynamicFieldConfig[]> {
   const { data, error } = await db
     .from("configuracion_campos_paciente")
     .select("*")
