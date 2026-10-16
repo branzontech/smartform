@@ -1,4 +1,4 @@
-# Convenciones de UX/UI de Ker Hub
+# Convenciones de UX/UI de Doctor Ker
 
 Reglas para toda pantalla nueva o modificada. Combinan las convenciones del equipo (mandan siempre) con
 las reglas de la skill **UI/UX Pro Max** (`.claude/skills/ui-ux-pro-max/`, 119 reglas), filtradas a lo que
@@ -10,7 +10,7 @@ calendario y tokens visuales (lienzo, radios, sombras, lima de acción): **`sist
 ## 1. Marca (no se negocia)
 
 - Paleta: morado `#8B35E9` (`--primary`), violeta `#4C1D95`, lavanda `#E9DDFB`, lima `#A2F603` solo como
-  acento. La skill propone cian y neumorfismo para salud: **no aplica**, Ker Hub ya tiene marca.
+  acento. La skill propone cian y neumorfismo para salud: **no aplica**, Doctor Ker ya tiene marca.
 - Colores siempre por token (`bg-primary`, `text-muted-foreground`…). **Cero hex en componentes.**
 - Logos en `public/kerhub-logo-color.png` (fondos oscuros o morados) y `kerhub-logo-blanco.png`.
 - Íconos 3D (`ModuleIcon`) **solo para módulos principales** (tarjetas de Inicio, lanzador). Todo lo

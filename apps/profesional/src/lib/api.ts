@@ -29,7 +29,7 @@ async function parse(res: Response): Promise<unknown> {
   }
 }
 
-/** Petición a Ker Hub con el token del profesional (cabecera Authorization: Bearer). */
+/** Petición a Doctor Ker con el token del profesional (cabecera Authorization: Bearer). */
 export const fetcher: Fetcher = async <T,>(path: string, init: RequestInit = {}): Promise<T> => {
   const token = await readToken();
   const headers = new Headers(init.headers);

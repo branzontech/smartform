@@ -56,7 +56,7 @@ const PROCEDURE_TYPE_LABELS: Record<string, string> = {
   otro: "Otro",
 };
 
-// ========== TABLAS (convención Ker Hub) ==========
+// ========== TABLAS (convención Doctor Ker) ==========
 type ServiceWithCount = ServicioClinico & { procedimientos_count?: number };
 
 const rightAligned = "text-right tabular-nums";
@@ -436,7 +436,7 @@ function CatalogoProcedimientosTab() {
             ]}
           />
         ) : undefined}
-        empty={isPlatformAdmin ? "Aún no hay procedimientos en el catálogo. Crea uno con «Nuevo procedimiento»." : "Aún no hay procedimientos en el catálogo. Lo administra el equipo de Ker Hub."}
+        empty={isPlatformAdmin ? "Aún no hay procedimientos en el catálogo. Crea uno con «Nuevo procedimiento»." : "Aún no hay procedimientos en el catálogo. Lo administra el equipo de Doctor Ker."}
       />
 
       {/* Dialog crear/editar procedimiento */}

@@ -129,7 +129,7 @@ export default function AcceptInvitation() {
 
   const title = preview.tipo === "empresa" ? `Activa ${preview.empresa}` : `Únete a ${preview.empresa}`;
   const description =
-    preview.tipo === "empresa" ? "Serás el administrador de la empresa en Ker Hub." : `Te invitan como ${preview.rol.toLowerCase()}.`;
+    preview.tipo === "empresa" ? "Serás el administrador de la empresa en Doctor Ker." : `Te invitan como ${preview.rol.toLowerCase()}.`;
   const sameUser = !!user && user.email.toLowerCase() === preview.email;
   const errorLine = error ? <p role="alert" className="text-[13px] text-destructive">{error}</p> : null;
 
@@ -225,7 +225,7 @@ export default function AcceptInvitation() {
     return (
       <AuthLayout title={title} description={description}>
         <form onSubmit={signInAndAccept} className="space-y-5" noValidate>
-          <p className="text-[14px] text-muted-foreground">Ya tienes cuenta en Ker Hub. Entra para aceptar.</p>
+          <p className="text-[14px] text-muted-foreground">Ya tienes cuenta en Doctor Ker. Entra para aceptar.</p>
           {emailField}
           {passwordField("password", "Contraseña", password, setPassword, "current-password")}
           {errorLine}

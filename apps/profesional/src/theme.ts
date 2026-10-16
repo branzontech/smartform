@@ -1,6 +1,6 @@
 import { BRAND } from '@kerhub/core/brand';
 
-/** Estilo de Ker Hub en la app: lienzo gris, tarjetas blancas, acento de marca. */
+/** Estilo de Doctor Ker en la app: lienzo gris, tarjetas blancas, acento de marca. */
 export const colors = {
   canvas: BRAND.canvas,
   surface: BRAND.surface,

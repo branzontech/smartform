@@ -1,5 +1,5 @@
 /**
- * Formatos de la atención para Ker Hub web: los de cada admisión y la
+ * Formatos de la atención para Doctor Ker web: los de cada admisión y la
  * configuración por tipo de profesional. La lógica vive en @kerhub/core
  * (compartida con la app del profesional); aquí solo se conecta a apiFetch.
  */

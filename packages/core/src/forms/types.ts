@@ -1,6 +1,6 @@
 /**
- * Formatos clínicos de Ker Hub: la forma de un formato y de sus respuestas.
- * Lo comparten Ker Hub web y la app del profesional.
+ * Formatos clínicos de Doctor Ker: la forma de un formato y de sus respuestas.
+ * Lo comparten Doctor Ker web y la app del profesional.
  */
 
 export interface Diagnosis {

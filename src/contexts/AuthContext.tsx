@@ -5,7 +5,7 @@ import { apiFetch, ApiError, SESSION_EXPIRED } from "@/integrations/api/client";
 import { getAuthClient } from "@/integrations/auth/client";
 
 /**
- * Sesión de Ker Hub sobre la API propia (Better Auth + /api/me). Conserva la
+ * Sesión de Doctor Ker sobre la API propia (Better Auth + /api/me). Conserva la
  * interfaz que usaba el resto de la app con Supabase: user, profile, roles,
  * signIn, signOut, resetPassword, updatePassword, hasRole.
  */

@@ -17,7 +17,7 @@ interface RowActionsProps {
   onView?: () => void;
   /** Acciones de uso ocasional: van dentro de «Más acciones». */
   menu?: RowAction[];
-  /** Eliminar SIEMPRE va al final de «Más acciones» y pide confirmación (convención Ker Hub). */
+  /** Eliminar SIEMPRE va al final de «Más acciones» y pide confirmación (convención Doctor Ker). */
   onDelete?: () => void | Promise<void>;
   /** Texto de la confirmación de eliminar. */
   deleteConfirmation?: { title: string; description: string };

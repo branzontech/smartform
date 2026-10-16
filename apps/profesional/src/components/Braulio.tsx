@@ -2,7 +2,7 @@ import { Image } from 'expo-image';
 import { StyleSheet, Text, View } from 'react-native';
 import { colors } from '@/theme';
 
-/** Braulio, la mascota de Ker Hub, recortado sin fondo en cuatro poses. */
+/** Braulio, la mascota de Doctor Ker, recortado sin fondo en cuatro poses. */
 export const BRAULIO_POSES = {
   formato: require('../../assets/braulio/formato.webp'),
   maletin: require('../../assets/braulio/maletin.webp'),

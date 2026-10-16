@@ -64,7 +64,7 @@ const FIELD_TYPE_MAP = Object.fromEntries(FIELD_TYPES.map(t => [t.value, t]));
 
 const getFieldTypeLabel = (tipo: string) => FIELD_TYPE_MAP[tipo]?.label || tipo;
 
-// ── Tabla (convención Ker Hub) ─────────────────────────────────────
+// ── Tabla (convención Doctor Ker) ─────────────────────────────────────
 
 const COLUMNS: TableColumn<DynamicFieldConfig>[] = [
   { id: "order", title: "Orden", value: (f) => f.orden, className: "text-right tabular-nums", hidden: true },

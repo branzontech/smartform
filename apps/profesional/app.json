@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Ker Hub Profesional",
+    "name": "Doctor Ker",
     "slug": "kerhub-profesional",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -37,7 +37,7 @@
       [
         "expo-location",
         {
-          "locationWhenInUsePermission": "Ker Hub registra tu ubicación al salir hacia el paciente y al llegar, como constancia de la visita."
+          "locationWhenInUsePermission": "Doctor Ker registra tu ubicación al salir hacia el paciente y al llegar, como constancia de la visita."
         }
       ]
     ],

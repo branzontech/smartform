@@ -1,5 +1,5 @@
 /**
- * Ambientes de Ker Hub. El ambiente se elige en el login y decide a qué API
+ * Ambientes de Doctor Ker. El ambiente se elige en el login y decide a qué API
  * (y por tanto a qué base de datos) habla la web, sin cambiar de dirección.
  *
  *   · Desarrollo: la API de este computador (localhost:5340), base dev de Neon.

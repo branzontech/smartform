@@ -63,7 +63,7 @@ export default function Inicio() {
         <BraulioEmpty
           pose="historial"
           title="Tu IPS aún no ha publicado contenido"
-          hint="Aquí verás sus noticias, eventos, actividades y cultura. Se publican desde Ker Hub web, en Contenido de la app."
+          hint="Aquí verás sus noticias, eventos, actividades y cultura. Se publican desde Doctor Ker web, en Contenido de la app."
         />
       ) : (
         <>

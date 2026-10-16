@@ -2,7 +2,7 @@ import * as SecureStore from 'expo-secure-store';
 import { ENVIRONMENTS, type EnvironmentId, type EnvironmentInfo } from './config';
 
 /**
- * La sesión del profesional es un token de Ker Hub guardado en el llavero del
+ * La sesión del profesional es un token de Doctor Ker guardado en el llavero del
  * teléfono (Keychain en iPhone, Keystore en Android), nunca en texto plano.
  * Cada ambiente tiene su propio token: la sesión de uno no viaja al otro.
  */

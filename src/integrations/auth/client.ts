@@ -1,5 +1,5 @@
 /**
- * Cliente de identidad (Better Auth) contra la API de Ker Hub. La sesión es
+ * Cliente de identidad (Better Auth) contra la API de Doctor Ker. La sesión es
  * una cookie que emite la API en el mismo origen que la web (/api/auth).
  *
  * Hay un cliente por ambiente: el que se elija en el login decide a qué API

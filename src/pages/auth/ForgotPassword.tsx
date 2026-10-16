@@ -47,7 +47,7 @@ const ForgotPassword = () => {
         <div className="flex items-start gap-3 rounded-2xl bg-muted/60 p-4 text-sm text-muted-foreground">
           <MailCheck className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
           <p>
-            Si <span className="font-medium text-foreground">{email}</span> tiene una cuenta en Ker Hub, recibirás un
+            Si <span className="font-medium text-foreground">{email}</span> tiene una cuenta en Doctor Ker, recibirás un
             enlace para elegir una nueva contraseña. Caduca en una hora.
           </p>
         </div>

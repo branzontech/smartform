@@ -16,7 +16,7 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
 /*
- * Inventario con la convención de tablas de Ker Hub: vistas del módulo como
+ * Inventario con la convención de tablas de Doctor Ker: vistas del módulo como
  * pestañas de carpeta, cada una con su DataTable. Sin tarjetas KPI ni
  * alertas sueltas: lo urgente (stock bajo, agotado, por vencer) son segmentos
  * con conteo de la tabla de stock.

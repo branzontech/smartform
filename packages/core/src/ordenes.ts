@@ -1,6 +1,6 @@
 /**
  * Órdenes médicas de una atención: tipos, etiquetas y cliente de /api/ordenes.
- * Lo comparten la app del profesional y Ker Hub web.
+ * Lo comparten la app del profesional y Doctor Ker web.
  */
 import type { Fetcher } from "./agenda";
 

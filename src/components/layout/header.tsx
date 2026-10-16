@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/tooltip";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { toast } from "@/hooks/use-toast";
+import { BrandLogo } from "@/components/brand/BrandLogo";
 
 interface HeaderProps {
   showCreate?: boolean;
@@ -181,7 +182,7 @@ const HeaderBase = ({ showCreate = true }: HeaderProps) => {
               onClick={() => navigate("/app/home")}
               className="flex items-center hover:opacity-80 transition-opacity cursor-pointer"
             >
-              <img src="/kerhub-logo-color.png" alt="Ker Hub" className="h-7 w-auto" />
+              <BrandLogo size="sm" />
             </button>
             {ENVIRONMENTS.length > 1 && <EnvironmentLabel />}
             <LicenseNotice />

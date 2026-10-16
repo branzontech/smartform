@@ -1,7 +1,7 @@
 import { Image } from 'expo-image';
 
 /**
- * Íconos 3D de Ker Hub. Son los mismos archivos de la web (public/iconos):
+ * Íconos 3D de Doctor Ker. Son los mismos archivos de la web (public/iconos):
  * si allá cambia un ícono, la app lo toma sin copiar nada.
  */
 export const ICONS_3D = {

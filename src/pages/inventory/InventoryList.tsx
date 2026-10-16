@@ -57,7 +57,7 @@ const SEGMENTS: TableSegment<InventoryItem>[] = [
 
 const rowKey = (i: InventoryItem) => i.id;
 
-/** Artículos de inventario (almacenamiento local) con el kit de tablas de Ker Hub. */
+/** Artículos de inventario (almacenamiento local) con el kit de tablas de Doctor Ker. */
 const InventoryList = () => {
   const navigate = useNavigate();
   const [inventory, setInventory] = useState<InventoryItem[]>([]);

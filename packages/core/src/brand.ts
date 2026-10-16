@@ -1,4 +1,4 @@
-/** Colores de la marca Ker Hub (iguales en web y app). */
+/** Colores de la marca Doctor Ker (iguales en web y app). */
 export const BRAND = {
   purple: "#8b35e9",
   purpleDark: "#6d22c4",

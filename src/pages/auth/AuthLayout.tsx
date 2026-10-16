@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { BrandLogo } from "@/components/brand/BrandLogo";
 
 interface AuthLayoutProps {
   title: string;
@@ -24,9 +25,9 @@ export function AuthLayout({ title, description, children, footer }: AuthLayoutP
           decoding="async"
           className="absolute inset-0 h-full w-full object-cover object-[50%_35%]"
         />
-        {/* El logo es blanco y lima: va sobre una placa morada para leerse sobre la ilustración. */}
+        {/* El logotipo es blanco y lima: va sobre una placa morada para leerse sobre la ilustración. */}
         <div className="absolute left-6 top-6 rounded-2xl bg-[#3b2364]/75 px-4 py-3 shadow-sm backdrop-blur">
-          <img src="/kerhub-logo-color.png" alt="Ker Hub" className="h-8 w-auto sm:h-9" />
+          <BrandLogo size="md" />
         </div>
         <p className="absolute bottom-6 left-6 hidden rounded-full bg-background/85 px-3.5 py-1.5 text-xs font-medium text-foreground shadow-sm backdrop-blur lg:block">
           Tu consulta, en un solo lugar

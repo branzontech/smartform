@@ -1,7 +1,7 @@
 import { cn } from "@/lib/utils";
 
 /**
- * Íconos 3D de Ker Hub (public/iconos/*.webp). Son SOLO para los módulos
+ * Íconos 3D de Doctor Ker (public/iconos/*.webp). Son SOLO para los módulos
  * principales: tarjetas de Inicio y lanzador de aplicaciones. Botones, menús
  * internos y acciones siguen con los íconos de Lucide.
  * Origen y nombres: docs/iconos-3d/prompt-flow.md.

@@ -57,7 +57,7 @@ const FormCreator = () => {
   // Intentar restaurar borrador
   const draft = !id ? loadDraft() : null;
   
-  const [title, setTitle] = useState(draft?.title || "Nuevo formulario Ker Hub");
+  const [title, setTitle] = useState(draft?.title || "Nuevo formulario Doctor Ker");
   const [description, setDescription] = useState(draft?.description || "Formulario para registro de datos clínicos");
   const [formType, setFormType] = useState<string>(draft?.formType || "historia_clinica");
   const [creatingCategory, setCreatingCategory] = useState(false);
@@ -77,7 +77,7 @@ const FormCreator = () => {
   // Uso del formato: con registros guardados, los cambios crean una versión nueva y los campos usados no se borran.
   const [recordCount, setRecordCount] = useState(0);
   const [currentVersion, setCurrentVersion] = useState(1);
-  /** Formato global de Ker Hub (HC base, escalas): no se modifica; guardar crea una copia de la empresa. */
+  /** Formato global de Doctor Ker (HC base, escalas): no se modifica; guardar crea una copia de la empresa. */
   const [isGlobal, setIsGlobal] = useState(false);
   const [usedIds, setUsedIds] = useState<Set<string>>(new Set());
   const [showPreview, setShowPreview] = useState(readPreviewPref);
@@ -299,7 +299,7 @@ const FormCreator = () => {
           .single();
         if (error) throw error;
         clearDraft();
-        toast({ title: "Se creó tu copia propia", description: "El formato base de Ker Hub no se modifica; tus cambios quedaron en una copia de tu empresa." });
+        toast({ title: "Se creó tu copia propia", description: "El formato base de Doctor Ker no se modifica; tus cambios quedaron en una copia de tu empresa." });
         navigate(`/app/editar/${(data as { id: string }).id}`, { replace: true });
         return;
       }
@@ -466,7 +466,7 @@ const FormCreator = () => {
           <div className={cn("mx-auto pb-6 pt-1 md:pr-12", showPreview ? "max-w-2xl" : "max-w-3xl")}>
             {isGlobal && (
               <p className="mb-3 rounded-xl bg-primary/[0.06] px-4 py-2.5 text-[13px] leading-5 text-foreground">
-                <span className="font-semibold">Formato base de Ker Hub.</span>{" "}
+                <span className="font-semibold">Formato base de Doctor Ker.</span>{" "}
                 <span className="text-muted-foreground">
                   Lo comparten todas las empresas y no se modifica. Al guardar se crea una copia propia de tu empresa con tus cambios.
                 </span>

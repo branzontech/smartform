@@ -1,6 +1,6 @@
 /**
  * Contenido de la app (Inicio): lo que la IPS publica para sus profesionales
- * y pacientes. Lo comparten Ker Hub web (lo administra) y las apps (lo muestran).
+ * y pacientes. Lo comparten Doctor Ker web (lo administra) y las apps (lo muestran).
  */
 import type { Fetcher } from "./agenda";
 

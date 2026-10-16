@@ -157,7 +157,7 @@ export default function Atencion() {
     );
   }
   if (!cita) return <BraulioEmpty pose="formato" title="No se pudo cargar la cita" hint={errorMessage(citaQuery.error)} />;
-  if (!admisionId) return <BraulioEmpty pose="formato" title="Esta cita no tiene atención" hint="La admisión se crea al agendar la cita en Ker Hub web." />;
+  if (!admisionId) return <BraulioEmpty pose="formato" title="Esta cita no tiene atención" hint="La admisión se crea al agendar la cita en Doctor Ker web." />;
   if (formatsQuery.isError) return <BraulioEmpty pose="formato" title="No se pudieron cargar los formatos" hint={errorMessage(formatsQuery.error)} />;
   if (!me) return null;
 

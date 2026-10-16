@@ -104,7 +104,7 @@ async function fetchForms(): Promise<FormRow[]> {
 }
 
 /**
- * Formularios en Configuración, con la convención de tablas de Ker Hub:
+ * Formularios en Configuración, con la convención de tablas de Doctor Ker:
  * segmentos por tipo con conteo, Filtrar (estado, uso, origen), búsqueda,
  * orden, columnas, CSV y paginación. Las acciones van fijas a la derecha.
  */

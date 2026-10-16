@@ -13,7 +13,7 @@ const BLOCK_REASON: Record<string, string> = {
 
 function blockText(blocks: CompanyBlock[]): string {
   if (!blocks.length) return "Tu cuenta no pertenece a ninguna empresa activa. Pide a tu administrador que te invite.";
-  return blocks.map((b) => `${b.nombre} ${BLOCK_REASON[b.estado] ?? "no está disponible"}`).join(". ") + ". Comunícate con su administrador o con el equipo de Ker Hub.";
+  return blocks.map((b) => `${b.nombre} ${BLOCK_REASON[b.estado] ?? "no está disponible"}`).join(". ") + ". Comunícate con su administrador o con el equipo de Doctor Ker.";
 }
 
 export const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {

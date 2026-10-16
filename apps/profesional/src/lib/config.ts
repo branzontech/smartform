@@ -1,7 +1,7 @@
 import Constants from 'expo-constants';
 
 /**
- * Ambientes de Ker Hub, como en el login de la web. Cada uno habla con su API
+ * Ambientes de Doctor Ker, como en el login de la web. Cada uno habla con su API
  * (y su base de datos) y guarda su propia sesión.
  *
  *   · Desarrollo: la API de este computador (puerto 5340), base dev de Neon.

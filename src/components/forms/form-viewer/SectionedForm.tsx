@@ -55,7 +55,7 @@ function rowsOf(questions: QuestionData[]): QuestionData[][] {
 }
 
 /**
- * Diligenciamiento de cualquier formato con el diseño de Ker Hub
+ * Diligenciamiento de cualquier formato con el diseño de Doctor Ker
  * (docs/ux-ui/sistema-diseno.md §7): una tarjeta por sección con su avance de
  * obligatorios, campos a ancho completo y errores marcados en su sitio.
  */

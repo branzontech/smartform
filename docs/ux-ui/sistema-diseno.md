@@ -1,4 +1,4 @@
-# Sistema de diseño de Ker Hub: tarjetas, cifras y calendario
+# Sistema de diseño de Doctor Ker: tarjetas, cifras y calendario
 
 Complementa `convenciones.md` (que manda en caso de choque). Referencias aprobadas por el usuario en
 `referencias/tarjetas-y-fechas.png` y `referencias/panel-y-calendario.png`: de ellas se toma la
@@ -10,7 +10,7 @@ colores ni sus barras gruesas.
 | No | Sí |
 |---|---|
 | Brillos difuminados de fondo, destellos (`Sparkles`), emojis | Lienzo liso; el contenido es la decoración |
-| Texto con degradado, chips decorativos («Ker Hub») | Texto sólido; el color se reserva para lo que significa algo |
+| Texto con degradado, chips decorativos («Doctor Ker») | Texto sólido; el color se reserva para lo que significa algo |
 | Animaciones con rebote, tarjetas que «saltan» al pasar el mouse | Aparición de 150–250 ms; al pasar el mouse cambia la sombra o el tono |
 | Tres acentos de color en una misma tarjeta | **Un acento por tarjeta** (morado de marca); lima solo para «hoy» o lo destacado |
 | Barras de progreso gruesas | Anillo (`ProgressRing`) o línea de 1 px |
@@ -97,7 +97,7 @@ confirmación ancho al final del panel, en píldora.
 ## 7. Diligenciamiento de formatos (elegido por el usuario: dirección C sin nota en vivo)
 
 Aplica a **todo formato**, existente o nuevo: lo pinta el renderizador común de formularios, nunca un
-diseño por formato. Prototipo de referencia: artefacto «Ker Hub · Diligenciar historia clínica».
+diseño por formato. Prototipo de referencia: artefacto «Doctor Ker · Diligenciar historia clínica».
 
 - **Encabezado del paciente** siempre visible: nombre, edad, sexo, documento, HC, régimen y alertas
   (alergias en rojo), con el avance de obligatorios en anillo.
@@ -119,7 +119,7 @@ diseño por formato. Prototipo de referencia: artefacto «Ker Hub · Diligenciar
 ## 8. Ficha de un registro principal (paciente y similares) — aprobado el 2026-10-16
 
 Tomado de Epic (Storyboard), Elation (perfil clínico), athenaOne, HubSpot y Attio. Prototipo de referencia:
-artefacto «Ker Hub · Ficha del paciente». Implementación: `src/pages/patients/PatientDetail.tsx` y
+artefacto «Doctor Ker · Ficha del paciente». Implementación: `src/pages/patients/PatientDetail.tsx` y
 `src/components/patients/chart/`.
 
 - **La página no se desplaza**: cada columna tiene su propio scroll (`h-full overflow-hidden` dentro del layout).

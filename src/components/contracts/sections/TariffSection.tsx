@@ -45,7 +45,7 @@ function UvbForm({ year, onSave }: { year: number; onSave: (value: number, sourc
   return (
     <div className="grid gap-3 rounded-tile bg-amber-500/10 p-4">
       <p className="text-[13px]">
-        <span className="font-semibold">Registra la UVB de {year}.</span> Tómala de la publicación oficial del Ministerio de Hacienda; Ker Hub no la calcula.
+        <span className="font-semibold">Registra la UVB de {year}.</span> Tómala de la publicación oficial del Ministerio de Hacienda; Doctor Ker no la calcula.
       </p>
       <FieldGrid>
         <NumberField id="uvb-value" label={`Valor de la UVB ${year}`} prefix="$" value={value} onChange={setValue} />
@@ -104,7 +104,7 @@ export function TariffSection({ form, set, manuals, year, uvb, canEditUvb, onSav
       <PriceExample manual={medManual} pct={form.ajuste_medicamentos_pct} uvb={uvb} year={year} />
       {needsUvb && canEditUvb && <UvbForm year={year} onSave={onSaveUvb} />}
       {needsUvb && !canEditUvb && !uvb && (
-        <p className="text-[13px] text-muted-foreground">La UVB de {year} aún no está registrada. La registra el equipo de Ker Hub con el valor oficial del año.</p>
+        <p className="text-[13px] text-muted-foreground">La UVB de {year} aún no está registrada. La registra el equipo de Doctor Ker con el valor oficial del año.</p>
       )}
 
       <div className="grid gap-3 border-t border-border pt-5">

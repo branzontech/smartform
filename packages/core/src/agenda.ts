@@ -1,6 +1,6 @@
 /**
- * Agenda de Ker Hub: tipos, etiquetas, fechas y cliente de /api/agenda.
- * Lo comparten Ker Hub web y la app del profesional: un cambio aquí llega a ambos.
+ * Agenda de Doctor Ker: tipos, etiquetas, fechas y cliente de /api/agenda.
+ * Lo comparten Doctor Ker web y la app del profesional: un cambio aquí llega a ambos.
  */
 
 /** Estados de la cita (los mismos del servidor, src/agenda/rules.ts). */

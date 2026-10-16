@@ -42,7 +42,7 @@ export default function Login() {
         </View>
         <View style={styles.card}>
           <Text style={styles.title}>Bienvenido</Text>
-          <Text style={styles.hint}>Entra con tu cuenta de Ker Hub.</Text>
+          <Text style={styles.hint}>Entra con tu cuenta de Doctor Ker.</Text>
           {ENVIRONMENTS.length > 1 && (
             <View style={styles.envs} accessibilityRole="radiogroup">
               {ENVIRONMENTS.map((e) => {

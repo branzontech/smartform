@@ -1,4 +1,4 @@
-# Ker Hub — frontend
+# Doctor Ker — frontend
 
 App clínica (React 18 + Vite + TypeScript + Tailwind + shadcn/ui). La API y la base viven en el
 repositorio `branzontech/smartform-backend` (Hono + Better Auth + Neon); este front habla con ella por

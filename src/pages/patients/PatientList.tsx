@@ -78,7 +78,7 @@ const SEGMENTS: TableSegment<PatientRow>[] = [
 const rowKey = (p: PatientRow) => p.id;
 
 /**
- * Lista de pacientes con la convención de tablas de Ker Hub (kit de Equipo
+ * Lista de pacientes con la convención de tablas de Doctor Ker (kit de Equipo
  * Tracker/Magnet): segmentos con conteo, Filtrar, Ordenar, Opciones (columnas y
  * CSV), búsqueda desplegable, esqueleto de carga y acciones fijas a la derecha.
  */

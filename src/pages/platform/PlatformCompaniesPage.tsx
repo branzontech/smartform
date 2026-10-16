@@ -41,7 +41,7 @@ const SEGMENTS: TableSegment<PlatformCompany>[] = [
   { id: "blocked", title: "Suspendidas o vencidas", match: (c) => c.licencia.estado === "suspendida" || c.licencia.estado === "vencida" },
 ];
 
-/** Plataforma › Empresas: licencias de cada cliente. Solo dueños de Ker Hub. */
+/** Plataforma › Empresas: licencias de cada cliente. Solo dueños de Doctor Ker. */
 export default function PlatformCompaniesPage() {
   const navigate = useNavigate();
   const { isPlatformAdmin, isLoading: sessionLoading } = useAuth();

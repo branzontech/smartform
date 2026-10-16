@@ -155,13 +155,13 @@ function Body({ q, data, all, set, readOnly }: FieldProps) {
       return <SignatureField q={q} data={data} set={set} readOnly={readOnly} />;
 
     case 'file':
-      return <Notice>Las fotos y adjuntos desde el celular llegan en la próxima entrega. Por ahora se cargan en Ker Hub web.</Notice>;
+      return <Notice>Las fotos y adjuntos desde el celular llegan en la próxima entrega. Por ahora se cargan en Doctor Ker web.</Notice>;
 
     case 'medication':
-      return <Notice>Los medicamentos se formulan en Ker Hub web, en la pestaña Medicamentos de la consulta.</Notice>;
+      return <Notice>Los medicamentos se formulan en Doctor Ker web, en la pestaña Medicamentos de la consulta.</Notice>;
 
     default:
-      return <Notice>Este campo se diligencia en Ker Hub web.</Notice>;
+      return <Notice>Este campo se diligencia en Doctor Ker web.</Notice>;
   }
 }
 

@@ -1,7 +1,7 @@
 import { NativeTabs } from 'expo-router/unstable-native-tabs';
 import { colors } from '@/theme';
 
-/** Menú inferior del profesional (barra nativa) con los íconos 3D de Ker Hub. */
+/** Menú inferior del profesional (barra nativa) con los íconos 3D de Doctor Ker. */
 export default function TabsLayout() {
   return (
     <NativeTabs tintColor={colors.primary}>

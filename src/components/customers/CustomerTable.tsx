@@ -140,7 +140,7 @@ const SEGMENTS: TableSegment<Customer>[] = [
 
 const rowKey = (c: Customer) => c.id;
 
-/** Listado de clientes con la convención de tablas de Ker Hub. */
+/** Listado de clientes con la convención de tablas de Doctor Ker. */
 export const CustomerTable = () => {
   const navigate = useNavigate();
   const { toast } = useToast();

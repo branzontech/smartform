@@ -1,5 +1,5 @@
 /**
- * Cliente de datos de Ker Hub: consultas a las tablas de Neon a través de la
+ * Cliente de datos de Doctor Ker: consultas a las tablas de Neon a través de la
  * API propia (/api/data), con la misma forma de escribir que usaba el código
  * heredado (`db.from("pacientes").select("*").eq("id", x).single()`).
  *
