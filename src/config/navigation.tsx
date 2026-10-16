@@ -53,7 +53,8 @@ import {
   CalendarCheck,
   CalendarClock,
   Workflow,
-  Bot
+  Bot,
+  Smartphone
 } from "lucide-react";
 
 export type MenuItem = {
@@ -217,7 +218,19 @@ export const mainNavItems: SubmenuItem[] = [
   },
   {
     title: "Configuración",
-    path: "/app/configuracion",
+    path: "#",
     icon: SettingsIcon,
+    items: [
+      {
+        title: "Configuración",
+        path: "/app/configuracion",
+        icon: SettingsIcon,
+      },
+      {
+        title: "Contenido de la app",
+        path: "/app/contenido-app",
+        icon: Smartphone,
+      },
+    ],
   },
 ];

@@ -34,6 +34,7 @@ import SiteListPage from "@/pages/locations/SiteListPage";
 import SiteDetailPage from "@/pages/locations/SiteDetailPage";
 import OfficeListPage from "@/pages/locations/OfficeListPage";
 import ProfessionalsPage from "@/pages/professionals/ProfessionalsPage";
+import ContentPage from "@/pages/content/ContentPage";
 import ProfessionalPage from "@/pages/professionals/ProfessionalPage";
 import BillingDashboard from "@/pages/billing/BillingDashboard";
 import ContractsPage from "@/pages/billing/ContractsPage";
@@ -91,6 +92,7 @@ const AppRoutes = () => {
         <Route path="medicos/*" element={<Navigate to="/app/profesionales" replace />} />
         <Route path="profesionales" element={<ProfessionalsPage />} />
         <Route path="profesionales/:id" element={<ProfessionalPage />} />
+        <Route path="contenido-app" element={<ContentPage />} />
         <Route path="especialidades/cirujano" element={<CirujanoPage />} />
         <Route path="especialidades/psicologo" element={<PsicologoPage />} />
         <Route path="especialidades/nutricionista" element={<NutricionistaPage />} />
