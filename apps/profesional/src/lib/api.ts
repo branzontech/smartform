@@ -1,5 +1,5 @@
 import { createAgendaApi, type Fetcher } from '@kerhub/core/agenda';
-import { createAttentionApi } from '@kerhub/core/forms';
+import { createAttentionApi, createFormatsApi } from '@kerhub/core/forms';
 import { CONTENT_BUCKET, apiFileUrl, createContentApi } from '@kerhub/core/contenido';
 import { clearToken, currentEnvironment, readToken, saveToken } from './session';
 
@@ -51,6 +51,7 @@ export const fetcher: Fetcher = async <T,>(path: string, init: RequestInit = {})
 
 export const agenda = createAgendaApi(fetcher);
 export const attention = createAttentionApi(fetcher);
+export const formats = createFormatsApi(fetcher);
 export const content = createContentApi(fetcher);
 
 /** Imagen de una publicación, servida por la API del ambiente activo. */

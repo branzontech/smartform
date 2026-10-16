@@ -172,3 +172,48 @@ export function createAttentionApi(fetcher: Fetcher) {
 }
 
 export type AttentionApi = ReturnType<typeof createAttentionApi>;
+
+/** Un formato de la atención: el principal, los del tipo de profesional y los agregados en la visita. */
+export interface AttentionFormat {
+  formularioId: string;
+  titulo: string;
+  tipo: string;
+  obligatorio: boolean;
+  origen: "principal" | "agenda" | "profesional";
+  tieneRespuesta: boolean;
+}
+
+export interface AvailableForm {
+  id: string;
+  titulo: string;
+  tipo: string;
+  global: boolean;
+}
+
+export interface FormatConfigRow {
+  tipoProfesional: string;
+  formularioId: string;
+  titulo: string;
+  tipo: string;
+  principal: boolean;
+  obligatorio: boolean;
+  orden: number;
+}
+
+const send = (method: string, body?: unknown): RequestInit => ({ method, body: body === undefined ? undefined : JSON.stringify(body) });
+
+/** Formatos de cada atención y su configuración por tipo de profesional (/api/atencion). */
+export function createFormatsApi(fetcher: Fetcher) {
+  return {
+    fetchAdmissionFormats: (admisionId: string) => fetcher<AttentionFormat[]>(`/api/atencion/admisiones/${admisionId}/formatos`),
+    addAdmissionFormat: (admisionId: string, formularioId: string) =>
+      fetcher<{ ok: true }>(`/api/atencion/admisiones/${admisionId}/formatos`, send("POST", { formularioId })),
+    removeAdmissionFormat: (admisionId: string, formularioId: string) =>
+      fetcher<{ ok: true }>(`/api/atencion/admisiones/${admisionId}/formatos/${formularioId}`, send("DELETE")),
+    fetchAvailableForms: () => fetcher<AvailableForm[]>("/api/atencion/formularios"),
+    fetchFormatConfig: () => fetcher<FormatConfigRow[]>("/api/atencion/formatos-tipo"),
+    saveFormatConfig: (tipo: string, formatos: { formularioId: string; principal: boolean; obligatorio: boolean }[]) =>
+      fetcher<{ tipo: string; formatos: number }>(`/api/atencion/formatos-tipo/${tipo}`, send("PUT", { formatos })),
+  };
+}
+

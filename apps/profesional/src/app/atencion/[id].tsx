@@ -1,25 +1,18 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { router, useLocalSearchParams, useNavigation } from 'expo-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { formHasAnswers, isAnswerable, missingRequired, visibleQuestions, withDerivedValues, type FormAnswers } from '@kerhub/core/forms';
-import { agenda, attention, errorMessage } from '@/lib/api';
+import { agenda, attention, errorMessage, formats } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { BraulioEmpty } from '@/components/Braulio';
 import { Icon3D } from '@/components/Icon3D';
-import { QuestionView } from '@/components/form/QuestionView';
+import { FormatEditor, type FormatHandle, type FormatState } from '@/components/attention/FormatEditor';
+import { FormatList } from '@/components/attention/FormatList';
 import { Button, Card } from '@/components/ui';
 import { colors } from '@/theme';
 
-/** Espera tras el último cambio antes de guardar solo. */
-const AUTOSAVE_DELAY_MS = 2500;
-
-type SaveStatus = 'idle' | 'dirty' | 'saving' | 'saved' | 'error';
-
-const clock = () => new Date().toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' });
-
-/** Diligenciar la atención de una cita con su formato (historia clínica). */
+/** Diligenciar la atención de una cita: sus formatos (los de la agenda y los que agregue el profesional). */
 export default function Atencion() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { me } = useAuth();
@@ -29,112 +22,70 @@ export default function Atencion() {
 
   const citaQuery = useQuery({ queryKey: ['agenda', 'cita', id], queryFn: () => agenda.fetchCita(id) });
   const cita = citaQuery.data;
-  const ready = !!cita?.admisionId && !!cita?.formularioId;
-  const formQuery = useQuery({
-    queryKey: ['atencion', id, cita?.admisionId],
-    enabled: ready,
-    staleTime: Infinity,
-    gcTime: 0,
-    queryFn: () => attention.loadForm({ formularioId: cita!.formularioId!, pacienteId: cita!.pacienteId, admisionId: cita!.admisionId! }),
+  const admisionId = cita?.admisionId ?? null;
+  const formatsQuery = useQuery({
+    queryKey: ['atencion', 'formatos', admisionId],
+    enabled: !!admisionId,
+    queryFn: () => formats.fetchAdmissionFormats(admisionId!),
   });
-  const form = formQuery.data;
+  const list = formatsQuery.data ?? [];
   const readOnly = cita?.estado !== 'en_atencion';
 
-  const [data, setData] = useState<FormAnswers>({});
-  const [status, setStatus] = useState<SaveStatus>('idle');
-  const [savedAt, setSavedAt] = useState<string | null>(null);
-  const [showMissing, setShowMissing] = useState(false);
+  const [active, setActive] = useState<string | null>(null);
+  const [states, setStates] = useState<Record<string, FormatState>>({});
   const [finishing, setFinishing] = useState(false);
-
-  const dataRef = useRef(data);
-  dataRef.current = data;
-  const statusRef = useRef(status);
-  statusRef.current = status;
-  const responseIdRef = useRef<string | null>(null);
-  const versionRef = useRef(0);
-  const savingRef = useRef<Promise<boolean> | null>(null);
-  const lastErrorRef = useRef('');
-  const positions = useRef<Record<string, number>>({});
+  const handles = useRef<Record<string, FormatHandle>>({});
   const scrollRef = useRef<ScrollView>(null);
+  const editorTop = useRef(0);
 
   useEffect(() => {
-    if (!form) return;
-    setData(withDerivedValues(form.questions, form.formData));
-    responseIdRef.current = form.responseId;
-    setStatus('idle');
-  }, [form]);
+    if (!active && list.length > 0) setActive(list[0].formularioId);
+  }, [active, list]);
 
-  const save = useCallback((): Promise<boolean> => {
-    if (!form || !cita?.admisionId || !me || readOnly) return Promise.resolve(true);
-    if (savingRef.current) return savingRef.current;
-    const startVersion = versionRef.current;
-    const run = (async () => {
-      setStatus('saving');
-      try {
-        responseIdRef.current = await attention.saveResponse({
-          form,
-          responseId: responseIdRef.current,
-          pacienteId: cita.pacienteId,
-          admisionId: cita.admisionId!,
-          medicoId: me.user.id,
-          formData: dataRef.current,
-        });
-        setSavedAt(clock());
-        setStatus(versionRef.current === startVersion ? 'saved' : 'dirty');
-        return true;
-      } catch (e) {
-        lastErrorRef.current = errorMessage(e);
-        setStatus('error');
-        return false;
-      } finally {
-        savingRef.current = null;
-      }
-    })();
-    savingRef.current = run;
-    return run;
-  }, [form, cita, me, readOnly]);
+  const onState = useCallback((fid: string, s: FormatState) => setStates((prev) => ({ ...prev, [fid]: s })), []);
+  const register = useCallback((fid: string, h: FormatHandle | null) => {
+    if (h) handles.current[fid] = h;
+    else delete handles.current[fid];
+  }, []);
+  const scrollTo = useCallback((y: number) => scrollRef.current?.scrollTo({ y: Math.max(editorTop.current + y - 12, 0), animated: true }), []);
 
-  const set = useCallback(
-    (key: string, value: unknown) => {
-      if (readOnly || !form) return;
-      versionRef.current += 1;
-      setData((prev) => withDerivedValues(form.questions, { ...prev, [key]: value }));
-      setStatus('dirty');
-    },
-    [readOnly, form],
-  );
+  const saveAll = useCallback(async () => {
+    const results = await Promise.all(Object.values(handles.current).map((h) => h.save()));
+    return results.every(Boolean);
+  }, []);
 
-  // Autoguardado: unos segundos después del último cambio.
-  useEffect(() => {
-    if (status !== 'dirty' || !form) return;
-    const t = setTimeout(() => {
-      if (formHasAnswers(form.questions, dataRef.current)) void save();
-    }, AUTOSAVE_DELAY_MS);
-    return () => clearTimeout(t);
-  }, [data, status, form, save]);
+  // Al salir de la pantalla se guarda lo pendiente de todos los formatos.
+  useEffect(() => navigation.addListener('beforeRemove', () => void saveAll()), [navigation, saveAll]);
 
-  // Al salir de la pantalla se guarda lo pendiente.
-  useEffect(
-    () =>
-      navigation.addListener('beforeRemove', () => {
-        if (statusRef.current === 'dirty' || statusRef.current === 'error') void save();
-      }),
-    [navigation, save],
-  );
-
-  const missingIds = useMemo(
-    () => new Set(showMissing && form ? missingRequired(form.questions.filter(isAnswerable), data).map((q) => q.id) : []),
-    [showMissing, form, data],
-  );
+  const addFormat = async (formularioId: string) => {
+    if (!admisionId) return;
+    try {
+      await formats.addAdmissionFormat(admisionId, formularioId);
+      await formatsQuery.refetch();
+      setActive(formularioId);
+    } catch (e) {
+      Alert.alert('No se pudo agregar', errorMessage(e));
+    }
+  };
+  const removeFormat = async (formularioId: string) => {
+    if (!admisionId) return;
+    try {
+      await formats.removeAdmissionFormat(admisionId, formularioId);
+      if (active === formularioId) setActive(null);
+      await formatsQuery.refetch();
+    } catch (e) {
+      Alert.alert('No se pudo quitar', errorMessage(e));
+    }
+  };
 
   const complete = async () => {
-    if (!cita?.admisionId) return;
+    if (!admisionId) return;
     setFinishing(true);
     try {
-      if (!(await save())) throw new Error(lastErrorRef.current || 'No se pudo guardar el formato.');
-      await attention.completeAdmission(cita.admisionId);
+      if (!(await saveAll())) throw new Error('Algún formato no se pudo guardar. Revisa la conexión e intenta de nuevo.');
+      await attention.completeAdmission(admisionId);
       await queryClient.invalidateQueries({ queryKey: ['agenda'] });
-      Alert.alert('Atención terminada', 'El formato quedó guardado y la cita, atendida.');
+      Alert.alert('Atención terminada', 'Los formatos quedaron guardados y la cita, atendida.');
       router.back();
     } catch (e) {
       Alert.alert('No se pudo terminar', errorMessage(e));
@@ -144,88 +95,87 @@ export default function Atencion() {
   };
 
   const finish = () => {
-    if (!form) return;
-    if (!formHasAnswers(form.questions, data)) {
-      Alert.alert('El formato está vacío', 'Diligencia la atención antes de terminarla.');
+    // Obligatorios: diligenciados y completos. Opcionales: si se empezaron, completos.
+    const problems = list.flatMap((f) => {
+      const s = states[f.formularioId];
+      if (!s?.loaded) return [{ f, why: 'aún está cargando' }];
+      if (s.empty) return f.obligatorio ? [{ f, why: 'está sin diligenciar' }] : [];
+      return s.missing > 0 ? [{ f, why: s.missing === 1 ? 'le falta 1 campo obligatorio' : `le faltan ${s.missing} campos obligatorios` }] : [];
+    });
+    if (problems.length > 0) {
+      const first = problems[0].f.formularioId;
+      setActive(first);
+      setTimeout(() => handles.current[first]?.revealMissing(), 300);
+      Alert.alert('Falta completar', problems.map((p) => `«${p.f.titulo}» ${p.why}.`).join('\n'));
       return;
     }
-    const missing = missingRequired(form.questions.filter(isAnswerable), data);
-    if (missing.length > 0) {
-      setShowMissing(true);
-      const y = positions.current[missing[0].id];
-      if (y != null) scrollRef.current?.scrollTo({ y: Math.max(y - 12, 0), animated: true });
-      Alert.alert(missing.length === 1 ? 'Falta 1 campo obligatorio' : `Faltan ${missing.length} campos obligatorios`, 'Están marcados en rojo.');
-      return;
-    }
-    Alert.alert('Terminar atención', 'Se guarda el formato y la cita queda como atendida. Después ya no se edita desde la app.', [
+    Alert.alert('Terminar atención', 'Se guardan los formatos y la cita queda como atendida. Después ya no se editan desde la app.', [
       { text: 'Volver', style: 'cancel' },
       { text: 'Terminar', onPress: () => void complete() },
     ]);
   };
 
-  if (citaQuery.isLoading || (ready && formQuery.isLoading)) {
+  if (citaQuery.isLoading || (admisionId && formatsQuery.isLoading)) {
     return (
       <View style={styles.center}>
         <ActivityIndicator color={colors.primary} />
       </View>
     );
   }
-  if (!cita) {
-    return <BraulioEmpty pose="formato" title="No se pudo cargar la cita" hint={errorMessage(citaQuery.error)} />;
-  }
-  if (!ready) {
-    return <BraulioEmpty pose="formato" title="Esta cita no tiene formato" hint="Asigna la historia clínica al agendar la cita en Ker Hub web." />;
-  }
-  if (!form) {
-    return <BraulioEmpty pose="formato" title="No se pudo cargar el formato" hint={errorMessage(formQuery.error)} />;
-  }
+  if (!cita) return <BraulioEmpty pose="formato" title="No se pudo cargar la cita" hint={errorMessage(citaQuery.error)} />;
+  if (!admisionId) return <BraulioEmpty pose="formato" title="Esta cita no tiene atención" hint="La admisión se crea al agendar la cita en Ker Hub web." />;
+  if (formatsQuery.isError) return <BraulioEmpty pose="formato" title="No se pudieron cargar los formatos" hint={errorMessage(formatsQuery.error)} />;
+  if (!me) return null;
 
-  const statusText =
-    status === 'saving'
+  const activeState = active ? states[active] : undefined;
+  const statusLine =
+    activeState?.status === 'saving'
       ? 'Guardando…'
-      : status === 'dirty'
+      : activeState?.status === 'dirty'
         ? 'Cambios sin guardar'
-        : status === 'error'
-          ? `No se pudo guardar: ${lastErrorRef.current}`
-          : savedAt
-            ? `Guardado a las ${savedAt}`
-            : form.responseId
-              ? 'Guardado'
-              : 'Aún sin guardar';
+        : activeState?.status === 'error'
+          ? `No se pudo guardar: ${activeState.error ?? ''}`
+          : activeState?.savedAt
+            ? `Guardado a las ${activeState.savedAt}`
+            : null;
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.canvas }}>
-      <ScrollView
-        ref={scrollRef}
-        contentContainerStyle={styles.page}
-        keyboardShouldPersistTaps="handled"
-        keyboardDismissMode="interactive"
-        automaticallyAdjustKeyboardInsets>
+      <ScrollView ref={scrollRef} contentContainerStyle={styles.page} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive" automaticallyAdjustKeyboardInsets>
         <Card style={styles.hero}>
           <Icon3D name="historia-clinica" size={56} />
           <View style={{ flex: 1, gap: 2 }}>
-            <Text style={styles.title}>{form.title}</Text>
+            <Text style={styles.title}>{cita.paciente}</Text>
             <Text style={styles.meta}>
-              {cita.paciente}
-              {cita.documento ? ` · ${cita.tipoDocumento ?? ''} ${cita.documento}` : ''}
+              {cita.tipoDocumento ?? ''} {cita.documento ?? ''}
             </Text>
-            {!readOnly && <Text style={[styles.meta, status === 'error' && { color: colors.danger }]}>{statusText}</Text>}
+            {!readOnly && statusLine ? <Text style={[styles.meta, activeState?.status === 'error' && { color: colors.danger }]}>{statusLine}</Text> : null}
           </View>
         </Card>
         {readOnly && (
           <Text style={styles.notice}>
-            {cita.estado === 'atendida' ? 'La atención ya terminó: el formato es de solo lectura.' : 'Inicia la atención desde la cita para diligenciar el formato.'}
+            {cita.estado === 'atendida' ? 'La atención ya terminó: los formatos son de solo lectura.' : 'Inicia la atención desde la cita para diligenciar los formatos.'}
           </Text>
         )}
-        {visibleQuestions(form.questions, data).map((q) => (
-          <View
-            key={q.id}
-            onLayout={(e) => {
-              positions.current[q.id] = e.nativeEvent.layout.y;
-            }}>
-            <QuestionView q={q} data={data} all={form.questions} set={set} readOnly={readOnly} missing={missingIds.has(q.id)} />
-          </View>
-        ))}
+        <FormatList items={list} states={states} active={active} readOnly={readOnly} onSelect={setActive} onAdd={addFormat} onRemove={removeFormat} />
+        <View
+          onLayout={(e) => {
+            editorTop.current = e.nativeEvent.layout.y;
+          }}>
+          {list.map((f) => (
+            <FormatEditor
+              key={f.formularioId}
+              cita={cita}
+              formularioId={f.formularioId}
+              medicoId={me.user.id}
+              readOnly={readOnly}
+              visible={f.formularioId === active}
+              onState={onState}
+              register={register}
+              onScrollTo={scrollTo}
+            />
+          ))}
+        </View>
       </ScrollView>
       {!readOnly && (
         <View style={[styles.footer, { paddingBottom: insets.bottom + 10 }]}>
