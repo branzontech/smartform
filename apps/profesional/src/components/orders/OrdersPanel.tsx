@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { showAlert } from '@/components/overlay/Overlay';
-import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { ORDER_TYPES, ORDER_TYPE_LABEL, PRIORITY_LABEL, describeItem, type Order, type OrderType } from '@kerhub/core/ordenes';
 import { errorMessage, orders } from '@/lib/api';
@@ -11,6 +10,7 @@ import { Button, Card } from '@/components/ui';
 import { colors, radius } from '@/theme';
 import { OrderDetail } from './OrderDetail';
 import { OrderEditor } from './OrderEditor';
+import { BottomSheet } from '@/components/overlay/BottomSheet';
 
 const ORDER_ICON: Record<OrderType, Icon3DName> = {
   medicamento: 'farmacia',
@@ -22,7 +22,6 @@ const ORDER_ICON: Record<OrderType, Icon3DName> = {
 
 /** Órdenes de la atención: lista, nueva orden por tipo y detalle con anulación. */
 export function OrdersPanel({ admisionId, canOrder, isAdmin }: { admisionId: string; canOrder: boolean; isAdmin: boolean }) {
-  const insets = useSafeAreaInsets();
   const query = useQuery({ queryKey: ['ordenes', admisionId], queryFn: () => orders.fetchAdmissionOrders(admisionId) });
   const [choosing, setChoosing] = useState(false);
   const [editing, setEditing] = useState<OrderType | null>(null);
@@ -53,14 +52,15 @@ export function OrdersPanel({ admisionId, canOrder, isAdmin }: { admisionId: str
         );
       })}
       {canOrder ? (
-        <Button title="Nueva orden" onPress={() => setChoosing(true)} />
+        <View style={{ alignItems: 'flex-start' }}>
+          <Button size="sm" title="Nueva orden" onPress={() => setChoosing(true)} />
+        </View>
       ) : (
         <Notice>Las órdenes las hace el médico o el administrador.</Notice>
       )}
 
-      <Modal visible={choosing} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setChoosing(false)}>
-        <View style={[styles.sheet, { paddingBottom: insets.bottom + 12 }]}>
-          <Text style={styles.sheetTitle}>Nueva orden</Text>
+      <BottomSheet visible={choosing} onClose={() => setChoosing(false)} title="Nueva orden" size="auto">
+        <View style={styles.sheet}>
           {ORDER_TYPES.map((t) => (
             <Pressable
               key={t}
@@ -73,10 +73,8 @@ export function OrdersPanel({ admisionId, canOrder, isAdmin }: { admisionId: str
               <Text style={styles.title}>{ORDER_TYPE_LABEL[t]}</Text>
             </Pressable>
           ))}
-          <View style={{ flex: 1 }} />
-          <Button title="Cerrar" variant="secondary" onPress={() => setChoosing(false)} />
         </View>
-      </Modal>
+      </BottomSheet>
 
       {editing && (
         <OrderEditor
@@ -90,10 +88,10 @@ export function OrdersPanel({ admisionId, canOrder, isAdmin }: { admisionId: str
           }}
         />
       )}
-      {viewing && (
+      {(
         <OrderDetail
           order={viewing}
-          canCancel={canOrder && (viewing.propia || isAdmin)}
+          canCancel={!!viewing && canOrder && (viewing.propia || isAdmin)}
           onClose={() => setViewing(null)}
           onChanged={() => {
             setViewing(null);
@@ -110,7 +108,6 @@ const styles = StyleSheet.create({
   number: { fontSize: 13, fontWeight: '700', color: colors.primary, fontVariant: ['tabular-nums'] },
   title: { fontSize: 16, fontWeight: '700', color: colors.ink },
   meta: { fontSize: 13, color: colors.muted, lineHeight: 18 },
-  sheet: { flex: 1, backgroundColor: colors.canvas, padding: 16, paddingTop: 24, gap: 10 },
-  sheetTitle: { fontSize: 22, fontWeight: '800', color: colors.ink },
+  sheet: { paddingHorizontal: 16, paddingBottom: 8, gap: 10 },
   choice: { flexDirection: 'row', alignItems: 'center', gap: 12, borderRadius: radius.control, backgroundColor: colors.surface, padding: 12 },
 });

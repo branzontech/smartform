@@ -1,14 +1,14 @@
 import { useEffect, useState, type ReactNode } from 'react';
-import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
+import { errorMessage } from '@/lib/api';
 import { Field, Notice } from '@/components/form/parts';
-import { Button } from '@/components/ui';
+import { BottomSheet } from '@/components/overlay/BottomSheet';
 import { colors, radius } from '@/theme';
 
 const SEARCH_DELAY_MS = 300;
 
-/** Hoja de búsqueda en un catálogo (CUPS, medicamentos, diagnósticos): escribe, toca un resultado. */
+/** Búsqueda en un catálogo (CUPS, medicamentos, diagnósticos) en una hoja grande desde abajo. */
 export function CatalogSearch<T>({
   open,
   title,
@@ -32,7 +32,6 @@ export function CatalogSearch<T>({
   onClose: () => void;
   footer?: (term: string) => ReactNode;
 }) {
-  const insets = useSafeAreaInsets();
   const [term, setTerm] = useState('');
   const [debounced, setDebounced] = useState('');
   useEffect(() => {
@@ -45,29 +44,27 @@ export function CatalogSearch<T>({
   const results = useQuery({ queryKey: [queryKey, debounced], queryFn: () => search(debounced), enabled: open && debounced.length >= 2, staleTime: 5 * 60_000 });
 
   return (
-    <Modal visible={open} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
-      <View style={[styles.sheet, { paddingBottom: insets.bottom + 12 }]}>
-        <Text style={styles.title}>{title}</Text>
+    <BottomSheet visible={open} onClose={onClose} title={title}>
+      <View style={styles.body}>
         <Field value={term} onChangeText={setTerm} placeholder={placeholder} autoFocus autoCorrect={false} />
         <ScrollView contentContainerStyle={{ gap: 8, paddingVertical: 8 }} keyboardShouldPersistTaps="handled">
           {results.isFetching ? <ActivityIndicator color={colors.primary} /> : null}
+          {results.isError ? <Notice>No se pudo buscar: {errorMessage(results.error)}</Notice> : null}
           {(results.data ?? []).map((item) => (
-            <Pressable key={keyOf(item)} style={styles.result} onPress={() => onPick(item, term.trim())}>
+            <Pressable key={keyOf(item)} style={({ pressed }) => [styles.result, pressed && { opacity: 0.8 }]} onPress={() => onPick(item, term.trim())}>
               {render(item)}
             </Pressable>
           ))}
-          {debounced.length >= 2 && !results.isFetching && results.data?.length === 0 ? <Notice>Sin resultados para «{debounced}».</Notice> : null}
+          {debounced.length >= 2 && !results.isFetching && !results.isError && results.data?.length === 0 ? <Notice>Sin resultados para «{debounced}».</Notice> : null}
           {debounced.length < 2 ? <Notice>Escribe al menos 2 letras o el código.</Notice> : null}
           {footer?.(term.trim())}
         </ScrollView>
-        <Button title="Cerrar" variant="secondary" onPress={onClose} />
       </View>
-    </Modal>
+    </BottomSheet>
   );
 }
 
 const styles = StyleSheet.create({
-  sheet: { flex: 1, backgroundColor: colors.canvas, padding: 16, paddingTop: 24, gap: 10 },
-  title: { fontSize: 22, fontWeight: '800', color: colors.ink },
+  body: { flex: 1, paddingHorizontal: 16, gap: 10 },
   result: { borderRadius: radius.control, backgroundColor: colors.surface, padding: 14, gap: 2 },
 });

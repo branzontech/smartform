@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
-import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
-import Animated, { FadeIn, FadeInUp, FadeOut, FadeOutUp, SlideInDown, SlideOutDown } from 'react-native-reanimated';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import Animated, { FadeInUp, FadeOutUp } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors } from '@/theme';
+import { BottomSheet } from './BottomSheet';
 
 /**
  * Hoja de acciones y avisos de la app (reemplazan a Alert del sistema).
@@ -44,44 +45,37 @@ export function showAlert(title: string, message?: string, buttons?: SheetButton
 }
 
 function Sheet({ sheet, onClose }: { sheet: SheetState; onClose: () => void }) {
-  const insets = useSafeAreaInsets();
+  const [visible, setVisible] = useState(true);
   const cancel = sheet.buttons.find((b) => b.style === 'cancel');
   const actions = sheet.buttons.filter((b) => b.style !== 'cancel');
   const pick = (b?: SheetButton) => {
-    onClose();
-    // Deja cerrar la hoja antes de abrir lo siguiente (otra hoja, una pantalla).
-    if (b?.onPress) setTimeout(b.onPress, 220);
+    setVisible(false);
+    // Deja bajar la hoja antes de abrir lo siguiente (otra hoja, una pantalla).
+    setTimeout(() => {
+      onClose();
+      b?.onPress?.();
+    }, 220);
   };
   return (
-    <Modal transparent visible animationType="none" onRequestClose={() => pick(cancel)} statusBarTranslucent>
-      <Animated.View entering={FadeIn.duration(180)} exiting={FadeOut.duration(160)} style={styles.backdrop}>
-        <Pressable style={StyleSheet.absoluteFill} onPress={() => pick(cancel)} accessibilityLabel="Cerrar" />
-      </Animated.View>
-      <Animated.View
-        entering={SlideInDown.springify().damping(22).stiffness(220)}
-        exiting={SlideOutDown.duration(180)}
-        style={[styles.sheetWrap, { paddingBottom: insets.bottom + 8 }]}>
-        <View style={styles.sheet}>
-          <View style={styles.handle} />
-          <Text style={styles.title}>{sheet.title}</Text>
-          {sheet.message ? <Text style={styles.message}>{sheet.message}</Text> : null}
-          <View style={styles.actions}>
-            {actions.map((b, i) => (
-              <Pressable
-                key={`${b.text}-${i}`}
-                onPress={() => pick(b)}
-                accessibilityRole="button"
-                style={({ pressed }) => [styles.action, i > 0 && styles.divider, pressed && styles.pressed]}>
-                <Text style={[styles.actionText, b.style === 'destructive' && { color: colors.danger }]}>{b.text}</Text>
-              </Pressable>
-            ))}
-          </View>
+    <BottomSheet visible={visible} onClose={() => pick(cancel)} size="auto" title={sheet.title}>
+      <View style={styles.body}>
+        {sheet.message ? <Text style={styles.message}>{sheet.message}</Text> : null}
+        <View style={styles.actions}>
+          {actions.map((b, i) => (
+            <Pressable
+              key={`${b.text}-${i}`}
+              onPress={() => pick(b)}
+              accessibilityRole="button"
+              style={({ pressed }) => [styles.action, i > 0 && styles.divider, pressed && styles.pressed]}>
+              <Text style={[styles.actionText, b.style === 'destructive' && { color: colors.danger }]}>{b.text}</Text>
+            </Pressable>
+          ))}
         </View>
         <Pressable onPress={() => pick(cancel)} accessibilityRole="button" style={({ pressed }) => [styles.cancel, pressed && styles.pressed]}>
           <Text style={styles.cancelText}>{cancel?.text ?? 'Cancelar'}</Text>
         </Pressable>
-      </Animated.View>
-    </Modal>
+      </View>
+    </BottomSheet>
   );
 }
 
@@ -127,16 +121,12 @@ export function OverlayHost() {
 }
 
 const styles = StyleSheet.create({
-  backdrop: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(20,22,28,0.38)' },
-  sheetWrap: { position: 'absolute', left: 0, right: 0, bottom: 0, paddingHorizontal: 10, gap: 8 },
-  sheet: { backgroundColor: colors.surface, borderRadius: 24, paddingTop: 8, paddingBottom: 6, overflow: 'hidden' },
-  handle: { alignSelf: 'center', width: 36, height: 4, borderRadius: 2, backgroundColor: colors.line, marginBottom: 10 },
-  title: { fontSize: 17, fontWeight: '700', color: colors.ink, paddingHorizontal: 20 },
-  message: { fontSize: 14, color: colors.muted, paddingHorizontal: 20, marginTop: 4, lineHeight: 20 },
-  actions: { marginTop: 10 },
-  action: { minHeight: 52, justifyContent: 'center', paddingHorizontal: 20 },
+  body: { paddingHorizontal: 16, paddingBottom: 6, gap: 10 },
+  message: { fontSize: 15, color: colors.muted, lineHeight: 21, paddingHorizontal: 4 },
+  actions: { backgroundColor: colors.surface, borderRadius: 18, overflow: 'hidden' },
+  action: { minHeight: 54, justifyContent: 'center', paddingHorizontal: 18 },
   divider: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.line },
-  pressed: { backgroundColor: colors.canvas },
+  pressed: { opacity: 0.7 },
   actionText: { fontSize: 16, color: colors.ink },
   cancel: { minHeight: 54, borderRadius: 18, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' },
   cancelText: { fontSize: 16, fontWeight: '600', color: colors.primary },

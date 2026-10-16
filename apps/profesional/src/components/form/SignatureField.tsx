@@ -1,13 +1,13 @@
 import { useRef, useState } from 'react';
 import { showAlert } from '@/components/overlay/Overlay';
-import { Modal, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { Image } from 'expo-image';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import SignatureScreen, { type SignatureViewRef } from 'react-native-signature-canvas';
 import type { FormAnswers, QuestionData } from '@kerhub/core/forms';
 import { Button } from '@/components/ui';
 import { colors } from '@/theme';
 import { Notice } from './parts';
+import { BottomSheet } from '@/components/overlay/BottomSheet';
 
 /** El lienzo ocupa todo el recuadro, sin los botones propios de la librería. */
 const PAD_STYLE = `
@@ -22,7 +22,6 @@ export function SignatureField({ q, data, set, readOnly }: { q: QuestionData; da
   const value = typeof data[q.id] === 'string' ? (data[q.id] as string) : '';
   const [open, setOpen] = useState(false);
   const pad = useRef<SignatureViewRef>(null);
-  const insets = useSafeAreaInsets();
 
   return (
     <View style={{ gap: 10 }}>
@@ -33,11 +32,14 @@ export function SignatureField({ q, data, set, readOnly }: { q: QuestionData; da
       ) : (
         <Notice>{readOnly ? 'Sin firma.' : 'Aún no hay firma.'}</Notice>
       )}
-      {!readOnly && <Button title={value ? 'Firmar de nuevo' : 'Firmar'} variant="secondary" onPress={() => setOpen(true)} />}
+      {!readOnly && (
+        <View style={{ alignItems: 'flex-start' }}>
+          <Button size="sm" title={value ? 'Firmar de nuevo' : 'Firmar'} variant="secondary" onPress={() => setOpen(true)} />
+        </View>
+      )}
 
-      <Modal visible={open} animationType="slide" presentationStyle="fullScreen" onRequestClose={() => setOpen(false)}>
-        <View style={[styles.sheet, { paddingTop: insets.top + 12, paddingBottom: insets.bottom + 12 }]}>
-          <Text style={styles.title}>{q.title}</Text>
+      <BottomSheet visible={open} onClose={() => setOpen(false)} title={q.title} dragToClose={false}>
+        <View style={styles.sheet}>
           <Notice>Firma con el dedo dentro del recuadro.</Notice>
           <View style={styles.padBox}>
             <SignatureScreen
@@ -54,25 +56,21 @@ export function SignatureField({ q, data, set, readOnly }: { q: QuestionData; da
               backgroundColor="#ffffff"
             />
           </View>
-          <Button title="Guardar firma" onPress={() => pad.current?.readSignature()} />
           <View style={styles.row}>
-            <View style={{ flex: 1 }}>
-              <Button title="Borrar" variant="secondary" onPress={() => pad.current?.clearSignature()} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Button title="Cancelar" variant="secondary" onPress={() => setOpen(false)} />
-            </View>
+            <Button title="Borrar" variant="secondary" onPress={() => pad.current?.clearSignature()} />
+            <View style={{ flex: 1 }} />
+            <Button title="Cancelar" variant="secondary" onPress={() => setOpen(false)} />
+            <Button title="Guardar firma" onPress={() => pad.current?.readSignature()} />
           </View>
         </View>
-      </Modal>
+      </BottomSheet>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   preview: { borderRadius: 14, backgroundColor: '#fff', borderWidth: 1, borderColor: colors.line, overflow: 'hidden' },
-  sheet: { flex: 1, backgroundColor: colors.canvas, paddingHorizontal: 16, gap: 12 },
-  title: { fontSize: 20, fontWeight: '800', color: colors.ink },
+  sheet: { flex: 1, paddingHorizontal: 16, gap: 12 },
   padBox: { flex: 1, borderRadius: 18, overflow: 'hidden', backgroundColor: '#fff', borderWidth: 1, borderColor: colors.line },
-  row: { flexDirection: 'row', gap: 10 },
+  row: { flexDirection: 'row', gap: 8, alignItems: 'center' },
 });

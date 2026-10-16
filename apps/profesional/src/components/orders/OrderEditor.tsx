@@ -1,7 +1,6 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { showAlert } from '@/components/overlay/Overlay';
-import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import {
   DOSE_UNITS,
   ORDER_TYPE_LABEL,
@@ -21,6 +20,8 @@ import { Button, Card } from '@/components/ui';
 import { colors } from '@/theme';
 import { CatalogSearch } from './CatalogSearch';
 import { SelectField } from './SelectField';
+import { BottomSheet } from '@/components/overlay/BottomSheet';
+import { MoreButton } from '@/components/overlay/MoreButton';
 
 type Draft = Omit<MedicationInput, 'dosis' | 'frecuenciaHoras' | 'duracionDias'> & { dosis: string; frecuenciaHoras: string; duracionDias: string };
 type ProcDraft = { item: CatalogProcedure; cantidad: number };
@@ -39,7 +40,6 @@ function fromCatalog(m: CatalogMedication): Draft {
 
 /** Editor de una orden nueva, a pantalla completa. Guarda en una sola llamada. */
 export function OrderEditor({ admisionId, tipo, onClose, onSaved }: { admisionId: string; tipo: OrderType; onClose: () => void; onSaved: (numero: string) => void }) {
-  const insets = useSafeAreaInsets();
   const [prioridad, setPrioridad] = useState<Priority>('routine');
   const [indicaciones, setIndicaciones] = useState('');
   const [especialidad, setEspecialidad] = useState('');
@@ -48,6 +48,8 @@ export function OrderEditor({ admisionId, tipo, onClose, onSaved }: { admisionId
   const [procs, setProcs] = useState<ProcDraft[]>([]);
   const [searching, setSearching] = useState<'med' | 'proc' | 'dx' | null>(null);
   const [saving, setSaving] = useState(false);
+  // Evita dos fórmulas por un doble toque antes de que «Guardando…» se pinte.
+  const savingRef = useRef(false);
 
   const setMed = (i: number, patch: Partial<Draft>) => setMeds((prev) => prev.map((m, j) => (j === i ? { ...m, ...patch } : m)));
   const removeMed = (i: number) =>
@@ -57,6 +59,8 @@ export function OrderEditor({ admisionId, tipo, onClose, onSaved }: { admisionId
     ]);
 
   const save = async () => {
+    if (savingRef.current) return;
+    savingRef.current = true;
     setSaving(true);
     try {
       const base = { admisionId, tipo, prioridad, indicaciones: indicaciones.trim() || null, diagnostico: diagnostico ? { codigo: diagnostico.codigo, descripcion: diagnostico.descripcion } : null };
@@ -83,17 +87,26 @@ export function OrderEditor({ admisionId, tipo, onClose, onSaved }: { admisionId
     } catch (e) {
       showAlert('No se pudo guardar la orden', errorMessage(e));
     } finally {
+      savingRef.current = false;
       setSaving(false);
     }
+  };
+
+  const dirty = meds.length > 0 || procs.length > 0 || !!diagnostico || indicaciones.trim() !== '' || especialidad.trim() !== '';
+  const requestClose = () => {
+    if (!dirty) return onClose();
+    showAlert('Descartar la orden', 'Lo que escribiste en esta orden no se guarda.', [
+      { text: 'Descartar', style: 'destructive', onPress: onClose },
+      { text: 'Seguir editando', style: 'cancel' },
+    ]);
   };
 
   const catalogType = tipo === 'laboratorio' || tipo === 'imagenologia' || tipo === 'procedimiento' ? tipo : null;
 
   return (
-    <Modal visible animationType="slide" presentationStyle="fullScreen" onRequestClose={onClose}>
-      <View style={{ flex: 1, backgroundColor: colors.canvas }}>
-        <ScrollView contentContainerStyle={[styles.page, { paddingTop: insets.top + 16 }]} keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets>
-          <Text style={styles.title}>{ORDER_TYPE_LABEL[tipo]}</Text>
+    <BottomSheet visible onClose={requestClose} title={ORDER_TYPE_LABEL[tipo]}>
+      <View style={{ flex: 1 }}>
+        <ScrollView contentContainerStyle={styles.page} keyboardShouldPersistTaps="handled">
 
           {tipo === 'medicamento' && (
             <>
@@ -101,9 +114,7 @@ export function OrderEditor({ admisionId, tipo, onClose, onSaved }: { admisionId
                 <Card key={i} style={{ gap: 10 }}>
                   <View style={styles.rowBetween}>
                     <Text style={styles.itemTitle}>{m.nombre || `Medicamento ${i + 1}`}</Text>
-                    <Pressable onPress={() => removeMed(i)} hitSlop={8} accessibilityLabel="Más acciones">
-                      <Text style={styles.more}>···</Text>
-                    </Pressable>
+                    <MoreButton actions={[{ label: 'Quitar medicamento', destructive: true, onPress: () => removeMed(i) }]} />
                   </View>
                   {!m.productoId && <Field value={m.nombre} onChangeText={(t) => setMed(i, { nombre: t })} placeholder="Nombre y concentración" />}
                   <View style={styles.row}>
@@ -127,7 +138,7 @@ export function OrderEditor({ admisionId, tipo, onClose, onSaved }: { admisionId
                   <Field value={m.indicaciones ?? ''} onChangeText={(t) => setMed(i, { indicaciones: t })} placeholder="Indicaciones (opcional)" />
                 </Card>
               ))}
-              <Button title={meds.length ? 'Agregar otro medicamento' : 'Agregar medicamento'} variant="secondary" onPress={() => setSearching('med')} />
+              <Button title={meds.length ? 'Agregar otro medicamento' : 'Agregar medicamento'} size="sm" variant="secondary" onPress={() => setSearching('med')} />
             </>
           )}
 
@@ -197,13 +208,9 @@ export function OrderEditor({ admisionId, tipo, onClose, onSaved }: { admisionId
           </Card>
           {tipo === 'medicamento' && meds.length === 0 ? <Notice>Agrega al menos un medicamento para guardar la fórmula.</Notice> : null}
         </ScrollView>
-        <View style={[styles.footer, { paddingBottom: insets.bottom + 10 }]}>
-          <View style={{ flex: 1 }}>
-            <Button title="Cancelar" variant="secondary" onPress={onClose} />
-          </View>
-          <View style={{ flex: 1 }}>
-            <Button title="Guardar orden" busy={saving} onPress={save} />
-          </View>
+        <View style={styles.footer}>
+          <Button title="Cancelar" variant="secondary" onPress={requestClose} />
+          <Button title="Guardar orden" busy={saving} onPress={save} />
         </View>
 
         <CatalogSearch<CatalogMedication>
@@ -277,13 +284,12 @@ export function OrderEditor({ admisionId, tipo, onClose, onSaved }: { admisionId
           onClose={() => setSearching(null)}
         />
       </View>
-    </Modal>
+    </BottomSheet>
   );
 }
 
 const styles = StyleSheet.create({
-  page: { padding: 16, gap: 12, paddingBottom: 32 },
-  title: { fontSize: 26, fontWeight: '800', color: colors.ink, letterSpacing: -0.4 },
+  page: { paddingHorizontal: 16, gap: 12, paddingBottom: 32 },
   label: { fontSize: 13, fontWeight: '600', color: colors.muted },
   row: { flexDirection: 'row', gap: 10 },
   rowBetween: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8 },
@@ -291,11 +297,10 @@ const styles = StyleSheet.create({
   itemText: { fontSize: 15, color: colors.ink },
   meta: { fontSize: 13, color: colors.muted },
   code: { fontSize: 13, fontWeight: '700', color: colors.primary, fontVariant: ['tabular-nums'] },
-  more: { color: colors.primary, fontSize: 18, fontWeight: '700' },
   procRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   stepper: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   stepBtn: { width: 34, height: 34, borderRadius: 10, backgroundColor: colors.primarySoft, alignItems: 'center', justifyContent: 'center' },
   stepText: { fontSize: 20, color: colors.primary, fontWeight: '700', marginTop: -2 },
   qty: { minWidth: 22, textAlign: 'center', fontSize: 16, fontWeight: '700', color: colors.ink, fontVariant: ['tabular-nums'] },
-  footer: { flexDirection: 'row', gap: 10, paddingHorizontal: 16, paddingTop: 10, backgroundColor: colors.canvas, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.line },
+  footer: { flexDirection: 'row', gap: 8, justifyContent: 'flex-end', paddingHorizontal: 16, paddingTop: 10, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.line },
 });

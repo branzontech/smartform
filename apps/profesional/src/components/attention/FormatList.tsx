@@ -1,13 +1,14 @@
 import { useState } from 'react';
 import { showAlert } from '@/components/overlay/Overlay';
-import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import type { AttentionFormat } from '@kerhub/core/forms';
 import { formats as formatsApi } from '@/lib/api';
 import { Button, Card } from '@/components/ui';
 import { colors, radius } from '@/theme';
 import type { FormatState } from './FormatEditor';
+import { BottomSheet } from '@/components/overlay/BottomSheet';
+import { MoreButton } from '@/components/overlay/MoreButton';
 
 /** Estado de un formato en texto (sin puntos ni cápsulas). */
 function statusText(f: AttentionFormat, s: FormatState | undefined): { label: string; color: string } {
@@ -37,22 +38,13 @@ export function FormatList({
   onAdd: (formularioId: string) => Promise<void>;
   onRemove: (formularioId: string) => Promise<void>;
 }) {
-  const insets = useSafeAreaInsets();
   const [picking, setPicking] = useState(false);
   const available = useQuery({ queryKey: ['atencion', 'formularios'], queryFn: () => formatsApi.fetchAvailableForms(), enabled: picking, staleTime: 5 * 60_000 });
   const choices = (available.data ?? []).filter((f) => !items.some((i) => i.formularioId === f.id));
 
-  const more = (f: AttentionFormat) =>
-    showAlert(f.titulo, undefined, [
-      {
-        text: 'Quitar formato',
-        style: 'destructive',
-        onPress: () =>
-          showAlert('Quitar formato', `Se quita «${f.titulo}» de esta atención.`, [
-            { text: 'Volver', style: 'cancel' },
-            { text: 'Quitar', style: 'destructive', onPress: () => void onRemove(f.formularioId) },
-          ]),
-      },
+  const confirmRemove = (f: AttentionFormat) =>
+    showAlert('Quitar formato', `Se quita «${f.titulo}» de esta atención.`, [
+      { text: 'Quitar', style: 'destructive', onPress: () => void onRemove(f.formularioId) },
       { text: 'Volver', style: 'cancel' },
     ]);
 
@@ -74,19 +66,18 @@ export function FormatList({
                 {f.obligatorio ? ' · obligatorio' : ''}
               </Text>
             </Pressable>
-            {removable ? (
-              <Pressable onPress={() => more(f)} accessibilityLabel="Más acciones" hitSlop={8} style={styles.more}>
-                <Text style={styles.moreText}>···</Text>
-              </Pressable>
-            ) : null}
+            {removable ? <MoreButton actions={[{ label: 'Quitar formato', destructive: true, onPress: () => confirmRemove(f) }]} /> : null}
           </View>
         );
       })}
-      {!readOnly && <Button title="Agregar formato" variant="secondary" onPress={() => setPicking(true)} />}
+      {!readOnly && (
+        <View style={{ alignItems: 'flex-start' }}>
+          <Button size="sm" title="Agregar formato" variant="secondary" onPress={() => setPicking(true)} />
+        </View>
+      )}
 
-      <Modal visible={picking} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setPicking(false)}>
-        <View style={[styles.sheet, { paddingBottom: insets.bottom + 12 }]}>
-          <Text style={styles.sheetTitle}>Agregar formato</Text>
+      <BottomSheet visible={picking} onClose={() => setPicking(false)} title="Agregar formato">
+        <View style={styles.sheet}>
           <Text style={styles.status}>Escalas, notas y valoraciones que quieras diligenciar en esta visita.</Text>
           <ScrollView contentContainerStyle={{ gap: 8, paddingVertical: 8 }}>
             {available.isLoading ? <Text style={styles.status}>Cargando…</Text> : null}
@@ -104,9 +95,8 @@ export function FormatList({
             ))}
             {!available.isLoading && choices.length === 0 ? <Text style={styles.status}>No hay más formatos activos para agregar.</Text> : null}
           </ScrollView>
-          <Button title="Cerrar" variant="secondary" onPress={() => setPicking(false)} />
         </View>
-      </Modal>
+      </BottomSheet>
     </Card>
   );
 }
@@ -117,9 +107,6 @@ const styles = StyleSheet.create({
   rowSelected: { backgroundColor: colors.primarySoft },
   title: { fontSize: 15, fontWeight: '700', color: colors.ink },
   status: { fontSize: 13, color: colors.muted },
-  more: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-  moreText: { color: colors.primary, fontSize: 18, fontWeight: '700', marginTop: -6 },
-  sheet: { flex: 1, backgroundColor: colors.canvas, padding: 16, paddingTop: 24, gap: 8 },
-  sheetTitle: { fontSize: 22, fontWeight: '800', color: colors.ink },
+  sheet: { flex: 1, paddingHorizontal: 16, gap: 8 },
   choice: { borderRadius: radius.control, backgroundColor: colors.surface, padding: 14, gap: 2 },
 });
