@@ -36,7 +36,7 @@ export default function Login() {
         <View style={styles.brand}>
           <Braulio pose="maletin" height={150} />
           <Text style={styles.logo}>
-            Ker<Text style={{ color: colors.lime }}>Hub</Text>
+            <Text style={{ fontWeight: '400' }}>Doctor </Text><Text style={{ color: colors.lime }}>Ker</Text>
           </Text>
           <Text style={styles.subtitle}>Profesional</Text>
         </View>

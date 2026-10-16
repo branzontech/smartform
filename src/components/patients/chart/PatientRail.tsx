@@ -64,7 +64,7 @@ export function PatientRail({ patient: p, snapshot, next, collapsed, onToggle, o
   const { format: fmt } = useCountry();
   const name = fullName(p);
   const age = ageOf(p.fecha_nacimiento);
-  const avatar = <UserAvatar seed={p.id} alt={name} className={collapsed ? "h-10 w-10" : "h-11 w-11 shrink-0"} />;
+  const avatar = <UserAvatar seed={name || p.id} alt={name} className={collapsed ? "h-10 w-10" : "h-11 w-11 shrink-0"} />;
 
   if (collapsed) {
     return (

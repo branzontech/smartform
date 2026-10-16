@@ -109,15 +109,17 @@ export default function PatientDetail() {
         </div>
       </header>
 
+      {/* Las pestañas van a lo ancho: así el panel del paciente y la historia empiezan a la misma altura. */}
+      <div className="shrink-0">
+        <FolderTabs id="patient.chart.tabs" label="Historia del paciente" tabs={TABS} active={view} onChange={setView} initialVisible={CHART_VIEWS} />
+      </div>
+
       <div className="flex flex-col gap-3.5 md:min-h-0 md:flex-1 md:flex-row">
         <aside aria-label="Paciente" className={cn(card, "shrink-0 overflow-hidden transition-[width] duration-300 ease-[cubic-bezier(.32,.72,0,1)]", collapsed ? "md:w-16" : "md:w-[300px]")}>
           <PatientRail patient={patient} snapshot={chart.snapshot} next={chart.next} collapsed={collapsed} onToggle={() => setCollapsed(!collapsed)} onOpenProfile={() => setProfileOpen(true)} />
         </aside>
 
         <section aria-label="Historia del paciente" className="flex min-w-0 flex-col md:min-h-0 md:flex-1">
-          <div className="mb-3 shrink-0">
-            <FolderTabs id="patient.chart.tabs" label="Historia del paciente" tabs={TABS} active={view} onChange={setView} initialVisible={CHART_VIEWS} />
-          </div>
           <div className={cn(card, "grid h-[72vh] overflow-hidden md:h-auto md:min-h-0 md:flex-1 md:grid-cols-[340px_minmax(0,1fr)]")}>
             <div className={cn("min-h-0 md:border-r md:border-border", showDetail && "hidden md:block")}>
               <ChartList

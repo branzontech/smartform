@@ -78,7 +78,8 @@ export function AttentionDetail({ cita, patientId, records, orders, recordsLoadi
               {capitalizeFirst(formatLongDay(localDay(cita.inicio)))}, {localTime(cita.inicio)} – {localTime(cita.fin)}
             </h2>
             <p className="mt-0.5 flex flex-wrap gap-x-2 text-[13px] text-muted-foreground">
-              <span>{cita.profesional}</span>·<span>{cita.servicio ?? "Sin servicio"}</span>·<span>{MODALITY_LABEL[cita.modalidad]}</span>·<StateText state={cita.estado} />
+              <span>{[cita.profesional, cita.servicio, MODALITY_LABEL[cita.modalidad]].filter(Boolean).join(" · ")} ·</span>
+              <StateText state={cita.estado} />
             </p>
           </div>
           <div className="flex items-center gap-0.5">
