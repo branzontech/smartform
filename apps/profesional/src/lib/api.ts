@@ -34,7 +34,9 @@ export const fetcher: Fetcher = async <T,>(path: string, init: RequestInit = {})
   const headers = new Headers(init.headers);
   if (init.body && !headers.has('Content-Type')) headers.set('Content-Type', 'application/json');
   if (token) headers.set('Authorization', `Bearer ${token}`);
-  const res = await fetch(`${currentEnvironment().url}${path}`, { ...init, headers });
+  // Sin cookies: la sesión va solo en el token. Una cookie guardada por el teléfono
+  // hace que el servidor exija un «Origin» que una app nativa no envía.
+  const res = await fetch(`${currentEnvironment().url}${path}`, { ...init, headers, credentials: 'omit' });
   const body = await parse(res);
   if (res.status === 401 && !path.startsWith('/api/auth/')) {
     await clearToken();
@@ -78,19 +80,22 @@ export async function signIn(email: string, password: string): Promise<void> {
   let res: Response;
   try {
     res = await fetch(`${currentEnvironment().url}/api/auth/sign-in/email`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email: email.trim().toLowerCase(), password }),
-  });
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email.trim().toLowerCase(), password }),
+      credentials: 'omit',
+    });
   } catch {
     throw new ApiError(0, `No hay conexión con ${currentEnvironment().label}. Revisa que el teléfono y el computador estén en la misma red.`);
   }
   const token = res.headers.get('set-auth-token');
+  if (res.status === 401) throw new ApiError(401, `Correo o contraseña incorrectos en ${currentEnvironment().label}.`);
+  if (res.status === 429) throw new ApiError(429, 'Demasiados intentos. Espera un minuto y vuelve a intentar.');
   if (!res.ok || !token) {
-    throw new ApiError(
-      res.status,
-      res.status === 401 ? `Correo o contraseña incorrectos en ${currentEnvironment().label}.` : 'No pudimos iniciar sesión. Intenta de nuevo.',
-    );
+    // El motivo del servidor (p. ej. «Missing or null Origin») ayuda a saber qué pasó.
+    const body = await parse(res);
+    const reason = body && typeof body === 'object' ? ((body as { message?: string; error?: string }).message ?? (body as { error?: string }).error) : null;
+    throw new ApiError(res.status, `No pudimos iniciar sesión (${res.status}${reason ? `: ${reason}` : ''}). Intenta de nuevo.`);
   }
   await saveToken(token);
 }
