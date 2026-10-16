@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { ChevronDown, Pin, PinOff, X } from "lucide-react";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
@@ -25,6 +25,10 @@ interface FolderTabsProps<K extends string> {
   /** Pestañas visibles por defecto; el resto va en «Más». */
   initialVisible: K[];
   label: string;
+  /** En la misma línea, a la izquierda (p. ej. «← Volver» y el nombre del registro). */
+  start?: ReactNode;
+  /** En la misma línea, justo antes de las pestañas (acciones de la página). */
+  actions?: ReactNode;
 }
 
 /*
@@ -58,7 +62,7 @@ const isStringList = (v: unknown): v is string[] => Array.isArray(v) && v.every(
  * tabla. Muestra las fijadas; el resto va en «Más», donde el usuario puede
  * fijar o desfijar cada una (se recuerda en este navegador).
  */
-export function FolderTabs<K extends string>({ id, tabs, active, onChange, initialVisible, label }: FolderTabsProps<K>) {
+export function FolderTabs<K extends string>({ id, tabs, active, onChange, initialVisible, label, start, actions }: FolderTabsProps<K>) {
   const [saved, setPinned] = usePersistentState<string[]>(`${id}.pinned`, initialVisible, isStringList);
   const pinnedIds = new Set<string>([...saved, ...tabs.filter((tab) => tab.pinned).map((tab) => tab.id)]);
 
@@ -87,6 +91,8 @@ export function FolderTabs<K extends string>({ id, tabs, active, onChange, initi
 
   return (
     <div className="flex items-end justify-end border-b border-border">
+      {start && <div className="mr-auto flex min-w-0 items-center gap-3 self-center pb-0.5">{start}</div>}
+      {actions && <div className="flex shrink-0 items-center gap-1 self-center pb-0.5 pl-3">{actions}</div>}
       <div role="tablist" aria-label={label} className="isolate -mb-px flex items-end overflow-x-auto pl-3 pr-4 pt-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {visible.map((tab, i) => {
           const selected = tab.id === active;

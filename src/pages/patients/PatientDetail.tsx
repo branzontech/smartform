@@ -89,29 +89,37 @@ export default function PatientDetail() {
 
   return (
     <div className="flex h-full flex-col gap-3 overflow-y-auto pb-5 pt-3 md:overflow-hidden">
-      <header className="flex shrink-0 flex-wrap items-center justify-between gap-3">
-        <div className="flex min-w-0 items-center gap-3">
-          <BackLink />
-          {collapsed && (
-            <span className="truncate text-sm font-semibold text-foreground animate-in fade-in">
-              {fullName(patient)}
-              <span className="font-normal text-muted-foreground">{age !== null ? ` · ${age} años` : ""} · {patient.tipo_documento} {patient.numero_documento}</span>
-            </span>
-          )}
-        </div>
-        <div className="flex items-center gap-1">
-          <Button variant="ghost" size="sm" disabled={activeRecords.length === 0} onClick={() => void printRecords(activeRecords, { patientId: patient.id })} className="h-8 gap-1.5 rounded-lg px-2.5 text-[13px] text-muted-foreground hover:text-foreground">
-            <Printer className="h-4 w-4" />Imprimir historia
-          </Button>
-          <Button size="sm" onClick={() => navigate(`/app/pacientes/nueva-consulta?patientId=${patient.id}`)} className="ml-1 h-[34px] rounded-[11px] bg-highlight px-3.5 font-semibold text-highlight-foreground hover:bg-highlight/90 active:scale-[.97]">
-            Nueva atención
-          </Button>
-        </div>
-      </header>
-
-      {/* Las pestañas van a lo ancho: así el panel del paciente y la historia empiezan a la misma altura. */}
+      {/* Una sola línea: volver, acciones y pestañas de carpeta. A lo ancho, para que el panel y la historia empiecen a la misma altura. */}
       <div className="shrink-0">
-        <FolderTabs id="patient.chart.tabs" label="Historia del paciente" tabs={TABS} active={view} onChange={setView} initialVisible={CHART_VIEWS} />
+        <FolderTabs
+          id="patient.chart.tabs"
+          label="Historia del paciente"
+          tabs={TABS}
+          active={view}
+          onChange={setView}
+          initialVisible={CHART_VIEWS}
+          start={
+            <>
+              <BackLink />
+              {collapsed && (
+                <span className="truncate text-sm font-semibold text-foreground animate-in fade-in">
+                  {fullName(patient)}
+                  <span className="font-normal text-muted-foreground">{age !== null ? ` · ${age} años` : ""} · {patient.tipo_documento} {patient.numero_documento}</span>
+                </span>
+              )}
+            </>
+          }
+          actions={
+            <>
+              <Button variant="ghost" size="sm" disabled={activeRecords.length === 0} onClick={() => void printRecords(activeRecords, { patientId: patient.id })} className="h-8 gap-1.5 rounded-lg px-2.5 text-[13px] text-muted-foreground hover:text-foreground">
+                <Printer className="h-4 w-4" />Imprimir historia
+              </Button>
+              <Button size="sm" onClick={() => navigate(`/app/pacientes/nueva-consulta?patientId=${patient.id}`)} className="h-8 rounded-[10px] bg-highlight px-3.5 text-[13px] font-semibold text-highlight-foreground hover:bg-highlight/90 active:scale-[.97]">
+                Nueva atención
+              </Button>
+            </>
+          }
+        />
       </div>
 
       <div className="flex flex-col gap-3.5 md:min-h-0 md:flex-1 md:flex-row">
