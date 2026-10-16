@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { showAlert } from '@/components/overlay/Overlay';
+import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { router, useLocalSearchParams, useNavigation } from 'expo-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -67,7 +68,7 @@ export default function Atencion() {
       await formatsQuery.refetch();
       setActive(formularioId);
     } catch (e) {
-      Alert.alert('No se pudo agregar', errorMessage(e));
+      showAlert('No se pudo agregar', errorMessage(e));
     }
   };
   const removeFormat = async (formularioId: string) => {
@@ -77,7 +78,7 @@ export default function Atencion() {
       if (active === formularioId) setActive(null);
       await formatsQuery.refetch();
     } catch (e) {
-      Alert.alert('No se pudo quitar', errorMessage(e));
+      showAlert('No se pudo quitar', errorMessage(e));
     }
   };
 
@@ -88,10 +89,10 @@ export default function Atencion() {
       if (!(await saveAll())) throw new Error('Algún formato no se pudo guardar. Revisa la conexión e intenta de nuevo.');
       await attention.completeAdmission(admisionId);
       await queryClient.invalidateQueries({ queryKey: ['agenda'] });
-      Alert.alert('Atención terminada', 'Los formatos quedaron guardados y la cita, atendida.');
+      showAlert('Atención terminada', 'Los formatos quedaron guardados y la cita, atendida.');
       router.back();
     } catch (e) {
-      Alert.alert('No se pudo terminar', errorMessage(e));
+      showAlert('No se pudo terminar', errorMessage(e));
     } finally {
       setFinishing(false);
     }
@@ -110,10 +111,10 @@ export default function Atencion() {
       setSection('formatos');
       setActive(first);
       setTimeout(() => handles.current[first]?.revealMissing(), 300);
-      Alert.alert('Falta completar', problems.map((p) => `«${p.f.titulo}» ${p.why}.`).join('\n'));
+      showAlert('Falta completar', problems.map((p) => `«${p.f.titulo}» ${p.why}.`).join('\n'));
       return;
     }
-    Alert.alert('Terminar atención', 'Se guardan los formatos y la cita queda como atendida. Después ya no se editan desde la app.', [
+    showAlert('Terminar atención', 'Se guardan los formatos y la cita queda como atendida. Después ya no se editan desde la app.', [
       { text: 'Volver', style: 'cancel' },
       { text: 'Terminar', onPress: () => void complete() },
     ]);

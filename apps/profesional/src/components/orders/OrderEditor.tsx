@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Alert, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { showAlert } from '@/components/overlay/Overlay';
+import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   DOSE_UNITS,
@@ -50,7 +51,7 @@ export function OrderEditor({ admisionId, tipo, onClose, onSaved }: { admisionId
 
   const setMed = (i: number, patch: Partial<Draft>) => setMeds((prev) => prev.map((m, j) => (j === i ? { ...m, ...patch } : m)));
   const removeMed = (i: number) =>
-    Alert.alert('Quitar medicamento', meds[i]?.nombre, [
+    showAlert('Quitar medicamento', meds[i]?.nombre, [
       { text: 'Volver', style: 'cancel' },
       { text: 'Quitar', style: 'destructive', onPress: () => setMeds((prev) => prev.filter((_, j) => j !== i)) },
     ]);
@@ -80,7 +81,7 @@ export function OrderEditor({ admisionId, tipo, onClose, onSaved }: { admisionId
       const created = await orders.createOrder(input);
       onSaved(created.numero);
     } catch (e) {
-      Alert.alert('No se pudo guardar la orden', errorMessage(e));
+      showAlert('No se pudo guardar la orden', errorMessage(e));
     } finally {
       setSaving(false);
     }
@@ -143,7 +144,7 @@ export function OrderEditor({ admisionId, tipo, onClose, onSaved }: { admisionId
                       onPress={() =>
                         p.cantidad > 1
                           ? setProcs((prev) => prev.map((x, j) => (j === i ? { ...x, cantidad: x.cantidad - 1 } : x)))
-                          : Alert.alert('Quitar', p.item.descripcion, [
+                          : showAlert('Quitar', p.item.descripcion, [
                               { text: 'Volver', style: 'cancel' },
                               { text: 'Quitar', style: 'destructive', onPress: () => setProcs((prev) => prev.filter((_, j) => j !== i)) },
                             ])

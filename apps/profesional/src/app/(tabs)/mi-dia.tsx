@@ -14,6 +14,7 @@ import { SegmentedTabs } from '@/components/SegmentedTabs';
 import { MonthCalendar } from '@/components/agenda/MonthCalendar';
 import { PeriodNav } from '@/components/agenda/PeriodNav';
 import { PeriodSummary } from '@/components/agenda/PeriodSummary';
+import { RouteCard } from '@/components/agenda/RouteCard';
 import { WeekAgenda } from '@/components/agenda/WeekAgenda';
 import { WeekStrip } from '@/components/agenda/WeekStrip';
 import { colors } from '@/theme';
@@ -83,6 +84,7 @@ export default function MiDia() {
         {mode === 'dia' && (
           <>
             <WeekStrip days={weekDays(day)} selected={day} byDay={weekByDay} onSelect={setDay} />
+            <RouteCard citas={dayCitas} isToday={day === now} />
             {dayCitas.map((c, i) => (
               <CitaCard key={c.id} cita={c} index={i} />
             ))}

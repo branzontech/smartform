@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Alert, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { showAlert } from '@/components/overlay/Overlay';
+import { Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ORDER_TYPE_LABEL, PRIORITY_LABEL, describeItem, type Order } from '@kerhub/core/ordenes';
 import { localDay, localTime } from '@kerhub/core/agenda';
@@ -21,9 +22,9 @@ export function OrderDetail({ order, canCancel, onClose, onChanged }: { order: O
       await orders.cancelOrder(order.id, motivo.trim());
       setAsking(false);
       onChanged();
-      Alert.alert('Orden anulada', `${order.numero} quedó anulada con su motivo.`);
+      showAlert('Orden anulada', `${order.numero} quedó anulada con su motivo.`);
     } catch (e) {
-      Alert.alert('No se pudo anular', errorMessage(e));
+      showAlert('No se pudo anular', errorMessage(e));
     } finally {
       setBusy(false);
     }
@@ -42,7 +43,7 @@ export function OrderDetail({ order, canCancel, onClose, onChanged }: { order: O
           </View>
           {canCancel && !cancelled ? (
             <Pressable
-              onPress={() => Alert.alert('Más acciones', undefined, [{ text: 'Anular orden', style: 'destructive', onPress: () => setAsking(true) }, { text: 'Volver', style: 'cancel' }])}
+              onPress={() => showAlert('Más acciones', undefined, [{ text: 'Anular orden', style: 'destructive', onPress: () => setAsking(true) }, { text: 'Volver', style: 'cancel' }])}
               hitSlop={8}
               accessibilityLabel="Más acciones">
               <Text style={styles.more}>···</Text>

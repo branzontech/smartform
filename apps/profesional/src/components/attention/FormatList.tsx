@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Alert, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { showAlert } from '@/components/overlay/Overlay';
+import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQuery } from '@tanstack/react-query';
 import type { AttentionFormat } from '@kerhub/core/forms';
@@ -42,12 +43,12 @@ export function FormatList({
   const choices = (available.data ?? []).filter((f) => !items.some((i) => i.formularioId === f.id));
 
   const more = (f: AttentionFormat) =>
-    Alert.alert(f.titulo, undefined, [
+    showAlert(f.titulo, undefined, [
       {
         text: 'Quitar formato',
         style: 'destructive',
         onPress: () =>
-          Alert.alert('Quitar formato', `Se quita «${f.titulo}» de esta atención.`, [
+          showAlert('Quitar formato', `Se quita «${f.titulo}» de esta atención.`, [
             { text: 'Volver', style: 'cancel' },
             { text: 'Quitar', style: 'destructive', onPress: () => void onRemove(f.formularioId) },
           ]),

@@ -7,6 +7,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider, useAuth } from '@/lib/auth';
 import { preloadImages } from '@/lib/preload';
 import { Intro } from '@/components/Intro';
+import { OverlayHost } from '@/components/overlay/Overlay';
 import { colors } from '@/theme';
 
 void SplashScreen.preventAutoHideAsync();
@@ -45,6 +46,7 @@ function Boot() {
         <Stack.Screen name="atencion/[id]" options={{ title: 'Atención', headerBackTitle: 'Cita' }} />
         <Stack.Screen name="contenido/[id]" options={{ title: '', headerBackTitle: 'Inicio', headerTransparent: true }} />
       </Stack>
+      <OverlayHost />
       {showIntro && <Intro onShown={() => void SplashScreen.hideAsync()} />}
     </View>
   );

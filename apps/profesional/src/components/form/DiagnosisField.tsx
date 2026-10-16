@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, StyleSheet, Text, View } from 'react-native';
+import { showAlert } from '@/components/overlay/Overlay';
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { ICD10_URI, type FormAnswers, type QuestionData, type SelectedDiagnosis } from '@kerhub/core/forms';
 import { attention } from '@/lib/api';
@@ -33,7 +34,7 @@ export function DiagnosisField({ q, data, set, readOnly }: { q: QuestionData; da
     setTerm('');
   };
   const remove = (d: SelectedDiagnosis) =>
-    Alert.alert('Quitar diagnóstico', `${d.codigo} · ${d.descripcion}`, [
+    showAlert('Quitar diagnóstico', `${d.codigo} · ${d.descripcion}`, [
       { text: 'Volver', style: 'cancel' },
       { text: 'Quitar', style: 'destructive', onPress: () => set(q.id, selected.filter((s) => s.codigo !== d.codigo)) },
     ]);

@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Alert, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { showAlert } from '@/components/overlay/Overlay';
+import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQuery } from '@tanstack/react-query';
 import { ORDER_TYPES, ORDER_TYPE_LABEL, PRIORITY_LABEL, describeItem, type Order, type OrderType } from '@kerhub/core/ordenes';
@@ -85,7 +86,7 @@ export function OrdersPanel({ admisionId, canOrder, isAdmin }: { admisionId: str
           onSaved={(numero) => {
             setEditing(null);
             void query.refetch();
-            Alert.alert('Orden guardada', `Quedó con el número ${numero}.`);
+            showAlert('Orden guardada', `Quedó con el número ${numero}.`);
           }}
         />
       )}

@@ -1,4 +1,5 @@
-import { Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { showAlert } from '@/components/overlay/Overlay';
 import { router } from 'expo-router';
 import Constants from 'expo-constants';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -33,7 +34,7 @@ export default function Perfil() {
   const insets = useSafeAreaInsets();
 
   const confirmSignOut = () =>
-    Alert.alert('Cerrar sesión', 'Tendrás que volver a entrar con tu correo y contraseña.', [
+    showAlert('Cerrar sesión', 'Tendrás que volver a entrar con tu correo y contraseña.', [
       { text: 'Volver', style: 'cancel' },
       {
         text: 'Cerrar sesión',

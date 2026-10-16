@@ -61,3 +61,38 @@ export function secondaryNext(cita: CitaLike): CitaState[] {
   const rest = allowedNext(cita).filter((s) => s !== primary);
   return [...rest.filter((s) => !REASON_REQUIRED.includes(s)), ...rest.filter((s) => REASON_REQUIRED.includes(s))];
 }
+
+/**
+ * Trabajo en terreno (app del profesional). El profesional no confirma la cita
+ * (eso lo hace recepción con el paciente) ni la marca atendida a mano: la cita
+ * queda atendida al terminar la atención, con sus formatos diligenciados.
+ *   domicilio: Salir hacia el paciente → Llegué · Iniciar atención
+ *   sede / telemedicina: Iniciar atención
+ */
+export const FIELD_LABEL: Partial<Record<CitaState, string>> = {
+  en_camino: "Salir hacia el paciente",
+  en_atencion: "Iniciar atención",
+  no_asistio: "El paciente no estaba",
+  cancelada_paciente: "Cancelada por el paciente",
+  cancelada_ips: "Cancelar por la IPS",
+};
+
+/** Paso siguiente del profesional, o null si la cita ya no avanza por estado. */
+export function fieldPrimary(cita: CitaLike): CitaState | null {
+  const allowed = allowedNext(cita);
+  const next: CitaState | null =
+    cita.estado === "programada" || cita.estado === "confirmada"
+      ? cita.modalidad === "domicilio" ? "en_camino" : "en_atencion"
+      : cita.estado === "en_camino" ? "en_atencion" : null;
+  return next && allowed.includes(next) ? next : null;
+}
+
+/** Lo que va en «Más acciones» del profesional: solo novedades (no asistió, cancelaciones). */
+export function fieldSecondary(cita: CitaLike): CitaState[] {
+  return allowedNext(cita).filter((s) => ["no_asistio", "cancelada_paciente", "cancelada_ips"].includes(s));
+}
+
+/** Etiqueta del paso del profesional: al llegar al domicilio, «Llegué · Iniciar atención». */
+export const fieldLabel = (cita: CitaLike, s: CitaState) =>
+  s === "en_atencion" && cita.estado === "en_camino" ? "Llegué · Iniciar atención" : FIELD_LABEL[s] ?? ACTION_LABEL[s] ?? s;
+

@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
-import { Alert, Modal, StyleSheet, Text, View } from 'react-native';
+import { showAlert } from '@/components/overlay/Overlay';
+import { Modal, StyleSheet, Text, View } from 'react-native';
 import { Image } from 'expo-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import SignatureScreen, { type SignatureViewRef } from 'react-native-signature-canvas';
@@ -45,7 +46,7 @@ export function SignatureField({ q, data, set, readOnly }: { q: QuestionData; da
                 set(q.id, img);
                 setOpen(false);
               }}
-              onEmpty={() => Alert.alert('Falta la firma', 'Firma dentro del recuadro antes de guardar.')}
+              onEmpty={() => showAlert('Falta la firma', 'Firma dentro del recuadro antes de guardar.')}
               webStyle={PAD_STYLE}
               autoClear={false}
               imageType="image/png"
