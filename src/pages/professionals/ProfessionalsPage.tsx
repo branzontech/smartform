@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { UserPlus } from "lucide-react";
+import { ClipboardList, UserPlus } from "lucide-react";
 import {
   fetchProfessionals, MODALITY_LABEL, PRO_TYPE_LABEL, type ProfessionalRow,
 } from "@/components/agenda/agenda-api";
@@ -72,7 +72,10 @@ const ProfessionalsPage = () => {
 
   return (
     <div className="mx-auto max-w-7xl space-y-5 py-6">
-      <ModuleHeader title="Profesionales" />
+      <ModuleHeader
+        title="Profesionales"
+        secondary={[{ title: "Formatos de la atención", icon: ClipboardList, onClick: () => navigate("/app/profesionales/formatos") }]}
+      />
       <DataTable
         t={t}
         loading={isLoading}

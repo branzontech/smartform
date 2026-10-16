@@ -46,6 +46,8 @@ const CONSULT_TABS: FolderTab<string>[] = [
 const CONSULT_INITIAL_TABS = ["historia"];
 import { FormHeaderPreview } from '@/components/forms/FormHeaderPreview';
 import { useAuth } from '@/contexts/AuthContext';
+import { addAdmissionFormat, fetchAdmissionFormats, removeAdmissionFormat, type AttentionFormat } from '@/components/agenda/formats-api';
+import { ApiError } from '@/integrations/api/client';
 
 import { PatientHeaderBanner } from '@/components/forms/PatientHeaderBanner';
 import { RecordsHistory } from '@/components/forms/registros/RecordsHistory';
@@ -177,7 +179,7 @@ const FormViewer = () => {
   }, []);
   const [showCompletedDialog, setShowCompletedDialog] = useState(false);
   const [showValidationDialog, setShowValidationDialog] = useState(false);
-  const [validationIssues, setValidationIssues] = useState<{formId: string; title: string; missingCount: number}[]>([]);
+  const [validationIssues, setValidationIssues] = useState<{formId: string; title: string; missingCount: number; empty?: boolean}[]>([]);
   const [showEmptyFormDialog, setShowEmptyFormDialog] = useState(false);
   const [emptyFormIds, setEmptyFormIds] = useState<string[]>([]);
   const [validationErrorsByForm, setValidationErrorsByForm] = useState<Record<string, string[]>>({});
@@ -208,6 +210,39 @@ const FormViewer = () => {
   // Resolve real DB admission UUID (consultationId might be a nanoid from localStorage)
   const isConsultationUUID = consultationId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(consultationId);
   const [resolvedAdmisionId, setResolvedAdmisionId] = useState<string | null>(isConsultationUUID ? consultationId : null);
+
+  // Formatos guardados de la admisión (el principal, los que puso la agenda según el tipo de
+  // profesional y los agregados en la visita). Solo existen cuando la consulta es una admisión real.
+  const persistedAdmisionId = isConsultationUUID ? consultationId : null;
+  const [admissionFormats, setAdmissionFormats] = useState<AttentionFormat[]>([]);
+  /** Hasta tener la lista no se cargan los formatos: así las pestañas llegan todas juntas. */
+  const [admissionFormatsReady, setAdmissionFormatsReady] = useState(!persistedAdmisionId);
+
+  useEffect(() => {
+    if (!persistedAdmisionId) {
+      setAdmissionFormatsReady(true);
+      return;
+    }
+    let vigente = true;
+    fetchAdmissionFormats(persistedAdmisionId)
+      .then(list => { if (vigente) setAdmissionFormats(list ?? []); })
+      // Sin la lista la consulta se abre como antes (formato de la ruta y ?forms=).
+      .catch(e => { if (vigente) toast.error(`No se pudieron cargar los formatos de la cita: ${e instanceof Error ? e.message : 'error inesperado'}`); })
+      .finally(() => { if (vigente) setAdmissionFormatsReady(true); });
+    return () => { vigente = false; };
+    // formId: al cambiar de historia se vuelve a leer (la base ya movió el principal).
+  }, [persistedAdmisionId, formId]);
+
+  const admissionFormatById = React.useMemo(
+    () => new Map(admissionFormats.map(f => [f.formularioId, f])),
+    [admissionFormats],
+  );
+  // El formato de la ruta manda: si el principal guardado es otro (p. ej. aún no se releyó tras
+  // cambiar de historia), no se abre como pestaña aparte.
+  const admissionFormIdsKey = admissionFormats
+    .filter(f => !(formId && f.origen === 'principal' && f.formularioId !== formId))
+    .map(f => f.formularioId)
+    .join(',');
 
   useEffect(() => {
     if (isConsultationUUID) {
@@ -241,10 +276,12 @@ const FormViewer = () => {
   const allFormIds = React.useMemo(() => {
     const ids: string[] = [];
     if (formId) ids.push(formId);
+    // Formatos guardados de la admisión, en el orden que devuelve la API (el principal primero).
+    admissionFormIdsKey.split(',').filter(Boolean).forEach(id => { if (!ids.includes(id)) ids.push(id); });
     extraFormIds.forEach(id => { if (!ids.includes(id)) ids.push(id); });
     dynamicFormIdsKey.split(',').filter(Boolean).forEach(id => { if (!ids.includes(id)) ids.push(id); });
     return ids;
-  }, [formId, extraFormIds, dynamicFormIdsKey]);
+  }, [formId, admissionFormIdsKey, extraFormIds, dynamicFormIdsKey]);
 
   const isMultiForm = allFormIds.length > 1;
 
@@ -292,11 +329,27 @@ const FormViewer = () => {
     }
   }, [showAddFormDialog, addFormSearch, searchForms]);
 
-  const handleRemoveForm = useCallback((targetId: string) => {
+  const handleRemoveForm = useCallback(async (targetId: string) => {
     // Do not allow removing the primary form (the one in the route)
     if (targetId === formId) {
       toast("No se puede quitar el formulario principal");
       return;
+    }
+    // Formato guardado en la admisión: solo se quitan los que agregó el profesional y sin
+    // registro (la API responde 409 en otro caso); los de la agenda vienen con la cita.
+    const persisted = admissionFormatById.get(targetId);
+    if (persisted && persistedAdmisionId) {
+      if (persisted.origen !== 'profesional') {
+        toast("Este formato viene con la cita y no se puede quitar");
+        return;
+      }
+      try {
+        await removeAdmissionFormat(persistedAdmisionId, targetId);
+      } catch (e) {
+        toast.error(e instanceof Error && e.message ? e.message : "No se pudo quitar el formato de la atención");
+        return;
+      }
+      setAdmissionFormats(prev => prev.filter(f => f.formularioId !== targetId));
     }
     // Remove from dynamic and extra (URL) lists
     setDynamicFormIds(prev => prev.filter(id => id !== targetId));
@@ -322,7 +375,7 @@ const FormViewer = () => {
       if (remaining.length > 0) setActiveFormId(remaining[0]);
     }
     toast.success("Formulario quitado de la consulta");
-  }, [formId, extraFormIds, location.pathname, location.search, navigate, activeFormId, allFormIds]);
+  }, [formId, extraFormIds, location.pathname, location.search, navigate, activeFormId, allFormIds, admissionFormatById, persistedAdmisionId]);
 
   const handleAddNewForm = async (newFormId: string) => {
     if (allFormIds.includes(newFormId)) {
@@ -331,6 +384,29 @@ const FormViewer = () => {
     }
     const result = await fetchFormById(newFormId);
     if (result.form) {
+      // Atención guardada: el formato queda también en la admisión (vuelve al reabrirla).
+      // Si la API lo rechaza (sin permiso o no se puede agregar) no se abre la pestaña.
+      if (persistedAdmisionId) {
+        try {
+          await addAdmissionFormat(persistedAdmisionId, newFormId);
+          setAdmissionFormats(prev => prev.some(f => f.formularioId === newFormId) ? prev : [...prev, {
+            formularioId: newFormId,
+            titulo: result.form!.title,
+            tipo: result.form!.formType || 'historia_clinica',
+            obligatorio: false,
+            origen: 'profesional',
+            tieneRespuesta: false,
+          }]);
+        } catch (e) {
+          const message = e instanceof Error && e.message ? e.message : "No se pudo agregar el formato a la atención";
+          if (e instanceof ApiError && (e.status === 403 || e.status === 409)) {
+            toast.error(message);
+            return;
+          }
+          // Otro fallo (red, servidor): se agrega solo en esta pantalla, como antes.
+          toast.error(`${message}. El formato se agregó solo en esta pantalla.`);
+        }
+      }
       const qs = result.form.questions as QuestionData[] || [];
       setFormsMap(prev => ({
         ...prev,
@@ -574,6 +650,8 @@ const FormViewer = () => {
   // Solo carga los formatos que aún no están: agregar uno a mitad de consulta no
   // borra lo escrito en los demás ni pierde sus respuestas ya guardadas.
   useEffect(() => {
+    // Espera la lista de formatos de la admisión para cargar todas las pestañas de una vez.
+    if (!admissionFormatsReady) return;
     let vigente = true;
     const loadMissingForms = async () => {
       const toLoad = allFormIds.filter(id => !formsMapRef.current[id]);
@@ -682,7 +760,7 @@ const FormViewer = () => {
     };
     loadMissingForms();
     return () => { vigente = false; };
-  }, [allFormIds, patientId, consultationId]);
+  }, [allFormIds, patientId, consultationId, admissionFormatsReady]);
 
   const dynamicSchema = createDynamicSchema(questions);
   
@@ -805,7 +883,9 @@ const FormViewer = () => {
   // ── "Completar atención" handler ──
   const handleCompleteAttention = async () => {
     // Phase 1: Check for completely empty forms
-    const emptyForms = allFormIds.filter(fId => formsMap[fId] && isFormEmpty(fId));
+    // Los formatos guardados en la admisión no pasan por este diálogo: si son opcionales y están
+    // vacíos se ignoran; si son obligatorios se validan abajo y no dejan cerrar la atención.
+    const emptyForms = allFormIds.filter(fId => formsMap[fId] && isFormEmpty(fId) && !admissionFormatById.has(fId));
     if (emptyForms.length > 0) {
       setEmptyFormIds(emptyForms);
       setShowEmptyFormDialog(true);
@@ -813,13 +893,18 @@ const FormViewer = () => {
     }
 
     // Phase 2: Validate required fields
-    const issues: {formId: string; title: string; missingCount: number}[] = [];
+    const issues: {formId: string; title: string; missingCount: number; empty?: boolean}[] = [];
     const errMap: Record<string, string[]> = {};
     for (const fId of allFormIds) {
       if (!formsMap[fId]) continue;
+      const persisted = admissionFormatById.get(fId);
+      const empty = isFormEmpty(fId);
+      // Opcional de la cita sin diligenciar: no cuenta para cerrar.
+      if (persisted && !persisted.obligatorio && empty) continue;
       const errors = getRequiredFieldErrors(fId);
-      if (errors.length > 0) {
-        issues.push({ formId: fId, title: formsMap[fId]?.title || 'Formulario', missingCount: errors.length });
+      const requiredButEmpty = !!persisted?.obligatorio && empty;
+      if (errors.length > 0 || requiredButEmpty) {
+        issues.push({ formId: fId, title: formsMap[fId]?.title || 'Formulario', missingCount: errors.length, empty: requiredButEmpty });
         errMap[fId] = errors;
       }
     }
@@ -836,6 +921,16 @@ const FormViewer = () => {
 
   const handleDiscardEmptyForms = useCallback(() => {
     setShowEmptyFormDialog(false);
+    // Agregados por el profesional y guardados en la admisión: se quitan también de ella
+    // (mejor esfuerzo; si la API se niega, el formato vuelve al reabrir la consulta).
+    if (persistedAdmisionId) {
+      const added = emptyFormIds.filter(id => admissionFormatById.get(id)?.origen === 'profesional');
+      added.forEach(id => {
+        removeAdmissionFormat(persistedAdmisionId, id).catch(e =>
+          toast.error(e instanceof Error && e.message ? e.message : "No se pudo quitar el formato de la atención"));
+      });
+      if (added.length) setAdmissionFormats(prev => prev.filter(f => !added.includes(f.formularioId)));
+    }
     setDynamicFormIds(prev => prev.filter(id => !emptyFormIds.includes(id)));
     setFormsMap(prev => {
       const next = { ...prev };
@@ -847,7 +942,7 @@ const FormViewer = () => {
       if (remaining.length > 0) setActiveFormId(remaining[0]);
     }
     setEmptyFormIds([]);
-  }, [emptyFormIds, activeFormId, allFormIds, formsMap]);
+  }, [emptyFormIds, activeFormId, allFormIds, formsMap, persistedAdmisionId, admissionFormatById]);
 
   const doCompleteAttention = async () => {
     setIsCompletingAttention(true);
@@ -1438,7 +1533,7 @@ const FormViewer = () => {
                                 type="button"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  handleRemoveForm(fId);
+                                  void handleRemoveForm(fId);
                                 }}
                                 className={`ml-1.5 w-4 h-4 rounded-full flex items-center justify-center transition-opacity ${
                                   isActive
@@ -1655,7 +1750,10 @@ const FormViewer = () => {
               <div key={issue.formId} className="flex items-center justify-between p-3 rounded-lg border">
                 <div>
                   <p className="text-sm font-medium">{issue.title}</p>
-                  <p className="text-xs" style={{ color: '#ef4444' }}>{issue.missingCount} campo(s) obligatorio(s) vacío(s)</p>
+                  <p className="text-xs" style={{ color: '#ef4444' }}>
+                    {/* Formato obligatorio de la cita que no tiene nada diligenciado */}
+                    {issue.empty && issue.missingCount === 0 ? 'Formato obligatorio sin diligenciar' : `${issue.missingCount} campo(s) obligatorio(s) vacío(s)`}
+                  </p>
                 </div>
                 <Button
                   size="sm"
