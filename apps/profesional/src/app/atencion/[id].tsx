@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { showAlert, showNotice } from '@/components/overlay/Overlay';
-import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { router, useLocalSearchParams, useNavigation } from 'expo-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -9,11 +9,12 @@ import { useAuth } from '@/lib/auth';
 import { BraulioEmpty } from '@/components/Braulio';
 import { Icon3D } from '@/components/Icon3D';
 import { FormatEditor, type FormatHandle, type FormatState } from '@/components/attention/FormatEditor';
-import { FormatList } from '@/components/attention/FormatList';
+import { FormatList, statusText } from '@/components/attention/FormatList';
+import { BottomSheet } from '@/components/overlay/BottomSheet';
 import { OrdersPanel } from '@/components/orders/OrdersPanel';
 import { SegmentedTabs } from '@/components/SegmentedTabs';
 import { Button, Card } from '@/components/ui';
-import { colors } from '@/theme';
+import { colors, radius } from '@/theme';
 
 /** Diligenciar la atención de una cita: sus formatos (los de la agenda y los que agregue el profesional). */
 export default function Atencion() {
@@ -38,6 +39,7 @@ export default function Atencion() {
   const [states, setStates] = useState<Record<string, FormatState>>({});
   const [finishing, setFinishing] = useState(false);
   const [section, setSection] = useState<'formatos' | 'ordenes'>('formatos');
+  const [choosing, setChoosing] = useState(false);
   const handles = useRef<Record<string, FormatHandle>>({});
   const scrollRef = useRef<ScrollView>(null);
   const editorTop = useRef(0);
@@ -111,25 +113,34 @@ export default function Atencion() {
     }
   };
 
+  // Obligatorios: diligenciados y completos. Opcionales: si se empezaron, completos.
+  const problems = list.flatMap((f) => {
+    const s = states[f.formularioId];
+    if (!s?.loaded) return [{ f, why: 'aún está cargando' }];
+    if (s.empty) return f.obligatorio ? [{ f, why: 'está sin diligenciar' }] : [];
+    return s.missing > 0 ? [{ f, why: s.missing === 1 ? 'le falta 1 campo obligatorio' : `le faltan ${s.missing} campos obligatorios` }] : [];
+  });
+
+  /** Abre un formato desde su comienzo, esté donde esté el profesional. */
+  const goToFormat = (formularioId: string) => {
+    setSection('formatos');
+    setActive(formularioId);
+    setTimeout(() => scrollRef.current?.scrollTo({ y: Math.max(editorTop.current - 12, 0), animated: true }), 60);
+  };
+
+  /** Lleva a lo primero que falta: el formato pendiente y, si ya se empezó, su primer campo obligatorio vacío. */
+  const goToPending = () => {
+    const first = problems[0];
+    if (!first) return;
+    goToFormat(first.f.formularioId);
+    if (!states[first.f.formularioId]?.empty) setTimeout(() => handles.current[first.f.formularioId]?.revealMissing(), 260);
+    const rest = problems.length - 1;
+    showAlert(`«${first.f.titulo}» ${first.why}`, rest > 0 ? `Y ${rest} formato${rest > 1 ? 's' : ''} más por completar.` : undefined);
+  };
+
   const finish = () => {
-    // Obligatorios: diligenciados y completos. Opcionales: si se empezaron, completos.
-    const problems = list.flatMap((f) => {
-      const s = states[f.formularioId];
-      if (!s?.loaded) return [{ f, why: 'aún está cargando' }];
-      if (s.empty) return f.obligatorio ? [{ f, why: 'está sin diligenciar' }] : [];
-      return s.missing > 0 ? [{ f, why: s.missing === 1 ? 'le falta 1 campo obligatorio' : `le faltan ${s.missing} campos obligatorios` }] : [];
-    });
     if (problems.length > 0) {
-      const first = problems[0].f.formularioId;
-      setSection('formatos');
-      setActive(first);
-      showNotice({
-        title: 'Falta completar',
-        tone: 'warning',
-        message: problems.map((p) => `«${p.f.titulo}» ${p.why}.`).join('\n'),
-        action: 'Ir al campo',
-        onClose: () => setTimeout(() => handles.current[first]?.revealMissing(), 120),
-      });
+      goToPending();
       return;
     }
     showAlert('Terminar atención', 'Se guardan los formatos y la cita queda como atendida. Después ya no se editan desde la app.', [
@@ -163,6 +174,10 @@ export default function Atencion() {
             : null;
   const saveTone =
     activeState?.status === 'error' ? colors.danger : activeState?.status === 'saving' || activeState?.status === 'dirty' ? colors.muted : colors.success;
+  const activeIndex = list.findIndex((f) => f.formularioId === active);
+  const activeFormat = list[activeIndex];
+  const nextFormat = activeIndex >= 0 ? list[activeIndex + 1] : undefined;
+  const pendingCount = new Set(problems.map((p) => p.f.formularioId)).size;
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.canvas }}>
@@ -214,15 +229,78 @@ export default function Atencion() {
             />
           ))}
         </View>
+        {/* Al final del formato: seguir con el siguiente sin volver arriba. */}
+        {section === 'formatos' && activeFormat && (nextFormat || !readOnly) && (
+          <Card style={styles.next}>
+            {nextFormat ? (
+              <>
+                <View style={{ flex: 1, gap: 2 }}>
+                  <Text style={styles.nextHint}>Siguiente formato</Text>
+                  <Text style={styles.nextTitle} numberOfLines={2}>
+                    {nextFormat.titulo}
+                  </Text>
+                </View>
+                <Button size="sm" title="Continuar" onPress={() => goToFormat(nextFormat.formularioId)} />
+              </>
+            ) : (
+              <>
+                <View style={{ flex: 1, gap: 2 }}>
+                  <Text style={styles.nextHint}>Último formato</Text>
+                  <Text style={styles.nextTitle}>{pendingCount > 0 ? 'Aún hay formatos por completar' : 'Todo listo para terminar'}</Text>
+                </View>
+                <Button size="sm" variant={pendingCount > 0 ? 'secondary' : 'primary'} title={pendingCount > 0 ? 'Ir a lo que falta' : 'Terminar atención'} busy={finishing} onPress={finish} />
+              </>
+            )}
+          </Card>
+        )}
       </ScrollView>
       {!readOnly && (
         <View style={[styles.footer, { paddingBottom: insets.bottom + 10 }]}>
-          <Text style={[styles.saveText, { color: saveTone }]} numberOfLines={2}>
-            {statusLine ?? 'Se guarda solo mientras escribes'}
-          </Text>
-          <Button title="Terminar atención" size="sm" busy={finishing} onPress={finish} />
+          <Pressable style={styles.current} onPress={() => setChoosing(true)} accessibilityRole="button" accessibilityHint="Cambiar de formato">
+            <Text style={styles.currentHint} numberOfLines={1}>
+              {activeFormat ? `Formato ${activeIndex + 1} de ${list.length} · cambiar` : 'Formatos'}
+            </Text>
+            <Text style={styles.currentTitle} numberOfLines={1}>
+              {activeFormat?.titulo ?? '—'}
+            </Text>
+            <Text style={[styles.saveText, { color: saveTone }]} numberOfLines={1}>
+              {statusLine ?? 'Se guarda solo mientras escribes'}
+            </Text>
+          </Pressable>
+          {pendingCount > 0 ? (
+            <Button title="Ir a lo que falta" size="sm" variant="secondary" onPress={goToPending} />
+          ) : (
+            <Button title="Terminar atención" size="sm" busy={finishing} onPress={finish} />
+          )}
         </View>
       )}
+      <BottomSheet visible={choosing} onClose={() => setChoosing(false)} size="auto" title="Formatos de la atención">
+        <View style={styles.sheet}>
+          {list.map((f, i) => {
+            const st = statusText(f, states[f.formularioId]);
+            const selected = f.formularioId === active;
+            return (
+              <Pressable
+                key={f.formularioId}
+                style={({ pressed }) => [styles.choice, selected && styles.choiceSelected, pressed && { opacity: 0.8 }]}
+                onPress={() => {
+                  setChoosing(false);
+                  goToFormat(f.formularioId);
+                }}
+                accessibilityRole="button"
+                accessibilityState={{ selected }}>
+                <Text style={[styles.nextTitle, selected && { color: colors.primary }]} numberOfLines={2}>
+                  {i + 1}. {f.titulo}
+                </Text>
+                <Text style={[styles.currentHint, { color: st.color }]}>
+                  {st.label}
+                  {f.obligatorio ? ' · obligatorio' : ''}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
+      </BottomSheet>
     </View>
   );
 }
@@ -244,5 +322,14 @@ const styles = StyleSheet.create({
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: colors.line,
   },
-  saveText: { flex: 1, fontSize: 14, fontWeight: '600' },
+  saveText: { fontSize: 12, fontWeight: '600' },
+  current: { flex: 1, gap: 1 },
+  currentHint: { fontSize: 12, color: colors.muted },
+  currentTitle: { fontSize: 15, fontWeight: '700', color: colors.ink },
+  next: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  nextHint: { fontSize: 13, fontWeight: '600', color: colors.muted },
+  nextTitle: { fontSize: 16, fontWeight: '700', color: colors.ink },
+  sheet: { paddingHorizontal: 16, paddingBottom: 8, gap: 8 },
+  choice: { borderRadius: radius.control, backgroundColor: colors.surface, paddingHorizontal: 14, paddingVertical: 12, gap: 2 },
+  choiceSelected: { backgroundColor: colors.primarySoft },
 });

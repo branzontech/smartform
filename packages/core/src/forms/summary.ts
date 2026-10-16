@@ -1,16 +1,7 @@
 import { visibleQuestions, hasPartialAnswer, isAnswerable } from "./answers";
 import { scoreSummary, scoredItemsOf, multifieldTotal } from "./scoring";
 import type { FormAnswers, QuestionData } from "./types";
-import { vitalReadings } from "./vitals";
-
-/** Una respuesta del formato lista para leer en el resumen de la atención. */
-export interface AnswerLine {
-  id: string;
-  label: string;
-  value: string;
-  /** Texto largo (párrafos): se muestra debajo del título y no en la misma línea. */
-  long?: boolean;
-}
+import { vitalReadings, type VitalReading } from "./vitals";
 
 const text = (v: unknown) => (v === null || v === undefined ? "" : String(v).trim());
 
@@ -18,6 +9,13 @@ const text = (v: unknown) => (v === null || v === undefined ? "" : String(v).tri
 function partsOf(qId: string, data: FormAnswers): Record<string, unknown> {
   const prefix = `${qId}_`;
   return Object.fromEntries(Object.entries(data).filter(([k]) => k.startsWith(prefix)).map(([k, v]) => [k.slice(prefix.length), v]));
+}
+
+/** Partes de los signos vitales; los personalizados se guardan como `<id>_custom_<signo>`. */
+function vitalParts(qId: string, data: FormAnswers): Record<string, unknown> {
+  const parts = partsOf(qId, data);
+  for (const [k, v] of Object.entries(parts)) if (k.startsWith("custom_")) parts[k.slice("custom_".length)] = v;
+  return parts;
 }
 
 function valueOf(q: QuestionData, data: FormAnswers, all: QuestionData[]): string {
@@ -36,8 +34,6 @@ function valueOf(q: QuestionData, data: FormAnswers, all: QuestionData[]): strin
       const total = s.maxScore ? `${s.total} / ${s.maxScore}` : String(s.total);
       return s.complete && s.interpretation ? `${total} · ${s.interpretation}` : total;
     }
-    case "vitals":
-      return vitalReadings(q, partsOf(q.id, data)).map((r) => `${r.label} ${r.value} ${r.unit}`.trim()).join(" · ");
     case "diagnosis":
       return Array.isArray(v) ? v.map((d: { codigo?: string; descripcion?: string }) => `${d.codigo ?? ""} ${d.descripcion ?? ""}`.trim()).join("\n") : "";
     case "clinical": {
@@ -60,18 +56,41 @@ function valueOf(q: QuestionData, data: FormAnswers, all: QuestionData[]): strin
   }
 }
 
+/** Una pieza del resumen, en el mismo orden y estructura del formato. */
+export type SummaryItem =
+  | { kind: "section"; id: string; title: string }
+  | { kind: "answer"; id: string; label: string; value: string }
+  | { kind: "vitals"; id: string; label: string; readings: VitalReading[] };
+
 /**
- * Lo diligenciado en un formato, en orden y legible: lo que el profesional
- * revisa al terminar la atención. Omite títulos de sección y preguntas vacías.
+ * Lo diligenciado en un formato, en orden y legible, con sus secciones:
+ * lo que el profesional revisa al terminar la atención. Omite preguntas vacías
+ * y secciones que quedaron sin respuestas.
  */
-export function answerLines(questions: QuestionData[], data: FormAnswers): AnswerLine[] {
-  return visibleQuestions(questions, data)
-    .filter((q) => q.type === "score_total" || q.type === "calculation" || (isAnswerable(q) && hasPartialAnswer(q, data)))
-    .map((q) => ({
-      id: q.id,
-      label: q.type === "vitals" ? q.title || "Signos vitales" : q.title,
-      value: valueOf(q, data, questions),
-      long: ["paragraph", "clinical", "diagnosis", "multifield"].includes(q.type),
-    }))
-    .filter((l) => l.value !== "");
+export function summaryItems(questions: QuestionData[], data: FormAnswers): SummaryItem[] {
+  const items: SummaryItem[] = [];
+  let section: SummaryItem | null = null;
+  for (const q of visibleQuestions(questions, data)) {
+    if (q.type === "section") {
+      section = { kind: "section", id: q.id, title: q.title };
+      continue;
+    }
+    if (!(q.type === "score_total" || q.type === "calculation" || (isAnswerable(q) && hasPartialAnswer(q, data)))) continue;
+    let item: SummaryItem | null = null;
+    if (q.type === "vitals") {
+      const readings = vitalReadings(q, vitalParts(q.id, data));
+      if (readings.length) item = { kind: "vitals", id: q.id, label: q.title || "Signos vitales", readings };
+    } else {
+      const value = valueOf(q, data, questions);
+      if (value) item = { kind: "answer", id: q.id, label: q.title, value };
+    }
+    if (!item) continue;
+    // La sección se muestra solo si tiene al menos una respuesta.
+    if (section) {
+      items.push(section);
+      section = null;
+    }
+    items.push(item);
+  }
+  return items;
 }

@@ -3,7 +3,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useQueries, useQuery } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { formatLongDay, localDay, localTime } from '@kerhub/core/agenda';
-import { answerLines } from '@kerhub/core/forms';
+import { summaryItems, type SummaryItem } from '@kerhub/core/forms';
 import { ORDER_TYPE_LABEL, describeItem, type Order } from '@kerhub/core/ordenes';
 import { agenda, attention, errorMessage, formats, orders } from '@/lib/api';
 import { BraulioEmpty } from '@/components/Braulio';
@@ -80,7 +80,7 @@ export default function ResumenAtencion() {
 
         {list.map((f, i) => {
           const q = forms[i];
-          const lines = q?.data ? answerLines(q.data.questions, q.data.formData) : [];
+          const items = q?.data ? summaryItems(q.data.questions, q.data.formData) : [];
           return (
             <Card key={f.formularioId} style={styles.block}>
               <Text style={styles.blockTitle}>{f.titulo}</Text>
@@ -88,15 +88,10 @@ export default function ResumenAtencion() {
                 <ActivityIndicator color={colors.primary} style={{ alignSelf: 'flex-start' }} />
               ) : q?.isError ? (
                 <Text style={styles.error}>No se pudo cargar: {errorMessage(q.error)}</Text>
-              ) : lines.length === 0 ? (
+              ) : items.length === 0 ? (
                 <Text style={styles.empty}>Sin diligenciar</Text>
               ) : (
-                lines.map((l, j) => (
-                  <View key={l.id} style={[l.long ? styles.lineLong : styles.line, j > 0 && styles.divider]}>
-                    <Text style={[styles.lineLabel, !l.long && { flex: 1 }]}>{l.label}</Text>
-                    <Text style={[styles.lineValue, !l.long && styles.lineValueShort]}>{l.value}</Text>
-                  </View>
-                ))
+                items.map((it, j) => <SummaryRow key={it.id} item={it} first={j === 0 || items[j - 1].kind === 'section'} />)
               )}
             </Card>
           );
@@ -118,6 +113,34 @@ export default function ResumenAtencion() {
       <View style={[styles.footer, { paddingBottom: insets.bottom + 10 }]}>
         <Button title="Volver a Mi día" size="sm" onPress={goHome} />
       </View>
+    </View>
+  );
+}
+
+/** Una pieza del formato tal como se diligenció: sección, respuesta o signos vitales en baldosas. */
+function SummaryRow({ item, first }: { item: SummaryItem; first: boolean }) {
+  if (item.kind === 'section') return <Text style={styles.section}>{item.title}</Text>;
+  if (item.kind === 'vitals') {
+    return (
+      <View style={[styles.lineLong, !first && styles.divider]}>
+        <Text style={styles.lineLabel}>{item.label}</Text>
+        <View style={styles.vitals}>
+          {item.readings.map((r) => (
+            <View key={r.key} style={styles.vital}>
+              <Text style={styles.vitalLabel}>{r.label}</Text>
+              <Text style={styles.vitalValue}>
+                {r.value} <Text style={styles.vitalUnit}>{r.unit}</Text>
+              </Text>
+            </View>
+          ))}
+        </View>
+      </View>
+    );
+  }
+  return (
+    <View style={[styles.lineLong, !first && styles.divider]}>
+      <Text style={styles.lineLabel}>{item.label}</Text>
+      <Text style={styles.lineValue}>{item.value}</Text>
     </View>
   );
 }
@@ -149,12 +172,16 @@ const styles = StyleSheet.create({
   meta: { fontSize: 14, color: colors.muted },
   block: { gap: 0 },
   blockTitle: { fontSize: 17, fontWeight: '800', color: colors.ink, marginBottom: 6 },
-  line: { flexDirection: 'row', alignItems: 'flex-start', gap: 12, paddingVertical: 10 },
+  section: { fontSize: 16, fontWeight: '800', color: colors.primary, marginTop: 14, marginBottom: 2, letterSpacing: -0.2 },
+  vitals: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 4 },
+  vital: { width: '48%', flexGrow: 1, borderRadius: 12, backgroundColor: colors.canvas, paddingHorizontal: 12, paddingVertical: 9, gap: 1 },
+  vitalLabel: { fontSize: 12, fontWeight: '600', color: colors.muted },
+  vitalValue: { fontSize: 19, fontWeight: '700', color: colors.ink, fontVariant: ['tabular-nums'] },
+  vitalUnit: { fontSize: 12, fontWeight: '500', color: colors.muted },
   lineLong: { gap: 4, paddingVertical: 10 },
   divider: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.line },
   lineLabel: { fontSize: 13, fontWeight: '600', color: colors.muted },
   lineValue: { fontSize: 15, color: colors.ink, lineHeight: 21 },
-  lineValueShort: { flex: 1.4, textAlign: 'right', fontWeight: '600' },
   empty: { fontSize: 14, color: colors.muted },
   error: { fontSize: 14, color: colors.danger },
   footer: {

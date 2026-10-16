@@ -11,7 +11,7 @@ import { BottomSheet } from '@/components/overlay/BottomSheet';
 import { MoreButton } from '@/components/overlay/MoreButton';
 
 /** Estado de un formato en texto (sin puntos ni cápsulas). */
-function statusText(f: AttentionFormat, s: FormatState | undefined): { label: string; color: string } {
+export function statusText(f: AttentionFormat, s: FormatState | undefined): { label: string; color: string } {
   if (!s?.loaded) return { label: 'Cargando…', color: colors.muted };
   if (s.status === 'error') return { label: 'No se pudo guardar', color: colors.danger };
   if (s.status === 'saving') return { label: 'Guardando…', color: colors.muted };
