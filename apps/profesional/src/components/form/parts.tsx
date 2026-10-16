@@ -22,7 +22,7 @@ export function Field({ readOnly, style, ...props }: TextInputProps & { readOnly
     <TextInput
       editable={!readOnly}
       placeholderTextColor="#a29fae"
-      style={[styles.field, props.multiline && styles.area, readOnly && { color: colors.muted }, style]}
+      style={[styles.field, props.multiline && styles.area, props.multiline && !readOnly && styles.areaCap, readOnly && { color: colors.muted }, style]}
       {...props}
     />
   );
@@ -68,6 +68,8 @@ export const styles = StyleSheet.create({
   label: { fontSize: 15, fontWeight: '700', color: colors.ink },
   field: { minHeight: 48, borderRadius: radius.control, backgroundColor: colors.canvas, paddingHorizontal: 14, paddingVertical: 12, fontSize: 16, color: colors.ink },
   area: { minHeight: 110, textAlignVertical: 'top' },
+  /** Un texto largo pegado crece hasta ~8 líneas y luego se desplaza dentro de su caja. */
+  areaCap: { maxHeight: 200 },
   notice: { fontSize: 14, color: colors.muted, lineHeight: 20 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 48, borderRadius: radius.control, backgroundColor: colors.canvas, paddingHorizontal: 12, paddingVertical: 10 },
   rowSelected: { backgroundColor: colors.primarySoft },

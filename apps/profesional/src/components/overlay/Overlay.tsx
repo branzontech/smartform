@@ -1,19 +1,32 @@
 import { useEffect, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
-import Animated, { FadeInUp, FadeOutUp } from 'react-native-reanimated';
+import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import Animated, { Easing, FadeInUp, FadeOutUp, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors } from '@/theme';
 import { BottomSheet } from './BottomSheet';
 
 /**
- * Hoja de acciones y avisos de la app (reemplazan a Alert del sistema).
- * showAlert tiene la misma forma que Alert.alert: con botones abre una hoja
- * desde abajo; sin botones muestra un aviso arriba que se va solo.
+ * Ventanas y avisos de la app (reemplazan a Alert del sistema).
+ * - showAlert (misma forma que Alert.alert): con botones abre una hoja desde abajo;
+ *   sin botones muestra un aviso oscuro arriba que se va solo.
+ * - showNotice: mensaje importante en el centro de la pantalla (errores, falta completar),
+ *   que se cierra con «Entendido».
  */
 export interface SheetButton {
   text: string;
   style?: 'default' | 'cancel' | 'destructive';
   onPress?: () => void;
+}
+
+export type NoticeTone = 'error' | 'warning' | 'success';
+
+export interface NoticeInput {
+  title: string;
+  message?: string;
+  tone?: NoticeTone;
+  /** Texto del botón; por defecto «Entendido». */
+  action?: string;
+  onClose?: () => void;
 }
 
 interface SheetState {
@@ -29,12 +42,24 @@ interface ToastState {
   message?: string;
 }
 
+interface NoticeState extends NoticeInput {
+  id: number;
+}
+
 /** Cuánto se ve un aviso. */
-const TOAST_MS = 3200;
+const TOAST_MS = 3600;
+const NOTICE_IN = { duration: 180, easing: Easing.out(Easing.cubic) };
+
+const TONE: Record<NoticeTone, { color: string; soft: string; glyph: string }> = {
+  error: { color: colors.danger, soft: '#fdecec', glyph: '!' },
+  warning: { color: '#b45309', soft: '#fdf3e2', glyph: '!' },
+  success: { color: colors.success, soft: '#e8f6ee', glyph: '✓' },
+};
 
 let nextId = 1;
 let sheetListener: ((s: SheetState | null) => void) | null = null;
 let toastListener: ((t: ToastState | null) => void) | null = null;
+let noticeListener: ((n: NoticeState | null) => void) | null = null;
 
 export function showAlert(title: string, message?: string, buttons?: SheetButton[]) {
   if (!buttons || buttons.length === 0) {
@@ -42,6 +67,10 @@ export function showAlert(title: string, message?: string, buttons?: SheetButton
     return;
   }
   sheetListener?.({ id: nextId++, title, message, buttons });
+}
+
+export function showNotice(notice: NoticeInput) {
+  noticeListener?.({ id: nextId++, tone: 'error', ...notice });
 }
 
 function Sheet({ sheet, onClose }: { sheet: SheetState; onClose: () => void }) {
@@ -79,18 +108,53 @@ function Sheet({ sheet, onClose }: { sheet: SheetState; onClose: () => void }) {
   );
 }
 
+/** Mensaje importante en el centro: ícono de color, título grande y «Entendido». */
+function Notice({ notice, onClose }: { notice: NoticeState; onClose: () => void }) {
+  const tone = TONE[notice.tone ?? 'error'];
+  const progress = useSharedValue(0);
+  useEffect(() => {
+    progress.value = withTiming(1, NOTICE_IN);
+  }, [progress]);
+  const card = useAnimatedStyle(() => ({ opacity: progress.value, transform: [{ scale: 0.94 + progress.value * 0.06 }] }));
+  const backdrop = useAnimatedStyle(() => ({ opacity: progress.value }));
+  const close = () => {
+    onClose();
+    notice.onClose?.();
+  };
+  return (
+    <Modal transparent visible animationType="none" onRequestClose={close} statusBarTranslucent>
+      <View style={styles.noticeRoot}>
+        <Animated.View style={[styles.backdrop, backdrop]} />
+        <Animated.View style={[styles.noticeCard, card]} accessibilityRole="alert" accessibilityViewIsModal>
+          <View style={[styles.noticeIcon, { backgroundColor: tone.soft }]}>
+            <Text style={[styles.noticeGlyph, { color: tone.color }]}>{tone.glyph}</Text>
+          </View>
+          <Text style={styles.noticeTitle}>{notice.title}</Text>
+          {notice.message ? <Text style={styles.noticeMessage}>{notice.message}</Text> : null}
+          <Pressable onPress={close} accessibilityRole="button" style={({ pressed }) => [styles.noticeButton, pressed && styles.pressed]}>
+            <Text style={styles.noticeButtonText}>{notice.action ?? 'Entendido'}</Text>
+          </Pressable>
+        </Animated.View>
+      </View>
+    </Modal>
+  );
+}
+
 /** Se monta una vez en la raíz de la app. */
 export function OverlayHost() {
   const insets = useSafeAreaInsets();
   const [sheet, setSheet] = useState<SheetState | null>(null);
   const [toast, setToast] = useState<ToastState | null>(null);
+  const [notice, setNotice] = useState<NoticeState | null>(null);
 
   useEffect(() => {
     sheetListener = setSheet;
     toastListener = setToast;
+    noticeListener = setNotice;
     return () => {
       sheetListener = null;
       toastListener = null;
+      noticeListener = null;
     };
   }, []);
 
@@ -103,11 +167,12 @@ export function OverlayHost() {
   return (
     <>
       {sheet ? <Sheet key={sheet.id} sheet={sheet} onClose={() => setSheet(null)} /> : null}
+      {notice ? <Notice key={notice.id} notice={notice} onClose={() => setNotice(null)} /> : null}
       {toast ? (
         <Animated.View
           key={toast.id}
-          entering={FadeInUp.duration(220)}
-          exiting={FadeOutUp.duration(180)}
+          entering={FadeInUp.duration(200)}
+          exiting={FadeOutUp.duration(160)}
           pointerEvents="box-none"
           style={[styles.toastWrap, { top: insets.top + 8 }]}>
           <Pressable onPress={() => setToast(null)} style={styles.toast} accessibilityRole="alert">
@@ -130,19 +195,43 @@ const styles = StyleSheet.create({
   actionText: { fontSize: 16, color: colors.ink },
   cancel: { minHeight: 54, borderRadius: 18, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' },
   cancelText: { fontSize: 16, fontWeight: '600', color: colors.primary },
+  noticeRoot: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 28 },
+  backdrop: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(20,22,28,0.45)' },
+  noticeCard: {
+    width: '100%',
+    maxWidth: 360,
+    backgroundColor: colors.surface,
+    borderRadius: 26,
+    paddingHorizontal: 22,
+    paddingTop: 26,
+    paddingBottom: 18,
+    alignItems: 'center',
+    gap: 8,
+    shadowColor: '#14161c',
+    shadowOpacity: 0.2,
+    shadowRadius: 30,
+    shadowOffset: { width: 0, height: 12 },
+    elevation: 12,
+  },
+  noticeIcon: { width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center', marginBottom: 4 },
+  noticeGlyph: { fontSize: 28, fontWeight: '800' },
+  noticeTitle: { fontSize: 20, fontWeight: '800', color: colors.ink, textAlign: 'center', letterSpacing: -0.3 },
+  noticeMessage: { fontSize: 15, color: colors.muted, lineHeight: 22, textAlign: 'center' },
+  noticeButton: { marginTop: 12, alignSelf: 'stretch', minHeight: 46, borderRadius: 14, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center' },
+  noticeButtonText: { fontSize: 16, fontWeight: '700', color: '#fff' },
   toastWrap: { position: 'absolute', left: 12, right: 12, zIndex: 50 },
   toast: {
-    backgroundColor: colors.surface,
+    backgroundColor: '#1d1b26',
     borderRadius: 18,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    gap: 2,
+    paddingHorizontal: 18,
+    paddingVertical: 14,
+    gap: 3,
     shadowColor: '#14161c',
-    shadowOpacity: 0.12,
-    shadowRadius: 18,
-    shadowOffset: { width: 0, height: 6 },
-    elevation: 6,
+    shadowOpacity: 0.28,
+    shadowRadius: 20,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 8,
   },
-  toastTitle: { fontSize: 15, fontWeight: '700', color: colors.ink },
-  toastMessage: { fontSize: 13, color: colors.muted, lineHeight: 18 },
+  toastTitle: { fontSize: 16, fontWeight: '700', color: '#fff' },
+  toastMessage: { fontSize: 14, color: 'rgba(255,255,255,0.78)', lineHeight: 19 },
 });

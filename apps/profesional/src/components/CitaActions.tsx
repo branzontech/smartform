@@ -23,6 +23,7 @@ export function CitaActions({ cita, compact = false }: { cita: Pick<Cita, 'id' |
   const primary = fieldPrimary(cita);
   const others = fieldSecondary(cita);
   const openAttention = () => router.push({ pathname: '/atencion/[id]', params: { id: cita.id } });
+  const openSummary = () => router.push({ pathname: '/atencion/resumen/[id]', params: { id: cita.id } });
 
   const change = useMutation({
     mutationFn: async ({ estado, motivo }: { estado: CitaState; motivo?: string }) => {
@@ -59,7 +60,7 @@ export function CitaActions({ cita, compact = false }: { cita: Pick<Cita, 'id' |
       <MoreButton actions={others.map((estado) => ({ label: fieldLabel(cita, estado), destructive: REASON_REQUIRED.includes(estado), onPress: () => run(estado) }))} />
       {primary && <Button size="sm" title={fieldLabel(cita, primary)} busy={change.isPending} onPress={() => run(primary)} />}
       {inAttention && <Button size="sm" title="Continuar atención" onPress={openAttention} />}
-      {attended && <Button size="sm" variant="secondary" title="Ver atención" onPress={openAttention} />}
+      {attended && <Button size="sm" variant="secondary" title="Ver atención" onPress={openSummary} />}
 
       <BottomSheet visible={!!reasonFor} onClose={() => setReasonFor(null)} size="auto" title={reasonFor ? fieldLabel(cita, reasonFor) : ''}>
         <View style={styles.sheet}>

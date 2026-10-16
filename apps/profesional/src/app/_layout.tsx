@@ -44,6 +44,7 @@ function Boot() {
         <Stack.Screen name="(tabs)" options={{ headerShown: false, animation: 'fade' }} />
         <Stack.Screen name="cita/[id]" options={{ title: 'Cita', headerBackTitle: 'Atrás' }} />
         <Stack.Screen name="atencion/[id]" options={{ title: 'Atención', headerBackTitle: 'Cita' }} />
+        <Stack.Screen name="atencion/resumen/[id]" options={{ title: 'Resumen de la atención', headerBackTitle: 'Cita' }} />
         <Stack.Screen name="contenido/[id]" options={{ title: '', headerBackTitle: 'Inicio', headerTransparent: true }} />
       </Stack>
       <OverlayHost />

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { showAlert } from '@/components/overlay/Overlay';
+import { showAlert, showNotice } from '@/components/overlay/Overlay';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { router, useLocalSearchParams, useNavigation } from 'expo-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -58,6 +58,20 @@ export default function Atencion() {
     return results.every(Boolean);
   }, []);
 
+  // Si un formato no se pudo guardar solo, se avisa en el centro (una vez por fallo).
+  const warnedError = useRef<Record<string, boolean>>({});
+  useEffect(() => {
+    for (const f of list) {
+      const s = states[f.formularioId];
+      if (s?.status === 'error' && !warnedError.current[f.formularioId]) {
+        warnedError.current[f.formularioId] = true;
+        showNotice({ title: 'No se pudo guardar', message: `«${f.titulo}»: ${s.error ?? 'revisa la conexión'}. Lo escrito sigue en pantalla y se reintenta con el próximo cambio.` });
+      } else if (s && s.status !== 'error') {
+        warnedError.current[f.formularioId] = false;
+      }
+    }
+  }, [list, states]);
+
   // Al salir de la pantalla se guarda lo pendiente de todos los formatos.
   useEffect(() => navigation.addListener('beforeRemove', () => void saveAll()), [navigation, saveAll]);
 
@@ -68,7 +82,7 @@ export default function Atencion() {
       await formatsQuery.refetch();
       setActive(formularioId);
     } catch (e) {
-      showAlert('No se pudo agregar', errorMessage(e));
+      showNotice({ title: 'No se pudo agregar el formato', message: errorMessage(e) });
     }
   };
   const removeFormat = async (formularioId: string) => {
@@ -78,7 +92,7 @@ export default function Atencion() {
       if (active === formularioId) setActive(null);
       await formatsQuery.refetch();
     } catch (e) {
-      showAlert('No se pudo quitar', errorMessage(e));
+      showNotice({ title: 'No se pudo quitar el formato', message: errorMessage(e) });
     }
   };
 
@@ -89,10 +103,9 @@ export default function Atencion() {
       if (!(await saveAll())) throw new Error('Algún formato no se pudo guardar. Revisa la conexión e intenta de nuevo.');
       await attention.completeAdmission(admisionId);
       await queryClient.invalidateQueries({ queryKey: ['agenda'] });
-      showAlert('Atención terminada', 'Los formatos quedaron guardados y la cita, atendida.');
-      router.back();
+      router.replace({ pathname: '/atencion/resumen/[id]', params: { id, recien: '1' } });
     } catch (e) {
-      showAlert('No se pudo terminar', errorMessage(e));
+      showNotice({ title: 'No se pudo terminar la atención', message: errorMessage(e) });
     } finally {
       setFinishing(false);
     }
@@ -110,8 +123,13 @@ export default function Atencion() {
       const first = problems[0].f.formularioId;
       setSection('formatos');
       setActive(first);
-      setTimeout(() => handles.current[first]?.revealMissing(), 300);
-      showAlert('Falta completar', problems.map((p) => `«${p.f.titulo}» ${p.why}.`).join('\n'));
+      showNotice({
+        title: 'Falta completar',
+        tone: 'warning',
+        message: problems.map((p) => `«${p.f.titulo}» ${p.why}.`).join('\n'),
+        action: 'Ir al campo',
+        onClose: () => setTimeout(() => handles.current[first]?.revealMissing(), 120),
+      });
       return;
     }
     showAlert('Terminar atención', 'Se guardan los formatos y la cita queda como atendida. Después ya no se editan desde la app.', [
@@ -143,6 +161,8 @@ export default function Atencion() {
           : activeState?.savedAt
             ? `Guardado a las ${activeState.savedAt}`
             : null;
+  const saveTone =
+    activeState?.status === 'error' ? colors.danger : activeState?.status === 'saving' || activeState?.status === 'dirty' ? colors.muted : colors.success;
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.canvas }}>
@@ -154,7 +174,6 @@ export default function Atencion() {
             <Text style={styles.meta}>
               {cita.tipoDocumento ?? ''} {cita.documento ?? ''}
             </Text>
-            {!readOnly && statusLine ? <Text style={[styles.meta, activeState?.status === 'error' && { color: colors.danger }]}>{statusLine}</Text> : null}
           </View>
         </Card>
         {readOnly && (
@@ -198,7 +217,10 @@ export default function Atencion() {
       </ScrollView>
       {!readOnly && (
         <View style={[styles.footer, { paddingBottom: insets.bottom + 10 }]}>
-          <Button title="Terminar atención" busy={finishing} onPress={finish} />
+          <Text style={[styles.saveText, { color: saveTone }]} numberOfLines={2}>
+            {statusLine ?? 'Se guarda solo mientras escribes'}
+          </Text>
+          <Button title="Terminar atención" size="sm" busy={finishing} onPress={finish} />
         </View>
       )}
     </View>
@@ -212,5 +234,15 @@ const styles = StyleSheet.create({
   title: { fontSize: 19, fontWeight: '800', color: colors.ink },
   meta: { fontSize: 14, color: colors.muted },
   notice: { fontSize: 14, color: colors.muted, paddingHorizontal: 4 },
-  footer: { paddingHorizontal: 16, paddingTop: 10, backgroundColor: colors.canvas, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.line },
+  footer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingHorizontal: 16,
+    paddingTop: 10,
+    backgroundColor: colors.surface,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: colors.line,
+  },
+  saveText: { flex: 1, fontSize: 14, fontWeight: '600' },
 });
