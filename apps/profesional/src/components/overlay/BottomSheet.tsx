@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { Modal, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
-import Animated, { runOnJS, useAnimatedKeyboard, useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
+import Animated, { Easing, runOnJS, useAnimatedKeyboard, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors } from '@/theme';
 
@@ -12,7 +12,8 @@ const CLOSE_DISTANCE = 120;
 const CLOSE_VELOCITY = 900;
 /** Aire entre el borde de arriba de la pantalla y la hoja cuando el teclado la empuja. */
 const TOP_GAP = 8;
-const SPRING = { damping: 24, stiffness: 230, mass: 0.9 };
+/** Entrada sin rebote: rápida y frena al final. */
+const OPEN = { duration: 260, easing: Easing.out(Easing.cubic) };
 
 /**
  * Hoja que nace desde abajo: la forma de toda ventana con contenido en la app.
@@ -48,11 +49,11 @@ export function BottomSheet({
     if (visible) {
       setMounted(true);
       offset.value = height;
-      offset.value = withSpring(0, SPRING);
+      offset.value = withTiming(0, OPEN);
       shade.value = withTiming(1, { duration: 220 });
     } else {
       shade.value = withTiming(0, { duration: 160 });
-      offset.value = withTiming(height, { duration: 200 }, (done) => {
+      offset.value = withTiming(height, { duration: 180, easing: Easing.in(Easing.cubic) }, (done) => {
         if (done) runOnJS(setMounted)(false);
       });
     }
@@ -65,7 +66,7 @@ export function BottomSheet({
     })
     .onEnd((e) => {
       if (e.translationY > CLOSE_DISTANCE || e.velocityY > CLOSE_VELOCITY) runOnJS(onClose)();
-      else offset.value = withSpring(0, SPRING);
+      else offset.value = withTiming(0, OPEN);
     });
 
   const topInset = insets.top;

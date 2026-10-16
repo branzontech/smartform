@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import Animated, { Easing, FadeOut, useAnimatedStyle, useSharedValue, withDelay, withRepeat, withSequence, withSpring, withTiming } from 'react-native-reanimated';
+import Animated, { Easing, FadeOut, useAnimatedStyle, useSharedValue, withDelay, withRepeat, withSequence, withTiming } from 'react-native-reanimated';
 import { Braulio } from './Braulio';
 import { colors } from '@/theme';
 
@@ -14,7 +14,7 @@ export function Intro({ onShown }: { onShown?: () => void }) {
   const words = useSharedValue(0);
 
   useEffect(() => {
-    scale.value = withSpring(1, { damping: 12, stiffness: 140 });
+    scale.value = withTiming(1, { duration: 380, easing: Easing.out(Easing.cubic) });
     words.value = withDelay(180, withTiming(1, { duration: 420, easing: Easing.out(Easing.cubic) }));
     // Braulio flota mientras carga.
     lift.value = withDelay(500, withRepeat(withSequence(withTiming(-8, { duration: 700 }), withTiming(0, { duration: 700 })), -1));

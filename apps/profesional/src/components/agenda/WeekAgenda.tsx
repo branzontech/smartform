@@ -18,7 +18,7 @@ export function WeekAgenda({ days, byDay, onOpenDay }: { days: string[]; byDay: 
         const citas = byDay[d] ?? [];
         const isToday = d === now;
         return (
-          <Animated.View key={d} entering={FadeInDown.delay(i * 45).springify().damping(18)} style={[styles.day, citas.length === 0 && styles.free]}>
+          <Animated.View key={d} entering={FadeInDown.delay(i * 30).duration(220)} style={[styles.day, citas.length === 0 && styles.free]}>
             <Pressable onPress={() => onOpenDay(d)} style={styles.head} accessibilityRole="button">
               <Text style={[styles.dayName, isToday && { color: colors.primary }]}>
                 {capitalize(formatWeekday(d))} {dayOfMonth(d)}

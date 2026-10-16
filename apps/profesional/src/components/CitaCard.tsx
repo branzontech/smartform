@@ -13,7 +13,7 @@ export const CLOSED_STATES = ['cancelada_paciente', 'cancelada_ips', 'no_asistio
 export function CitaCard({ cita, index = 0 }: { cita: Cita; index?: number }) {
   const faded = CLOSED_STATES.includes(cita.estado);
   return (
-    <Animated.View entering={FadeInDown.delay(Math.min(index, 8) * 50).springify().damping(18)}>
+    <Animated.View entering={FadeInDown.delay(Math.min(index, 8) * 30).duration(220)}>
       <Pressable onPress={() => router.push({ pathname: '/cita/[id]', params: { id: cita.id } })}>
         <Card style={faded && { opacity: 0.6 }}>
           <View style={styles.top}>

@@ -44,7 +44,7 @@ export function MoreButton({ actions, label = 'Más acciones', size = 36 }: { ac
       <Modal transparent visible={!!anchor} animationType="none" onRequestClose={close} statusBarTranslucent>
         <Pressable style={StyleSheet.absoluteFill} onPress={close} accessibilityLabel="Cerrar menú" />
         {anchor ? (
-          <Animated.View entering={ZoomIn.springify().damping(18).stiffness(260)} exiting={FadeOut.duration(120)} style={[styles.menu, { top, right }]}>
+          <Animated.View entering={ZoomIn.duration(140)} exiting={FadeOut.duration(120)} style={[styles.menu, { top, right }]}>
             {actions.map((a, i) => (
               <Pressable
                 key={`${a.label}-${i}`}

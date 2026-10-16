@@ -20,7 +20,7 @@ export function Upcoming({ items }: { items: ContentItem[] }) {
         {items.map((item, i) => {
           const d = dateBlock(item.fechaInicio ?? item.creadoEn);
           return (
-            <Animated.View key={item.id} entering={FadeInDown.delay(i * 50).springify().damping(18)}>
+            <Animated.View key={item.id} entering={FadeInDown.delay(i * 30).duration(220)}>
               <Pressable onPress={() => open(item.id)} style={[styles.eventRow, i > 0 && styles.divider]}>
                 <View style={styles.dateBox}>
                   <Text style={styles.dateDay}>{d.day}</Text>
@@ -85,7 +85,7 @@ export function News({ items }: { items: ContentItem[] }) {
   return (
     <Section title="Noticias">
       {items.map((item, i) => (
-        <Animated.View key={item.id} entering={FadeInDown.delay(i * 50).springify().damping(18)}>
+        <Animated.View key={item.id} entering={FadeInDown.delay(i * 30).duration(220)}>
           <Pressable onPress={() => open(item.id)} style={styles.newsCard}>
             <ContentImage path={item.imagenRuta} fallback={FALLBACK_ICON[item.tipo]} style={styles.thumb} iconSize={44} />
             <View style={{ flex: 1, gap: 2 }}>

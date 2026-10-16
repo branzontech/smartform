@@ -22,7 +22,7 @@ export function RouteCard({ citas, isToday }: { citas: Cita[]; isToday: boolean 
   if (visits.length === 0) return null;
   const places = [...new Set(visits.map((c) => barrio(c.direccion)).filter(Boolean))].join(' · ');
   return (
-    <Animated.View entering={FadeInDown.springify().damping(18)} style={styles.card}>
+    <Animated.View entering={FadeInDown.duration(220)} style={styles.card}>
       <Icon3D name="zonas" size={48} />
       <View style={{ flex: 1, gap: 2 }}>
         <Text style={styles.title}>{visits.length === 1 ? '1 visita a domicilio' : `${visits.length} visitas a domicilio`}</Text>

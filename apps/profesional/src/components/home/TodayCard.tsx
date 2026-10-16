@@ -28,7 +28,7 @@ export function TodayCard() {
           : `Te quedan ${pending.length} citas hoy`;
 
   return (
-    <Animated.View entering={FadeInDown.springify().damping(18)}>
+    <Animated.View entering={FadeInDown.duration(220)}>
       <Pressable onPress={() => router.push('/mi-dia')} style={({ pressed }) => [styles.card, pressed && { opacity: 0.92 }]} accessibilityRole="button">
         <View style={{ flex: 1, gap: 6 }}>
           <Text style={styles.title}>{title}</Text>

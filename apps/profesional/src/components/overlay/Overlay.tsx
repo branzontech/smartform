@@ -106,7 +106,7 @@ export function OverlayHost() {
       {toast ? (
         <Animated.View
           key={toast.id}
-          entering={FadeInUp.springify().damping(20)}
+          entering={FadeInUp.duration(220)}
           exiting={FadeOutUp.duration(180)}
           pointerEvents="box-none"
           style={[styles.toastWrap, { top: insets.top + 8 }]}>

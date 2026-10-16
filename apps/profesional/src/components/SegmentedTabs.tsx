@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import Animated, { useAnimatedStyle, withSpring } from 'react-native-reanimated';
+import Animated, { Easing, useAnimatedStyle, withTiming } from 'react-native-reanimated';
 import { colors } from '@/theme';
 
 const PAD = 4;
@@ -12,7 +12,7 @@ export function SegmentedTabs<T extends string>({ options, value, onChange }: { 
   const index = Math.max(0, options.findIndex((o) => o.value === value));
   const thumb = useAnimatedStyle(() => ({
     width: segment,
-    transform: [{ translateX: withSpring(index * segment, { damping: 20, stiffness: 220 }) }],
+    transform: [{ translateX: withTiming(index * segment, { duration: 200, easing: Easing.out(Easing.cubic) }) }],
   }));
 
   return (
