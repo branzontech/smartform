@@ -9,6 +9,8 @@ import { BraulioEmpty } from '@/components/Braulio';
 import { Icon3D } from '@/components/Icon3D';
 import { FormatEditor, type FormatHandle, type FormatState } from '@/components/attention/FormatEditor';
 import { FormatList } from '@/components/attention/FormatList';
+import { OrdersPanel } from '@/components/orders/OrdersPanel';
+import { SegmentedTabs } from '@/components/SegmentedTabs';
 import { Button, Card } from '@/components/ui';
 import { colors } from '@/theme';
 
@@ -34,6 +36,7 @@ export default function Atencion() {
   const [active, setActive] = useState<string | null>(null);
   const [states, setStates] = useState<Record<string, FormatState>>({});
   const [finishing, setFinishing] = useState(false);
+  const [section, setSection] = useState<'formatos' | 'ordenes'>('formatos');
   const handles = useRef<Record<string, FormatHandle>>({});
   const scrollRef = useRef<ScrollView>(null);
   const editorTop = useRef(0);
@@ -104,6 +107,7 @@ export default function Atencion() {
     });
     if (problems.length > 0) {
       const first = problems[0].f.formularioId;
+      setSection('formatos');
       setActive(first);
       setTimeout(() => handles.current[first]?.revealMissing(), 300);
       Alert.alert('Falta completar', problems.map((p) => `«${p.f.titulo}» ${p.why}.`).join('\n'));
@@ -157,8 +161,22 @@ export default function Atencion() {
             {cita.estado === 'atendida' ? 'La atención ya terminó: los formatos son de solo lectura.' : 'Inicia la atención desde la cita para diligenciar los formatos.'}
           </Text>
         )}
-        <FormatList items={list} states={states} active={active} readOnly={readOnly} onSelect={setActive} onAdd={addFormat} onRemove={removeFormat} />
+        <SegmentedTabs
+          options={[
+            { value: 'formatos', label: 'Formatos' },
+            { value: 'ordenes', label: 'Órdenes' },
+          ]}
+          value={section}
+          onChange={setSection}
+        />
+        {section === 'ordenes' && (
+          <OrdersPanel admisionId={admisionId} canOrder={!readOnly && ['admin', 'doctor'].includes(me.empresa?.rol ?? '')} isAdmin={me.empresa?.rol === 'admin'} />
+        )}
+        {section === 'formatos' && (
+          <FormatList items={list} states={states} active={active} readOnly={readOnly} onSelect={setActive} onAdd={addFormat} onRemove={removeFormat} />
+        )}
         <View
+          style={section === 'formatos' ? undefined : { display: 'none' }}
           onLayout={(e) => {
             editorTop.current = e.nativeEvent.layout.y;
           }}>

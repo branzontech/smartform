@@ -18,6 +18,11 @@ export const ICONS_3D = {
   zonas: require('../../../../public/iconos/zonas.webp'),
   notificaciones: require('../../../../public/iconos/notificaciones.webp'),
   seguridad: require('../../../../public/iconos/seguridad.webp'),
+  farmacia: require('../../../../public/iconos/farmacia.webp'),
+  laboratorio: require('../../../../public/iconos/laboratorio.webp'),
+  imagenologia: require('../../../../public/iconos/imagenologia.webp'),
+  especialidades: require('../../../../public/iconos/especialidades.webp'),
+  cirugia: require('../../../../public/iconos/cirugia.webp'),
 } as const;
 
 export type Icon3DName = keyof typeof ICONS_3D;
