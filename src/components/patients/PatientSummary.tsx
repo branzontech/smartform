@@ -33,8 +33,8 @@ export interface AdmissionSummaryRow {
 interface PatientSummaryProps {
   patient: EditablePatientRow;
   admissions: AdmissionSummaryRow[];
-  /** Volver a buscar otro paciente. */
-  onChange: () => void;
+  /** Volver a buscar otro paciente (sin él, no se ofrece «Cambiar paciente»). */
+  onChange?: () => void;
   /** Los datos se editaron aquí mismo. */
   onUpdated: (patient: EditablePatientRow) => void;
 }
@@ -129,10 +129,12 @@ export function PatientSummary({ patient: p, admissions, onChange, onUpdated }: 
         <Pencil className="h-3.5 w-3.5" />
         Editar
       </Button>
-      <Button variant="ghost" size="sm" onClick={onChange} className="gap-1.5 rounded-full">
-        <ArrowLeftRight className="h-3.5 w-3.5" />
-        Cambiar paciente
-      </Button>
+      {onChange && (
+        <Button variant="ghost" size="sm" onClick={onChange} className="gap-1.5 rounded-full">
+          <ArrowLeftRight className="h-3.5 w-3.5" />
+          Cambiar paciente
+        </Button>
+      )}
     </div>
   );
   const identity = (

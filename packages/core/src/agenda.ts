@@ -215,6 +215,8 @@ export function createAgendaApi(fetcher: Fetcher) {
 
     fetchCitas: (params: { desde: string; hasta: string; profesionalId?: string | null; pacienteId?: string | null }) =>
   fetcher<Cita[]>(`/api/agenda/citas?${qs(params)}`),
+    /** Citas de un paciente, de la más reciente a la más antigua (las últimas 300). */
+    fetchPatientCitas: (pacienteId: string) => fetcher<Cita[]>(`/api/agenda/pacientes/${pacienteId}/citas`),
     fetchCita: (id: string) => fetcher<Cita & { eventos: CitaEvent[] }>(`/api/agenda/citas/${id}`),
     fetchMyDay: (fecha?: string) => fetcher<{ fecha: string; citas: Cita[] }>(`/api/agenda/mi-dia${fecha ? `?fecha=${fecha}` : ""}`),
     /** Citas del profesional en sesión entre dos días incluidos (máx. 62 días). */

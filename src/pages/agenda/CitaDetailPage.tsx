@@ -97,6 +97,11 @@ export default function CitaDetailPage() {
               {cita.sede && <Field label="Sede">{cita.sede}</Field>}
               <Field label="Servicio">{cita.servicio ? `${cita.servicioCodigo ? `${cita.servicioCodigo} · ` : ""}${cita.servicio}` : "—"}</Field>
               <Field label="Convenio">{cita.convenio ?? "—"}</Field>
+              {cita.admisionId && (cita.estado === "en_atencion" || cita.estado === "atendida") && (
+                <Field label="Atención">
+                  <Link to={`/app/pacientes/${cita.pacienteId}?tab=atenciones&cita=${cita.id}`} className={linkClass}>Ver lo registrado</Link>
+                </Field>
+              )}
               {cita.motivo && <Field label="Motivo de la consulta" wide>{cita.motivo}</Field>}
               {cita.notas && <Field label="Notas" wide><span className="whitespace-pre-line">{cita.notas}</span></Field>}
               {cita.motivoCancelacion && <Field label="Motivo de cancelación" wide>{cita.motivoCancelacion}</Field>}

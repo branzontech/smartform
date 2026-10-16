@@ -17,6 +17,7 @@ export const {
   fetchSlots,
   fetchCitas,
   fetchCita,
+  fetchPatientCitas,
   fetchMyDay,
   createCita,
   changeCitaState,

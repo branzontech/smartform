@@ -1,577 +1,144 @@
-import React, { useState, useEffect } from "react";
-import { useParams, useNavigate, useLocation } from "react-router-dom";
-import { Header } from "@/components/layout/header";
-import { BackButton } from "@/App";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { format, parse, isWithinInterval, subMonths } from "date-fns";
-import { es } from "date-fns/locale";
-import { 
-  User, Calendar, Phone, Mail, MapPin, 
-  FileText, Plus, ClipboardList, Search,
-  Filter, FilePlus, ExternalLink
-} from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Patient, MedicalConsultation, PatientWithConsultations } from "@/types/patient-types";
-import { getFormResponsesByConsultation } from "@/utils/form-utils";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { BarTabs } from "@/components/kit/table";
+import { db } from "@/integrations/data/client";
+import { fetchPatientCitas } from "@/components/agenda/agenda-api";
+import { errorMessage } from "@/components/agenda/agenda-ui";
+import { PatientSummary, type AdmissionSummaryRow } from "@/components/patients/PatientSummary";
+import type { EditablePatientRow } from "@/components/patients/PatientEditForm";
+import { PatientAttentions } from "@/components/patients/PatientAttentions";
+import { RecordsHistory } from "@/components/forms/registros/RecordsHistory";
+import { useRecordsHistory } from "@/components/forms/registros/useRecordsHistory";
 
-const PASTEL_COLORS = [
-  "bg-[#F2FCE2]", // Soft Green
-  "bg-[#FEF7CD]", // Soft Yellow
-  "bg-[#FEC6A1]", // Soft Orange
-  "bg-[#E5DEFF]", // Soft Purple
-  "bg-[#FFDEE2]", // Soft Pink
-  "bg-[#FDE1D3]", // Soft Peach
-  "bg-[#D3E4FD]", // Soft Blue
-  "bg-[#F1F0FB]", // Soft Gray
-];
+type Tab = "atenciones" | "registros";
 
-const generateMockConsultations = (patientId: string): MedicalConsultation[] => {
-  const today = new Date();
-  
-  return [
-    {
-      id: "mock-cons-1",
-      patientId,
-      consultationDate: new Date(today.getFullYear(), today.getMonth() - 1, 15),
-      reason: "Dolor de cabeza y mareos frecuentes",
-      diagnosis: "Migraña tensional",
-      treatment: "Ibuprofeno 400mg c/8h por 5 días. Técnicas de relajación.",
-      notes: "Paciente refiere estrés laboral intenso en las últimas semanas.",
-      status: "Completada",
-      formId: "mock-form-1",
-      formTitle: "Historia Clínica General",
-      formCompleted: true,
-      formCompletedAt: new Date(today.getFullYear(), today.getMonth() - 1, 15).toISOString()
-    },
-    {
-      id: "mock-cons-2",
-      patientId,
-      consultationDate: new Date(today.getFullYear(), today.getMonth() - 2, 5),
-      reason: "Control rutinario",
-      diagnosis: "Paciente sano",
-      treatment: "N/A",
-      notes: "Se realizaron exámenes de laboratorio de rutina",
-      status: "Completada",
-      formId: "mock-form-2",
-      formTitle: "Examen Físico Completo",
-      formCompleted: true,
-      formCompletedAt: new Date(today.getFullYear(), today.getMonth() - 2, 5).toISOString()
-    },
-    {
-      id: "mock-cons-3",
-      patientId,
-      consultationDate: new Date(today.getFullYear(), today.getMonth() - 4, 22),
-      reason: "Dolor en articulaciones",
-      diagnosis: "Artritis leve",
-      treatment: "Diclofenaco 50mg c/12h por 7 días. Compresas calientes.",
-      followUpDate: new Date(today.getFullYear(), today.getMonth() - 3, 20),
-      status: "Completada",
-      formId: "mock-form-3",
-      formTitle: "Evaluación Reumatológica",
-      formCompleted: true,
-      formCompletedAt: new Date(today.getFullYear(), today.getMonth() - 4, 22).toISOString()
-    },
-    {
-      id: "mock-cons-4",
-      patientId,
-      consultationDate: new Date(today.getFullYear(), today.getMonth(), today.getDate() - 2),
-      reason: "Seguimiento de migraña",
-      diagnosis: "Migraña en remisión",
-      treatment: "Continuar con técnicas de manejo del estrés",
-      status: "Completada",
-      formId: "mock-form-4",
-      formTitle: "Seguimiento Neurológico",
-      formCompleted: true,
-      formCompletedAt: new Date(today.getFullYear(), today.getMonth(), today.getDate() - 2).toISOString()
-    }
-  ];
-};
+const patientKey = (id: string) => ["patient", id] as const;
 
-const PatientDetail = () => {
-  const { id } = useParams<{ id: string }>();
+async function fetchPatient(id: string): Promise<EditablePatientRow | null> {
+  const { data, error } = await db.from("pacientes").select("*").eq("id", id).maybeSingle();
+  if (error) throw error;
+  return (data ?? null) as EditablePatientRow | null;
+}
+
+async function fetchAdmissions(id: string): Promise<AdmissionSummaryRow[]> {
+  const { data, error } = await db
+    .from("admisiones")
+    .select("id, estado, fecha_inicio, motivo, diagnostico_principal")
+    .eq("paciente_id", id)
+    .order("fecha_inicio", { ascending: false });
+  if (error) throw error;
+  return (data ?? []) as AdmissionSummaryRow[];
+}
+
+function BackLink() {
+  return (
+    <Link to="/app/pacientes" className="inline-flex items-center gap-1.5 rounded-lg text-[13px] text-muted-foreground transition-colors hover:text-foreground">
+      <ArrowLeft className="h-4 w-4" aria-hidden />
+      Pacientes
+    </Link>
+  );
+}
+
+/** Pestaña pedida en la URL (los enlaces viejos usan ?tab=consultations). */
+const tabOf = (value: string | null): Tab => (value === "registros" ? "registros" : "atenciones");
+
+/**
+ * Ficha del paciente con datos reales: quién es (con edición), sus atenciones
+ * (cada cita con los formatos diligenciados y las órdenes, lo mismo que se hace
+ * desde la app) y el historial completo de registros clínicos.
+ */
+export default function PatientDetail() {
+  const { id = "" } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const location = useLocation();
-  const searchParams = new URLSearchParams(location.search);
-  const initialTab = searchParams.get('tab') || "info";
-  
-  const [patient, setPatient] = useState<PatientWithConsultations | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState(initialTab);
-  
-  const [filterDate, setFilterDate] = useState<string>("all");
-  const [searchTerm, setSearchTerm] = useState("");
-  const [filteredConsultations, setFilteredConsultations] = useState<MedicalConsultation[]>([]);
+  const queryClient = useQueryClient();
+  const [params, setParams] = useSearchParams();
+  const tab = tabOf(params.get("tab"));
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      const savedPatients = localStorage.getItem("patients");
-      const savedConsultations = localStorage.getItem("consultations");
-      const savedForms = localStorage.getItem("forms");
-      
-      if (savedPatients) {
-        try {
-          const parsedPatients = JSON.parse(savedPatients);
-          const foundPatient = parsedPatients.find((p: any) => p.id === id);
-          
-          if (foundPatient) {
-            foundPatient.createdAt = new Date(foundPatient.createdAt);
-            if (foundPatient.lastVisitAt) {
-              foundPatient.lastVisitAt = new Date(foundPatient.lastVisitAt);
-            }
-            
-            let consultations: MedicalConsultation[] = [];
-            if (savedConsultations) {
-              const parsedConsultations = JSON.parse(savedConsultations);
-              consultations = parsedConsultations
-                .filter((c: any) => c.patientId === id)
-                .map((c: any) => {
-                  let formTitle = "";
-                  if (c.formId && savedForms) {
-                    const parsedForms = JSON.parse(savedForms);
-                    const form = parsedForms.find((f: any) => f.id === c.formId);
-                    if (form) {
-                      formTitle = form.title;
-                    }
-                  }
-                  
-                  return {
-                    ...c,
-                    formTitle,
-                    consultationDate: new Date(c.consultationDate),
-                    followUpDate: c.followUpDate ? new Date(c.followUpDate) : undefined,
-                    formCompletedAt: c.formCompletedAt ? c.formCompletedAt : undefined
-                  };
-                });
-            }
-            
-            if (consultations.length < 4) {
-              const mockConsultations = generateMockConsultations(id);
-              consultations = [...consultations, ...mockConsultations];
-            }
-            
-            setPatient({ ...foundPatient, consultations });
-            setFilteredConsultations(consultations);
-          }
-        } catch (error) {
-          console.error("Error parsing patient data:", error);
-        }
-      }
-      
-      setLoading(false);
-    }, 800);
+  const patientQuery = useQuery({ queryKey: patientKey(id), queryFn: () => fetchPatient(id), enabled: !!id });
+  const admissionsQuery = useQuery({ queryKey: ["patient", id, "admisiones"], queryFn: () => fetchAdmissions(id), enabled: !!id });
+  const citasQuery = useQuery({ queryKey: ["agenda", "paciente", id], queryFn: () => fetchPatientCitas(id), enabled: !!id });
+  const { records, isLoading: recordsLoading } = useRecordsHistory(id);
 
-    return () => clearTimeout(timer);
-  }, [id]);
+  const setTab = (next: Tab) =>
+    setParams(
+      (prev) => {
+        const p = new URLSearchParams(prev);
+        p.set("tab", next);
+        p.delete("cita");
+        return p;
+      },
+      { replace: true },
+    );
 
-  useEffect(() => {
-    if (patient) {
-      let filtered = [...patient.consultations];
-      
-      if (filterDate !== "all") {
-        const today = new Date();
-        let startDate;
-        
-        switch (filterDate) {
-          case "month":
-            startDate = subMonths(today, 1);
-            break;
-          case "3months":
-            startDate = subMonths(today, 3);
-            break;
-          case "6months":
-            startDate = subMonths(today, 6);
-            break;
-          case "year":
-            startDate = subMonths(today, 12);
-            break;
-          default:
-            startDate = null;
-        }
-        
-        if (startDate) {
-          filtered = filtered.filter(c => 
-            isWithinInterval(c.consultationDate, { start: startDate as Date, end: today })
-          );
-        }
-      }
-      
-      if (searchTerm) {
-        const term = searchTerm.toLowerCase();
-        filtered = filtered.filter(c => 
-          c.reason.toLowerCase().includes(term) || 
-          (c.diagnosis && c.diagnosis.toLowerCase().includes(term)) ||
-          (c.formTitle && c.formTitle.toLowerCase().includes(term))
-        );
-      }
-      
-      filtered.sort((a, b) => b.consultationDate.getTime() - a.consultationDate.getTime());
-      
-      setFilteredConsultations(filtered);
-    }
-  }, [filterDate, searchTerm, patient]);
-
-  const handleCreateConsultation = () => {
-    navigate(`/app/pacientes/nueva-consulta?patientId=${id}`);
-  };
-
-  const handleViewForm = (formId: string, consultationId: string) => {
-    navigate(`/app/ver/${formId}?consultationId=${consultationId}&readonly=true`);
-  };
-
-  const calculateAge = (dateOfBirth: string) => {
-    const today = new Date();
-    const birthDate = new Date(dateOfBirth);
-    let age = today.getFullYear() - birthDate.getFullYear();
-    const month = today.getMonth() - birthDate.getMonth();
-    if (month < 0 || (month === 0 && today.getDate() < birthDate.getDate())) {
-      age--;
-    }
-    return age;
-  };
-
-  if (loading) {
+  if (patientQuery.isLoading) {
     return (
-      <div className="min-h-screen flex flex-col">
-        <Header />
-        <div className="flex-1 flex items-center justify-center">
-          <div className="animate-pulse text-center w-full max-w-3xl">
-            <div className="h-8 w-48 bg-gray-200 dark:bg-gray-800 rounded mb-6 mx-auto"></div>
-            <div className="h-64 bg-gray-200 dark:bg-gray-800 rounded-xl mx-4"></div>
-          </div>
+      <div className="mx-auto max-w-7xl space-y-5 py-6" aria-busy="true">
+        <BackLink />
+        <Skeleton className="h-44 rounded-card" />
+        <Skeleton className="h-[480px] rounded-card" />
+      </div>
+    );
+  }
+
+  const patient = patientQuery.data;
+  if (patientQuery.isError || !patient) {
+    return (
+      <div className="mx-auto max-w-7xl space-y-4 py-6">
+        <BackLink />
+        <div className="rounded-card bg-card px-6 py-12 text-center shadow-card">
+          <h1 className="text-lg font-semibold text-foreground">{patientQuery.isError ? "No se pudo cargar el paciente" : "Paciente no encontrado"}</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {patientQuery.isError ? errorMessage(patientQuery.error) : "No existe o no pertenece a tu institución."}
+          </p>
         </div>
       </div>
     );
   }
 
-  if (!patient) {
-    return (
-      <div className="min-h-screen flex flex-col">
-        <Header />
-        <main className="flex-1 container mx-auto py-8 px-4">
-          <BackButton />
-          <div className="text-center py-12">
-            <h2 className="text-2xl font-bold mb-2">Paciente no encontrado</h2>
-            <p className="text-gray-500 mb-6">El paciente que estás buscando no existe o ha sido eliminado.</p>
-            <Button 
-              onClick={() => navigate("/app/pacientes")}
-              className="bg-purple-600 hover:bg-purple-700"
-            >
-              Volver a la lista de pacientes
-            </Button>
-          </div>
-        </main>
-      </div>
-    );
-  }
+  const citas = citasQuery.data ?? [];
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <Header />
-      <main className="flex-1 container mx-auto py-8 px-4">
-        <BackButton />
-        
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 mb-6">
-          <div className="flex justify-between items-start mb-4">
-            <h1 className="text-2xl font-bold flex items-center">
-              <User className="mr-2 text-purple-500" />
-              {patient.name}
-            </h1>
-            <Button 
-              onClick={handleCreateConsultation}
-              className="bg-purple-600 hover:bg-purple-700"
-            >
-              <Plus className="mr-2" size={16} />
-              Nueva consulta
-            </Button>
-          </div>
+    <div className="mx-auto max-w-7xl space-y-5 py-6">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <BackLink />
+        <Button size="sm" className="rounded-lg" onClick={() => navigate(`/app/pacientes/nueva-consulta?patientId=${patient.id}`)}>
+          Nueva atención
+        </Button>
+      </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-            <div className="flex items-center text-gray-600 dark:text-gray-300">
-              <Calendar size={18} className="mr-2 text-purple-500" />
-              <span>
-                Fecha de nacimiento: {format(new Date(patient.dateOfBirth), "d 'de' MMMM 'de' yyyy", { locale: es })} 
-                ({calculateAge(patient.dateOfBirth)} años)
-              </span>
+      <PatientSummary
+        patient={patient}
+        admissions={admissionsQuery.data ?? []}
+        onUpdated={(updated) => queryClient.setQueryData<EditablePatientRow | null>(patientKey(id), updated)}
+      />
+
+      <div className="space-y-3">
+        <BarTabs
+          label="Historia del paciente"
+          tabs={[
+            { id: "atenciones", title: "Atenciones", count: citasQuery.isLoading ? undefined : citas.length },
+            { id: "registros", title: "Registros clínicos", count: recordsLoading ? undefined : records.length },
+          ]}
+          active={tab}
+          onChange={setTab}
+        />
+        <div className="overflow-hidden rounded-card bg-card shadow-card dark:border dark:border-border dark:shadow-none md:h-[calc(100vh-180px)] md:min-h-[520px]">
+          {tab === "registros" ? (
+            <RecordsHistory patientId={patient.id} />
+          ) : citasQuery.isLoading ? (
+            <div className="grid gap-2 p-4" aria-busy="true">
+              {[0, 1, 2].map((i) => <Skeleton key={i} className="h-16 rounded-xl" />)}
             </div>
-            <div className="flex items-center text-gray-600 dark:text-gray-300">
-              <ClipboardList size={18} className="mr-2 text-purple-500" />
-              <span>Documento: {patient.documentId}</span>
-            </div>
-            <div className="flex items-center text-gray-600 dark:text-gray-300">
-              <Phone size={18} className="mr-2 text-purple-500" />
-              <span>Teléfono: {patient.contactNumber}</span>
-            </div>
-            {patient.email && (
-              <div className="flex items-center text-gray-600 dark:text-gray-300">
-                <Mail size={18} className="mr-2 text-purple-500" />
-                <span>Email: {patient.email}</span>
-              </div>
-            )}
-            {patient.address && (
-              <div className="flex items-center text-gray-600 dark:text-gray-300">
-                <MapPin size={18} className="mr-2 text-purple-500" />
-                <span>Dirección: {patient.address}</span>
-              </div>
-            )}
-          </div>
+          ) : citasQuery.isError ? (
+            <p className="px-6 py-16 text-center text-sm text-destructive">No se pudieron cargar las atenciones: {errorMessage(citasQuery.error)}</p>
+          ) : (
+            <PatientAttentions citas={citas} records={records} recordsLoading={recordsLoading} initialCitaId={params.get("cita")} />
+          )}
         </div>
-
-        <Tabs 
-          defaultValue="info" 
-          value={activeTab}
-          onValueChange={(value) => {
-            setActiveTab(value);
-            navigate(`/app/pacientes/${id}?tab=${value}`, { replace: true });
-          }}
-          className="w-full"
-        >
-          <TabsList className="mb-4">
-            <TabsTrigger value="info">Información</TabsTrigger>
-            <TabsTrigger value="consultations">
-              Historial de consultas
-              {patient.consultations.length > 0 && (
-                <span className="ml-2 px-2 py-0.5 bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200 text-xs rounded-full">
-                  {patient.consultations.length}
-                </span>
-              )}
-            </TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="info" className="p-4 bg-white dark:bg-gray-800 rounded-lg shadow-sm">
-            <div className="space-y-4">
-              <div>
-                <h3 className="text-lg font-medium mb-2 flex items-center">
-                  <FileText className="mr-2 text-purple-500" size={18} />
-                  Información adicional
-                </h3>
-                <p className="text-gray-600 dark:text-gray-300">
-                  Género: {patient.gender}
-                </p>
-                <p className="text-gray-600 dark:text-gray-300">
-                  Registrado el: {format(patient.createdAt, "d 'de' MMMM 'de' yyyy", { locale: es })}
-                </p>
-                {patient.lastVisitAt && (
-                  <p className="text-gray-600 dark:text-gray-300">
-                    Última visita: {format(patient.lastVisitAt, "d 'de' MMMM 'de' yyyy", { locale: es })}
-                  </p>
-                )}
-              </div>
-            </div>
-          </TabsContent>
-          
-          <TabsContent value="consultations" className="bg-white dark:bg-gray-800 rounded-lg shadow-sm">
-            {patient.consultations.length === 0 ? (
-              <div className="p-8 text-center">
-                <FileText size={48} className="mx-auto mb-4 text-gray-300" />
-                <h3 className="text-lg font-medium mb-2">Sin consultas previas</h3>
-                <p className="text-gray-500 mb-4">Este paciente no tiene consultas registradas.</p>
-                <Button 
-                  onClick={handleCreateConsultation}
-                  className="bg-purple-600 hover:bg-purple-700"
-                >
-                  <Plus className="mr-2" size={16} />
-                  Crear primera consulta
-                </Button>
-              </div>
-            ) : (
-              <div>
-                <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-                  <div className="flex flex-col md:flex-row gap-3 items-start md:items-center justify-between">
-                    <div className="flex gap-2 items-center w-full md:w-auto">
-                      <div className="relative w-full md:w-64">
-                        <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-500" />
-                        <Input
-                          placeholder="Buscar consultas..."
-                          className="pl-8"
-                          value={searchTerm}
-                          onChange={(e) => setSearchTerm(e.target.value)}
-                        />
-                      </div>
-                      
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button variant="outline" size="sm" className="flex items-center">
-                            <Filter className="mr-2 h-4 w-4" />
-                            Filtrar
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-56 p-2">
-                          <div className="space-y-2">
-                            <h4 className="font-medium text-sm">Filtrar por fecha</h4>
-                            <Select 
-                              value={filterDate} 
-                              onValueChange={setFilterDate}
-                            >
-                              <SelectTrigger className="w-full">
-                                <SelectValue placeholder="Seleccionar período" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="all">Todas las fechas</SelectItem>
-                                <SelectItem value="month">Último mes</SelectItem>
-                                <SelectItem value="3months">Últimos 3 meses</SelectItem>
-                                <SelectItem value="6months">Últimos 6 meses</SelectItem>
-                                <SelectItem value="year">Último año</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-                        </PopoverContent>
-                      </Popover>
-                    </div>
-                    
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm text-gray-500">
-                        {filteredConsultations.length} consulta{filteredConsultations.length !== 1 ? 's' : ''}
-                      </span>
-                      {filterDate !== "all" && (
-                        <Badge variant="outline" className="flex items-center gap-1">
-                          {filterDate === "month" ? "Último mes" : 
-                           filterDate === "3months" ? "Últimos 3 meses" : 
-                           filterDate === "6months" ? "Últimos 6 meses" : "Último año"}
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className="h-4 w-4 p-0 ml-1" 
-                            onClick={() => setFilterDate("all")}
-                          >
-                            ×
-                          </Button>
-                        </Badge>
-                      )}
-                      {searchTerm && (
-                        <Badge variant="outline" className="flex items-center gap-1">
-                          Buscar: "{searchTerm}"
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className="h-4 w-4 p-0 ml-1" 
-                            onClick={() => setSearchTerm("")}
-                          >
-                            ×
-                          </Button>
-                        </Badge>
-                      )}
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="divide-y divide-gray-200 dark:divide-gray-700">
-                  {filteredConsultations.length === 0 ? (
-                    <div className="p-8 text-center">
-                      <Search size={48} className="mx-auto mb-4 text-gray-300" />
-                      <h3 className="text-lg font-medium mb-2">No se encontraron consultas</h3>
-                      <p className="text-gray-500">Intenta ajustar los filtros de búsqueda</p>
-                    </div>
-                  ) : (
-                    filteredConsultations.map((consultation, index) => {
-                      const colorIndex = index % PASTEL_COLORS.length;
-                      const cardColor = PASTEL_COLORS[colorIndex];
-                      
-                      const hasFormResponse = consultation.formCompleted;
-                      
-                      return (
-                        <Card 
-                          key={consultation.id} 
-                          className={`border-0 shadow-none mb-4 ${cardColor} rounded-lg overflow-hidden`}
-                        >
-                          <CardContent className="p-4">
-                            <div className="flex justify-between items-start mb-2">
-                              <h3 className="font-medium">
-                                Consulta del {format(consultation.consultationDate, "d 'de' MMMM 'de' yyyy", { locale: es })}
-                              </h3>
-                              <span className={`px-2 py-1 text-xs rounded-full ${
-                                consultation.status === 'Completada' ? 'bg-green-100 text-green-800' :
-                                consultation.status === 'Programada' ? 'bg-blue-100 text-blue-800' :
-                                consultation.status === 'En curso' ? 'bg-yellow-100 text-yellow-800' :
-                                'bg-red-100 text-red-800'
-                              }`}>
-                                {consultation.status}
-                              </span>
-                            </div>
-                            
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
-                              <div>
-                                <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">
-                                  <strong>Motivo:</strong> {consultation.reason}
-                                </p>
-                                {consultation.diagnosis && (
-                                  <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">
-                                    <strong>Diagnóstico:</strong> {consultation.diagnosis}
-                                  </p>
-                                )}
-                                {consultation.treatment && (
-                                  <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">
-                                    <strong>Tratamiento:</strong> {consultation.treatment}
-                                  </p>
-                                )}
-                              </div>
-                              
-                              <div>
-                                {consultation.notes && (
-                                  <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">
-                                    <strong>Notas:</strong> {consultation.notes}
-                                  </p>
-                                )}
-                                {consultation.followUpDate && (
-                                  <p className="text-sm text-gray-600 dark:text-gray-300">
-                                    <strong>Próximo seguimiento:</strong> {format(consultation.followUpDate, "d 'de' MMMM 'de' yyyy", { locale: es })}
-                                  </p>
-                                )}
-                              </div>
-                            </div>
-                            
-                            {consultation.formId && (
-                              <div className="mt-2 pt-2 border-t border-gray-200 dark:border-gray-700">
-                                <div className="flex justify-between items-center">
-                                  <div className="flex items-center">
-                                    <FilePlus size={16} className="mr-2 text-purple-500" />
-                                    <span className="text-sm font-medium">
-                                      Formato: {consultation.formTitle || "Formato"}
-                                    </span>
-                                    {hasFormResponse && (
-                                      <span className="ml-2 px-2 py-0.5 bg-green-100 text-green-800 text-xs rounded-full">
-                                        Completado
-                                      </span>
-                                    )}
-                                  </div>
-                                  
-                                  {hasFormResponse && (
-                                    <Button 
-                                      variant="outline" 
-                                      size="sm"
-                                      onClick={() => handleViewForm(consultation.formId!, consultation.id)}
-                                      className="text-xs"
-                                    >
-                                      <ExternalLink size={14} className="mr-1" />
-                                      Consultar atención
-                                    </Button>
-                                  )}
-                                </div>
-                                
-                                {hasFormResponse && consultation.formCompletedAt && (
-                                  <p className="text-xs text-gray-500 mt-1">
-                                    Completado el {format(new Date(consultation.formCompletedAt), "d 'de' MMMM 'de' yyyy, HH:mm", { locale: es })}
-                                  </p>
-                                )}
-                              </div>
-                            )}
-                          </CardContent>
-                        </Card>
-                      );
-                    })
-                  )}
-                </div>
-              </div>
-            )}
-          </TabsContent>
-        </Tabs>
-      </main>
+      </div>
     </div>
   );
-};
-
-export default PatientDetail;
+}
