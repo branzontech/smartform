@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { User, ClipboardList, Calendar, MapPin, MessageSquare, Bell, FileText, ArrowLeft, ArrowRight } from "lucide-react";
+import { User, ClipboardList, Calendar, FileText, ArrowLeft, ArrowRight } from "lucide-react";
 import { SurfaceCard } from "@/components/kit/surface";
 import { VerticalStepper, type StepItem } from "@/components/kit/stepper/VerticalStepper";
 import { Button } from "@/components/ui/button";
@@ -9,11 +9,7 @@ import { PatientSearchStep } from "./PatientSearchStep";
 import { PatientDetailStep } from "./PatientDetailStep";
 import { AdmissionStep, AdmissionData } from "./AdmissionStep";
 import { SchedulingStep, SchedulingData } from "./SchedulingStep";
-import { MapPanelDrawer } from "./MapPanelDrawer";
-import { Dock, DockItem } from "@/components/ui/dock";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { db } from "@/integrations/data/client";
-import { toast } from "sonner";
 
 export interface WizardData {
   patient: ExtendedPatient | null;
@@ -45,27 +41,6 @@ export const AppointmentWizard: React.FC<AppointmentWizardProps> = ({
     scheduling: null
   });
   const [direction, setDirection] = useState(0);
-  const [isMapOpen, setIsMapOpen] = useState(false);
-  const [apiKey, setApiKey] = useState("");
-
-  // Fetch Google Maps API key (se guarda solo en memoria, nunca en web storage)
-  useEffect(() => {
-    let vigente = true;
-    const fetchApiKey = async () => {
-      try {
-        const { data } = await db.functions.invoke("get-maps-config");
-        if (vigente && data?.apiKey) {
-          setApiKey(data.apiKey);
-        }
-      } catch (e) {
-        console.error("Error fetching maps config:", e);
-      }
-    };
-    fetchApiKey();
-    return () => {
-      vigente = false;
-    };
-  }, []);
 
   const goToStep = (step: number) => {
     setDirection(step > currentStep ? 1 : -1);
@@ -126,40 +101,6 @@ export const AppointmentWizard: React.FC<AppointmentWizardProps> = ({
       scale: 0.95
     })
   };
-
-  // Dock items configuration
-  const dockItems: DockItem[] = [
-    {
-      id: "map",
-      label: "Ubicación",
-      icon: MapPin,
-      onClick: () => setIsMapOpen(true),
-      isActive: isMapOpen,
-      badge: wizardData.patient?.address ? undefined : "!",
-      badgeVariant: wizardData.patient?.address ? undefined : "warning",
-    },
-    {
-      id: "chat",
-      label: "Chat",
-      icon: MessageSquare,
-      onClick: () => {},
-      disabled: true,
-    },
-    {
-      id: "notifications",
-      label: "Notificaciones",
-      icon: Bell,
-      onClick: () => {},
-      disabled: true,
-    },
-    {
-      id: "documents",
-      label: "Documentos",
-      icon: FileText,
-      onClick: () => {},
-      disabled: true,
-    },
-  ];
 
   const patientName = wizardData.patient ? `${wizardData.patient.firstName} ${wizardData.patient.lastName}`.trim() : undefined;
   const stepItems: StepItem[] = [
@@ -262,21 +203,6 @@ export const AppointmentWizard: React.FC<AppointmentWizardProps> = ({
             </div>
         </section>
       </div>
-
-        {/* Dock - Always visible with contextual actions on step 3 */}
-        <Dock 
-          items={dockItems} 
-          magnification={56} 
-          baseSize={42} 
-        />
-
-        {/* Map Panel Drawer */}
-        <MapPanelDrawer
-          isOpen={isMapOpen}
-          onClose={() => setIsMapOpen(false)}
-          patient={wizardData.patient}
-          apiKey={apiKey}
-        />
       </div>
     </TooltipProvider>
   );
