@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { arrivalAt, decodePolyline, formatDistance, formatDuration, navigationLinks, nextStop, type Parada } from "./rutas";
+import { arrivalAt, decodePolyline, formatDistance, formatDuration, navigationLinks, nextStop, trafficDelay, trafficSegments, type Parada } from "./rutas";
 
 describe("decodePolyline", () => {
   it("decodifica el ejemplo de la documentación de Google", () => {
@@ -34,6 +34,27 @@ describe("nextStop", () => {
   it("es la primera pendiente en el orden del día", () => {
     expect(nextStop([p("a", "atendida"), p("b", "no_asistio"), p("c", "en_camino"), p("d", "programada")])?.id).toBe("c");
     expect(nextStop([p("a", "atendida")])).toBeNull();
+  });
+});
+
+describe("tráfico", () => {
+  const pts = [0, 1, 2, 3, 4, 5].map((i) => ({ latitude: i, longitude: i }));
+  it("corta el trazado en tramos normales y con tráfico, sin huecos", () => {
+    const segs = trafficSegments(pts, [{ inicio: 2, fin: 4, velocidad: "TRAFFIC_JAM" }]);
+    expect(segs.map((s) => [s.velocidad, s.coords.map((c) => c.latitude).join("")])).toEqual([
+      ["NORMAL", "012"],
+      ["TRAFFIC_JAM", "234"],
+      ["NORMAL", "45"],
+    ]);
+  });
+
+  it("sin datos de tráfico todo es normal", () => {
+    expect(trafficSegments(pts, [])).toEqual([{ coords: pts, velocidad: "NORMAL" }]);
+  });
+
+  it("la demora solo se dice si pasa de 2 minutos", () => {
+    expect(trafficDelay({ segundos: 1962, segundosSinTrafico: 1499 })).toBe("8 min de demora por tráfico");
+    expect(trafficDelay({ segundos: 600, segundosSinTrafico: 560 })).toBeNull();
   });
 });
 

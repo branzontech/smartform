@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Linking } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import * as Location from 'expo-location';
@@ -9,6 +9,7 @@ import { currentPosition } from '@/lib/location';
 import { showAlert, showNotice } from '@/components/overlay/Overlay';
 
 export const ROUTE_KEY = ['rutas', 'mi-ruta'] as const;
+export const VIEW_KEY = ['rutas', 'vista'] as const;
 type Pos = { latitud: number; longitud: number };
 
 /** Cada cuánto se reporta el avance mientras la ruta está activa (con la app abierta). */
@@ -21,18 +22,37 @@ const TRACK = { timeInterval: 60_000, distanceInterval: 100 };
 export function useMyRoute(withAttention: boolean) {
   const queryClient = useQueryClient();
   const query = useQuery({ queryKey: ROUTE_KEY, queryFn: () => rutas.fetchMyRoute(), refetchInterval: 60_000 });
-  const [position, setPosition] = useState<Pos | null>(null);
+  const [position, setPositionState] = useState<Pos | null>(null);
+  const positionRef = useRef<Pos | null>(null);
+  const setPosition = useCallback((p: Pos) => {
+    positionRef.current = p;
+    setPositionState(p);
+  }, []);
+  // Vista en vivo desde donde está: recorrido con tráfico, hora de llegada a cada visita y caminos a la próxima.
+  const view = useQuery({
+    queryKey: VIEW_KEY,
+    enabled: !!position,
+    queryFn: () => rutas.viewMyRoute(positionRef.current!),
+    refetchInterval: 60_000,
+    staleTime: 30_000,
+  });
   const [arrivedId, setArrivedId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const active = query.data?.ruta?.estado === 'en_curso';
   const { refetch } = query;
 
   // Al volver a la pestaña (p. ej. tras terminar una atención) se refresca la ruta.
-  useFocusEffect(useCallback(() => void refetch(), [refetch]));
+  const refetchView = view.refetch;
+  useFocusEffect(
+    useCallback(() => {
+      void refetch();
+      if (positionRef.current) void refetchView();
+    }, [refetch, refetchView]),
+  );
 
   useEffect(() => {
     void currentPosition().then((p) => p && setPosition(p));
-  }, []);
+  }, [setPosition]);
 
   // Mientras la ruta está activa: la posición en el mapa y el avance para la IPS.
   useEffect(() => {
@@ -52,11 +72,11 @@ export function useMyRoute(withAttention: boolean) {
       cancelled = true;
       sub?.remove();
     };
-  }, [active]);
+  }, [active, setPosition]);
 
   const set = (data: MiRuta) => queryClient.setQueryData(ROUTE_KEY, data);
   const refresh = async () => {
-    await Promise.all([refetch(), queryClient.invalidateQueries({ queryKey: ['agenda'] })]);
+    await Promise.all([refetch(), refetchView(), queryClient.invalidateQueries({ queryKey: ['agenda'] })]);
   };
 
   /** Pide la ubicación; sin ella no se puede trazar la ruta ni constatar la visita. */
@@ -80,7 +100,9 @@ export function useMyRoute(withAttention: boolean) {
 
   const start = () => run('No se pudo iniciar la ruta', async () => {
     const p = await locate();
-    if (p) set(await rutas.computeMyRoute(p));
+    if (!p) return;
+    set(await rutas.computeMyRoute(p));
+    await refetchView();
   });
 
   const depart = (stop: Parada) => run('No se pudo salir hacia el paciente', async () => {
@@ -89,7 +111,7 @@ export function useMyRoute(withAttention: boolean) {
     await agenda.changeCitaState(stop.id, { estado: 'en_camino', ...p });
     // Tiempos frescos desde donde está ahora.
     set(await rutas.computeMyRoute(p));
-    await queryClient.invalidateQueries({ queryKey: ['agenda'] });
+    await Promise.all([refetchView(), queryClient.invalidateQueries({ queryKey: ['agenda'] })]);
   });
 
   const arrive = (stop: Parada) => run('No se pudo registrar la llegada', async () => {
@@ -156,5 +178,5 @@ export function useMyRoute(withAttention: boolean) {
     else void Linking.openURL(`tel:${stop.telefono.replace(/\s+/g, '')}`);
   };
 
-  return { query, position, arrivedId, busy, start, depart, arrive, primary, absent, finish, navigate, call };
+  return { query, view, position, arrivedId, busy, start, depart, arrive, primary, absent, finish, navigate, call };
 }

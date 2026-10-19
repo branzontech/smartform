@@ -43,18 +43,22 @@ export function TextButton({ title, onPress, tone = 'muted' }: { title: string; 
 }
 
 /** Resumen antes de salir: visitas del día en orden, distancia y tiempo, e «Iniciar ruta». */
-export function SummarySheet({ paradas, ruta, busy, onStart, onLayoutHeight }: {
+export function SummarySheet({ paradas, totals, etas, busy, onStart, onLayoutHeight }: {
   paradas: Parada[];
-  ruta: Ruta | null;
+  /** Recorrido calculado en vivo desde donde está (distancia y tiempo con tráfico). */
+  totals: { distanciaM: number; duracionS: number } | null;
+  /** Hora de llegada estimada a cada visita. */
+  etas: Record<string, string>;
   busy: boolean;
   onStart: () => void;
   onLayoutHeight?: (h: number) => void;
 }) {
   const pending = paradas.filter(isPending);
   const unlocated = pending.filter((p) => !isLocated(p)).length;
-  const stats = [`${pending.length} ${pending.length === 1 ? 'visita' : 'visitas'}`, ruta?.distanciaM ? formatDistance(ruta.distanciaM) : null, ruta?.duracionS ? `${formatDuration(ruta.duracionS)} manejando` : null]
+  const stats = [`${pending.length} ${pending.length === 1 ? 'visita' : 'visitas'}`, totals ? formatDistance(totals.distanciaM) : null, totals ? `${formatDuration(totals.duracionS)} manejando` : null]
     .filter(Boolean)
     .join(' · ');
+  const last = pending.filter((p) => etas[p.id]).at(-1);
   return (
     <SheetFrame onLayoutHeight={onLayoutHeight}>
       <View style={styles.head}>
@@ -62,6 +66,7 @@ export function SummarySheet({ paradas, ruta, busy, onStart, onLayoutHeight }: {
         <View style={{ flex: 1 }}>
           <Text style={styles.title}>Tu ruta de hoy</Text>
           <Text style={styles.sub}>{stats}</Text>
+          {last && <Text style={styles.sub}>Llegas a la última visita a las {etas[last.id]}</Text>}
         </View>
       </View>
       <View style={{ gap: 2 }}>
@@ -72,7 +77,7 @@ export function SummarySheet({ paradas, ruta, busy, onStart, onLayoutHeight }: {
               <Text style={styles.rowTitle} numberOfLines={1}>{p.paciente}</Text>
               <Text style={styles.rowSub} numberOfLines={1}>{localTime(p.inicio)} · {p.direccion ?? 'Sin dirección'}</Text>
             </View>
-            {!isLocated(p) && <Text style={styles.warn}>Sin ubicar</Text>}
+            {!isLocated(p) ? <Text style={styles.warn}>Sin ubicar</Text> : etas[p.id] ? <Text style={styles.etaText}>llegas {etas[p.id]}</Text> : null}
           </View>
         ))}
         {pending.length > 5 && <Text style={styles.more}>y {pending.length - 5} más</Text>}
@@ -80,7 +85,9 @@ export function SummarySheet({ paradas, ruta, busy, onStart, onLayoutHeight }: {
       <Text style={styles.note}>
         {unlocated > 0
           ? `${unlocated === 1 ? 'Una dirección no está' : `${unlocated} direcciones no están`} en el mapa: esas visitas quedan por fuera del recorrido.`
-          : 'En el orden de tus citas, con el tráfico de ahora. Tu IPS ve tu avance mientras la ruta está activa.'}
+          : totals
+            ? 'En el orden de tus citas, con el tráfico de ahora. Tu IPS ve tu avance mientras la ruta está activa.'
+            : 'Calculando el recorrido con el tráfico de ahora…'}
       </Text>
       <LimeButton title="Iniciar ruta" onPress={onStart} busy={busy} />
     </SheetFrame>
@@ -144,6 +151,7 @@ const styles = StyleSheet.create({
   rowTitle: { fontSize: 15, fontWeight: '700', color: colors.ink },
   rowSub: { fontSize: 13, color: colors.muted },
   warn: { fontSize: 12.5, fontWeight: '700', color: colors.warning },
+  etaText: { fontSize: 12.5, fontWeight: '600', color: colors.muted },
   more: { fontSize: 13, color: colors.muted, paddingLeft: 40 },
   note: { fontSize: 12.5, color: colors.muted, marginTop: -4 },
   lime: { height: 50, borderRadius: 16, backgroundColor: colors.lime, alignItems: 'center', justifyContent: 'center' },

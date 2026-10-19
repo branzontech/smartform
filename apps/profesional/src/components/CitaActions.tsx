@@ -4,7 +4,8 @@ import { router } from 'expo-router';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { LOCATION_STATES, REASON_REQUIRED, SUCCESS_LABEL, fieldLabel, fieldPrimary, fieldSecondary } from '@kerhub/core/cita-actions';
 import type { Cita, CitaState } from '@kerhub/core/agenda';
-import { agenda, errorMessage } from '@/lib/api';
+import { agenda, errorMessage, hasModule, rutas } from '@/lib/api';
+import { useAuth } from '@/lib/auth';
 import { currentPosition } from '@/lib/location';
 import { BottomSheet } from '@/components/overlay/BottomSheet';
 import { MoreButton } from '@/components/overlay/MoreButton';
@@ -18,6 +19,9 @@ import { Button } from './ui';
  */
 export function CitaActions({ cita, compact = false }: { cita: Pick<Cita, 'id' | 'estado' | 'modalidad'>; compact?: boolean }) {
   const queryClient = useQueryClient();
+  const { me } = useAuth();
+  // Visita a domicilio con el módulo de rutas: salir hacia el paciente inicia la ruta y abre el mapa.
+  const withRoute = cita.modalidad === 'domicilio' && hasModule(me, 'rutas');
   const [reasonFor, setReasonFor] = useState<CitaState | null>(null);
   const [reason, setReason] = useState('');
   const primary = fieldPrimary(cita);
@@ -29,14 +33,18 @@ export function CitaActions({ cita, compact = false }: { cita: Pick<Cita, 'id' |
     mutationFn: async ({ estado, motivo }: { estado: CitaState; motivo?: string }) => {
       const position = LOCATION_STATES.includes(estado) ? await currentPosition() : null;
       await agenda.changeCitaState(cita.id, { estado, motivo: motivo ?? null, ...(position ?? {}) });
+      if (estado === 'en_camino' && withRoute && position) await rutas.computeMyRoute(position).catch(() => undefined);
       return estado;
     },
     onSuccess: (estado) => {
       void queryClient.invalidateQueries({ queryKey: ['agenda'] });
+      void queryClient.invalidateQueries({ queryKey: ['rutas'] });
       setReasonFor(null);
       setReason('');
       // Al iniciar la atención se abre la atención: ahí se diligencia todo.
       if (estado === 'en_atencion') openAttention();
+      // En camino a un domicilio: el mapa con el tiempo de llegada y el camino.
+      else if (estado === 'en_camino' && withRoute) router.navigate('/ruta');
       else showAlert(SUCCESS_LABEL[estado] ?? 'Listo');
     },
     onError: (e) => showAlert('No se pudo', errorMessage(e)),

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { nextStop, type Parada } from '@kerhub/core/rutas';
+import { arrivalAt, formatDuration, nextStop, type Parada } from '@kerhub/core/rutas';
 import { errorMessage, hasModule } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { BraulioEmpty } from '@/components/Braulio';
@@ -32,19 +32,41 @@ export default function Ruta() {
   const route = useMyRoute(withAttention);
   const map = useRef<RouteMapHandle>(null);
   const [sheetHeight, setSheetHeight] = useState(320);
+  const [selectedAlt, setSelectedAlt] = useState<number | null>(null);
 
   const data = route.query.data;
-  const paradas = data?.paradas ?? [];
+  const live = route.view.data;
+  const vista = live?.vista ?? null;
   const ruta = data?.ruta ?? null;
+  // Tramos en vivo (desde donde está ahora) cuando la vista ya llegó.
+  const legs = new Map((vista?.tramos ?? []).map((t) => [t.citaId, t]));
+  const paradas = (data?.paradas ?? []).map((p) => ({ ...p, tramo: legs.get(p.id) ?? p.tramo }));
   const next = nextStop(paradas);
-  const active = ruta?.estado === 'en_curso';
+  // En ruta: la ruta del día está en curso, o ya salió hacia un paciente (p. ej. desde Mi día).
+  const active = ruta?.estado === 'en_curso' || paradas.some((p) => p.estado === 'en_camino' || p.estado === 'en_atencion');
+  const siguiente = live?.siguiente && next && live.siguiente.citaId === next.id ? live.siguiente : null;
+  const legView = siguiente ? { principal: siguiente, alternativas: siguiente.alternativas } : null;
+
+  // Hora estimada de llegada a cada visita pendiente: tramos acumulados desde ahora.
+  const etas: Record<string, string> = {};
+  let acc = 0;
+  for (const t of vista?.tramos ?? []) {
+    acc += t.segundos;
+    etas[t.citaId] = arrivalAt(acc);
+  }
+  const chosen = legView ? (selectedAlt != null ? legView.alternativas[selectedAlt] : undefined) ?? legView.principal : null;
+  const targetLabel = active && next && chosen ? formatDuration(chosen.segundos) : null;
 
   // Encuadra la ruta cuando cambian las paradas o el trazado.
-  const fitKey = `${paradas.length}-${ruta?.polilinea?.length ?? 0}-${next?.id ?? ''}`;
+  const fitKey = `${paradas.length}-${vista?.polilinea?.length ?? 0}-${next?.id ?? ''}`;
   useEffect(() => {
     const t = setTimeout(() => map.current?.fit(), 350);
     return () => clearTimeout(t);
   }, [fitKey]);
+
+  // Al pasar a otra visita, vuelve a la ruta recomendada.
+  const nextId = next?.id;
+  useEffect(() => setSelectedAlt(null), [nextId]);
 
   if (!withRoutes) {
     return <BraulioEmpty pose="maletin" title="Tu empresa no tiene el módulo de rutas" hint="Pídele al administrador que lo active para ver tus visitas a domicilio en el mapa." />;
@@ -65,7 +87,19 @@ export default function Ruta() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.canvas }}>
-      <RouteMap ref={map} paradas={paradas} polilinea={ruta?.polilinea ?? null} position={route.position} targetId={active ? next?.id ?? null : null} bottomInset={sheetHeight} />
+      <RouteMap
+        ref={map}
+        paradas={paradas}
+        route={vista ? { polilinea: vista.polilinea, trafico: vista.trafico } : ruta ? { polilinea: ruta.polilinea, trafico: [] } : null}
+        leg={active ? legView : null}
+        selectedAlt={selectedAlt}
+        onSelectAlt={setSelectedAlt}
+        etas={etas}
+        targetLabel={targetLabel}
+        position={route.position}
+        targetId={active ? next?.id ?? null : null}
+        bottomInset={sheetHeight}
+      />
 
       <View style={[styles.top, { top: insets.top + 8 }]} pointerEvents="box-none">
         <View style={styles.pill}>
@@ -79,7 +113,7 @@ export default function Ruta() {
       </View>
 
       {!active && next ? (
-        <SummarySheet paradas={paradas} ruta={ruta} busy={route.busy} onStart={route.start} onLayoutHeight={setSheetHeight} />
+        <SummarySheet paradas={paradas} totals={vista} etas={etas} busy={route.busy} onStart={route.start} onLayoutHeight={setSheetHeight} />
       ) : next ? (
         <VisitSheet
           stop={next}
@@ -88,6 +122,9 @@ export default function Ruta() {
           phase={phaseOf(next, route.arrivedId, withAttention)}
           withAttention={withAttention}
           busy={route.busy}
+          leg={legView}
+          selectedAlt={selectedAlt}
+          onSelectAlt={setSelectedAlt}
           onDepart={() => route.depart(next)}
           onArrive={() => route.arrive(next)}
           onPrimary={() => route.primary(next)}

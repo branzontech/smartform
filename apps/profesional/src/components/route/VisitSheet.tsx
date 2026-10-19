@@ -1,6 +1,6 @@
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { localTime } from '@kerhub/core/agenda';
-import { arrivalAt, formatDistance, formatDuration, type Parada } from '@kerhub/core/rutas';
+import { arrivalAt, formatDistance, formatDuration, trafficDelay, type Camino, type Parada } from '@kerhub/core/rutas';
 import { colors } from '@/theme';
 import { ROUTE_ICONS } from './RouteMap';
 import { LimeButton, SheetFrame, TextButton } from './RouteSheets';
@@ -22,6 +22,10 @@ interface VisitSheetProps {
   /** La empresa tiene el módulo de Atención (formatos y órdenes). */
   withAttention: boolean;
   busy: boolean;
+  /** Camino en vivo hasta esta visita y sus alternas (si ya se calculó). */
+  leg: { principal: Camino; alternativas: Camino[] } | null;
+  selectedAlt: number | null;
+  onSelectAlt: (i: number | null) => void;
   onDepart: () => void;
   onArrive: () => void;
   onPrimary: () => void;
@@ -41,7 +45,11 @@ function Action({ label, onPress, strong }: { label: string; onPress: () => void
 
 export function VisitSheet(props: VisitSheetProps) {
   const { stop, number, total, phase, withAttention, busy } = props;
-  const leg = stop.tramo;
+  const live = props.leg;
+  const chosen = live ? (props.selectedAlt != null ? live.alternativas[props.selectedAlt] : undefined) ?? live.principal : null;
+  const leg = chosen ? { segundos: chosen.segundos, metros: chosen.metros } : stop.tramo;
+  const delay = chosen ? trafficDelay(chosen) : null;
+  const options = live ? [live.principal, ...live.alternativas] : [];
   const first = stop.paciente.split(' ').slice(0, 2).join(' ');
 
   return (
@@ -65,6 +73,7 @@ export function VisitSheet(props: VisitSheetProps) {
           </View>
         )
       )}
+      {(phase === 'salir' || phase === 'camino') && delay && <Text style={styles.delay}>{delay}</Text>}
 
       <View style={styles.card}>
         <Image source={ROUTE_ICONS.paciente} style={{ width: 48, height: 48 }} />
@@ -79,6 +88,21 @@ export function VisitSheet(props: VisitSheetProps) {
         <View style={styles.actions}>
           <Action label="Navegar" onPress={props.onNavigate} strong />
           <Action label="Llamar" onPress={props.onCall} />
+        </View>
+      )}
+
+      {(phase === 'salir' || phase === 'camino') && options.length > 1 && (
+        <View style={styles.routes}>
+          {options.map((o, i) => {
+            const index = i === 0 ? null : i - 1;
+            const on = props.selectedAlt === index;
+            return (
+              <Pressable key={i} accessibilityRole="button" accessibilityState={{ selected: on }} onPress={() => props.onSelectAlt(index)} style={[styles.route, on && styles.routeOn]}>
+                <Text style={[styles.routeTime, on && { color: colors.primaryDark }]}>{formatDuration(o.segundos)}</Text>
+                <Text style={styles.routeName} numberOfLines={1}>{i === 0 ? 'Recomendada' : 'Alterna'}{o.descripcion ? ` · ${o.descripcion}` : ''}</Text>
+              </Pressable>
+            );
+          })}
         </View>
       )}
 
@@ -110,4 +134,10 @@ const styles = StyleSheet.create({
   actionStrong: { backgroundColor: colors.primarySoft },
   actionText: { fontSize: 14, fontWeight: '700', color: colors.ink },
   note: { fontSize: 13, color: colors.muted },
+  delay: { fontSize: 13, fontWeight: '600', color: '#c2410c', marginTop: -8 },
+  routes: { flexDirection: 'row', gap: 6 },
+  route: { flex: 1, borderRadius: 14, backgroundColor: colors.canvas, paddingVertical: 8, paddingHorizontal: 10, gap: 1 },
+  routeOn: { backgroundColor: colors.primarySoft },
+  routeTime: { fontSize: 15, fontWeight: '800', color: colors.ink },
+  routeName: { fontSize: 11.5, color: colors.muted },
 });
