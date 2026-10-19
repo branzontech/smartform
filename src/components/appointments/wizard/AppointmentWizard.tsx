@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Check, User, ClipboardList, Calendar, MapPin, MessageSquare, Bell, FileText, ArrowLeft, ArrowRight } from "lucide-react";
+import { User, ClipboardList, Calendar, MapPin, MessageSquare, Bell, FileText, ArrowLeft, ArrowRight } from "lucide-react";
+import { SurfaceCard } from "@/components/kit/surface";
+import { VerticalStepper, type StepItem } from "@/components/kit/stepper/VerticalStepper";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
 import { ExtendedPatient } from "../PatientPanel";
 import { PatientSearchStep } from "./PatientSearchStep";
 import { PatientDetailStep } from "./PatientDetailStep";
@@ -160,135 +161,50 @@ export const AppointmentWizard: React.FC<AppointmentWizardProps> = ({
     },
   ];
 
-  // Header: 84px + Stepper: ~40px + Gap: 10px = 134px
-  // Reducido para acercar el contenido al stepper
-  const NAV_HEIGHT = 120;
+  const patientName = wizardData.patient ? `${wizardData.patient.firstName} ${wizardData.patient.lastName}`.trim() : undefined;
+  const stepItems: StepItem[] = [
+    { id: 1, title: "Paciente", description: "Buscar o crear", summary: patientName },
+    { id: 2, title: "Detalle", description: "Revisar sus datos", summary: "Datos revisados" },
+    {
+      id: 3,
+      title: "Admisión",
+      description: "Opcional",
+      summary: wizardData.admission ? wizardData.admission.servicio_nombre || wizardData.admission.contrato_nombre : "Sin admisión",
+    },
+    { id: 4, title: "Agenda", description: "Profesional y horario" },
+  ];
 
   return (
     <TooltipProvider>
-      <div className="h-full flex flex-col overflow-hidden bg-gradient-to-br from-background via-background to-muted/20">
-        {/* Fixed Stepper Area - positioned below header */}
-        <div 
-          className="shrink-0 z-30 bg-background"
-        >
-          {/* Stepper Container */}
-          <motion.div 
-            initial={{ y: -10, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            className="px-6 md:px-8 py-1"
-          >
-            <div className="max-w-xl mx-auto">
-              {/* Stepper Windows 11 style - Compact */}
-              <div className="relative flex items-center bg-card/80 backdrop-blur rounded-2xl px-4 py-1.5 border border-border/10">
-                {steps.map((step, index) => {
-                  const isCompleted = currentStep > step.id;
-                  const isCurrent = currentStep === step.id;
-                  const Icon = step.icon;
-                  const isLast = index === steps.length - 1;
-
-                  return (
-                    <React.Fragment key={step.id}>
-                      {/* Step button */}
-                      <motion.button
-                        onClick={() => {
-                          if (step.id < currentStep || (step.id === 2 && wizardData.patient)) {
-                            goToStep(step.id);
-                          }
-                        }}
-                        disabled={step.id > currentStep && !(step.id === 2 && wizardData.patient)}
-                        className={cn(
-                          "relative z-10 flex items-center gap-2 transition-all duration-300 flex-shrink-0",
-                          (step.id <= currentStep || (step.id === 2 && wizardData.patient)) && "cursor-pointer"
-                        )}
-                        whileHover={{ scale: step.id <= currentStep ? 1.02 : 1 }}
-                        whileTap={{ scale: step.id <= currentStep ? 0.98 : 1 }}
-                      >
-                        <motion.div
-                          className={cn(
-                            "w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-300 shadow-sm",
-                            isCompleted && "bg-gradient-to-br from-primary to-primary/80 text-primary-foreground",
-                            isCurrent && "bg-gradient-to-br from-primary/90 to-primary text-primary-foreground ring-2 ring-primary/20",
-                            !isCompleted && !isCurrent && "bg-muted text-muted-foreground"
-                          )}
-                          animate={{
-                            scale: isCurrent ? 1.05 : 1,
-                          }}
-                        >
-                          {isCompleted ? (
-                            <Check className="w-4 h-4" />
-                          ) : (
-                            <Icon className="w-4 h-4" />
-                          )}
-                        </motion.div>
-                        <div className="text-left hidden sm:block">
-                          <p className={cn(
-                            "font-medium text-sm leading-tight transition-colors",
-                            (isCurrent || isCompleted) ? "text-foreground" : "text-muted-foreground"
-                          )}>
-                            {step.title}
-                          </p>
-                          <p className="text-[10px] text-muted-foreground leading-tight">
-                            {step.description}
-                          </p>
-                        </div>
-                      </motion.button>
-
-                      {/* Connector line between steps */}
-                      {!isLast && (
-                        <div className="flex-1 mx-3 h-0.5 bg-muted rounded-full overflow-hidden">
-                          <motion.div 
-                            className="h-full w-full origin-left bg-primary rounded-full"
-                            initial={{ scaleX: 0 }}
-                            animate={{ 
-                              scaleX: isCompleted ? 1 : 0 
-                            }}
-                            transition={{ duration: 0.4, ease: "easeOut" }}
-                          />
-                        </div>
-                      )}
-                    </React.Fragment>
-                  );
-                })}
-              </div>
+      <div className="h-full">
+      <div className="grid h-full gap-5 py-3 lg:grid-cols-[248px_minmax(0,1fr)]">
+        {/* Riel del asistente, como en la atención: pasos, lo elegido y las acciones */}
+        <aside className="lg:min-h-0">
+          <SurfaceCard className="flex flex-col gap-4">
+            <div className="space-y-0.5 px-2">
+              <h1 className="text-[15px] font-semibold text-foreground">Nueva cita</h1>
+              <p className="text-[13px] text-muted-foreground">Paso {currentStep} de {steps.length}</p>
             </div>
-          </motion.div>
-        </div>
+            <VerticalStepper steps={stepItems} current={currentStep - 1} onStepClick={(i) => goToStep(i + 1)} />
+            {currentStep > 1 && (
+              <div className="flex flex-col gap-2 border-t border-border pt-4">
+                {currentStep === 2 && wizardData.patient && (
+                  <Button onClick={handlePatientDetailContinue} className="h-10 w-full gap-2 rounded-full">
+                    Continuar
+                    <ArrowRight className="h-4 w-4" />
+                  </Button>
+                )}
+                <Button variant="ghost" onClick={handleBack} className="h-10 w-full gap-2 rounded-full">
+                  <ArrowLeft className="h-4 w-4" />
+                  Atrás
+                </Button>
+              </div>
+            )}
+          </SurfaceCard>
+        </aside>
 
-        {/* Navigation buttons - always visible below stepper */}
-        <div className="shrink-0 px-6 md:px-8 pb-2">
-          <div className={cn(
-            "mx-auto flex items-center justify-between",
-            currentStep === 4 ? "max-w-[1600px]" : "max-w-5xl"
-          )}>
-            {currentStep > 1 ? (
-              <Button variant="ghost" onClick={handleBack} className="rounded-xl gap-2 h-9">
-                <ArrowLeft className="w-4 h-4" />
-                Atrás
-              </Button>
-            ) : (
-              <div />
-            )}
-            {currentStep === 2 && wizardData.patient && (
-              <Button onClick={handlePatientDetailContinue} className="rounded-xl h-9 px-5 gap-2">
-                Continuar
-                <ArrowRight className="w-4 h-4" />
-              </Button>
-            )}
-            {currentStep === 3 && !wizardData.admission && (
-              <div />
-            )}
-          </div>
-        </div>
-
-        {/* Content area - no scroll here, each step manages its own */}
-        <div 
-          className="flex-1 min-h-0 overflow-hidden px-6 md:px-8"
-        >
-          {/* Use full width for scheduling step (step 3), constrained width for others */}
-          <div className={cn(
-            "mx-auto transition-all duration-300 h-full",
-            currentStep === 4 ? "max-w-[1600px]" : "max-w-5xl"
-          )}>
+        {/* Contenido del paso: cada paso maneja su propio scroll */}
+        <section className="min-h-0 min-w-0 overflow-hidden">
             <div className="relative overflow-hidden h-full">
             <AnimatePresence mode="wait" custom={direction}>
               <motion.div
@@ -344,8 +260,8 @@ export const AppointmentWizard: React.FC<AppointmentWizardProps> = ({
               </motion.div>
             </AnimatePresence>
             </div>
-          </div>
-        </div>
+        </section>
+      </div>
 
         {/* Dock - Always visible with contextual actions on step 3 */}
         <Dock 
