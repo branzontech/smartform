@@ -4,7 +4,7 @@ import {
   ArrowLeft, FileText, Palette, Bell, Save, User, Shield, Plus, HelpCircle,
   Trash2, SlidersHorizontal, ClipboardList, Loader2, Eye, Edit, BarChart,
   Building2, UserCog, Stethoscope, FlaskConical, Search, ChevronLeft,
-  ChevronRight, Building, Handshake, Calculator, Package, MapPin, Settings, Users,
+  ChevronRight, Building, Handshake, Calculator, Package, MapPin, Settings, Users, CalendarCheck2, CalendarX2,
 } from "lucide-react";
 import { Header } from "@/components/layout/header";
 import { ServiciosClinicosConfig } from "@/components/config/ServiciosClinicosConfig";
@@ -14,6 +14,8 @@ import { PatientFieldsConfig } from "@/components/config/PatientFieldsConfig";
 import { AdmissionFieldsConfig } from "@/components/config/AdmissionFieldsConfig";
 import { PatientHeaderConfig } from "@/components/config/PatientHeaderConfig";
 import { FormsSettings } from "@/components/config/FormsSettings";
+import { AppointmentTypesSettings } from "@/components/agenda-config/AppointmentTypesSettings";
+import { HolidaysSettings } from "@/components/agenda-config/HolidaysSettings";
 import { CompanyUsers } from "@/components/tenancy/CompanyUsers";
 import { db } from "@/integrations/data/client";
 import { Button } from "@/components/ui/button";
@@ -49,6 +51,13 @@ const settingsSections = [
     ],
   },
   {
+    label: "Agenda",
+    items: [
+      { id: "tipos-cita", label: "Tipos de cita", icon: CalendarCheck2 },
+      { id: "festivos", label: "Festivos", icon: CalendarX2 },
+    ],
+  },
+  {
     label: "Facturación",
     items: [
       { id: "contratos", label: "Contratos y convenios", icon: Handshake },
@@ -74,6 +83,9 @@ const settingsSections = [
 
 const allItemIds = settingsSections.flatMap((s) => s.items.map((i) => i.id));
 
+/** Secciones que guardan cada cambio al momento: no muestran el botón Guardar. */
+const SELF_SAVING = ["tipos-cita", "festivos"];
+
 // Titles / subtitles for content header
 const sectionMeta: Record<string, { title: string; subtitle?: string }> = {
   general: { title: "Institución", subtitle: "Configuración general de la institución" },
@@ -85,6 +97,8 @@ const sectionMeta: Record<string, { title: string; subtitle?: string }> = {
   "servicios-clinicos": { title: "Servicios clínicos", subtitle: "Administre los servicios clínicos de la institución" },
   "catalogo-procedimientos": { title: "Catálogo de procedimientos", subtitle: "Maestro de procedimientos médicos" },
   customization: { title: "Campos personalizados", subtitle: "Campos personalizados almacenados como extensiones FHIR" },
+  "tipos-cita": { title: "Tipos de cita", subtitle: "Qué se agenda: duración, modalidades, cobertura y quiénes atienden" },
+  festivos: { title: "Festivos", subtitle: "Días sin agenda: los nacionales y los de la institución" },
   contratos: { title: "Contratos y convenios", subtitle: "Gestión de contratos con pagadores" },
   tarifarios: { title: "Tarifarios", subtitle: "Administración de tarifarios de servicios" },
   pagadores: { title: "Pagadores / EPS", subtitle: "Entidades pagadoras y aseguradoras" },
@@ -405,6 +419,9 @@ export const SettingsPage = () => {
 
             {activeCategory === "forms" && <FormsSettings />}
 
+            {activeCategory === "tipos-cita" && <AppointmentTypesSettings />}
+            {activeCategory === "festivos" && <HolidaysSettings />}
+
             {activeCategory === "servicios-clinicos" && <ServiciosClinicosConfig defaultTab="servicios" />}
             {activeCategory === "catalogo-procedimientos" && <ServiciosClinicosConfig defaultTab="catalogo" />}
 
@@ -483,13 +500,15 @@ export const SettingsPage = () => {
         </main>
       </div>
 
-      {/* Save FAB */}
-      <div className="fixed bottom-6 right-6 z-50">
-        <Button onClick={handleSave} size="sm" className="shadow-lg rounded-lg gap-1.5">
-          <Save className="h-3.5 w-3.5" />
-          Guardar
-        </Button>
-      </div>
+      {/* Save FAB (las secciones de agenda guardan cada cambio por su cuenta) */}
+      {!SELF_SAVING.includes(activeCategory) && (
+        <div className="fixed bottom-6 right-6 z-50">
+          <Button onClick={handleSave} size="sm" className="shadow-lg rounded-lg gap-1.5">
+            <Save className="h-3.5 w-3.5" />
+            Guardar
+          </Button>
+        </div>
+      )}
     </div>
   );
 };

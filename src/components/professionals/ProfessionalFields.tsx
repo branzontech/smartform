@@ -83,6 +83,14 @@ export function ProfessionalFields({ idPrefix, form, onChange, showActive = fals
         </div>
       </div>
 
+      <ToggleRow
+        id={id("holidays")}
+        label="Atiende festivos"
+        help="Se le ofrecen cupos en festivos, por ejemplo para domicilios."
+        checked={form.atiendeFestivos}
+        onChange={(atiendeFestivos) => onChange({ atiendeFestivos })}
+      />
+
       {showActive && (
         <ToggleRow
           id={id("active")}

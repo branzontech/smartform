@@ -30,6 +30,8 @@ export interface ProfessionalForm {
   duracionCitaMin: string;
   color: string;
   activo: boolean;
+  /** Se le ofrecen cupos en festivos (domicilios, urgencias). */
+  atiendeFestivos: boolean;
 }
 
 export const emptyProfessionalForm = (): ProfessionalForm => ({
@@ -40,6 +42,7 @@ export const emptyProfessionalForm = (): ProfessionalForm => ({
   duracionCitaMin: String(DEFAULT_DURATION_MIN),
   color: DEFAULT_COLOR,
   activo: true,
+  atiendeFestivos: false,
 });
 
 export const formFromDetail = (d: ProfessionalDetail): ProfessionalForm => ({
@@ -50,6 +53,7 @@ export const formFromDetail = (d: ProfessionalDetail): ProfessionalForm => ({
   duracionCitaMin: String(d.duracionCitaMin),
   color: d.color ?? DEFAULT_COLOR,
   activo: d.activo,
+  atiendeFestivos: d.atiendeFestivos ?? false,
 });
 
 const inputSchema = z.object({
@@ -64,6 +68,7 @@ const inputSchema = z.object({
     .max(480, "La duración de la cita va de 5 a 480 minutos."),
   color: z.string().regex(/^#[0-9a-fA-F]{6}$/, "Color no válido."),
   activo: z.boolean(),
+  atiendeFestivos: z.boolean(),
 });
 
 export type FormResult = { ok: true; input: ProfessionalInput } | { ok: false; error: string };
@@ -83,6 +88,7 @@ export function toProfessionalInput(form: ProfessionalForm): FormResult {
       duracionCitaMin: v.duracionCitaMin,
       color: v.color.toLowerCase(),
       activo: v.activo,
+      atiendeFestivos: v.atiendeFestivos,
     },
   };
 }
