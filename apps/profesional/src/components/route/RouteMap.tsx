@@ -3,6 +3,7 @@ import { Image, Platform, StyleSheet, Text, View } from 'react-native';
 import MapView, { Marker, Polyline, type EdgePadding } from 'react-native-maps';
 import { decodePolyline, isLocated, isPending, trafficSegments, type Camino, type Parada, type TraficoTramo, type Velocidad } from '@kerhub/core/rutas';
 import { colors } from '@/theme';
+import { PIN_HECHA, pinFor } from './pins';
 
 export const ROUTE_ICONS = {
   carro: require('../../../assets/rutas/carro.png'),
@@ -120,39 +121,29 @@ export const RouteMap = forwardRef<RouteMapHandle, RouteMapProps>(function Route
         const target = p.id === targetId;
         const pendingLeft = located.filter(isPending);
         const last = !done && pendingLeft.length > 1 && pendingLeft[pendingLeft.length - 1].id === p.id;
-        const label = target && targetLabel ? targetLabel : !done && etas[p.id] ? etas[p.id] : null;
+        const source = done ? PIN_HECHA : pinFor(i + 1, last ? 'llegada' : 'visita', last ? ROUTE_ICONS.llegada : ROUTE_ICONS.visita);
+        const when = target && targetLabel ? `a ${targetLabel}` : etas[p.id] ? `llegas ${etas[p.id]}` : null;
         return (
-          <Marker key={p.id} coordinate={{ latitude: p.latitud!, longitude: p.longitud! }} anchor={{ x: 0.5, y: 1 }} zIndex={target ? 10 : done ? 1 : 5}>
-            {/* Tamaño fijo: sin él, el mapa dibuja el marcador vacío. */}
-            <View style={[styles.marker, done && { opacity: 0.45 }]} collapsable={false}>
-              {label ? (
-                <View style={target ? styles.bubble : styles.eta}>
-                  <Text style={target ? styles.bubbleText : styles.etaText}>{label}</Text>
-                </View>
-              ) : null}
-              <View style={styles.pinWrap}>
-                <Image source={last ? ROUTE_ICONS.llegada : ROUTE_ICONS.visita} style={target ? styles.pinTarget : styles.pinImage} fadeDuration={0} />
-                <View style={styles.badge}>
-                  <Text style={styles.badgeText}>{done ? '✓' : String(i + 1)}</Text>
-                </View>
-              </View>
-            </View>
+          // Una sola imagen por marcador (como el carro): el mapa no dibuja marcadores con vistas anidadas.
+          <Marker
+            key={p.id}
+            coordinate={{ latitude: p.latitud!, longitude: p.longitud! }}
+            anchor={{ x: 0.5, y: 1 }}
+            zIndex={target ? 10 : done ? 1 : 5}
+            title={`${i + 1}. ${p.paciente}`}
+            description={[when, p.direccion].filter(Boolean).join(' · ')}>
+            <Image source={source} style={target ? styles.pinTarget : styles.pinImage} fadeDuration={0} />
           </Marker>
         );
       })}
       {position && (
-        <Marker coordinate={{ latitude: position.latitud, longitude: position.longitud }} anchor={{ x: 0.5, y: started ? 0.5 : 1 }} zIndex={20}>
-          {started ? (
-            <Image source={ROUTE_ICONS.carro} style={styles.car} accessibilityLabel="Tu ubicación" fadeDuration={0} />
-          ) : (
-            <View style={styles.marker} collapsable={false}>
-              <View style={styles.startLabel}>
-                <Image source={ROUTE_ICONS.profesional} style={{ width: 18, height: 18 }} fadeDuration={0} />
-                <Text style={styles.etaText}>Salida</Text>
-              </View>
-              <Image source={ROUTE_ICONS.salida} style={styles.pinImage} accessibilityLabel="Punto de salida" fadeDuration={0} />
-            </View>
-          )}
+        <Marker
+          coordinate={{ latitude: position.latitud, longitude: position.longitud }}
+          anchor={{ x: 0.5, y: started ? 0.5 : 1 }}
+          zIndex={20}
+          title={started ? 'Tu ubicación' : 'Salida'}
+          description={started ? undefined : 'Desde aquí se calcula la ruta'}>
+          <Image source={started ? ROUTE_ICONS.carro : ROUTE_ICONS.salida} style={started ? styles.car : styles.pinImage} fadeDuration={0} />
         </Marker>
       )}
     </MapView>
@@ -164,8 +155,8 @@ const styles = StyleSheet.create({
   marker: { width: 92, height: 96, alignItems: 'center', justifyContent: 'flex-end', gap: 2 },
   pinWrap: { width: 58, height: 58, alignItems: 'center', justifyContent: 'flex-end' },
   startLabel: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#fff', borderRadius: 10, paddingHorizontal: 7, paddingVertical: 3 },
-  pinImage: { width: 42, height: 42 },
-  pinTarget: { width: 54, height: 54 },
+  pinImage: { width: 52, height: 52 },
+  pinTarget: { width: 64, height: 64 },
   badge: {
     position: 'absolute',
     right: 0,
