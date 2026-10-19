@@ -1,8 +1,11 @@
 import { NativeTabs } from 'expo-router/unstable-native-tabs';
+import { hasModule } from '@/lib/api';
+import { useAuth } from '@/lib/auth';
 import { colors } from '@/theme';
 
 /** Menú inferior del profesional (barra nativa) con los íconos 3D de Doctor Ker. */
 export default function TabsLayout() {
+  const { me } = useAuth();
   return (
     <NativeTabs tintColor={colors.primary}>
       <NativeTabs.Trigger name="inicio">
@@ -19,7 +22,8 @@ export default function TabsLayout() {
         />
         <NativeTabs.Trigger.Label>Mi día</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
-      <NativeTabs.Trigger name="ruta">
+      {/* Rutas es un módulo aparte: sin él, la pestaña no aparece. */}
+      <NativeTabs.Trigger name="ruta" hidden={!hasModule(me, 'rutas')}>
         <NativeTabs.Trigger.Icon
           src={{ default: require('../../../assets/tabs/zonas-off.png'), selected: require('../../../assets/tabs/zonas.png') }}
           renderingMode="original"

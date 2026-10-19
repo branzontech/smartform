@@ -2,6 +2,7 @@ import { createAgendaApi, type Fetcher } from '@kerhub/core/agenda';
 import { createAttentionApi, createFormatsApi } from '@kerhub/core/forms';
 import { CONTENT_BUCKET, apiFileUrl, createContentApi } from '@kerhub/core/contenido';
 import { createOrdersApi } from '@kerhub/core/ordenes';
+import { createRoutesApi } from '@kerhub/core/rutas';
 import { clearToken, currentEnvironment, readToken, saveToken } from './session';
 
 export class ApiError extends Error {
@@ -54,6 +55,7 @@ export const agenda = createAgendaApi(fetcher);
 export const attention = createAttentionApi(fetcher);
 export const formats = createFormatsApi(fetcher);
 export const orders = createOrdersApi(fetcher);
+export const rutas = createRoutesApi(fetcher);
 export const content = createContentApi(fetcher);
 
 /** Imagen de una publicación, servida por la API del ambiente activo. */
@@ -72,7 +74,8 @@ export function institutionLogoUrl(url: string | null | undefined): string | nul
 
 export interface Me {
   user: { id: string; email: string; name: string };
-  empresa: { id: string; nombre: string; rol: string } | null;
+  /** modulos: los que contrató la empresa (agenda, atencion, rutas). */
+  empresa: { id: string; nombre: string; rol: string; modulos?: string[] } | null;
   bloqueos?: { nombre: string; estado: string }[];
 }
 
@@ -113,3 +116,9 @@ export async function signOut(): Promise<void> {
 }
 
 export const errorMessage = (e: unknown) => (e instanceof Error ? e.message : 'Algo salió mal. Intenta de nuevo.');
+
+/** Módulos de la plataforma que una empresa puede contratar por separado. */
+export type Module = 'agenda' | 'atencion' | 'rutas';
+
+/** ¿La empresa activa tiene el módulo? Sin dato del servidor (API anterior) se asumen todos. */
+export const hasModule = (me: Me | null, module: Module) => (me?.empresa?.modulos ?? ['agenda', 'atencion', 'rutas']).includes(module);
