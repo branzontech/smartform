@@ -56,6 +56,7 @@ const ICON_BY_ROUTE: Record<string, ModuleIconName> = {
   "/app/profesionales": "medicos",
   "/app/contenido-app": "portal-usuario",
   "/app/mi-dia": "citas",
+  "/app/rutas": "zonas",
   "/app/inventario": "inventario",
   "/app/locations/sites": "sedes",
   "/app/facturacion": "facturacion",

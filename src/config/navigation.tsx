@@ -54,7 +54,8 @@ import {
   CalendarClock,
   Workflow,
   Bot,
-  Smartphone
+  Smartphone,
+  Navigation
 } from "lucide-react";
 
 export type MenuItem = {
@@ -115,6 +116,11 @@ export const mainNavItems: SubmenuItem[] = [
         title: "Mi día",
         path: "/app/mi-dia",
         icon: CalendarRange,
+      },
+      {
+        title: "Rutas del día",
+        path: "/app/rutas",
+        icon: Navigation,
       },
     ],
   },

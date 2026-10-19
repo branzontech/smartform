@@ -93,6 +93,43 @@ export interface VistaRuta extends MiRuta {
   siguiente: (Camino & { citaId: string; alternativas: Camino[] }) | null;
 }
 
+/** Visita de un profesional en el día del coordinador. */
+export type ParadaDia = Omit<Parada, "tramo"> & { profesionalId: string; profesional: string; color: string | null };
+
+/** Ruta en curso (o terminada) de un profesional, con su última posición conocida. */
+export interface RutaDia {
+  id: string;
+  estado: "en_curso" | "terminada";
+  iniciadaAt: string;
+  terminadaAt: string | null;
+  distanciaM: number | null;
+  duracionS: number | null;
+  polilinea: string | null;
+  orden: string[];
+  tramos: Tramo[];
+  recalculadaAt: string;
+  posicionLatitud: number | null;
+  posicionLongitud: number | null;
+  posicionAt: string | null;
+}
+
+export interface ProfesionalDia {
+  profesionalId: string;
+  profesional: string;
+  color: string | null;
+  ruta: RutaDia | null;
+  /** En el orden de su ruta si ya salió; si no, por hora de cita. */
+  paradas: ParadaDia[];
+  resueltas: number;
+  pendientes: number;
+}
+
+/** El día de rutas de la empresa, para coordinación. */
+export interface DiaRutas {
+  fecha: string;
+  profesionales: ProfesionalDia[];
+}
+
 const send = (method: string, body?: unknown): RequestInit => ({ method, body: body === undefined ? undefined : JSON.stringify(body) });
 
 export function createRoutesApi(fetcher: Fetcher) {
@@ -106,6 +143,8 @@ export function createRoutesApi(fetcher: Fetcher) {
     computeMyRoute: (pos: Posicion, orden: ModoRuta = "optimo") => fetcher<MiRuta>("/api/rutas/mi-ruta/calcular", send("POST", { ...pos, orden })),
     sendPosition: (pos: Posicion) => fetcher<{ guardada: boolean }>("/api/rutas/mi-ruta/posicion", send("POST", pos)),
     finishMyRoute: () => fetcher<MiRuta>("/api/rutas/mi-ruta/terminar", send("POST")),
+    /** Coordinación: todos los profesionales con visitas a domicilio ese día. */
+    fetchDay: (fecha?: string) => fetcher<DiaRutas>(`/api/rutas/dia${fecha ? `?fecha=${fecha}` : ""}`),
   };
 }
 
