@@ -84,7 +84,7 @@ export const RouteMap = forwardRef<RouteMapHandle, RouteMapProps>(function Route
   useImperativeHandle(ref, () => ({
     fit: (only) => {
       const points = only ?? [
-        ...located.map((p) => ({ latitude: p.latitud!, longitude: p.longitud! })),
+        ...located.map((p) => ({ latitude: Number(p.latitud), longitude: Number(p.longitud) })),
         ...(position ? [{ latitude: position.latitud, longitude: position.longitud }] : []),
         ...routePoints,
       ];
@@ -127,7 +127,7 @@ export const RouteMap = forwardRef<RouteMapHandle, RouteMapProps>(function Route
           // Una sola imagen por marcador (como el carro): el mapa no dibuja marcadores con vistas anidadas.
           <Marker
             key={p.id}
-            coordinate={{ latitude: p.latitud!, longitude: p.longitud! }}
+            coordinate={{ latitude: Number(p.latitud), longitude: Number(p.longitud) }}
             anchor={{ x: 0.5, y: 1 }}
             zIndex={target ? 10 : done ? 1 : 5}
             title={`${i + 1}. ${p.paciente}`}

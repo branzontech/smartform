@@ -110,7 +110,7 @@ export default function Ruta() {
     if (!p || !isLocated(p)) return;
     setPanelOpen(false);
     map.current?.fit([
-      { latitude: p.latitud!, longitude: p.longitud! },
+      { latitude: Number(p.latitud), longitude: Number(p.longitud) },
       ...(route.position ? [{ latitude: route.position.latitud, longitude: route.position.longitud }] : []),
     ]);
   };

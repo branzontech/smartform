@@ -51,7 +51,7 @@ export function RoutePreview({ citaId, latitud, longitud, direccion, telefono, w
   const fit = () => {
     if (!located) return;
     const points = [
-      { latitude: latitud!, longitude: longitud! },
+      { latitude: Number(latitud), longitude: Number(longitud) },
       ...(position ? [{ latitude: position.latitud, longitude: position.longitud }] : []),
       ...(leg.data?.polilinea ? decodePolyline(leg.data.polilinea) : []),
     ];
@@ -61,7 +61,7 @@ export function RoutePreview({ citaId, latitud, longitud, direccion, telefono, w
 
   const navigate = () => {
     if (!located) return openByText(direccion ?? '');
-    const links = navigationLinks({ latitud: latitud!, longitud: longitud! });
+    const links = navigationLinks({ latitud: Number(latitud), longitud: Number(longitud) });
     showAlert('Navegar con', direccion ?? undefined, [
       { text: 'Google Maps', onPress: () => void Linking.openURL(links.google) },
       { text: 'Waze', onPress: () => void Linking.openURL(links.waze) },
@@ -80,7 +80,7 @@ export function RoutePreview({ citaId, latitud, longitud, direccion, telefono, w
           <MapView
             ref={map}
             style={styles.map}
-            initialRegion={{ latitude: latitud!, longitude: longitud!, latitudeDelta: 0.03, longitudeDelta: 0.03 }}
+            initialRegion={{ latitude: Number(latitud), longitude: Number(longitud), latitudeDelta: 0.03, longitudeDelta: 0.03 }}
             mapType={Platform.OS === 'ios' ? 'mutedStandard' : 'standard'}
             showsTraffic
             showsPointsOfInterests={false}
@@ -90,7 +90,7 @@ export function RoutePreview({ citaId, latitud, longitud, direccion, telefono, w
             pitchEnabled={false}
             onMapReady={fit}>
             {leg.data && <TrafficLine polilinea={leg.data.polilinea} trafico={leg.data.trafico} width={5} />}
-            <Marker coordinate={{ latitude: latitud!, longitude: longitud! }} anchor={{ x: 0.5, y: 1 }}>
+            <Marker coordinate={{ latitude: Number(latitud), longitude: Number(longitud) }} anchor={{ x: 0.5, y: 1 }}>
               <Image source={ROUTE_ICONS.visita} style={{ width: 40, height: 40 }} />
             </Marker>
             {position && (
