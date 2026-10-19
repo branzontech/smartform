@@ -2,6 +2,7 @@ import { createAgendaApi, type Fetcher } from '@kerhub/core/agenda';
 import { createAttentionApi, createFormatsApi } from '@kerhub/core/forms';
 import { CONTENT_BUCKET, apiFileUrl, createContentApi } from '@kerhub/core/contenido';
 import { createOrdersApi } from '@kerhub/core/ordenes';
+import { createPatientsApi } from '@kerhub/core/pacientes';
 import { createRoutesApi } from '@kerhub/core/rutas';
 import { clearToken, currentEnvironment, readToken, saveToken } from './session';
 
@@ -56,6 +57,7 @@ export const attention = createAttentionApi(fetcher);
 export const formats = createFormatsApi(fetcher);
 export const orders = createOrdersApi(fetcher);
 export const rutas = createRoutesApi(fetcher);
+export const patients = createPatientsApi(fetcher);
 export const content = createContentApi(fetcher);
 
 /** Imagen de una publicación, servida por la API del ambiente activo. */

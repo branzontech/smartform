@@ -50,9 +50,14 @@ export default function CitaDetail() {
           </View>
           <Icon3D name={MODALITY_ICON[c.modalidad] ?? 'citas'} size={56} />
         </View>
-        <Text style={styles.meta}>
-          {c.tipoDocumento} {c.documento}
-        </Text>
+        <View style={styles.docRow}>
+          <Text style={styles.meta}>
+            {c.tipoDocumento} {c.documento}
+          </Text>
+          <Pressable accessibilityRole="button" hitSlop={8} onPress={() => router.push({ pathname: '/paciente/[id]', params: { id: c.pacienteId } })}>
+            <Text style={styles.link}>Ver ficha</Text>
+          </Pressable>
+        </View>
         <Text style={styles.when}>
           {capitalize(formatLongDay(localDay(c.inicio)))}, {localTime(c.inicio)} – {localTime(c.fin)}
         </Text>
@@ -117,6 +122,8 @@ export default function CitaDetail() {
 }
 
 const styles = StyleSheet.create({
+  docRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
+  link: { fontSize: 14, fontWeight: '700', color: colors.primary },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
   page: { padding: 16, gap: 12, paddingBottom: 40 },
   state: { fontSize: 13, fontWeight: '600' },
