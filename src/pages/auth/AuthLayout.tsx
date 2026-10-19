@@ -15,8 +15,9 @@ interface AuthLayoutProps {
  * fondo con textura de puntos. En móvil la ilustración queda como franja superior.
  */
 export function AuthLayout({ title, description, children, footer }: AuthLayoutProps) {
+  // html, body y #root no hacen scroll (la app lo maneja por pantalla): esta pantalla es su propio contenedor con scroll.
   return (
-    <div className="grid min-h-screen w-full grid-cols-1 bg-muted/50 motion-safe:animate-in motion-safe:fade-in [animation-duration:300ms] lg:grid-cols-[58fr_42fr]">
+    <div className="grid h-full w-full grid-cols-1 overflow-y-auto overscroll-contain bg-muted/50 motion-safe:animate-in motion-safe:fade-in [animation-duration:300ms] lg:grid-cols-[58fr_42fr]">
       <div className="relative h-[220px] overflow-hidden bg-[#4b2f7a] sm:h-[300px] lg:sticky lg:top-0 lg:h-screen">
         <img
           src="/login-medico.jpg"
