@@ -2,6 +2,8 @@
  * «Mis pacientes» del profesional (los que tienen citas con él): tipos, cliente
  * de /api/agenda/mis-pacientes y utilidades del listado. Lo usa la app.
  */
+import type { Responsable } from "./agenda";
+
 type Fetcher = <T>(path: string, init?: RequestInit) => Promise<T>;
 
 export interface MyPatient {
@@ -30,6 +32,8 @@ export interface MyPatientDetail extends MyPatient {
   numeroHistoria: string | null;
   ocupacion: string | null;
   zona: string | null;
+  /** Responsable o cuidador principal. */
+  responsable: Responsable | null;
 }
 
 export function createPatientsApi(fetcher: Fetcher) {

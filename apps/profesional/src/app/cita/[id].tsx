@@ -1,7 +1,7 @@
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
-import { MODALITY_LABEL, STATE_LABEL, STATE_TONE, formatLongDay, localDay, localTime } from '@kerhub/core/agenda';
+import { CITA_PRIORITY_LABEL, MODALITY_LABEL, STATE_LABEL, STATE_TONE, formatLongDay, localDay, localTime } from '@kerhub/core/agenda';
 import { agenda, errorMessage, hasModule } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { RoutePreview } from '@/components/route/RoutePreview';
@@ -10,9 +10,11 @@ import { CitaActions } from '@/components/CitaActions';
 import { Icon3D, MODALITY_ICON } from '@/components/Icon3D';
 import { Button, Card } from '@/components/ui';
 import { colors, toneColor } from '@/theme';
-import { callPhone, openDirections } from '@/lib/links';
+import { callPhone, openDirections, openLink } from '@/lib/links';
 
 const capitalize = (s: string) => s.charAt(0).toLocaleUpperCase('es') + s.slice(1);
+
+const EVENT_TEXT: Record<string, string> = { creada: 'Cita creada', llegada: 'Llegó el paciente', reprogramada: 'Cita reprogramada', actualizada: 'Datos actualizados' };
 
 export default function CitaDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -40,7 +42,10 @@ export default function CitaDetail() {
       <Card>
         <View style={styles.headRow}>
           <View style={{ flex: 1, gap: 2 }}>
-            <Text style={[styles.state, { color: toneColor[STATE_TONE[c.estado]] }]}>{STATE_LABEL[c.estado]}</Text>
+            <Text style={[styles.state, { color: toneColor[STATE_TONE[c.estado]] }]}>
+              {STATE_LABEL[c.estado]}
+              {c.prioridad !== 'normal' && <Text style={styles.urgent}> · {CITA_PRIORITY_LABEL[c.prioridad]}</Text>}
+            </Text>
             <Text style={styles.patient}>{c.paciente}</Text>
           </View>
           <Icon3D name={MODALITY_ICON[c.modalidad] ?? 'citas'} size={56} />
@@ -57,12 +62,14 @@ export default function CitaDetail() {
           {capitalize(formatLongDay(localDay(c.inicio)))}, {localTime(c.inicio)} – {localTime(c.fin)}
         </Text>
         <Text style={styles.meta}>
-          {MODALITY_LABEL[c.modalidad]}
+          {c.tipoCita ?? MODALITY_LABEL[c.modalidad]}
           {c.servicio ? ` · ${c.servicio}` : ''}
           {c.convenio ? ` · ${c.convenio}` : ''}
         </Text>
         {c.motivo && <Text style={styles.body}>Motivo: {c.motivo}</Text>}
+        {c.instrucciones && <Text style={styles.body}>Indicaciones al paciente: {c.instrucciones}</Text>}
         {c.notas && <Text style={styles.body}>Notas: {c.notas}</Text>}
+        {c.llegadaAt && <Text style={styles.meta}>Llegó a las {localTime(c.llegadaAt)}</Text>}
         {c.motivoCancelacion && <Text style={styles.body}>Motivo de cierre: {c.motivoCancelacion}</Text>}
         <CitaActions cita={c} />
       </Card>
@@ -98,12 +105,36 @@ export default function CitaDetail() {
         </Card>
       )}
 
+      {c.modalidad === 'telemedicina' && (
+        <Card>
+          <Text style={styles.label}>Videollamada</Text>
+          {c.enlaceTelemedicina ? (
+            <Button title="Entrar a la videollamada" onPress={() => void openLink(c.enlaceTelemedicina!)} />
+          ) : (
+            <Text style={styles.meta}>Aún no tiene enlace. Recepción lo agrega a la cita.</Text>
+          )}
+        </Card>
+      )}
+
+      {c.responsable && (
+        <Card>
+          <Text style={styles.label}>Responsable o cuidador</Text>
+          <Text style={styles.body}>
+            {c.responsable.nombre}
+            {c.responsable.parentesco ? ` · ${c.responsable.parentesco}` : ''}
+          </Text>
+          {c.responsable.telefono && (
+            <Button title={`Llamar · ${c.responsable.telefono}`} variant="secondary" onPress={() => void callPhone(c.responsable!.telefono!)} />
+          )}
+        </Card>
+      )}
+
       <Card>
         <Text style={styles.label}>Bitácora</Text>
         {c.eventos.map((e) => (
           <View key={e.id} style={styles.event}>
             <Text style={styles.body}>
-              {e.evento === 'creada' ? 'Cita creada' : e.estadoNuevo ? `Pasó a ${STATE_LABEL[e.estadoNuevo].toLowerCase()}` : e.evento}
+              {e.evento !== 'estado' ? EVENT_TEXT[e.evento] ?? e.evento : e.estadoNuevo ? `Pasó a ${STATE_LABEL[e.estadoNuevo].toLowerCase()}` : 'Cambió el estado'}
             </Text>
             <Text style={styles.meta}>
               {capitalize(formatLongDay(localDay(e.fecha)))}, {localTime(e.fecha)} · {e.actor}
@@ -122,6 +153,7 @@ const styles = StyleSheet.create({
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
   page: { padding: 16, gap: 12, paddingBottom: 40 },
   state: { fontSize: 13, fontWeight: '600' },
+  urgent: { color: colors.warning },
   patient: { fontSize: 22, fontWeight: '700', color: colors.ink },
   when: { fontSize: 16, fontWeight: '600', color: colors.ink, marginTop: 4 },
   meta: { fontSize: 14, color: colors.muted },

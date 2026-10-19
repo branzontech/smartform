@@ -118,6 +118,23 @@ export default function Paciente() {
           )}
         </Card>
 
+        {p.responsable && (
+          <View style={{ gap: 8 }}>
+            <Text style={styles.section}>Responsable o cuidador</Text>
+            <Card style={{ gap: 12 }}>
+              <View style={{ gap: 2 }}>
+                <Text style={styles.fieldValue}>{p.responsable.nombre}</Text>
+                {p.responsable.parentesco && <Text style={styles.meta}>{p.responsable.parentesco}</Text>}
+              </View>
+              {p.responsable.telefono && (
+                <View style={styles.actions}>
+                  <Action label={`Llamar · ${p.responsable.telefono}`} onPress={() => void callPhone(p.responsable!.telefono!)} />
+                </View>
+              )}
+            </Card>
+          </View>
+        )}
+
         {next && (
           <View style={{ gap: 8 }}>
             <Text style={styles.section}>Próxima cita</Text>

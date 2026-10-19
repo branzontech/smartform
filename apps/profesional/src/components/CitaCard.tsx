@@ -1,7 +1,7 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import Animated, { FadeInDown } from 'react-native-reanimated';
-import { MODALITY_LABEL, STATE_LABEL, STATE_TONE, localTime, type Cita } from '@kerhub/core/agenda';
+import { CITA_PRIORITY_LABEL, MODALITY_LABEL, STATE_LABEL, STATE_TONE, localTime, type Cita } from '@kerhub/core/agenda';
 import { CitaActions } from './CitaActions';
 import { Icon3D, MODALITY_ICON } from './Icon3D';
 import { Card } from './ui';
@@ -21,6 +21,7 @@ export function CitaCard({ cita, index = 0 }: { cita: Cita; index?: number }) {
               {localTime(cita.inicio)} – {localTime(cita.fin)}
             </Text>
             <View style={styles.right}>
+              {cita.prioridad !== 'normal' && !faded && <Text style={[styles.state, { color: colors.warning }]}>{CITA_PRIORITY_LABEL[cita.prioridad]} · </Text>}
               <Text style={[styles.state, { color: toneColor[STATE_TONE[cita.estado]] }]}>{STATE_LABEL[cita.estado]}</Text>
               {/* Acciones rápidas en «···»; el resto, en la ficha de la cita. */}
               <CitaActions cita={cita} menuOnly />
@@ -31,8 +32,8 @@ export function CitaCard({ cita, index = 0 }: { cita: Cita; index?: number }) {
             <View style={{ flex: 1, gap: 2 }}>
               <Text style={styles.patient}>{cita.paciente}</Text>
               <Text style={styles.meta} numberOfLines={2}>
-                {MODALITY_LABEL[cita.modalidad]}
-                {cita.servicio ? ` · ${cita.servicio}` : ''}
+                {cita.tipoCita ?? MODALITY_LABEL[cita.modalidad]}
+                {cita.servicio && !cita.tipoCita ? ` · ${cita.servicio}` : ''}
                 {cita.modalidad === 'domicilio' && cita.direccion ? `\n${cita.direccion}` : ''}
               </Text>
             </View>
