@@ -2,8 +2,8 @@ import type { ReactNode } from 'react';
 import { ActivityIndicator, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { localTime } from '@kerhub/core/agenda';
-import { formatDistance, formatDuration, isLocated, isPending, type Parada, type Ruta } from '@kerhub/core/rutas';
+import { formatDistance, formatDuration, isLocated, isPending, type ModoRuta, type Parada, type Ruta } from '@kerhub/core/rutas';
+import { SegmentedTabs } from '@/components/SegmentedTabs';
 import { colors } from '@/theme';
 import { ROUTE_ICONS } from './RouteMap';
 
@@ -42,13 +42,17 @@ export function TextButton({ title, onPress, tone = 'muted' }: { title: string; 
   );
 }
 
-/** Resumen antes de salir: visitas del día en orden, distancia y tiempo, e «Iniciar ruta». */
-export function SummarySheet({ paradas, totals, etas, busy, onStart, onLayoutHeight }: {
+/** Resumen antes de salir (las visitas, en el panel de arriba): cifras del recorrido, cómo ordenarlo e «Iniciar ruta». */
+export function SummarySheet({ paradas, totals, etas, lateCount, mode, onMode, busy, onStart, onLayoutHeight }: {
   paradas: Parada[];
-  /** Recorrido calculado en vivo desde donde está (distancia y tiempo con tráfico). */
+  /** Recorrido calculado desde donde está (distancia y tiempo). */
   totals: { distanciaM: number; duracionS: number } | null;
   /** Hora de llegada estimada a cada visita. */
   etas: Record<string, string>;
+  /** Visitas a las que llegaría tarde por la hora de su cita, en este orden. */
+  lateCount: number;
+  mode: ModoRuta;
+  onMode: (m: ModoRuta) => void;
   busy: boolean;
   onStart: () => void;
   onLayoutHeight?: (h: number) => void;
@@ -66,28 +70,27 @@ export function SummarySheet({ paradas, totals, etas, busy, onStart, onLayoutHei
         <View style={{ flex: 1 }}>
           <Text style={styles.title}>Tu ruta de hoy</Text>
           <Text style={styles.sub}>{stats}</Text>
-          {last && <Text style={styles.sub}>Llegas a la última visita a las {etas[last.id]}</Text>}
+          {last && <Text style={styles.sub}>Terminas en la última visita hacia las {etas[last.id]}</Text>}
         </View>
       </View>
-      <View style={{ gap: 2 }}>
-        {pending.slice(0, 5).map((p, i) => (
-          <View key={p.id} style={styles.row}>
-            <View style={styles.num}><Text style={styles.numText}>{i + 1}</Text></View>
-            <View style={{ flex: 1, minWidth: 0 }}>
-              <Text style={styles.rowTitle} numberOfLines={1}>{p.paciente}</Text>
-              <Text style={styles.rowSub} numberOfLines={1}>{localTime(p.inicio)} · {p.direccion ?? 'Sin dirección'}</Text>
-            </View>
-            {!isLocated(p) ? <Text style={styles.warn}>Sin ubicar</Text> : etas[p.id] ? <Text style={styles.etaText}>llegas {etas[p.id]}</Text> : null}
-          </View>
-        ))}
-        {pending.length > 5 && <Text style={styles.more}>y {pending.length - 5} más</Text>}
-      </View>
-      <Text style={styles.note}>
+      <SegmentedTabs
+        options={[
+          { value: 'optimo', label: 'Ruta más corta' },
+          { value: 'citas', label: 'Por hora de cita' },
+        ]}
+        value={mode}
+        onChange={onMode}
+      />
+      <Text style={[styles.note, lateCount > 0 && styles.lateNote]}>
         {unlocated > 0
           ? `${unlocated === 1 ? 'Una dirección no está' : `${unlocated} direcciones no están`} en el mapa: esas visitas quedan por fuera del recorrido.`
-          : totals
-            ? 'En el orden de tus citas, con el tráfico de ahora. Tu IPS ve tu avance mientras la ruta está activa.'
-            : 'Calculando el recorrido con el tráfico de ahora…'}
+          : !totals
+            ? 'Calculando el recorrido…'
+            : lateCount > 0
+              ? `En este orden llegarías tarde a ${lateCount === 1 ? 'una visita' : `${lateCount} visitas`} por la hora de su cita. Revísalas arriba o cambia a «Por hora de cita».`
+              : mode === 'optimo'
+                ? 'El orden que menos recorre. Toca «Hoy» arriba para ver el orden y la hora de llegada a cada visita.'
+                : 'En el orden de las horas de cita. Toca «Hoy» arriba para ver el orden.'}
       </Text>
       <LimeButton title="Iniciar ruta" onPress={onStart} busy={busy} />
     </SheetFrame>
@@ -154,6 +157,7 @@ const styles = StyleSheet.create({
   etaText: { fontSize: 12.5, fontWeight: '600', color: colors.muted },
   more: { fontSize: 13, color: colors.muted, paddingLeft: 40 },
   note: { fontSize: 12.5, color: colors.muted, marginTop: -4 },
+  lateNote: { color: '#c2410c', fontWeight: '600' },
   lime: { height: 50, borderRadius: 16, backgroundColor: colors.lime, alignItems: 'center', justifyContent: 'center' },
   limeText: { fontSize: 16, fontWeight: '800', color: colors.primaryDark },
   textButton: { height: 40, alignItems: 'center', justifyContent: 'center' },

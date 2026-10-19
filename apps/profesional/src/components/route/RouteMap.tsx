@@ -19,6 +19,8 @@ export const ROUTE_ICONS = {
 const SPEED_COLOR: Record<Velocidad, string> = { NORMAL: colors.primary, SLOW: '#f08c00', TRAFFIC_JAM: '#d92d20' };
 const FADED = 'rgba(139,53,233,0.35)';
 const ALT_COLOR = '#9aa3b2';
+/** Sin tráfico en vivo, el trazado va de un solo color. */
+const NO_TRAFFIC: TraficoTramo[] = [];
 
 /** Cartagena: donde se centra el mapa mientras llegan los datos. */
 const DEFAULT_REGION = { latitude: 10.4, longitude: -75.51, latitudeDelta: 0.12, longitudeDelta: 0.12 };
@@ -40,6 +42,10 @@ interface RouteMapProps {
   etas: Record<string, string>;
   /** Burbuja sobre la próxima visita («8 min»). */
   targetLabel: string | null;
+  /** Ya va en ruta: el profesional se ve como un carro; antes, como el punto de salida. */
+  started: boolean;
+  /** Tráfico en tiempo real: capa del mapa y trazado coloreado (verde, naranja, rojo). */
+  liveTraffic: boolean;
   position: { latitud: number; longitud: number } | null;
   targetId: string | null;
   /** Espacio que ocupa la hoja de abajo, para no tapar la ruta al encuadrar. */
@@ -67,7 +73,7 @@ export function TrafficLine({ polilinea, trafico, faded, width }: { polilinea: s
  * profesional con su carro.
  */
 export const RouteMap = forwardRef<RouteMapHandle, RouteMapProps>(function RouteMap(props, ref) {
-  const { paradas, route, leg, selectedAlt, onSelectAlt, etas, targetLabel, position, targetId, bottomInset } = props;
+  const { paradas, route, leg, selectedAlt, onSelectAlt, etas, targetLabel, started, liveTraffic, position, targetId, bottomInset } = props;
   const map = useRef<MapView>(null);
   const located = paradas.filter(isLocated);
   const routePoints = useMemo(() => (route?.polilinea ? decodePolyline(route.polilinea) : []), [route?.polilinea]);
@@ -91,14 +97,14 @@ export const RouteMap = forwardRef<RouteMapHandle, RouteMapProps>(function Route
       style={styles.fill}
       initialRegion={DEFAULT_REGION}
       mapType={Platform.OS === 'ios' ? 'mutedStandard' : 'standard'}
-      showsTraffic
+      showsTraffic={liveTraffic}
       showsPointsOfInterests={false}
       showsBuildings={false}
       showsCompass={false}
       toolbarEnabled={false}
       pitchEnabled={false}>
       {/* El resto del recorrido, tenue cuando hay un camino resaltado a la próxima visita. */}
-      {route && <TrafficLine polilinea={route.polilinea} trafico={route.trafico} faded={!!leg} width={5} />}
+      {route && <TrafficLine polilinea={route.polilinea} trafico={liveTraffic ? route.trafico : NO_TRAFFIC} faded={!!leg} width={5} />}
       {leg?.alternativas.map((alt, i) =>
         i === selectedAlt ? null : (
           <Polyline key={`alt-${i}`} coordinates={alt.polilinea ? decodePolyline(alt.polilinea) : []} strokeColor={ALT_COLOR} strokeWidth={5} lineCap="round" tappable onPress={() => onSelectAlt(i)} />
@@ -107,25 +113,25 @@ export const RouteMap = forwardRef<RouteMapHandle, RouteMapProps>(function Route
       {selectedAlt != null && leg && (
         <Polyline coordinates={leg.principal.polilinea ? decodePolyline(leg.principal.polilinea) : []} strokeColor={ALT_COLOR} strokeWidth={5} lineCap="round" tappable onPress={() => onSelectAlt(null)} />
       )}
-      {shown && <TrafficLine polilinea={shown.polilinea} trafico={shown.trafico} width={6} />}
+      {shown && <TrafficLine polilinea={shown.polilinea} trafico={liveTraffic ? shown.trafico : NO_TRAFFIC} width={6} />}
 
       {located.map((p, i) => {
         const done = !isPending(p);
         const target = p.id === targetId;
+        const pendingLeft = located.filter(isPending);
+        const last = !done && pendingLeft.length > 1 && pendingLeft[pendingLeft.length - 1].id === p.id;
+        const label = target && targetLabel ? targetLabel : !done && etas[p.id] ? etas[p.id] : null;
         return (
           <Marker key={p.id} coordinate={{ latitude: p.latitud!, longitude: p.longitud! }} anchor={{ x: 0.5, y: 1 }} zIndex={target ? 10 : done ? 1 : 5}>
-            <View style={[styles.pin, done && { opacity: 0.45 }]}>
-              {target && targetLabel ? (
-                <View style={styles.bubble}>
-                  <Text style={styles.bubbleText}>{targetLabel}</Text>
-                </View>
-              ) : etas[p.id] && !done ? (
-                <View style={styles.eta}>
-                  <Text style={styles.etaText}>{etas[p.id]}</Text>
+            {/* Tamaño fijo: sin él, el mapa dibuja el marcador vacío. */}
+            <View style={[styles.marker, done && { opacity: 0.45 }]} collapsable={false}>
+              {label ? (
+                <View style={target ? styles.bubble : styles.eta}>
+                  <Text style={target ? styles.bubbleText : styles.etaText}>{label}</Text>
                 </View>
               ) : null}
-              <View>
-                <Image source={ROUTE_ICONS.visita} style={target ? styles.pinTarget : styles.pinImage} />
+              <View style={styles.pinWrap}>
+                <Image source={last ? ROUTE_ICONS.llegada : ROUTE_ICONS.visita} style={target ? styles.pinTarget : styles.pinImage} fadeDuration={0} />
                 <View style={styles.badge}>
                   <Text style={styles.badgeText}>{done ? '✓' : String(i + 1)}</Text>
                 </View>
@@ -135,8 +141,18 @@ export const RouteMap = forwardRef<RouteMapHandle, RouteMapProps>(function Route
         );
       })}
       {position && (
-        <Marker coordinate={{ latitude: position.latitud, longitude: position.longitud }} anchor={{ x: 0.5, y: 0.5 }} zIndex={20}>
-          <Image source={ROUTE_ICONS.carro} style={styles.car} accessibilityLabel="Tu ubicación" />
+        <Marker coordinate={{ latitude: position.latitud, longitude: position.longitud }} anchor={{ x: 0.5, y: started ? 0.5 : 1 }} zIndex={20}>
+          {started ? (
+            <Image source={ROUTE_ICONS.carro} style={styles.car} accessibilityLabel="Tu ubicación" fadeDuration={0} />
+          ) : (
+            <View style={styles.marker} collapsable={false}>
+              <View style={styles.startLabel}>
+                <Image source={ROUTE_ICONS.profesional} style={{ width: 18, height: 18 }} fadeDuration={0} />
+                <Text style={styles.etaText}>Salida</Text>
+              </View>
+              <Image source={ROUTE_ICONS.salida} style={styles.pinImage} accessibilityLabel="Punto de salida" fadeDuration={0} />
+            </View>
+          )}
         </Marker>
       )}
     </MapView>
@@ -145,13 +161,15 @@ export const RouteMap = forwardRef<RouteMapHandle, RouteMapProps>(function Route
 
 const styles = StyleSheet.create({
   fill: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 },
-  pin: { alignItems: 'center', gap: 2 },
+  marker: { width: 92, height: 96, alignItems: 'center', justifyContent: 'flex-end', gap: 2 },
+  pinWrap: { width: 58, height: 58, alignItems: 'center', justifyContent: 'flex-end' },
+  startLabel: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#fff', borderRadius: 10, paddingHorizontal: 7, paddingVertical: 3 },
   pinImage: { width: 42, height: 42 },
   pinTarget: { width: 54, height: 54 },
   badge: {
     position: 'absolute',
-    right: -6,
-    top: -4,
+    right: 0,
+    top: 0,
     minWidth: 20,
     height: 20,
     paddingHorizontal: 5,

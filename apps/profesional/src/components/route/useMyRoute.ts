@@ -3,7 +3,7 @@ import { Linking } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import * as Location from 'expo-location';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { navigationLinks, type MiRuta, type Parada } from '@kerhub/core/rutas';
+import { navigationLinks, type MiRuta, type ModoRuta, type Parada } from '@kerhub/core/rutas';
 import { agenda, errorMessage, rutas } from '@/lib/api';
 import { currentPosition } from '@/lib/location';
 import { showAlert, showNotice } from '@/components/overlay/Overlay';
@@ -28,13 +28,17 @@ export function useMyRoute(withAttention: boolean) {
     positionRef.current = p;
     setPositionState(p);
   }, []);
-  // Vista en vivo desde donde está: recorrido con tráfico, hora de llegada a cada visita y caminos a la próxima.
+  /** Orden de las visitas: el más corto (por defecto) o el de las horas de cita. */
+  const [mode, setMode] = useState<ModoRuta>('optimo');
+  /** Tráfico en tiempo real: apagado no se consulta a Google cada minuto (solo al abrir y tras cada acción). */
+  const [liveTraffic, setLiveTraffic] = useState(false);
+  // Vista desde donde está: recorrido, orden propuesto, hora de llegada a cada visita y caminos a la próxima.
   const view = useQuery({
-    queryKey: VIEW_KEY,
+    queryKey: [...VIEW_KEY, mode],
     enabled: !!position,
-    queryFn: () => rutas.viewMyRoute(positionRef.current!),
-    refetchInterval: 60_000,
-    staleTime: 30_000,
+    queryFn: () => rutas.viewMyRoute(positionRef.current!, mode),
+    refetchInterval: liveTraffic ? 60_000 : false,
+    staleTime: liveTraffic ? 30_000 : Infinity,
   });
   const [arrivedId, setArrivedId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -101,7 +105,7 @@ export function useMyRoute(withAttention: boolean) {
   const start = () => run('No se pudo iniciar la ruta', async () => {
     const p = await locate();
     if (!p) return;
-    set(await rutas.computeMyRoute(p));
+    set(await rutas.computeMyRoute(p, mode));
     await refetchView();
   });
 
@@ -110,7 +114,7 @@ export function useMyRoute(withAttention: boolean) {
     if (!p) return;
     await agenda.changeCitaState(stop.id, { estado: 'en_camino', ...p });
     // Tiempos frescos desde donde está ahora.
-    set(await rutas.computeMyRoute(p));
+    set(await rutas.computeMyRoute(p, mode));
     await Promise.all([refetchView(), queryClient.invalidateQueries({ queryKey: ['agenda'] })]);
   });
 
@@ -178,5 +182,5 @@ export function useMyRoute(withAttention: boolean) {
     else void Linking.openURL(`tel:${stop.telefono.replace(/\s+/g, '')}`);
   };
 
-  return { query, view, position, arrivedId, busy, start, depart, arrive, primary, absent, finish, navigate, call };
+  return { query, view, position, mode, setMode, liveTraffic, setLiveTraffic, arrivedId, busy, start, depart, arrive, primary, absent, finish, navigate, call };
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { arrivalAt, decodePolyline, formatDistance, formatDuration, navigationLinks, nextStop, trafficDelay, trafficSegments, type Parada } from "./rutas";
+import { arrivalAt, decodePolyline, formatDistance, formatDuration, lateMinutes, navigationLinks, nextStop, trafficDelay, trafficSegments, type Parada } from "./rutas";
 
 describe("decodePolyline", () => {
   it("decodifica el ejemplo de la documentación de Google", () => {
@@ -55,6 +55,15 @@ describe("tráfico", () => {
   it("la demora solo se dice si pasa de 2 minutos", () => {
     expect(trafficDelay({ segundos: 1962, segundosSinTrafico: 1499 })).toBe("8 min de demora por tráfico");
     expect(trafficDelay({ segundos: 600, segundosSinTrafico: 560 })).toBeNull();
+  });
+});
+
+describe("lateMinutes", () => {
+  it("avisa solo si llega más de 10 minutos después de la hora de la cita", () => {
+    // Cita a las 14:00 en Colombia (19:00 UTC).
+    expect(lateMinutes("14:25", "2026-10-19T19:00:00Z")).toBe(25);
+    expect(lateMinutes("14:08", "2026-10-19T19:00:00Z")).toBe(0);
+    expect(lateMinutes("10:11", "2026-10-19T19:00:00Z")).toBe(0);
   });
 });
 

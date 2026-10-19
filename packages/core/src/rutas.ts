@@ -76,8 +76,20 @@ export interface Camino {
 export type CaminoCita = Camino & { alternativas: Camino[]; destino: { latitud: number; longitud: number } };
 
 /** Lo que se ve en el mapa desde donde está el profesional (calculado en vivo, no se guarda). */
+/** «optimo»: el orden que menos recorre (calculado por Google); «citas»: el de las horas de cita. */
+export type ModoRuta = "optimo" | "citas";
+
 export interface VistaRuta extends MiRuta {
-  vista: { polilinea: string | null; trafico: TraficoTramo[]; distanciaM: number; duracionS: number; tramos: Tramo[] } | null;
+  vista: {
+    modo: ModoRuta;
+    /** Ids de las visitas pendientes en el orden propuesto. */
+    orden: string[];
+    polilinea: string | null;
+    trafico: TraficoTramo[];
+    distanciaM: number;
+    duracionS: number;
+    tramos: Tramo[];
+  } | null;
   siguiente: (Camino & { citaId: string; alternativas: Camino[] }) | null;
 }
 
@@ -87,11 +99,11 @@ export function createRoutesApi(fetcher: Fetcher) {
   return {
     fetchMyRoute: (fecha?: string) => fetcher<MiRuta>(`/api/rutas/mi-ruta${fecha ? `?fecha=${fecha}` : ""}`),
     /** Recorrido con tráfico y camino a la próxima visita desde donde está (en vivo). */
-    viewMyRoute: (pos: Posicion) => fetcher<VistaRuta>("/api/rutas/mi-ruta/vista", send("POST", pos)),
+    viewMyRoute: (pos: Posicion, orden: ModoRuta = "optimo") => fetcher<VistaRuta>("/api/rutas/mi-ruta/vista", send("POST", { ...pos, orden })),
     /** Camino desde donde está hasta una visita (vista previa en la ficha de la cita). */
     fetchLegToCita: (citaId: string, pos: Posicion) => fetcher<CaminoCita>(`/api/rutas/citas/${citaId}/camino`, send("POST", pos)),
     /** Inicia la ruta o la recalcula desde donde está el profesional. */
-    computeMyRoute: (pos: Posicion) => fetcher<MiRuta>("/api/rutas/mi-ruta/calcular", send("POST", pos)),
+    computeMyRoute: (pos: Posicion, orden: ModoRuta = "optimo") => fetcher<MiRuta>("/api/rutas/mi-ruta/calcular", send("POST", { ...pos, orden })),
     sendPosition: (pos: Posicion) => fetcher<{ guardada: boolean }>("/api/rutas/mi-ruta/posicion", send("POST", pos)),
     finishMyRoute: () => fetcher<MiRuta>("/api/rutas/mi-ruta/terminar", send("POST")),
   };
@@ -103,6 +115,17 @@ export const isLocated = (p: Pick<Parada, "latitud" | "longitud">) => p.latitud 
 
 /** La próxima visita: la primera pendiente en el orden del día. */
 export const nextStop = (paradas: Parada[]): Parada | null => paradas.find(isPending) ?? null;
+
+/**
+ * Minutos que llegaría tarde a la hora de la cita (con 10 min de gracia), o 0.
+ * Sirve para avisar cuando el orden más corto no respeta una cita.
+ */
+export function lateMinutes(eta: string, inicio: string): number {
+  const cita = new Date(Date.parse(inicio) - 5 * 3_600_000).toISOString().slice(11, 16);
+  const toMin = (hhmm: string) => Number(hhmm.slice(0, 2)) * 60 + Number(hhmm.slice(3, 5));
+  const late = toMin(eta) - toMin(cita);
+  return late > 10 ? late : 0;
+}
 
 /** «8 min», «1 h 05 min». */
 export function formatDuration(seconds: number | null | undefined): string {
