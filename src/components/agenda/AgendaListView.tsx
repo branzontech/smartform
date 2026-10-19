@@ -3,7 +3,7 @@ import {
   DataTable, StatusCell, TableToolbar, useDataTable, type TableColumn, type TableFilter, type TableSegment,
 } from "@/components/kit/table";
 import {
-  ACTIVE_STATES, MODALITY_LABEL, STATE_LABEL, STATE_TONE, formatShortDay, localDay, localTime, type Cita, type CitaState, type Modality,
+  ACTIVE_STATES, CITA_PRIORITY_LABEL, MODALITY_LABEL, STATE_LABEL, STATE_TONE, formatShortDay, localDay, localTime, type Cita, type CitaState, type Modality,
 } from "./agenda-api";
 import { capitalizeFirst } from "./agenda-ui";
 
@@ -18,6 +18,8 @@ const COLUMNS: TableColumn<Cita>[] = [
   { id: "document", title: "Documento", value: documentOf, cell: (c) => documentOf(c) ?? "—", className: "font-mono text-xs" },
   { id: "professional", title: "Profesional", value: (c) => c.profesional },
   { id: "modality", title: "Modalidad", value: (c) => MODALITY_LABEL[c.modalidad] },
+  { id: "type", title: "Tipo de cita", value: (c) => c.tipoCita, cell: (c) => c.tipoCita ?? "—" },
+  { id: "priority", title: "Prioridad", value: (c) => CITA_PRIORITY_LABEL[c.prioridad] },
   { id: "service", title: "Servicio", value: (c) => c.servicio, cell: (c) => c.servicio ?? "—" },
   { id: "agreement", title: "Convenio", value: (c) => c.convenio, cell: (c) => c.convenio ?? "—" },
   { id: "site", title: "Sede", value: (c) => c.sede, cell: (c) => c.sede ?? "—", hidden: true },
@@ -29,11 +31,14 @@ const COLUMNS: TableColumn<Cita>[] = [
 ];
 
 const MODALITY_OPTIONS = (Object.keys(MODALITY_LABEL) as Modality[]).map((m) => ({ value: MODALITY_LABEL[m], label: MODALITY_LABEL[m] }));
+const PRIORITY_OPTIONS = Object.values(CITA_PRIORITY_LABEL).map((p) => ({ value: p, label: p }));
 const STATE_OPTIONS = (Object.keys(STATE_LABEL) as CitaState[]).map((s) => ({ value: STATE_LABEL[s], label: STATE_LABEL[s] }));
 
 const FILTERS: TableFilter<Cita>[] = [
   { id: "professional", title: "Profesional", value: (c) => c.profesional },
   { id: "modality", title: "Modalidad", value: (c) => MODALITY_LABEL[c.modalidad], options: MODALITY_OPTIONS },
+  { id: "type", title: "Tipo de cita", value: (c) => c.tipoCita },
+  { id: "priority", title: "Prioridad", value: (c) => CITA_PRIORITY_LABEL[c.prioridad], options: PRIORITY_OPTIONS },
   { id: "state", title: "Estado", value: (c) => STATE_LABEL[c.estado], options: STATE_OPTIONS },
   { id: "agreement", title: "Convenio", value: (c) => c.convenio },
 ];

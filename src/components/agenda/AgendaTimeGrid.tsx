@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, type CSSProperties, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
-import { MODALITY_LABEL, STATE_LABEL, localDay, localTime, type Cita, type CitaState } from "./agenda-api";
+import { CITA_PRIORITY_LABEL, MODALITY_LABEL, STATE_LABEL, localDay, localTime, type Cita, type CitaState } from "./agenda-api";
 import { tint } from "./agenda-ui";
 
 // Día completo: un horario nocturno o una cita de madrugada nunca queda fuera ni encima de otra.
@@ -169,7 +169,11 @@ function CitaBlock({ placed, onOpen, showProfessional }: { placed: Placed; onOpe
     "--block-bg-hover": tint(cita.color, 26),
   } as CSSProperties;
   const time = `${localTime(cita.inicio)} – ${localTime(cita.fin)}`;
-  const detail = faded ? STATE_LABEL[cita.estado] : showProfessional ? `${MODALITY_LABEL[cita.modalidad]} · ${cita.profesional}` : MODALITY_LABEL[cita.modalidad];
+  // Lo que se agenda (tipo o modalidad), la urgencia si no es normal y, si hay varios, quién atiende.
+  const urgency = cita.prioridad !== "normal" ? CITA_PRIORITY_LABEL[cita.prioridad] : null;
+  const detail = faded
+    ? STATE_LABEL[cita.estado]
+    : [urgency, cita.tipoCita ?? MODALITY_LABEL[cita.modalidad], showProfessional ? cita.profesional : null].filter(Boolean).join(" · ");
 
   return (
     <button
