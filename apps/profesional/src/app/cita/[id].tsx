@@ -6,6 +6,7 @@ import { agenda, errorMessage, hasModule } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { RoutePreview } from '@/components/route/RoutePreview';
 import { showsClinicalRecord } from '@kerhub/core/cita-actions';
+import { sessionLabel } from '@kerhub/core/planes';
 import { CitaActions } from '@/components/CitaActions';
 import { Icon3D, MODALITY_ICON } from '@/components/Icon3D';
 import { Button, Card } from '@/components/ui';
@@ -61,6 +62,7 @@ export default function CitaDetail() {
         <Text style={styles.when}>
           {capitalize(formatLongDay(localDay(c.inicio)))}, {localTime(c.inicio)} – {localTime(c.fin)}
         </Text>
+        {sessionLabel(c) && <Text style={styles.session}>{sessionLabel(c)}</Text>}
         <Text style={styles.meta}>
           {c.tipoCita ?? MODALITY_LABEL[c.modalidad]}
           {c.servicio ? ` · ${c.servicio}` : ''}
@@ -154,6 +156,7 @@ const styles = StyleSheet.create({
   page: { padding: 16, gap: 12, paddingBottom: 40 },
   state: { fontSize: 13, fontWeight: '600' },
   urgent: { color: colors.warning },
+  session: { fontSize: 14, fontWeight: '600', color: colors.primaryDark },
   patient: { fontSize: 22, fontWeight: '700', color: colors.ink },
   when: { fontSize: 16, fontWeight: '600', color: colors.ink, marginTop: 4 },
   meta: { fontSize: 14, color: colors.muted },

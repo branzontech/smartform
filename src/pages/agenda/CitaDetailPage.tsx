@@ -8,6 +8,7 @@ import {
   CITA_PRIORITY_LABEL, MODALITY_LABEL, REQUEST_CHANNEL_LABEL, fetchCita, formatLongDay, formatShortDay, localDay, localTime, type Cita,
 } from "@/components/agenda/agenda-api";
 import { capitalizeFirst, errorMessage, mapsUrl } from "@/components/agenda/agenda-ui";
+import { sessionLabel } from "@/components/agenda/plans-api";
 import { CitaActions } from "@/components/agenda/CitaActions";
 import { CitaTimeline } from "@/components/agenda/CitaTimeline";
 import { StateText } from "@/components/agenda/StateText";
@@ -96,6 +97,12 @@ export default function CitaDetailPage() {
               <Field label="Profesional">{cita.profesional}</Field>
               <Field label="Modalidad">{MODALITY_LABEL[cita.modalidad]}</Field>
               <Field label="Tipo de cita">{cita.tipoCita ?? "Sin tipo definido"}</Field>
+              {sessionLabel(cita) && (
+                <Field label="Plan de sesiones">
+                  {sessionLabel(cita)} ·{" "}
+                  <Link to={`/app/planes/${cita.planId}`} className={linkClass}>Ver el plan</Link>
+                </Field>
+              )}
               <Field label="Prioridad">{CITA_PRIORITY_LABEL[cita.prioridad]}</Field>
               {requestOf(cita) && <Field label="Solicitud">{requestOf(cita)}</Field>}
               {cita.llegadaAt && <Field label="Llegada"><span className="tabular-nums">{localTime(cita.llegadaAt)}</span></Field>}

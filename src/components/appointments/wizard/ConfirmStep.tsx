@@ -6,16 +6,18 @@ import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { useClinicalHistories } from "@/components/forms/clinical-histories";
 import {
-  CITA_PRIORITY_LABEL, MODALITY_LABEL, REQUEST_CHANNEL_LABEL, fetchAppointmentTypes, formatLongDay, formatShortDay,
+  CITA_PRIORITY_LABEL, MODALITY_LABEL, REQUEST_CHANNEL_LABEL, fetchAppointmentTypes, formatLongDay, formatShortDay, localDay,
 } from "@/components/agenda/agenda-api";
 import type { ExtendedPatient } from "../PatientPanel";
+import { frequencyText, type ChosenSession, type Recurrence, type SessionCheck } from "@/components/agenda/plans-api";
 import type { ConfirmData, NeedData, PickedSlot } from "./wizard-model";
 import { useCoverage } from "./useCoverage";
 
 interface ConfirmStepProps {
   patient: ExtendedPatient;
   need: NeedData;
-  slot: PickedSlot;
+  slot: PickedSlot | null;
+  plan: { recurrencia: Recurrence; checks: SessionCheck[]; sesiones: ChosenSession[] } | null;
   value: ConfirmData;
   onChange: (next: ConfirmData) => void;
 }
@@ -32,14 +34,18 @@ function Row({ label, children }: { label: string; children: ReactNode }) {
   );
 }
 
-function placeOf(need: NeedData, slot: PickedSlot): string {
+function placeOf(need: NeedData, slot: PickedSlot | null): string {
   if (need.modalidad === "domicilio") return `Domicilio · ${need.direccion.trim()}`;
   if (need.modalidad === "telemedicina") return need.enlaceTelemedicina.trim() ? "Telemedicina · con enlace" : "Telemedicina · enlace pendiente";
-  return slot.sede ? `En sede · ${slot.sede}` : MODALITY_LABEL.sede;
+  return slot?.sede ? `En sede · ${slot.sede}` : MODALITY_LABEL.sede;
 }
 
+/** Profesionales del plan, sin repetir, en el orden de las sesiones. */
+const planProfessionals = (checks: SessionCheck[], sesiones: ChosenSession[]) =>
+  [...new Set(sesiones.map((s) => checks.find((c) => c.profesionalId === s.profesionalId)?.profesional).filter(Boolean))].join(", ");
+
 /** Paso «Confirmar»: resumen de la cita, convenio, servicio, historia e indicaciones. */
-export function ConfirmStep({ patient, need, slot, value, onChange }: ConfirmStepProps) {
+export function ConfirmStep({ patient, need, slot, plan, value, onChange }: ConfirmStepProps) {
   const set = (patch: Partial<ConfirmData>) => onChange({ ...value, ...patch });
   const { contratos, servicios, sinTarifario } = useCoverage(value.contratoId ?? "");
   const histories = useClinicalHistories();
@@ -59,10 +65,25 @@ export function ConfirmStep({ patient, need, slot, value, onChange }: ConfirmSte
           <Row label="Paciente">{`${patient.firstName} ${patient.lastName}`.trim()}</Row>
           <Row label="Cita">{need.tipoCita ?? "Sin tipo definido"}</Row>
           <Row label="Motivo">{need.motivo.trim()}</Row>
-          <Row label="Cuándo">
-            <span className="first-letter:uppercase">{formatLongDay(slot.fecha)}</span>, {slot.hora} · {need.duracionMin} min
-          </Row>
-          <Row label="Profesional">{slot.profesional}</Row>
+          {slot && (
+            <>
+              <Row label="Cuándo">
+                <span className="first-letter:uppercase">{formatLongDay(slot.fecha)}</span>, {slot.hora} · {need.duracionMin} min
+              </Row>
+              <Row label="Profesional">{slot.profesional}</Row>
+            </>
+          )}
+          {plan && plan.sesiones.length > 0 && (
+            <>
+              <Row label="Plan">
+                {plan.sesiones.length} sesiones · {frequencyText(plan.recurrencia)} · {need.duracionMin} min
+              </Row>
+              <Row label="Fechas">
+                Del {formatShortDay(localDay(plan.sesiones[0].inicio))} al {formatShortDay(localDay(plan.sesiones[plan.sesiones.length - 1].inicio))}
+              </Row>
+              <Row label="Profesionales">{planProfessionals(plan.checks, plan.sesiones)}</Row>
+            </>
+          )}
           <Row label="Lugar">{placeOf(need, slot)}</Row>
           <Row label="Prioridad">{CITA_PRIORITY_LABEL[need.prioridad]}</Row>
           {request.length > 0 && <Row label="Solicitud">{request.join(" · ")}</Row>}

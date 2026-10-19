@@ -5,20 +5,27 @@ import { SurfaceCard } from "@/components/kit/surface";
 import { VerticalStepper, type StepItem } from "@/components/kit/stepper/VerticalStepper";
 import { Button } from "@/components/ui/button";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { formatShortDay } from "@/components/agenda/agenda-api";
+import { formatShortDay, today } from "@/components/agenda/agenda-api";
+import { chosenFrom, type ChosenSession, type Recurrence } from "@/components/agenda/plans-api";
 import { ExtendedPatient } from "../PatientPanel";
 import { PatientSearchStep } from "./PatientSearchStep";
 import { PatientLine } from "./PatientLine";
 import { NeedStep } from "./NeedStep";
-import { SchedulingStep } from "./SchedulingStep";
+import { SchedulingStep, type SchedulingMode } from "./SchedulingStep";
 import { ConfirmStep } from "./ConfirmStep";
-import { emptyConfirm, emptyNeed, invalidatesSlot, needMissing, type ConfirmData, type NeedData, type PickedSlot } from "./wizard-model";
+import {
+  citaDataOf, emptyConfirm, emptyNeed, emptyPlanState, invalidatesSlot, needMissing, recurrenceOf,
+  type ConfirmData, type NeedData, type PickedSlot, type PlanState,
+} from "./wizard-model";
 
 export interface WizardData {
   patient: ExtendedPatient;
   need: NeedData;
-  slot: PickedSlot;
   confirm: ConfirmData;
+  /** Una cita: el cupo elegido. */
+  slot: PickedSlot | null;
+  /** Plan de sesiones: la regla y las sesiones que quedaron tras la vista previa. */
+  plan: { recurrencia: Recurrence; sesiones: ChosenSession[] } | null;
 }
 
 interface AppointmentWizardProps {
@@ -43,12 +50,16 @@ export const AppointmentWizard: React.FC<AppointmentWizardProps> = ({ onComplete
   const [patient, setPatient] = useState<ExtendedPatient | null>(null);
   const [need, setNeed] = useState<NeedData>(emptyNeed(""));
   const [slot, setSlot] = useState<PickedSlot | null>(null);
+  const [mode, setMode] = useState<SchedulingMode>("una");
+  const [plan, setPlan] = useState<PlanState>(() => emptyPlanState(today()));
   const [confirm, setConfirm] = useState<ConfirmData>(emptyConfirm());
   const [saving, setSaving] = useState(false);
 
   const missingNeed = needMissing(need);
+  const sessions = plan.checks ? chosenFrom(plan.checks, plan.removed).sort((a, b) => a.inicio.localeCompare(b.inicio)) : [];
+  const scheduled = mode === "una" ? !!slot : sessions.length > 0;
   // Hasta qué paso se puede llegar con lo que ya está diligenciado.
-  const reachable = !patient ? 1 : missingNeed.length ? 2 : !slot ? 3 : 4;
+  const reachable = !patient ? 1 : missingNeed.length ? 2 : !scheduled ? 3 : 4;
 
   const goTo = (target: number) => {
     if (target > reachable || target < 1) return;
@@ -60,6 +71,7 @@ export const AppointmentWizard: React.FC<AppointmentWizardProps> = ({ onComplete
     if (p.id !== patient?.id) {
       setNeed(emptyNeed(addressOf(p)));
       setSlot(null);
+      setPlan(emptyPlanState(today()));
       setConfirm(emptyConfirm());
     }
     setPatient(p);
@@ -68,25 +80,37 @@ export const AppointmentWizard: React.FC<AppointmentWizardProps> = ({ onComplete
   };
 
   const changeNeed = (next: NeedData) => {
-    if (invalidatesSlot(need, next)) setSlot(null);
+    if (invalidatesSlot(need, next)) {
+      setSlot(null);
+      setPlan((p) => ({ ...p, checks: null, removed: new Set() }));
+    }
     setNeed(next);
   };
 
   const submit = async () => {
-    if (!patient || !slot || missingNeed.length) return;
+    if (!patient || !scheduled || missingNeed.length) return;
     setSaving(true);
     try {
-      await onComplete({ patient, need, slot, confirm });
+      await onComplete({
+        patient,
+        need,
+        confirm,
+        slot: mode === "una" ? slot : null,
+        plan: mode === "plan" ? { recurrencia: recurrenceOf(plan.draft), sesiones: sessions } : null,
+      });
     } finally {
       setSaving(false);
     }
   };
 
-  const hint = step === 2 && missingNeed.length ? `Falta ${missingNeed.join(", ")}.` : step === 3 && !slot ? "Elige un cupo." : null;
+  const hint =
+    step === 2 && missingNeed.length ? `Falta ${missingNeed.join(", ")}.` : step === 3 && !scheduled ? (mode === "una" ? "Elige un cupo." : "Revisa las sesiones del plan.") : null;
+  const whenSummary =
+    mode === "plan" ? (sessions.length ? `Plan de ${sessions.length} sesiones` : undefined) : slot ? `${formatShortDay(slot.fecha)}, ${slot.hora} · ${slot.profesional}` : undefined;
   const stepItems: StepItem[] = [
     { id: 1, title: "Paciente", description: "Buscar o crear", summary: patient ? `${patient.firstName} ${patient.lastName}`.trim() : undefined },
     { id: 2, title: "Qué necesita", description: "Tipo, motivo y modalidad", summary: need.tipoCita ?? need.motivo.trim().slice(0, 40) },
-    { id: 3, title: "Cuándo y con quién", description: "Profesional y horario", summary: slot ? `${formatShortDay(slot.fecha)}, ${slot.hora} · ${slot.profesional}` : undefined },
+    { id: 3, title: "Cuándo y con quién", description: "Profesional y horario", summary: whenSummary },
     { id: 4, title: "Confirmar", description: "Cobertura e indicaciones" },
   ];
 
@@ -114,7 +138,7 @@ export const AppointmentWizard: React.FC<AppointmentWizardProps> = ({ onComplete
                 ) : (
                   <Button onClick={() => void submit()} disabled={saving || reachable < TOTAL_STEPS} className="h-9 w-full gap-2 rounded-full">
                     {saving && <Loader2 className="h-4 w-4 animate-spin" />}
-                    Agendar cita
+                    {mode === "plan" ? `Agendar ${sessions.length} sesiones` : "Agendar cita"}
                   </Button>
                 )}
                 <Button variant="ghost" onClick={() => goTo(step - 1)} className="h-9 w-full gap-2 rounded-full">
@@ -142,8 +166,29 @@ export const AppointmentWizard: React.FC<AppointmentWizardProps> = ({ onComplete
               {step === 1 && <PatientSearchStep patients={initialPatients} onPatientSelected={selectPatient} onCreatePatient={(p) => selectPatient(p as ExtendedPatient)} />}
               {step > 1 && step < 4 && patient && <PatientLine patient={patient} onPatientUpdated={setPatient} />}
               {step === 2 && <NeedStep value={need} onChange={changeNeed} />}
-              {step === 3 && patient && <SchedulingStep patientId={patient.id} need={need} value={slot} onChange={setSlot} />}
-              {step === 4 && patient && slot && <ConfirmStep patient={patient} need={need} slot={slot} value={confirm} onChange={setConfirm} />}
+              {step === 3 && patient && (
+                <SchedulingStep
+                  patientId={patient.id}
+                  need={need}
+                  mode={mode}
+                  onModeChange={setMode}
+                  value={slot}
+                  onChange={setSlot}
+                  plan={plan}
+                  onPlanChange={setPlan}
+                  planCita={citaDataOf(patient.id, need, confirm)}
+                />
+              )}
+              {step === 4 && patient && scheduled && (
+                <ConfirmStep
+                  patient={patient}
+                  need={need}
+                  slot={mode === "una" ? slot : null}
+                  plan={mode === "plan" ? { recurrencia: recurrenceOf(plan.draft), checks: plan.checks ?? [], sesiones: sessions } : null}
+                  value={confirm}
+                  onChange={setConfirm}
+                />
+              )}
             </motion.div>
           </AnimatePresence>
         </section>

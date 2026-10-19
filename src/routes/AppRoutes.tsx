@@ -15,6 +15,7 @@ import PlatformCompaniesPage from "@/pages/platform/PlatformCompaniesPage";
 import PlatformCompanyPage from "@/pages/platform/PlatformCompanyPage";
 import AgendaPage from "@/pages/agenda/AgendaPage";
 import CitaDetailPage from "@/pages/agenda/CitaDetailPage";
+import PlanDetailPage from "@/pages/agenda/PlanDetailPage";
 import MyDayPage from "@/pages/agenda/MyDayPage";
 import RoutesDayPage from "@/pages/rutas/RoutesDayPage";
 import AppointmentForm from "@/pages/appointments/AppointmentForm";
@@ -77,6 +78,7 @@ const AppRoutes = () => {
         <Route path="citas" element={<AgendaPage />} />
         <Route path="citas/nueva" element={<AppointmentForm />} />
         <Route path="citas/:id" element={<CitaDetailPage />} />
+        <Route path="planes/:id" element={<PlanDetailPage />} />
         <Route path="citas/editar/:id" element={<Navigate to="/app/citas" replace />} />
         <Route path="mi-dia" element={<MyDayPage />} />
         <Route path="rutas" element={<RoutesDayPage />} />

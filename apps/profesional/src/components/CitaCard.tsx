@@ -2,6 +2,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { CITA_PRIORITY_LABEL, MODALITY_LABEL, STATE_LABEL, STATE_TONE, localTime, type Cita } from '@kerhub/core/agenda';
+import { sessionLabel } from '@kerhub/core/planes';
 import { CitaActions } from './CitaActions';
 import { Icon3D, MODALITY_ICON } from './Icon3D';
 import { Card } from './ui';
@@ -34,6 +35,7 @@ export function CitaCard({ cita, index = 0 }: { cita: Cita; index?: number }) {
               <Text style={styles.meta} numberOfLines={2}>
                 {cita.tipoCita ?? MODALITY_LABEL[cita.modalidad]}
                 {cita.servicio && !cita.tipoCita ? ` · ${cita.servicio}` : ''}
+                {sessionLabel(cita) ? ` · ${sessionLabel(cita)}` : ''}
                 {cita.modalidad === 'domicilio' && cita.direccion ? `\n${cita.direccion}` : ''}
               </Text>
             </View>

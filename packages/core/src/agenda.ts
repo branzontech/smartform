@@ -251,6 +251,10 @@ export interface Cita {
   /** El paciente llegó a la sede (o entró a la teleconsulta). */
   llegadaAt: string | null;
   responsable: Responsable | null;
+  /** Plan de sesiones al que pertenece (citas recurrentes). */
+  planId?: string | null;
+  planSesion?: number | null;
+  planTotal?: number | null;
 }
 
 export interface CitaEvent {

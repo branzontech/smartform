@@ -3,6 +3,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { AppointmentWizard, type WizardData } from "@/components/appointments/wizard";
 import { createCita, formatLongDay } from "@/components/agenda/agenda-api";
+import { createPlan } from "@/components/agenda/plans-api";
+import { citaDataOf } from "@/components/appointments/wizard/wizard-model";
 import { ApiError } from "@/integrations/api/client";
 
 /**
@@ -13,37 +15,26 @@ const AppointmentForm = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
-  const handleWizardComplete = async ({ patient, need, slot, confirm }: WizardData) => {
+  const handleWizardComplete = async ({ patient, need, confirm, slot, plan }: WizardData) => {
+    const cita = citaDataOf(patient.id, need, confirm);
+    const name = `${patient.firstName} ${patient.lastName}`.trim();
     try {
-      const { id } = await createCita({
-        pacienteId: patient.id,
-        profesionalId: slot.profesionalId,
-        inicio: slot.inicio,
-        duracionMin: need.duracionMin,
-        modalidad: need.modalidad,
-        sedeId: slot.sedeId,
-        tipoCitaId: need.tipoCitaId,
-        prioridad: need.prioridad,
-        formaSolicitud: need.formaSolicitud,
-        fechaDeseada: need.fechaDeseada,
-        motivo: need.motivo.trim(),
-        direccion: need.modalidad === "domicilio" ? need.direccion.trim() : null,
-        enlaceTelemedicina: need.modalidad === "telemedicina" ? need.enlaceTelemedicina.trim() || null : null,
-        contratoId: confirm.contratoId,
-        servicioId: confirm.servicioId,
-        formularioId: confirm.formularioId,
-        instrucciones: confirm.instrucciones.trim() || null,
-        notas: confirm.notas.trim() || null,
-      });
+      if (plan) {
+        const { id, citas } = await createPlan({ cita, recurrencia: plan.recurrencia, sesiones: plan.sesiones });
+        void queryClient.invalidateQueries({ queryKey: ["agenda"] });
+        toast.success("Plan agendado", { description: `${name} · ${citas} sesiones` });
+        navigate(`/app/planes/${id}`);
+        return;
+      }
+      if (!slot) return;
+      const { id } = await createCita({ ...cita, profesionalId: slot.profesionalId, inicio: slot.inicio, sedeId: slot.sedeId });
       void queryClient.invalidateQueries({ queryKey: ["agenda"] });
-      toast.success("Cita agendada", {
-        description: `${patient.firstName} ${patient.lastName} · ${formatLongDay(slot.fecha)}, ${slot.hora} con ${slot.profesional}`,
-      });
+      toast.success("Cita agendada", { description: `${name} · ${formatLongDay(slot.fecha)}, ${slot.hora} con ${slot.profesional}` });
       navigate(`/app/citas/${id}`);
     } catch (error) {
       void queryClient.invalidateQueries({ queryKey: ["agenda", "cupos"] });
-      // Otra persona pudo tomar el cupo mientras tanto: el servidor lo dice y se elige otra hora.
-      toast.error(error instanceof ApiError || error instanceof Error ? error.message : "No se pudo agendar la cita.");
+      // Otra persona pudo tomar un cupo mientras tanto: el servidor lo dice y se elige otra hora.
+      toast.error(error instanceof ApiError || error instanceof Error ? error.message : "No se pudo agendar.");
     }
   };
 
