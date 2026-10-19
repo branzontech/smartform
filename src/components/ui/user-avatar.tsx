@@ -28,8 +28,9 @@ interface UserAvatarProps {
  */
 export const UserAvatar: React.FC<UserAvatarProps> = ({ seed, src, initials, alt, className, fallbackClassName }) => {
   if (!src && seed) {
+    // [&>svg]:!size-full: dentro de un Button, su estilo base fuerza los SVG a 16 px y el avatar no llenaba el círculo.
     return (
-      <span role="img" aria-label={alt || "Avatar"} className={cn("relative flex h-10 w-10 shrink-0 overflow-hidden rounded-full", className)}>
+      <span role="img" aria-label={alt || "Avatar"} className={cn("relative flex h-10 w-10 shrink-0 overflow-hidden rounded-full [&>svg]:!size-full", className)}>
         <BoringAvatar name={String(seed)} variant="beam" size="100%" colors={PALETTE} />
       </span>
     );

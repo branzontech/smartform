@@ -229,7 +229,7 @@ export const AdmissionStep: React.FC<AdmissionStepProps> = ({
       variants={containerVariants}
       initial="hidden"
       animate="visible"
-      className="space-y-4 max-w-3xl mx-auto"
+      className="h-full space-y-4 overflow-y-auto pb-24 pt-5 scrollbar-thin md:pt-6"
     >
       {/* Header */}
       <motion.div variants={itemVariants} className="flex items-center gap-3">
@@ -242,41 +242,6 @@ export const AdmissionStep: React.FC<AdmissionStepProps> = ({
             Vincula cobertura, servicio y motivo de visita
           </p>
         </div>
-      </motion.div>
-
-      {/* Patient Summary */}
-      <motion.div variants={itemVariants}>
-        <Card className="bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20 rounded-2xl">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary/30 to-primary/20 flex items-center justify-center text-primary text-lg font-bold">
-                {patient.firstName.charAt(0)}
-                {patient.lastName.charAt(0)}
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="font-semibold text-base truncate">
-                  {patient.firstName} {patient.lastName}
-                </p>
-                <div className="flex items-center gap-3 text-sm text-muted-foreground flex-wrap">
-                  <span>
-                    {patient.documentType || "CC"} {patient.documentId}
-                  </span>
-                  {patient.contactNumber && (
-                    <span className="flex items-center gap-1">
-                      <Phone className="w-3 h-3" />
-                      {patient.contactNumber}
-                    </span>
-                  )}
-                </div>
-              </div>
-              {patient.regime && (
-                <Badge variant="secondary" className="rounded-lg text-xs">
-                  {patient.regime}
-                </Badge>
-              )}
-            </div>
-          </CardContent>
-        </Card>
       </motion.div>
 
       {/* Decision Cards */}

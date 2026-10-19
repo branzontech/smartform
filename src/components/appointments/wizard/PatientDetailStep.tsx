@@ -23,6 +23,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { UserAvatar } from "@/components/ui/user-avatar";
 import { Separator } from "@/components/ui/separator";
 import {
   Select,
@@ -157,16 +158,14 @@ export const PatientDetailStep: React.FC<PatientDetailStepProps> = ({
       variants={containerVariants}
       initial="hidden"
       animate="visible"
-      className="flex flex-col h-full w-full max-w-3xl mx-auto overflow-hidden"
+      className="flex h-full w-full flex-col overflow-hidden rounded-card bg-card shadow-card dark:border dark:border-border dark:shadow-none"
     >
       {/* Header - fixed */}
-      <motion.div variants={itemVariants} className="flex items-center justify-between shrink-0 pb-3 flex-none">
-        <div className="flex items-center gap-2.5">
-          <div className="w-9 h-9 rounded-full bg-muted flex items-center justify-center text-muted-foreground font-medium text-sm">
-            {patient.firstName?.charAt(0)}{patient.lastName?.charAt(0)}
-          </div>
+      <motion.div variants={itemVariants} className="flex flex-none shrink-0 items-center justify-between gap-3 border-b border-border/60 px-5 pb-4 pt-5 md:px-6 md:pt-6">
+        <div className="flex min-w-0 items-center gap-3">
+          <UserAvatar seed={`${patient.firstName} ${patient.lastName}`} alt={`${patient.firstName} ${patient.lastName}`} className="h-9 w-9" />
           <div>
-            <h2 className="text-base font-medium leading-tight">
+            <h2 className="truncate text-[15px] font-semibold leading-tight text-foreground">
               {patient.firstName} {patient.lastName}
             </h2>
             <div className="flex items-center gap-1.5">
@@ -198,10 +197,10 @@ export const PatientDetailStep: React.FC<PatientDetailStepProps> = ({
       </motion.div>
 
       {/* Scrollable content area */}
-      <div className="flex-1 min-h-0 overflow-y-auto">
+      <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-6 md:px-6">
         <motion.div variants={itemVariants}>
-          <Card className="bg-card/50 backdrop-blur-xl border-border/30 rounded-2xl shadow-none">
-            <CardContent className="p-4">
+          <Card className="border-0 bg-transparent shadow-none">
+            <CardContent className="px-0 pb-0 pt-4">
               {!isEditing ? (
                 /* Read-only view */
                 <div className="space-y-1">
