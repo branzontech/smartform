@@ -114,7 +114,9 @@ export function Itinerary({ pro, now, activeStopId, onActivateStop, onBack }: It
           <span className="absolute right-4 top-4">
             <RouteIcon3D name="carro" size={60} />
           </span>
-          <p className="text-[13px] text-white/60">{next ? "Próxima visita" : pro.ruta?.terminadaAt ? "Terminó a las" : "Visitas del día"}</p>
+          <p className="text-[13px] text-white/60">
+            {next?.estado === "en_atencion" ? "En atención · cita de las" : next?.estado === "en_camino" ? "Va en camino · cita de las" : next ? "Próxima visita" : pro.ruta?.terminadaAt ? "Terminó a las" : "Visitas del día"}
+          </p>
           <p className="text-4xl font-bold tabular-nums text-lime">
             {next ? localTime(next.inicio) : pro.ruta?.terminadaAt ? localTime(pro.ruta.terminadaAt) : "Listas"}
           </p>
