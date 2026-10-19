@@ -4,10 +4,11 @@ export type { WizardData } from "./AppointmentWizard";
 export { PatientSearchStep } from "./PatientSearchStep";
 export { PatientDetailStep } from "./PatientDetailStep";
 
-export { AdmissionStep } from "./AdmissionStep";
-export type { AdmissionData } from "./AdmissionStep";
+export { NeedStep } from "./NeedStep";
 
 export { SchedulingStep } from "./SchedulingStep";
-export type { SchedulingData } from "./SchedulingStep";
+
+export { ConfirmStep } from "./ConfirmStep";
+export type { ConfirmData, NeedData, PickedSlot } from "./wizard-model";
 
 export { MapPanelDrawer } from "./MapPanelDrawer";

@@ -22,4 +22,12 @@ export const {
   createCita,
   changeCitaState,
   rescheduleCita,
+  fetchSuggestions,
+  fetchAppointmentTypes,
+  createAppointmentType,
+  updateAppointmentType,
+  fetchHolidays,
+  addHoliday,
+  removeHoliday,
+  markArrival,
 } = createAgendaApi(apiFetch);

@@ -45,6 +45,89 @@ export const NEXT_STATES: Partial<Record<CitaState, CitaState[]>> = {
 
 export const MODALITY_LABEL: Record<Modality, string> = { sede: "En sede", domicilio: "Domiciliaria", telemedicina: "Telemedicina" };
 
+export type CitaPriority = "normal" | "prioritaria" | "urgente";
+export const CITA_PRIORITY_LABEL: Record<CitaPriority, string> = { normal: "Normal", prioritaria: "Prioritaria", urgente: "Urgente" };
+
+/** Cómo pidió la cita el paciente (alimenta el indicador de oportunidad junto con la fecha deseada). */
+export type RequestChannel = "presencial" | "telefonica" | "whatsapp" | "correo" | "app" | "domiciliaria" | "otra";
+export const REQUEST_CHANNEL_LABEL: Record<RequestChannel, string> = {
+  presencial: "Presencial",
+  telefonica: "Por teléfono",
+  whatsapp: "WhatsApp",
+  correo: "Correo",
+  app: "App",
+  domiciliaria: "En la visita domiciliaria",
+  otra: "Otra",
+};
+
+export type TipoCitaCategory = "consulta" | "procedimiento" | "terapia" | "valoracion" | "pyp" | "otro";
+export const CATEGORY_LABEL: Record<TipoCitaCategory, string> = {
+  consulta: "Consulta",
+  procedimiento: "Procedimiento",
+  terapia: "Terapia",
+  valoracion: "Valoración",
+  pyp: "Promoción y prevención",
+  otro: "Otro",
+};
+
+/** Qué se agenda y con qué reglas («asuntos» de SISMA). */
+export interface TipoCita {
+  id: string;
+  codigo: string | null;
+  nombre: string;
+  categoria: TipoCitaCategory;
+  primeraVez: boolean | null;
+  especialidad: string | null;
+  duracionMin: number;
+  modalidades: Modality[];
+  requiereAutorizacion: boolean;
+  controlaSesiones: boolean;
+  esPyp: boolean;
+  agendaEnLinea: boolean;
+  servicioId: string | null;
+  servicio: string | null;
+  formularioId: string | null;
+  formulario: string | null;
+  color: string | null;
+  activo: boolean;
+  /** Quiénes lo atienden; vacío = cualquier profesional con la modalidad. */
+  profesionalIds: string[];
+}
+
+export type TipoCitaInput = Omit<TipoCita, "id" | "servicio" | "formulario">;
+
+/** Cupo sugerido al agendar: el primero libre entre varios profesionales. */
+export interface Sugerido {
+  profesionalId: string;
+  profesional: string;
+  especialidad: string | null;
+  color: string | null;
+  fecha: string;
+  hora: string;
+  inicio: string;
+  fin: string;
+  modalidad: Modality;
+  sedeId: string | null;
+  sede: string | null;
+  /** Ya atendió a este paciente (continuidad). */
+  yaLoAtendio: boolean;
+  /** Domicilio: minutos aproximados desde su visita anterior de ese día. */
+  trasladoMin: number | null;
+}
+
+export interface Festivos {
+  anio: number;
+  nacionales: { fecha: string; nombre: string }[];
+  empresa: { id: string; fecha: string; nombre: string }[];
+}
+
+/** Responsable o cuidador principal del paciente. */
+export interface Responsable {
+  nombre: string;
+  parentesco: string | null;
+  telefono: string | null;
+}
+
 export const PRO_TYPE_LABEL: Record<string, string> = {
   medico: "Médico", enfermeria: "Enfermería", terapia: "Terapia", psicologia: "Psicología",
   nutricion: "Nutrición", odontologia: "Odontología", otro: "Otro",
@@ -68,6 +151,7 @@ export interface ProfessionalRow {
   duracionCitaMin: number | null;
   color: string | null;
   activo: boolean | null;
+  atiendeFestivos?: boolean | null;
   bloquesHorario: number;
 }
 
@@ -100,6 +184,7 @@ export interface ProfessionalDetail {
   duracionCitaMin: number;
   color: string | null;
   activo: boolean;
+  atiendeFestivos?: boolean;
   horario: ScheduleBlock[];
   bloqueos: Unavailability[];
 }
@@ -112,6 +197,7 @@ export interface ProfessionalInput {
   duracionCitaMin: number;
   color: string | null;
   activo: boolean;
+  atiendeFestivos?: boolean;
 }
 
 export interface Slot {
@@ -154,11 +240,22 @@ export interface Cita {
   sede: string | null;
   formularioId: string | null;
   creadaEn: string;
+  tipoCitaId: string | null;
+  tipoCita: string | null;
+  prioridad: CitaPriority;
+  formaSolicitud: RequestChannel | null;
+  fechaDeseada: string | null;
+  /** Indicaciones para el paciente (las ve en sus recordatorios). */
+  instrucciones: string | null;
+  enlaceTelemedicina: string | null;
+  /** El paciente llegó a la sede (o entró a la teleconsulta). */
+  llegadaAt: string | null;
+  responsable: Responsable | null;
 }
 
 export interface CitaEvent {
   id: number;
-  evento: "creada" | "estado" | "reprogramada" | "actualizada";
+  evento: "creada" | "estado" | "reprogramada" | "actualizada" | "llegada";
   estadoAnterior: CitaState | null;
   estadoNuevo: CitaState | null;
   detalle: Record<string, unknown>;
@@ -178,9 +275,28 @@ export interface NewCita {
   contratoId?: string | null;
   servicioId?: string | null;
   formularioId?: string | null;
-  motivo?: string | null;
+  motivo: string;
   notas?: string | null;
   direccion?: string | null;
+  tipoCitaId?: string | null;
+  prioridad?: CitaPriority;
+  formaSolicitud?: RequestChannel | null;
+  fechaDeseada?: string | null;
+  instrucciones?: string | null;
+  enlaceTelemedicina?: string | null;
+}
+
+export interface SuggestParams {
+  tipoCitaId?: string | null;
+  pacienteId?: string | null;
+  profesionalId?: string | null;
+  sedeId?: string | null;
+  modalidad: Modality;
+  especialidad?: string | null;
+  desde?: string | null;
+  dias?: number;
+  limite?: number;
+  duracionMin?: number | null;
 }
 
 const json = (method: string, body?: unknown): RequestInit => ({ method, body: body === undefined ? undefined : JSON.stringify(body) });
@@ -211,7 +327,20 @@ export function createAgendaApi(fetcher: Fetcher) {
     removeUnavailability: (id: string) => fetcher(`/api/agenda/bloqueos/${id}`, json("DELETE")),
 
     fetchSlots: (params: { profesionalId: string; fecha: string; duracionMin?: number; modalidad?: Modality | null; excludeCitaId?: string | null }) =>
-  fetcher<{ fecha: string; duracionMin: number; sinHorario: boolean; slots: Slot[] }>(`/api/agenda/disponibilidad?${qs(params)}`),
+  fetcher<{ fecha: string; duracionMin: number; sinHorario: boolean; festivo?: string | null; slots: Slot[] }>(`/api/agenda/disponibilidad?${qs(params)}`),
+    /** Primeros cupos libres entre los profesionales que atienden el tipo de cita. */
+    fetchSuggestions: ({ tipoCitaId, pacienteId, profesionalId, sedeId, modalidad, especialidad, desde, dias, limite, duracionMin }: SuggestParams) =>
+      fetcher<{ desde: string; sugeridos: Sugerido[] }>(
+        `/api/agenda/sugeridos?${qs({ tipoCitaId, pacienteId, profesionalId, sedeId, modalidad, especialidad, desde, dias, limite, duracionMin })}`,
+      ),
+    fetchAppointmentTypes: (soloActivos = false) => fetcher<TipoCita[]>(`/api/agenda/tipos-cita${soloActivos ? "?activos=1" : ""}`),
+    createAppointmentType: (input: TipoCitaInput) => fetcher<{ id: string }>("/api/agenda/tipos-cita", json("POST", input)),
+    updateAppointmentType: (id: string, input: TipoCitaInput) => fetcher(`/api/agenda/tipos-cita/${id}`, json("PUT", input)),
+    fetchHolidays: (anio: number) => fetcher<Festivos>(`/api/agenda/festivos?anio=${anio}`),
+    addHoliday: (input: { fecha: string; nombre: string }) => fetcher<{ id: string }>("/api/agenda/festivos", json("POST", input)),
+    removeHoliday: (id: string) => fetcher(`/api/agenda/festivos/${id}`, json("DELETE")),
+    /** Confirmar asistencia: el paciente llegó (sede o telemedicina). */
+    markArrival: (id: string) => fetcher(`/api/agenda/citas/${id}/llegada`, json("POST")),
 
     fetchCitas: (params: { desde: string; hasta: string; profesionalId?: string | null; pacienteId?: string | null }) =>
   fetcher<Cita[]>(`/api/agenda/citas?${qs(params)}`),
