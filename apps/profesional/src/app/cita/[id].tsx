@@ -2,7 +2,9 @@ import { ActivityIndicator, Linking, Platform, Pressable, ScrollView, StyleSheet
 import { router, useLocalSearchParams } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { MODALITY_LABEL, STATE_LABEL, STATE_TONE, formatLongDay, localDay, localTime } from '@kerhub/core/agenda';
-import { agenda, errorMessage } from '@/lib/api';
+import { agenda, errorMessage, hasModule } from '@/lib/api';
+import { useAuth } from '@/lib/auth';
+import { RoutePreview } from '@/components/route/RoutePreview';
 import { showsClinicalRecord } from '@kerhub/core/cita-actions';
 import { CitaActions } from '@/components/CitaActions';
 import { Icon3D, MODALITY_ICON } from '@/components/Icon3D';
@@ -20,6 +22,7 @@ function openDirections(address: string) {
 export default function CitaDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const query = useQuery({ queryKey: ['agenda', 'cita', id], queryFn: () => agenda.fetchCita(id) });
+  const { me } = useAuth();
 
   if (query.isLoading) {
     return (
@@ -77,7 +80,12 @@ export default function CitaDetail() {
         </Pressable>
       )}
 
-      {(c.direccion || c.telefono) && (
+      {/* Visita a domicilio: vista previa del camino con tráfico, navegar y llamar. */}
+      {c.modalidad === 'domicilio' && (
+        <RoutePreview citaId={c.id} latitud={c.latitud} longitud={c.longitud} direccion={c.direccion} telefono={c.telefono} withRoutes={hasModule(me, 'rutas')} />
+      )}
+
+      {c.modalidad !== 'domicilio' && (c.direccion || c.telefono) && (
         <Card>
           {c.direccion && (
             <>

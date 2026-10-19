@@ -17,7 +17,12 @@ import { Button } from './ui';
  * Acciones del profesional sobre su cita: salir, llegar e iniciar la atención (desde ahí
  * se diligencia todo y se termina). Las novedades van en «···».
  */
-export function CitaActions({ cita, compact = false }: { cita: Pick<Cita, 'id' | 'estado' | 'modalidad'>; compact?: boolean }) {
+export function CitaActions({ cita, compact = false, menuOnly = false }: {
+  cita: Pick<Cita, 'id' | 'estado' | 'modalidad'>;
+  compact?: boolean;
+  /** Solo «···» con todas las acciones (tarjetas de Mi día): todas las tarjetas se ven iguales. */
+  menuOnly?: boolean;
+}) {
   const queryClient = useQueryClient();
   const { me } = useAuth();
   // Visita a domicilio con el módulo de rutas: salir hacia el paciente inicia la ruta y abre el mapa.
@@ -63,12 +68,22 @@ export function CitaActions({ cita, compact = false }: { cita: Pick<Cita, 'id' |
   if (!primary && others.length === 0 && !inAttention && !attended) return null;
   const required = reasonFor ? REASON_REQUIRED.includes(reasonFor) : false;
 
+  const secondary = others.map((estado) => ({ label: fieldLabel(cita, estado), destructive: REASON_REQUIRED.includes(estado), onPress: () => run(estado) }));
+  const menu = menuOnly
+    ? [
+        ...(primary ? [{ label: fieldLabel(cita, primary), onPress: () => run(primary) }] : []),
+        ...(inAttention ? [{ label: 'Continuar atención', onPress: openAttention }] : []),
+        ...(attended ? [{ label: 'Ver atención', onPress: openSummary }] : []),
+        ...secondary,
+      ]
+    : secondary;
+
   return (
-    <View style={[styles.row, compact && { marginTop: 4 }]}>
-      <MoreButton actions={others.map((estado) => ({ label: fieldLabel(cita, estado), destructive: REASON_REQUIRED.includes(estado), onPress: () => run(estado) }))} />
-      {primary && <Button size="sm" title={fieldLabel(cita, primary)} busy={change.isPending} onPress={() => run(primary)} />}
-      {inAttention && <Button size="sm" title="Continuar atención" onPress={openAttention} />}
-      {attended && <Button size="sm" variant="secondary" title="Ver atención" onPress={openSummary} />}
+    <View style={[styles.row, compact && { marginTop: 4 }, menuOnly && styles.menuOnly]}>
+      <MoreButton actions={menu} />
+      {!menuOnly && primary && <Button size="sm" title={fieldLabel(cita, primary)} busy={change.isPending} onPress={() => run(primary)} />}
+      {!menuOnly && inAttention && <Button size="sm" title="Continuar atención" onPress={openAttention} />}
+      {!menuOnly && attended && <Button size="sm" variant="secondary" title="Ver atención" onPress={openSummary} />}
 
       <BottomSheet visible={!!reasonFor} onClose={() => setReasonFor(null)} size="auto" title={reasonFor ? fieldLabel(cita, reasonFor) : ''}>
         <View style={styles.sheet}>
@@ -91,6 +106,7 @@ export function CitaActions({ cita, compact = false }: { cita: Pick<Cita, 'id' |
 }
 
 const styles = StyleSheet.create({
+  menuOnly: { marginTop: 0, justifyContent: 'flex-end' },
   row: { flexDirection: 'row', gap: 6, alignItems: 'center', justifyContent: 'flex-end' },
   sheet: { paddingHorizontal: 20, paddingBottom: 8, gap: 12 },
   hint: { fontSize: 14, color: colors.muted },

@@ -9,7 +9,7 @@ import { colors, toneColor } from '@/theme';
 
 export const CLOSED_STATES = ['cancelada_paciente', 'cancelada_ips', 'no_asistio'];
 
-/** Tarjeta de una cita en Mi día: hora, paciente, modalidad y la acción siguiente. */
+/** Tarjeta de una cita en Mi día: hora, paciente, modalidad y estado; acciones rápidas en «···» y todo lo demás al tocarla. */
 export function CitaCard({ cita, index = 0 }: { cita: Cita; index?: number }) {
   const faded = CLOSED_STATES.includes(cita.estado);
   return (
@@ -20,7 +20,11 @@ export function CitaCard({ cita, index = 0 }: { cita: Cita; index?: number }) {
             <Text style={styles.time}>
               {localTime(cita.inicio)} – {localTime(cita.fin)}
             </Text>
-            <Text style={[styles.state, { color: toneColor[STATE_TONE[cita.estado]] }]}>{STATE_LABEL[cita.estado]}</Text>
+            <View style={styles.right}>
+              <Text style={[styles.state, { color: toneColor[STATE_TONE[cita.estado]] }]}>{STATE_LABEL[cita.estado]}</Text>
+              {/* Acciones rápidas en «···»; el resto, en la ficha de la cita. */}
+              <CitaActions cita={cita} menuOnly />
+            </View>
           </View>
           <View style={styles.who}>
             <Icon3D name={MODALITY_ICON[cita.modalidad] ?? 'citas'} size={44} />
@@ -33,7 +37,6 @@ export function CitaCard({ cita, index = 0 }: { cita: Cita; index?: number }) {
               </Text>
             </View>
           </View>
-          <CitaActions cita={cita} compact />
         </Card>
       </Pressable>
     </Animated.View>
@@ -44,6 +47,7 @@ const styles = StyleSheet.create({
   top: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   time: { fontSize: 15, fontWeight: '700', color: colors.ink, fontVariant: ['tabular-nums'] },
   state: { fontSize: 13, fontWeight: '600' },
+  right: { flexDirection: 'row', alignItems: 'center', gap: 4, marginRight: -8 },
   who: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   patient: { fontSize: 17, fontWeight: '600', color: colors.ink },
   meta: { fontSize: 14, color: colors.muted },

@@ -46,7 +46,7 @@ interface RouteMapProps {
   bottomInset: number;
 }
 
-function TrafficLine({ polilinea, trafico, faded, width }: { polilinea: string | null; trafico: TraficoTramo[]; faded?: boolean; width: number }) {
+export function TrafficLine({ polilinea, trafico, faded, width }: { polilinea: string | null; trafico: TraficoTramo[]; faded?: boolean; width: number }) {
   const segments = useMemo(() => trafficSegments(polilinea ? decodePolyline(polilinea) : [], trafico), [polilinea, trafico]);
   return (
     <>

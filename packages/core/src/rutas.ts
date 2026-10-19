@@ -72,6 +72,9 @@ export interface Camino {
   trafico: TraficoTramo[];
 }
 
+/** Camino hasta una visita concreta, con sus alternas y el punto de destino. */
+export type CaminoCita = Camino & { alternativas: Camino[]; destino: { latitud: number; longitud: number } };
+
 /** Lo que se ve en el mapa desde donde está el profesional (calculado en vivo, no se guarda). */
 export interface VistaRuta extends MiRuta {
   vista: { polilinea: string | null; trafico: TraficoTramo[]; distanciaM: number; duracionS: number; tramos: Tramo[] } | null;
@@ -85,6 +88,8 @@ export function createRoutesApi(fetcher: Fetcher) {
     fetchMyRoute: (fecha?: string) => fetcher<MiRuta>(`/api/rutas/mi-ruta${fecha ? `?fecha=${fecha}` : ""}`),
     /** Recorrido con tráfico y camino a la próxima visita desde donde está (en vivo). */
     viewMyRoute: (pos: Posicion) => fetcher<VistaRuta>("/api/rutas/mi-ruta/vista", send("POST", pos)),
+    /** Camino desde donde está hasta una visita (vista previa en la ficha de la cita). */
+    fetchLegToCita: (citaId: string, pos: Posicion) => fetcher<CaminoCita>(`/api/rutas/citas/${citaId}/camino`, send("POST", pos)),
     /** Inicia la ruta o la recalcula desde donde está el profesional. */
     computeMyRoute: (pos: Posicion) => fetcher<MiRuta>("/api/rutas/mi-ruta/calcular", send("POST", pos)),
     sendPosition: (pos: Posicion) => fetcher<{ guardada: boolean }>("/api/rutas/mi-ruta/posicion", send("POST", pos)),
