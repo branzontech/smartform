@@ -1,15 +1,17 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { CalendarClock, FileText, Loader2, MoreHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
-import type { Cita, CitaState } from "./agenda-api";
-import { clinicalRecordUrl } from "./agenda-ui";
+import { markArrival, today, type Cita, type CitaState } from "./agenda-api";
+import { clinicalRecordUrl, errorMessage } from "./agenda-ui";
 import {
-  ACTION_LABEL, REASON_REQUIRED, canReschedule, needsReason, primaryNext, secondaryNext, showsClinicalRecord,
+  ACTION_LABEL, REASON_REQUIRED, canMarkArrival, canReschedule, needsReason, primaryNext, secondaryNext, showsClinicalRecord,
 } from "./cita-actions";
 import { ReasonDialog } from "./ReasonDialog";
 import { RescheduleDialog } from "./RescheduleDialog";
@@ -41,6 +43,16 @@ export function CitaActions({ cita, layout = "inline", className }: CitaActionsP
   const stacked = layout === "stacked";
   const buttonSize = stacked ? "h-11 flex-1 rounded-xl" : "h-9 rounded-lg";
   const recordFirst = cita.estado === "en_atencion";
+  const queryClient = useQueryClient();
+  const arrival = useMutation({
+    mutationFn: () => markArrival(cita.id),
+    onSuccess: () => {
+      toast.success("Llegada registrada");
+      void queryClient.invalidateQueries({ queryKey: ["agenda"] });
+    },
+    onError: (error) => toast.error(errorMessage(error)),
+  });
+  const showArrival = canMarkArrival(cita, today());
 
   const run = (estado: CitaState) => {
     if (needsReason(estado)) setReasonFor(estado);
@@ -53,7 +65,7 @@ export function CitaActions({ cita, layout = "inline", className }: CitaActionsP
   };
 
   const pendingState = change.isPending ? change.variables?.estado : undefined;
-  const nothingToDo = !primary && !showRecord && secondary.length === 0 && !reschedulable;
+  const nothingToDo = !primary && !showRecord && !showArrival && secondary.length === 0 && !reschedulable;
   if (nothingToDo) return null;
 
   const recordButton = showRecord && (
@@ -84,6 +96,12 @@ export function CitaActions({ cita, layout = "inline", className }: CitaActionsP
 
   return (
     <div className={cn("flex items-center gap-2", stacked && "w-full", className)}>
+      {showArrival && (
+        <Button variant="outline" className={cn(buttonSize, "gap-1.5")} disabled={arrival.isPending} onClick={() => arrival.mutate()}>
+          {arrival.isPending && <Loader2 className="animate-spin" aria-hidden />}
+          Llegó
+        </Button>
+      )}
       {recordFirst ? <>{recordButton}{primaryButton}</> : <>{primaryButton}{recordButton}</>}
       {(secondary.length > 0 || reschedulable) && (
         <DropdownMenu>

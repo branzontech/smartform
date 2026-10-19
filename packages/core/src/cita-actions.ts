@@ -1,4 +1,4 @@
-import { NEXT_STATES, type Cita, type CitaState } from "./agenda";
+import { NEXT_STATES, localDay, type Cita, type CitaState } from "./agenda";
 
 /* Reglas de interfaz de las acciones sobre una cita, iguales en web y app (las del servidor están en NEXT_STATES). */
 
@@ -36,6 +36,16 @@ export const canReschedule = (s: CitaState) => s === "programada" || s === "conf
 export const showsClinicalRecord = (s: CitaState) => s === "en_atencion" || s === "atendida";
 
 type CitaLike = Pick<Cita, "estado" | "modalidad">;
+
+/**
+ * Recepción registra que el paciente llegó (sede o telemedicina): el día de la
+ * cita, antes de iniciar la atención y una sola vez. En domicilio llega el profesional.
+ */
+export const canMarkArrival = (cita: Pick<Cita, "estado" | "modalidad" | "inicio" | "llegadaAt">, today: string) =>
+  cita.modalidad !== "domicilio" &&
+  (cita.estado === "programada" || cita.estado === "confirmada") &&
+  !cita.llegadaAt &&
+  localDay(cita.inicio) === today;
 
 /** Estados a los que se puede pasar a mano; «en camino» solo tiene sentido en domicilio. */
 export function allowedNext(cita: CitaLike): CitaState[] {

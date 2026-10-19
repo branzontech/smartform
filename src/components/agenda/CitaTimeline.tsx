@@ -12,6 +12,7 @@ function describe(e: CitaEvent): string {
   if (e.evento === "creada") return textOf(e.detalle, "reprogramadaDesde") ? "Creó la cita al reprogramar la anterior" : "Creó la cita";
   if (e.evento === "reprogramada") return "Reprogramó la cita";
   if (e.evento === "actualizada") return "Actualizó los datos de la cita";
+  if (e.evento === "llegada") return "Registró la llegada del paciente";
   if (e.estadoAnterior && e.estadoNuevo) return `Cambió de ${STATE_LABEL[e.estadoAnterior]} a ${STATE_LABEL[e.estadoNuevo]}`;
   return e.estadoNuevo ? `Marcó ${STATE_LABEL[e.estadoNuevo]}` : "Cambió el estado";
 }

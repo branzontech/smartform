@@ -4,7 +4,9 @@ import { Link, useParams } from "react-router-dom";
 import { ArrowLeft, MapPin } from "lucide-react";
 import { SurfaceCard } from "@/components/kit/surface";
 import { Skeleton } from "@/components/ui/skeleton";
-import { MODALITY_LABEL, fetchCita, formatLongDay, localDay, localTime } from "@/components/agenda/agenda-api";
+import {
+  CITA_PRIORITY_LABEL, MODALITY_LABEL, REQUEST_CHANNEL_LABEL, fetchCita, formatLongDay, formatShortDay, localDay, localTime, type Cita,
+} from "@/components/agenda/agenda-api";
 import { capitalizeFirst, errorMessage, mapsUrl } from "@/components/agenda/agenda-ui";
 import { CitaActions } from "@/components/agenda/CitaActions";
 import { CitaTimeline } from "@/components/agenda/CitaTimeline";
@@ -19,6 +21,15 @@ function Field({ label, children, wide }: { label: string; children: ReactNode; 
       <dd className="mt-0.5 break-words text-[14px] text-foreground">{children}</dd>
     </div>
   );
+}
+
+/** Cómo y cuándo la pidió el paciente, en una línea. */
+function requestOf(cita: Cita): string | null {
+  const parts = [
+    cita.formaSolicitud ? REQUEST_CHANNEL_LABEL[cita.formaSolicitud] : null,
+    cita.fechaDeseada ? `deseaba el ${formatShortDay(cita.fechaDeseada)}` : null,
+  ].filter(Boolean);
+  return parts.length ? parts.join(" · ") : null;
 }
 
 function BackLink() {
@@ -84,6 +95,17 @@ export default function CitaDetailPage() {
               <Field label="Hora"><span className="tabular-nums">{localTime(cita.inicio)} – {localTime(cita.fin)}</span></Field>
               <Field label="Profesional">{cita.profesional}</Field>
               <Field label="Modalidad">{MODALITY_LABEL[cita.modalidad]}</Field>
+              <Field label="Tipo de cita">{cita.tipoCita ?? "Sin tipo definido"}</Field>
+              <Field label="Prioridad">{CITA_PRIORITY_LABEL[cita.prioridad]}</Field>
+              {requestOf(cita) && <Field label="Solicitud">{requestOf(cita)}</Field>}
+              {cita.llegadaAt && <Field label="Llegada"><span className="tabular-nums">{localTime(cita.llegadaAt)}</span></Field>}
+              {cita.modalidad === "telemedicina" && (
+                <Field label="Videollamada" wide>
+                  {cita.enlaceTelemedicina ? (
+                    <a href={cita.enlaceTelemedicina} target="_blank" rel="noopener noreferrer" className={linkClass}>Abrir el enlace</a>
+                  ) : "Enlace pendiente"}
+                </Field>
+              )}
               {cita.modalidad === "domicilio" && (
                 <Field label="Dirección" wide>
                   {cita.direccion ? (
@@ -103,6 +125,7 @@ export default function CitaDetailPage() {
                 </Field>
               )}
               {cita.motivo && <Field label="Motivo de la consulta" wide>{cita.motivo}</Field>}
+              {cita.instrucciones && <Field label="Indicaciones para el paciente" wide><span className="whitespace-pre-line">{cita.instrucciones}</span></Field>}
               {cita.notas && <Field label="Notas" wide><span className="whitespace-pre-line">{cita.notas}</span></Field>}
               {cita.motivoCancelacion && <Field label="Motivo de cancelación" wide>{cita.motivoCancelacion}</Field>}
               {cita.reprogramadaDesde && (
@@ -122,6 +145,18 @@ export default function CitaDetailPage() {
               <Field label="Teléfono">
                 {cita.telefono ? <a href={`tel:${cita.telefono}`} className={`tabular-nums ${linkClass}`}>{cita.telefono}</a> : "—"}
               </Field>
+              {cita.responsable && (
+                <Field label="Responsable">
+                  {cita.responsable.nombre}
+                  {cita.responsable.parentesco ? ` · ${cita.responsable.parentesco}` : ""}
+                  {cita.responsable.telefono && (
+                    <>
+                      {" · "}
+                      <a href={`tel:${cita.responsable.telefono}`} className={`tabular-nums ${linkClass}`}>{cita.responsable.telefono}</a>
+                    </>
+                  )}
+                </Field>
+              )}
             </dl>
           </SurfaceCard>
         </div>
