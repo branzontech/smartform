@@ -26,6 +26,8 @@ interface VisitSheetProps {
   leg: { principal: Camino; alternativas: Camino[] } | null;
   selectedAlt: number | null;
   onSelectAlt: (i: number | null) => void;
+  /** Las visitas que siguen después de esta, con su hora de cita y de llegada estimada. */
+  upcoming: { id: string; paciente: string; hora: string; eta: string | null }[];
   onDepart: () => void;
   onArrive: () => void;
   onPrimary: () => void;
@@ -106,6 +108,19 @@ export function VisitSheet(props: VisitSheetProps) {
         </View>
       )}
 
+      {props.upcoming.length > 0 && (
+        <View style={styles.after}>
+          <Text style={styles.afterTitle}>Después</Text>
+          {props.upcoming.slice(0, 3).map((u) => (
+            <View key={u.id} style={styles.afterRow}>
+              <Text style={styles.afterName} numberOfLines={1}>{u.paciente}</Text>
+              <Text style={styles.afterTime}>cita {u.hora}{u.eta ? ` · llegas ${u.eta}` : ''}</Text>
+            </View>
+          ))}
+          {props.upcoming.length > 3 && <Text style={styles.afterTime}>y {props.upcoming.length - 3} más</Text>}
+        </View>
+      )}
+
       {phase === 'salir' && <LimeButton title={`Salir hacia ${first}`} onPress={props.onDepart} busy={busy} />}
       {phase === 'camino' && <SlideToConfirm label="Desliza cuando llegues" onConfirm={props.onArrive} busy={busy} />}
       {phase === 'llegada' && (
@@ -136,6 +151,11 @@ const styles = StyleSheet.create({
   note: { fontSize: 13, color: colors.muted },
   delay: { fontSize: 13, fontWeight: '600', color: '#c2410c', marginTop: -8 },
   routes: { flexDirection: 'row', gap: 6 },
+  after: { gap: 4 },
+  afterTitle: { fontSize: 12.5, fontWeight: '700', color: colors.muted },
+  afterRow: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', gap: 10 },
+  afterName: { flex: 1, fontSize: 14, fontWeight: '600', color: colors.ink },
+  afterTime: { fontSize: 12.5, color: colors.muted },
   route: { flex: 1, borderRadius: 14, backgroundColor: colors.canvas, paddingVertical: 8, paddingHorizontal: 10, gap: 1 },
   routeOn: { backgroundColor: colors.primarySoft },
   routeTime: { fontSize: 15, fontWeight: '800', color: colors.ink },

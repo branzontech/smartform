@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { arrivalAt, formatDuration, nextStop, type Parada } from '@kerhub/core/rutas';
+import { localTime } from '@kerhub/core/agenda';
+import { arrivalAt, formatDuration, isPending, nextStop, type Parada } from '@kerhub/core/rutas';
 import { errorMessage, hasModule } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { BraulioEmpty } from '@/components/Braulio';
@@ -56,6 +57,9 @@ export default function Ruta() {
   }
   const chosen = legView ? (selectedAlt != null ? legView.alternativas[selectedAlt] : undefined) ?? legView.principal : null;
   const targetLabel = active && next && chosen ? formatDuration(chosen.segundos) : null;
+  const upcoming = paradas
+    .filter((p) => isPending(p) && p.id !== next?.id)
+    .map((p) => ({ id: p.id, paciente: p.paciente, hora: localTime(p.inicio), eta: etas[p.id] ?? null }));
 
   // Encuadra la ruta cuando cambian las paradas o el trazado.
   const fitKey = `${paradas.length}-${vista?.polilinea?.length ?? 0}-${next?.id ?? ''}`;
@@ -123,6 +127,7 @@ export default function Ruta() {
           withAttention={withAttention}
           busy={route.busy}
           leg={legView}
+          upcoming={upcoming}
           selectedAlt={selectedAlt}
           onSelectAlt={setSelectedAlt}
           onDepart={() => route.depart(next)}
