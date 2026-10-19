@@ -4,7 +4,7 @@ import { localTime } from '@kerhub/core/agenda';
 import { arrivalAt, formatDistance, formatDuration, trafficDelay, type Camino, type Parada } from '@kerhub/core/rutas';
 import { colors } from '@/theme';
 import { ROUTE_ICONS } from './RouteMap';
-import { LimeButton, SheetFrame, TextButton } from './RouteSheets';
+import { Foldable, LimeButton, SheetFrame, TextButton } from './RouteSheets';
 import { SlideToConfirm } from './SlideToConfirm';
 
 /**
@@ -59,8 +59,7 @@ export function VisitSheet(props: VisitSheetProps) {
 
   return (
     <SheetFrame onLayoutHeight={props.onLayoutHeight} collapsed={collapsed} onCollapse={setCollapsed}>
-      {!collapsed && (
-        <>
+      <Foldable open={!collapsed}>
       {phase === 'llegada' || phase === 'atencion' ? (
         <View style={styles.head}>
           <Image source={ROUTE_ICONS.salida} style={{ width: 52, height: 52 }} />
@@ -126,19 +125,20 @@ export function VisitSheet(props: VisitSheetProps) {
         </View>
       )}
 
-        </>
-      )}
+      {phase === 'llegada' && !withAttention && <Text style={styles.note}>Tu empresa maneja agenda y rutas: marca la visita como hecha y sigue con la próxima.</Text>}
+      </Foldable>
 
       {phase === 'salir' && <LimeButton title={`Salir hacia ${first}`} onPress={props.onDepart} busy={busy} />}
       {phase === 'camino' && <SlideToConfirm label="Desliza cuando llegues" onConfirm={props.onArrive} busy={busy} />}
       {phase === 'llegada' && (
-        <>
-          {!withAttention && !collapsed && <Text style={styles.note}>Tu empresa maneja agenda y rutas: marca la visita como hecha y sigue con la próxima.</Text>}
-          <LimeButton title={withAttention ? 'Iniciar atención' : 'Terminar visita'} onPress={props.onPrimary} busy={busy} />
-        </>
+        <LimeButton title={withAttention ? 'Iniciar atención' : 'Terminar visita'} onPress={props.onPrimary} busy={busy} />
       )}
       {phase === 'atencion' && <LimeButton title="Continuar atención" onPress={props.onPrimary} busy={busy} />}
-      {!collapsed && (phase === 'camino' || phase === 'llegada' || phase === 'salir') && <TextButton title="El paciente no estaba" onPress={props.onAbsent} />}
+      {(phase === 'camino' || phase === 'llegada' || phase === 'salir') && (
+        <Foldable open={!collapsed}>
+          <TextButton title="El paciente no estaba" onPress={props.onAbsent} />
+        </Foldable>
+      )}
     </SheetFrame>
   );
 }

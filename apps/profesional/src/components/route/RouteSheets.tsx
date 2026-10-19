@@ -1,7 +1,7 @@
-import type { ReactNode } from 'react';
+import { useEffect, useRef, type ReactNode } from 'react';
 import { ActivityIndicator, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
-import Animated, { FadeInDown, LinearTransition } from 'react-native-reanimated';
+import Animated, { Easing, FadeInDown, interpolate, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { formatDistance, formatDuration, isLocated, isPending, type ModoRuta, type Parada, type Ruta } from '@kerhub/core/rutas';
 import { SegmentedTabs } from '@/components/SegmentedTabs';
@@ -17,6 +17,13 @@ export function SheetFrame({ children, onLayoutHeight, collapsed, onCollapse }: 
   onCollapse?: (collapsed: boolean) => void;
 }) {
   const insets = useSafeAreaInsets();
+  // El alto se avisa cuando la hoja se queda quieta, no en cada cuadro de la animación.
+  const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  useEffect(() => () => clearTimeout(timer.current), []);
+  const reportHeight = (h: number) => {
+    clearTimeout(timer.current);
+    timer.current = setTimeout(() => onLayoutHeight?.(h), HEIGHT_SETTLE);
+  };
   const pan = Gesture.Pan()
     .enabled(!!onCollapse)
     .runOnJS(true)
@@ -27,8 +34,7 @@ export function SheetFrame({ children, onLayoutHeight, collapsed, onCollapse }: 
   return (
     <Animated.View
       entering={FadeInDown.duration(260)}
-      layout={LinearTransition.duration(220)}
-      onLayout={(e) => onLayoutHeight?.(e.nativeEvent.layout.height)}
+      onLayout={(e) => reportHeight(e.nativeEvent.layout.height)}
       style={[styles.sheet, { paddingBottom: insets.bottom + 16 }]}>
       {onCollapse ? (
         <GestureHandlerRootView>
@@ -53,6 +59,35 @@ export function SheetFrame({ children, onLayoutHeight, collapsed, onCollapse }: 
 
 /** Distancia de arrastre del agarrador para minimizar o abrir la hoja. */
 const GRIP_DRAG = 24;
+const HEIGHT_SETTLE = 120;
+/** Separación entre bloques de la hoja (la misma `gap` de `styles.sheet`). */
+const SHEET_GAP = 14;
+const FOLD = { duration: 340, easing: Easing.bezier(0.2, 0, 0, 1) };
+
+/**
+ * Bloque que se pliega con la hoja: anima su alto hasta cero y se desvanece,
+ * en vez de aparecer o desaparecer de golpe.
+ */
+export function Foldable({ open, children }: { open: boolean; children: ReactNode }) {
+  const progress = useSharedValue(open ? 1 : 0);
+  const height = useSharedValue(0);
+  useEffect(() => {
+    progress.value = withTiming(open ? 1 : 0, FOLD);
+  }, [open, progress]);
+  const style = useAnimatedStyle(() => ({
+    height: height.value * progress.value,
+    opacity: interpolate(progress.value, [0, 0.5, 1], [0, 0.25, 1]),
+    // Al plegarse, también recoge la separación con el bloque siguiente.
+    marginBottom: -SHEET_GAP * (1 - progress.value),
+  }));
+  return (
+    <Animated.View style={[styles.fold, style]} pointerEvents={open ? 'auto' : 'none'}>
+      <View style={styles.foldInner} onLayout={(e) => (height.value = e.nativeEvent.layout.height)}>
+        {children}
+      </View>
+    </Animated.View>
+  );
+}
 
 /** Botón principal de la ruta: lima con texto violeta (acento de acción de la marca). */
 export function LimeButton({ title, onPress, busy }: { title: string; onPress: () => void; busy?: boolean }) {
@@ -177,6 +212,8 @@ const styles = StyleSheet.create({
     elevation: 16,
   },
   grip: { alignSelf: 'center', width: 40, height: 5, borderRadius: 3, backgroundColor: colors.line },
+  fold: { overflow: 'hidden' },
+  foldInner: { position: 'absolute', top: 0, left: 0, right: 0, gap: SHEET_GAP },
   gripArea: { alignSelf: 'stretch', alignItems: 'center', paddingVertical: 8, marginTop: -8, marginBottom: -6 },
   head: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   headIcon: { width: 44, height: 44 },
