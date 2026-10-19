@@ -1,4 +1,4 @@
-import { Linking, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { CONTENT_TYPE_LABEL } from '@kerhub/core/contenido';
@@ -9,6 +9,7 @@ import { capitalize, formatWhen } from '@/components/home/format';
 import { FALLBACK_ICON } from '@/components/home/icons';
 import { Button } from '@/components/ui';
 import { colors } from '@/theme';
+import { openLink } from '@/lib/links';
 
 /** Una publicación de la IPS completa: imagen, fecha, lugar, texto y enlace. */
 export default function ContenidoDetalle() {
@@ -33,7 +34,7 @@ export default function ContenidoDetalle() {
         {item.cuerpo ? <Text style={styles.text}>{item.cuerpo}</Text> : null}
         {item.enlace?.startsWith('https://') ? (
           <View style={{ marginTop: 8 }}>
-            <Button title="Abrir enlace" variant="secondary" onPress={() => void Linking.openURL(item.enlace!)} />
+            <Button title="Abrir enlace" variant="secondary" onPress={() => void openLink(item.enlace!)} />
           </View>
         ) : null}
       </View>

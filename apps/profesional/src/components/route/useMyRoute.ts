@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Linking } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import * as Location from 'expo-location';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -7,6 +6,7 @@ import { navigationLinks, type MiRuta, type ModoRuta, type Parada } from '@kerhu
 import { agenda, errorMessage, rutas } from '@/lib/api';
 import { currentPosition } from '@/lib/location';
 import { showAlert, showNotice } from '@/components/overlay/Overlay';
+import { callPhone, openLink } from '@/lib/links';
 
 export const ROUTE_KEY = ['rutas', 'mi-ruta'] as const;
 export const VIEW_KEY = ['rutas', 'vista'] as const;
@@ -170,16 +170,16 @@ export function useMyRoute(withAttention: boolean) {
     }
     const links = navigationLinks({ latitud: stop.latitud, longitud: stop.longitud });
     showAlert('Navegar con', stop.direccion ?? undefined, [
-      { text: 'Google Maps', onPress: () => void Linking.openURL(links.google) },
-      { text: 'Waze', onPress: () => void Linking.openURL(links.waze) },
-      { text: 'Mapas de Apple', onPress: () => void Linking.openURL(links.apple) },
+      { text: 'Google Maps', onPress: () => void openLink(links.google) },
+      { text: 'Waze', onPress: () => void openLink(links.waze) },
+      { text: 'Mapas de Apple', onPress: () => void openLink(links.apple) },
       { text: 'Cancelar', style: 'cancel' },
     ]);
   };
 
   const call = (stop: Parada) => {
     if (!stop.telefono) showNotice({ title: 'Sin teléfono', tone: 'warning', message: 'El paciente no tiene teléfono registrado.' });
-    else void Linking.openURL(`tel:${stop.telefono.replace(/\s+/g, '')}`);
+    else void callPhone(stop.telefono);
   };
 
   return { query, view, position, mode, setMode, liveTraffic, setLiveTraffic, arrivedId, busy, start, depart, arrive, primary, absent, finish, navigate, call };

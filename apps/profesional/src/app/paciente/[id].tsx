@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ActivityIndicator, Linking, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { useQuery } from '@tanstack/react-query';
@@ -12,16 +12,12 @@ import { CitaCard } from '@/components/CitaCard';
 import { PatientAvatar } from '@/components/PatientAvatar';
 import { Card } from '@/components/ui';
 import { colors, toneColor } from '@/theme';
+import { callPhone, openAddress } from '@/lib/links';
 
 /** Citas del historial que se muestran antes de «Ver todas». */
 const HISTORY_PREVIEW = 8;
 
 const capitalize = (s: string) => s.charAt(0).toLocaleUpperCase('es') + s.slice(1);
-
-function openAddress(address: string) {
-  const q = encodeURIComponent(address);
-  void Linking.openURL(Platform.OS === 'ios' ? `maps://?q=${q}` : `https://www.google.com/maps/search/?api=1&query=${q}`);
-}
 
 function Action({ label, onPress, strong }: { label: string; onPress: () => void; strong?: boolean }) {
   return (
@@ -116,8 +112,8 @@ export default function Paciente() {
           </View>
           {(p.telefono || place) && (
             <View style={styles.actions}>
-              {p.telefono && <Action label="Llamar" strong onPress={() => void Linking.openURL(`tel:${p.telefono!.replace(/\s+/g, '')}`)} />}
-              {place && <Action label="Ver dirección" onPress={() => openAddress(place)} />}
+              {p.telefono && <Action label="Llamar" strong onPress={() => void callPhone(p.telefono!)} />}
+              {place && <Action label="Ver dirección" onPress={() => void openAddress(place)} />}
             </View>
           )}
         </Card>

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Image, Linking, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Image, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
 import { useQuery } from '@tanstack/react-query';
 import { arrivalAt, decodePolyline, formatDistance, formatDuration, navigationLinks, trafficDelay } from '@kerhub/core/rutas';
@@ -9,6 +9,7 @@ import { showAlert } from '@/components/overlay/Overlay';
 import { Card } from '@/components/ui';
 import { colors } from '@/theme';
 import { ROUTE_ICONS, TrafficLine } from './RouteMap';
+import { callPhone, openDirections, openLink } from '@/lib/links';
 
 interface RoutePreviewProps {
   citaId: string;
@@ -22,10 +23,7 @@ interface RoutePreviewProps {
 
 const MAP_HEIGHT = 190;
 
-function openByText(address: string) {
-  const q = encodeURIComponent(address);
-  void Linking.openURL(Platform.OS === 'ios' ? `maps://?daddr=${q}` : `https://www.google.com/maps/dir/?api=1&destination=${q}`);
-}
+const openByText = (address: string) => void openDirections(address);
 
 /**
  * Vista previa del camino en la ficha de una visita a domicilio: el mapa con
@@ -63,9 +61,9 @@ export function RoutePreview({ citaId, latitud, longitud, direccion, telefono, w
     if (!located) return openByText(direccion ?? '');
     const links = navigationLinks({ latitud: Number(latitud), longitud: Number(longitud) });
     showAlert('Navegar con', direccion ?? undefined, [
-      { text: 'Google Maps', onPress: () => void Linking.openURL(links.google) },
-      { text: 'Waze', onPress: () => void Linking.openURL(links.waze) },
-      { text: 'Mapas de Apple', onPress: () => void Linking.openURL(links.apple) },
+      { text: 'Google Maps', onPress: () => void openLink(links.google) },
+      { text: 'Waze', onPress: () => void openLink(links.waze) },
+      { text: 'Mapas de Apple', onPress: () => void openLink(links.apple) },
       { text: 'Cancelar', style: 'cancel' },
     ]);
   };
@@ -124,7 +122,7 @@ export function RoutePreview({ citaId, latitud, longitud, direccion, telefono, w
           <Text style={[styles.actionText, { color: colors.primaryDark }]}>Navegar</Text>
         </Pressable>
         {telefono && (
-          <Pressable accessibilityRole="button" onPress={() => void Linking.openURL(`tel:${telefono.replace(/\s+/g, '')}`)} style={({ pressed }) => [styles.action, pressed && { opacity: 0.8 }]}>
+          <Pressable accessibilityRole="button" onPress={() => void callPhone(telefono)} style={({ pressed }) => [styles.action, pressed && { opacity: 0.8 }]}>
             <Text style={styles.actionText}>Llamar</Text>
           </Pressable>
         )}

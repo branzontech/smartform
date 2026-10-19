@@ -6,6 +6,9 @@ import { createPatientsApi } from '@kerhub/core/pacientes';
 import { createRoutesApi } from '@kerhub/core/rutas';
 import { clearToken, currentEnvironment, readToken, saveToken } from './session';
 
+/** Mensaje cuando la petición ni siquiera llega al servidor. */
+export const NETWORK_ERROR = 'Se perdió la conexión con el servidor. Revisa tu internet e intenta de nuevo.';
+
 export class ApiError extends Error {
   constructor(
     readonly status: number,
@@ -39,7 +42,13 @@ export const fetcher: Fetcher = async <T,>(path: string, init: RequestInit = {})
   if (token) headers.set('Authorization', `Bearer ${token}`);
   // Sin cookies: la sesión va solo en el token. Una cookie guardada por el teléfono
   // hace que el servidor exija un «Origin» que una app nativa no envía.
-  const res = await fetch(`${currentEnvironment().url}${path}`, { ...init, headers, credentials: 'omit' });
+  let res: Response;
+  try {
+    res = await fetch(`${currentEnvironment().url}${path}`, { ...init, headers, credentials: 'omit' });
+  } catch {
+    // Sin red, servidor reiniciándose o conexión cortada: el mensaje del sistema no le sirve al profesional.
+    throw new ApiError(0, NETWORK_ERROR);
+  }
   const body = await parse(res);
   if (res.status === 401 && !path.startsWith('/api/auth/')) {
     await clearToken();

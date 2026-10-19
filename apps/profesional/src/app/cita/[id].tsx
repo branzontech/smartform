@@ -1,4 +1,4 @@
-import { ActivityIndicator, Linking, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { MODALITY_LABEL, STATE_LABEL, STATE_TONE, formatLongDay, localDay, localTime } from '@kerhub/core/agenda';
@@ -10,14 +10,9 @@ import { CitaActions } from '@/components/CitaActions';
 import { Icon3D, MODALITY_ICON } from '@/components/Icon3D';
 import { Button, Card } from '@/components/ui';
 import { colors, toneColor } from '@/theme';
+import { callPhone, openDirections } from '@/lib/links';
 
 const capitalize = (s: string) => s.charAt(0).toLocaleUpperCase('es') + s.slice(1);
-
-function openDirections(address: string) {
-  const q = encodeURIComponent(address);
-  const url = Platform.OS === 'ios' ? `maps://?daddr=${q}` : `https://www.google.com/maps/dir/?api=1&destination=${q}`;
-  Linking.openURL(url).catch(() => Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${q}`));
-}
 
 export default function CitaDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -99,7 +94,7 @@ export default function CitaDetail() {
               <Button title="Cómo llegar" variant="secondary" onPress={() => openDirections(c.direccion ?? '')} />
             </>
           )}
-          {c.telefono && <Button title={`Llamar · ${c.telefono}`} variant="secondary" onPress={() => Linking.openURL(`tel:${c.telefono}`)} />}
+          {c.telefono && <Button title={`Llamar · ${c.telefono}`} variant="secondary" onPress={() => void callPhone(c.telefono!)} />}
         </Card>
       )}
 
