@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { localTime } from '@kerhub/core/agenda';
 import { arrivalAt, formatDistance, formatDuration, trafficDelay, type Camino, type Parada } from '@kerhub/core/rutas';
@@ -53,9 +54,13 @@ export function VisitSheet(props: VisitSheetProps) {
   const delay = chosen ? trafficDelay(chosen) : null;
   const options = live ? [live.principal, ...live.alternativas] : [];
   const first = stop.paciente.split(' ').slice(0, 2).join(' ');
+  // Minimizada: solo la acción principal, para ver el mapa completo.
+  const [collapsed, setCollapsed] = useState(false);
 
   return (
-    <SheetFrame onLayoutHeight={props.onLayoutHeight}>
+    <SheetFrame onLayoutHeight={props.onLayoutHeight} collapsed={collapsed} onCollapse={setCollapsed}>
+      {!collapsed && (
+        <>
       {phase === 'llegada' || phase === 'atencion' ? (
         <View style={styles.head}>
           <Image source={ROUTE_ICONS.salida} style={{ width: 52, height: 52 }} />
@@ -121,16 +126,19 @@ export function VisitSheet(props: VisitSheetProps) {
         </View>
       )}
 
+        </>
+      )}
+
       {phase === 'salir' && <LimeButton title={`Salir hacia ${first}`} onPress={props.onDepart} busy={busy} />}
       {phase === 'camino' && <SlideToConfirm label="Desliza cuando llegues" onConfirm={props.onArrive} busy={busy} />}
       {phase === 'llegada' && (
         <>
-          {!withAttention && <Text style={styles.note}>Tu empresa maneja agenda y rutas: marca la visita como hecha y sigue con la próxima.</Text>}
+          {!withAttention && !collapsed && <Text style={styles.note}>Tu empresa maneja agenda y rutas: marca la visita como hecha y sigue con la próxima.</Text>}
           <LimeButton title={withAttention ? 'Iniciar atención' : 'Terminar visita'} onPress={props.onPrimary} busy={busy} />
         </>
       )}
       {phase === 'atencion' && <LimeButton title="Continuar atención" onPress={props.onPrimary} busy={busy} />}
-      {(phase === 'camino' || phase === 'llegada' || phase === 'salir') && <TextButton title="El paciente no estaba" onPress={props.onAbsent} />}
+      {!collapsed && (phase === 'camino' || phase === 'llegada' || phase === 'salir') && <TextButton title="El paciente no estaba" onPress={props.onAbsent} />}
     </SheetFrame>
   );
 }

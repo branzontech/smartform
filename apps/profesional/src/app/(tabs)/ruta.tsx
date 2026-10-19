@@ -77,8 +77,8 @@ export default function Ruta() {
   }));
   const lateCount = rows.filter((r) => r.tarde > 0 && !r.hecha).length;
 
-  // Encuadra la ruta cuando cambian las paradas o el trazado.
-  const fitKey = `${paradas.length}-${vista?.polilinea?.length ?? 0}-${next?.id ?? ''}`;
+  // Encuadra la ruta cuando cambian las paradas, el trazado o el alto de la hoja (al minimizarla).
+  const fitKey = `${paradas.length}-${vista?.polilinea?.length ?? 0}-${next?.id ?? ''}-${Math.round(sheetHeight / 40)}`;
   useEffect(() => {
     const t = setTimeout(() => map.current?.fit(), 350);
     return () => clearTimeout(t);
@@ -164,6 +164,7 @@ export default function Ruta() {
         />
       ) : next ? (
         <VisitSheet
+          key={next.id}
           stop={next}
           number={number}
           total={paradas.length}

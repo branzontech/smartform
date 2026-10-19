@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { ActivityIndicator, Image, Pressable, StyleSheet, Text, View } from 'react-native';
-import Animated, { FadeInDown } from 'react-native-reanimated';
+import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
+import Animated, { FadeInDown, LinearTransition } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { formatDistance, formatDuration, isLocated, isPending, type ModoRuta, type Parada, type Ruta } from '@kerhub/core/rutas';
 import { SegmentedTabs } from '@/components/SegmentedTabs';
@@ -8,18 +9,50 @@ import { colors } from '@/theme';
 import { ROUTE_ICONS } from './RouteMap';
 
 /** Hoja fija abajo, sobre el mapa (no es una ventana: el mapa sigue a la vista). */
-export function SheetFrame({ children, onLayoutHeight }: { children: ReactNode; onLayoutHeight?: (h: number) => void }) {
+export function SheetFrame({ children, onLayoutHeight, collapsed, onCollapse }: {
+  children: ReactNode;
+  onLayoutHeight?: (h: number) => void;
+  /** Con `onCollapse`, el agarrador minimiza la hoja (tocarlo o arrastrarlo) para ver el mapa completo. */
+  collapsed?: boolean;
+  onCollapse?: (collapsed: boolean) => void;
+}) {
   const insets = useSafeAreaInsets();
+  const pan = Gesture.Pan()
+    .enabled(!!onCollapse)
+    .runOnJS(true)
+    .onEnd((e) => {
+      if (e.translationY > GRIP_DRAG) onCollapse?.(true);
+      else if (e.translationY < -GRIP_DRAG) onCollapse?.(false);
+    });
   return (
     <Animated.View
       entering={FadeInDown.duration(260)}
+      layout={LinearTransition.duration(220)}
       onLayout={(e) => onLayoutHeight?.(e.nativeEvent.layout.height)}
       style={[styles.sheet, { paddingBottom: insets.bottom + 16 }]}>
-      <View style={styles.grip} />
+      {onCollapse ? (
+        <GestureHandlerRootView>
+          <GestureDetector gesture={pan}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={collapsed ? 'Mostrar detalles de la visita' : 'Minimizar para ver el mapa'}
+              onPress={() => onCollapse(!collapsed)}
+              hitSlop={8}
+              style={styles.gripArea}>
+              <View style={styles.grip} />
+            </Pressable>
+          </GestureDetector>
+        </GestureHandlerRootView>
+      ) : (
+        <View style={styles.grip} />
+      )}
       {children}
     </Animated.View>
   );
 }
+
+/** Distancia de arrastre del agarrador para minimizar o abrir la hoja. */
+const GRIP_DRAG = 24;
 
 /** Botón principal de la ruta: lima con texto violeta (acento de acción de la marca). */
 export function LimeButton({ title, onPress, busy }: { title: string; onPress: () => void; busy?: boolean }) {
@@ -144,6 +177,7 @@ const styles = StyleSheet.create({
     elevation: 16,
   },
   grip: { alignSelf: 'center', width: 40, height: 5, borderRadius: 3, backgroundColor: colors.line },
+  gripArea: { alignSelf: 'stretch', alignItems: 'center', paddingVertical: 8, marginTop: -8, marginBottom: -6 },
   head: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   headIcon: { width: 44, height: 44 },
   title: { fontSize: 20, fontWeight: '800', color: colors.ink, letterSpacing: -0.4 },
