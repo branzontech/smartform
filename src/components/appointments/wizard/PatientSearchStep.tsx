@@ -12,6 +12,7 @@ import {
   Users,
   ArrowRight,
   Sparkles,
+  ChevronRight,
   Loader2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -20,6 +21,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
+import { UserAvatar } from "@/components/ui/user-avatar";
 import { 
   Select,
   SelectContent,
@@ -233,28 +235,28 @@ export const PatientSearchStep: React.FC<PatientSearchStepProps> = ({
       variants={containerVariants}
       initial="hidden"
       animate="visible"
-      className="h-full space-y-4 overflow-y-auto pb-24 pt-5 scrollbar-thin md:pt-6"
+      className="h-full max-w-3xl space-y-4 overflow-y-auto pb-24 pt-5 scrollbar-thin md:pt-6"
     >
       {/* Header */}
-      <motion.div variants={itemVariants} className="flex items-center gap-3">
-        <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-primary/20 to-primary/10">
-          <User className="w-5 h-5 text-primary" />
+      <motion.div variants={itemVariants} className="flex items-end justify-between gap-3 px-1">
+        <div className="space-y-0.5">
+          <h2 className="text-[15px] font-semibold text-foreground">¿Quién es el paciente?</h2>
+          <p className="text-[13px] text-muted-foreground">Búscalo por nombre o documento, o créalo si es nuevo.</p>
         </div>
-        <div>
-          <h2 className="text-lg font-semibold">¿Quién es el paciente?</h2>
-          <p className="text-sm text-muted-foreground">
-            Busca un paciente existente o crea uno nuevo
-          </p>
-        </div>
+        {!showCreateForm && (
+          <button type="button" onClick={() => setShowCreateForm(true)} className="shrink-0 rounded-full px-3 py-1.5 text-[13px] font-semibold text-primary transition-colors hover:bg-primary/10 active:scale-[.97]">
+            Crear paciente
+          </button>
+        )}
       </motion.div>
 
       {/* Search Card */}
       <motion.div variants={itemVariants}>
-        <Card className="bg-card/60 backdrop-blur-xl border-border/30 shadow-lg rounded-2xl overflow-hidden">
-          <CardContent className="p-5">
+        <Card className="overflow-hidden rounded-card border-0 bg-card shadow-card dark:border dark:border-border dark:shadow-none">
+          <CardContent className="p-0">
             {/* Search Input */}
-            <div className="relative mb-5">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+            <div className="relative">
+              <Search className="absolute left-5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 placeholder="Buscar por nombre o número de documento..."
                 value={searchTerm}
@@ -262,27 +264,27 @@ export const PatientSearchStep: React.FC<PatientSearchStepProps> = ({
                   setSearchTerm(e.target.value);
                   setShowCreateForm(false);
                 }}
-                className="pl-12 h-12 text-base bg-background/50 border-border/50 rounded-xl focus-visible:ring-0"
+                className="h-14 rounded-none border-0 bg-transparent pl-12 pr-12 text-[15px] shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
               />
               {isSearching && (
-                <Loader2 className="absolute right-4 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
+                <Loader2 className="absolute right-5 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
               )}
             </div>
 
             {/* Results */}
             {searchTerm && !showCreateForm && (
               <motion.div
-                initial={{ opacity: 0, y: 10 }}
+                initial={{ opacity: 0, y: 4 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="space-y-4"
+                className="border-t border-border/60"
               >
                 {allResults.length > 0 ? (
                   <>
-                    <p className="text-sm text-muted-foreground mb-2">
-                      {allResults.length} resultado(s) encontrado(s)
+                    <p className="px-5 pb-1 pt-3 text-xs text-muted-foreground">
+                      {allResults.length} {allResults.length === 1 ? "paciente" : "pacientes"}
                     </p>
-                    <ScrollArea className="h-[260px]">
-                      <div className="space-y-2 pr-4">
+                    <div>
+                      <div className="divide-y divide-border/60 pb-1">
                         {allResults.map((result, index) => {
                           const isLocal = result.source === "local";
                           const patient = result.data;
@@ -294,16 +296,12 @@ export const PatientSearchStep: React.FC<PatientSearchStepProps> = ({
                           return (
                             <motion.div
                               key={`${result.source}-${isLocal ? (patient as ExtendedPatient).id : (patient as any).id}`}
-                              initial={{ opacity: 0, x: -20 }}
-                              animate={{ opacity: 1, x: 0 }}
-                              transition={{ delay: index * 0.05 }}
+                              initial={{ opacity: 0, y: 4 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ delay: Math.min(index, 8) * 0.03 }}
                             >
                               <Card
-                                className={cn(
-                                  "cursor-pointer transition-all duration-200 border-border/30 rounded-xl",
-                                  "hover:bg-primary/5 hover:border-primary/30 hover:shadow-md",
-                                  "active:scale-[0.99]"
-                                )}
+                                className="group cursor-pointer rounded-none border-0 bg-transparent shadow-none transition-colors duration-200 hover:bg-muted/50 active:bg-muted/70"
                                 onClick={() => {
                                   if (isLocal) {
                                     onPatientSelected(patient as ExtendedPatient);
@@ -312,33 +310,28 @@ export const PatientSearchStep: React.FC<PatientSearchStepProps> = ({
                                   }
                                 }}
                               >
-                                <CardContent className="p-3">
+                                <CardContent className="px-5 py-3">
                                   <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center text-primary font-semibold">
-                                      {firstName.charAt(0)}{lastName.charAt(0)}
-                                    </div>
+                                    <UserAvatar seed={`${firstName} ${lastName}`} alt={`${firstName} ${lastName}`} className="h-9 w-9" />
                                     <div className="flex-1 min-w-0">
-                                      <p className="font-semibold text-base truncate">
+                                      <p className="truncate text-[14.5px] font-semibold text-foreground">
                                         {firstName} {lastName}
                                       </p>
-                                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                      <div className="flex items-center gap-2 text-[13px] text-muted-foreground">
                                         <span>{docId}</span>
                                         {phone && (
                                           <>
-                                            <span>•</span>
+                                            <span>·</span>
                                             <span className="flex items-center gap-1">
                                               <Phone className="w-3 h-3" />
                                               {phone}
                                             </span>
                                           </>
                                         )}
-                                        {!isLocal && (
-                                          <Badge variant="outline" className="text-xs ml-1">BD</Badge>
-                                        )}
                                         <PatientStatusBadge status={isLocal ? (patient as ExtendedPatient).patientStatus : (patient as any).estado_paciente} />
                                       </div>
                                     </div>
-                                    <ArrowRight className="w-4 h-4 text-muted-foreground" />
+                                    <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground/50 opacity-0 transition-all duration-200 group-hover:translate-x-0.5 group-hover:opacity-100" />
                                   </div>
                                 </CardContent>
                               </Card>
@@ -346,70 +339,32 @@ export const PatientSearchStep: React.FC<PatientSearchStepProps> = ({
                           );
                         })}
                       </div>
-                    </ScrollArea>
+                    </div>
                   </>
                 ) : !isSearching ? (
                   <motion.div
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    className="text-center py-6"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="flex items-center justify-between gap-3 px-5 py-4"
                   >
-                    <div className="w-14 h-14 rounded-2xl bg-muted/50 flex items-center justify-center mx-auto mb-3">
-                      <Search className="w-7 h-7 text-muted-foreground" />
-                    </div>
-                    <p className="text-muted-foreground mb-3">
-                      No se encontraron pacientes con "{searchTerm}"
-                    </p>
-                    <Button
-                      onClick={() => setShowCreateForm(true)}
-                      className="rounded-xl h-10 px-5 gap-2"
-                    >
-                      <UserPlus className="w-4 h-4" />
-                      Crear nuevo paciente
-                    </Button>
+                    <p className="text-[13px] text-muted-foreground">Nadie con «{searchTerm}».</p>
+                    <button type="button" onClick={() => setShowCreateForm(true)} className="shrink-0 rounded-full px-3 py-1.5 text-[13px] font-semibold text-primary transition-colors hover:bg-primary/10">
+                      Crear paciente
+                    </button>
                   </motion.div>
                 ) : null}
-              </motion.div>
-            )}
-
-            {/* Empty state */}
-            {!searchTerm && !showCreateForm && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="flex items-center justify-center gap-4 py-4"
-              >
-                <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center shrink-0">
-                  <Sparkles className="w-5 h-5 text-primary" />
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  Escribe el nombre o documento del paciente
-                </p>
-                <span className="text-muted-foreground/50">o</span>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowCreateForm(true)}
-                  className="rounded-xl gap-1.5 shrink-0"
-                >
-                  <UserPlus className="w-4 h-4" />
-                  Crear nuevo
-                </Button>
               </motion.div>
             )}
 
             {/* Create Form */}
             {showCreateForm && (
               <motion.div
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 6 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="space-y-6"
+                className="space-y-6 border-t border-border/60 px-5 py-5"
               >
                 <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-semibold flex items-center gap-2">
-                    <UserPlus className="w-5 h-5 text-primary" />
-                    Nuevo Paciente
-                  </h3>
+                  <h3 className="text-[15px] font-semibold text-foreground">Nuevo paciente</h3>
                   <Button
                     variant="ghost"
                     size="sm"

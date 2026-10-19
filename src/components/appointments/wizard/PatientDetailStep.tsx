@@ -179,16 +179,15 @@ export const PatientDetailStep: React.FC<PatientDetailStepProps> = ({
           </div>
         </div>
         {!isEditing ? (
-          <Button variant="ghost" size="sm" onClick={startEditing} className="rounded-xl gap-1.5 text-muted-foreground">
-            <Edit2 className="w-3.5 h-3.5" />
-            Editar
-          </Button>
+          <button type="button" onClick={startEditing} className="shrink-0 rounded-full px-3 py-1.5 text-[13px] font-semibold text-primary transition-colors hover:bg-primary/10 active:scale-[.97]">
+            Editar datos
+          </button>
         ) : (
           <div className="flex gap-1.5">
-            <Button variant="ghost" size="sm" onClick={() => setIsEditing(false)} className="rounded-xl text-muted-foreground">
+            <Button variant="ghost" size="sm" onClick={() => setIsEditing(false)} className="h-8 rounded-full px-3 text-[13px] text-muted-foreground">
               Cancelar
             </Button>
-            <Button size="sm" onClick={handleSave} disabled={isSaving} className="rounded-xl gap-1.5">
+            <Button size="sm" onClick={handleSave} disabled={isSaving} className="h-8 gap-1.5 rounded-full px-4 text-[13px] active:scale-[.97]">
               {isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
               Guardar
             </Button>

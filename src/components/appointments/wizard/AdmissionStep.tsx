@@ -1,17 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import {
-  ClipboardList,
-  ArrowRight,
-  ArrowLeft,
-  Phone,
-  CheckCircle2,
-  FileText,
-  Loader2,
-  ShieldCheck,
-  Stethoscope,
-  MessageSquareText,
-} from "lucide-react";
+import { ArrowRight, CheckCircle2, ChevronRight, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
@@ -31,6 +20,10 @@ import { toast } from "sonner";
 import { BASE_CLINICAL_HISTORY_ID, useClinicalHistories } from "@/components/forms/clinical-histories";
 
 // ── Types ──────────────────────────────────────────────
+
+/** Superficie de tarjeta de Doctor Ker (sin bordes ni sombras exageradas). */
+const surface = "rounded-card bg-card shadow-card dark:border dark:border-border dark:shadow-none";
+
 export interface AdmissionData {
   contrato_id: string;
   contrato_nombre: string;
@@ -229,86 +222,52 @@ export const AdmissionStep: React.FC<AdmissionStepProps> = ({
       variants={containerVariants}
       initial="hidden"
       animate="visible"
-      className="h-full space-y-4 overflow-y-auto pb-24 pt-5 scrollbar-thin md:pt-6"
+      className="h-full max-w-3xl space-y-4 overflow-y-auto pb-24 pt-5 scrollbar-thin md:pt-6"
     >
-      {/* Header */}
-      <motion.div variants={itemVariants} className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center flex-shrink-0">
-          <ClipboardList className="w-5 h-5 text-primary" />
-        </div>
-        <div>
-          <h2 className="text-lg font-bold">Admisión del paciente</h2>
-          <p className="text-sm text-muted-foreground">
-            Vincula cobertura, servicio y motivo de visita
-          </p>
-        </div>
+      {/* Encabezado: una línea de título, alineada con el riel */}
+      <motion.div variants={itemVariants} className="space-y-0.5 px-1">
+        <h2 className="text-[15px] font-semibold text-foreground">Admisión del paciente</h2>
+        <p className="text-[13px] text-muted-foreground">Vincula cobertura, servicio y motivo de la visita, o agenda sin admitir.</p>
       </motion.div>
 
-      {/* Decision Cards */}
+      {/* Decisión: dos filas de opción, sin tarjetas grandes */}
       {wantsAdmission === null && (
-        <motion.div
-          variants={itemVariants}
-          className="grid grid-cols-1 md:grid-cols-2 gap-4"
-        >
-          <Card
-            className={cn(
-              "cursor-pointer transition-all duration-300 border-2 rounded-2xl overflow-hidden",
-              "hover:shadow-lg hover:scale-[1.01] hover:border-primary/50",
-              "active:scale-[0.99]"
-            )}
-            onClick={() => setWantsAdmission(true)}
-          >
-            <CardContent className="p-6 text-center">
-              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-green-500/20 to-green-500/10 flex items-center justify-center mx-auto mb-3">
-                <CheckCircle2 className="w-7 h-7 text-green-600" />
-              </div>
-              <h3 className="text-lg font-semibold mb-1">Sí, admitir ahora</h3>
-              <p className="text-muted-foreground text-sm">
-                Seleccionar cobertura, servicio y motivo
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card
-            className={cn(
-              "cursor-pointer transition-all duration-300 border-2 rounded-2xl overflow-hidden",
-              "hover:shadow-lg hover:scale-[1.01] hover:border-muted-foreground/30",
-              "active:scale-[0.99]"
-            )}
-            onClick={handleSkip}
-          >
-            <CardContent className="p-6 text-center">
-              <div className="w-14 h-14 rounded-2xl bg-muted/50 flex items-center justify-center mx-auto mb-3">
-                <ArrowRight className="w-7 h-7 text-muted-foreground" />
-              </div>
-              <h3 className="text-lg font-semibold mb-1">No, solo agendar</h3>
-              <p className="text-muted-foreground text-sm">
-                Ir directamente a seleccionar fecha y hora
-              </p>
-            </CardContent>
-          </Card>
+        <motion.div variants={itemVariants} className={cn(surface, "divide-y divide-border/70 overflow-hidden")}>
+          {[
+            { title: "Admitir ahora", hint: "Cobertura, servicio, historia clínica y motivo", icon: CheckCircle2, tone: "text-[hsl(var(--success))]", onClick: () => setWantsAdmission(true) },
+            { title: "Solo agendar", hint: "Pasar directo a profesional, fecha y hora", icon: ArrowRight, tone: "text-muted-foreground", onClick: handleSkip },
+          ].map((o) => (
+            <button
+              key={o.title}
+              type="button"
+              onClick={o.onClick}
+              className="group flex w-full items-center gap-3.5 px-5 py-4 text-left transition-colors duration-200 hover:bg-muted/50 active:bg-muted/70 focus-visible:outline-none focus-visible:bg-muted/50"
+            >
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-muted/70">
+                <o.icon className={cn("h-[18px] w-[18px]", o.tone)} />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-[14.5px] font-semibold text-foreground">{o.title}</span>
+                <span className="block text-[13px] text-muted-foreground">{o.hint}</span>
+              </span>
+              <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground/60 transition-transform duration-200 group-hover:translate-x-0.5" />
+            </button>
+          ))}
         </motion.div>
       )}
 
-      {/* Admission Form */}
+      {/* Formulario de admisión (el scroll es el del paso, no uno interno) */}
       {wantsAdmission === true && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="overflow-y-auto max-h-[calc(100vh-22rem)] pr-1"
-        >
-          <Card className="bg-card/60 backdrop-blur-xl border-border/30 shadow-lg rounded-2xl overflow-hidden">
-            <CardContent className="p-5 space-y-6">
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
+          <Card className={cn(surface, "border-0")}>
+            <CardContent className="space-y-5 p-5 md:p-6">
               <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold flex items-center gap-2">
-                  <FileText className="w-5 h-5 text-primary" />
-                  Datos de Admisión (Encounter)
-                </h3>
+                <h3 className="text-[15px] font-semibold text-foreground">Datos de la admisión</h3>
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => setWantsAdmission(null)}
-                  className="rounded-xl"
+                  className="h-8 rounded-lg px-2.5 text-[13px] text-muted-foreground hover:text-foreground"
                 >
                   Cancelar
                 </Button>
@@ -322,9 +281,8 @@ export const AdmissionStep: React.FC<AdmissionStepProps> = ({
                 <>
                   {/* Section 1: Cobertura / Pagador */}
                   <div className="space-y-2">
-                    <Label className="flex items-center gap-2 text-sm font-semibold">
-                      <ShieldCheck className="w-4 h-4 text-primary" />
-                      Cobertura / Pagador *
+                    <Label className="text-[13px] font-medium text-foreground">
+                      Cobertura o pagador *
                     </Label>
                     <Select
                       value={selectedContratoId}
@@ -333,7 +291,7 @@ export const AdmissionStep: React.FC<AdmissionStepProps> = ({
                         setSelectedServicioId("");
                       }}
                     >
-                      <SelectTrigger className="h-12 rounded-xl">
+                      <SelectTrigger className="h-10 rounded-lg">
                         <SelectValue placeholder="Selecciona un convenio activo" />
                       </SelectTrigger>
                       <SelectContent>
@@ -350,7 +308,7 @@ export const AdmissionStep: React.FC<AdmissionStepProps> = ({
                       </SelectContent>
                     </Select>
                     {selectedContrato && (
-                      <p className="text-xs text-muted-foreground pl-1">
+                      <p className="pl-0.5 text-xs text-muted-foreground">
                         Tipo: {selectedContrato.tipo_contratacion} · Pagador:{" "}
                         {selectedContrato.pagador_nombre}
                       </p>
@@ -364,20 +322,19 @@ export const AdmissionStep: React.FC<AdmissionStepProps> = ({
 
                   {/* Section 2: Servicio a realizar */}
                   <div className="space-y-2">
-                    <Label className="flex items-center gap-2 text-sm font-semibold">
-                      <Stethoscope className="w-4 h-4 text-primary" />
+                    <Label className="text-[13px] font-medium text-foreground">
                       Servicio a realizar *
                     </Label>
                     {!selectedContratoId ? (
-                      <div className="h-12 rounded-xl border border-dashed border-border flex items-center justify-center text-sm text-muted-foreground">
+                      <div className="h-10 rounded-lg border border-dashed border-border flex items-center justify-center text-sm text-muted-foreground">
                         Selecciona primero un convenio
                       </div>
                     ) : loadingServicios ? (
-                      <div className="h-12 rounded-xl border border-border flex items-center justify-center">
+                      <div className="h-10 rounded-lg border border-border flex items-center justify-center">
                         <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
                       </div>
                     ) : servicios.length === 0 ? (
-                      <div className="h-12 rounded-xl border border-dashed border-destructive/30 flex items-center justify-center text-sm text-destructive">
+                      <div className="h-10 rounded-lg border border-dashed border-destructive/30 flex items-center justify-center text-sm text-destructive">
                         Este convenio no tiene tarifario o servicios asociados
                       </div>
                     ) : (
@@ -385,7 +342,7 @@ export const AdmissionStep: React.FC<AdmissionStepProps> = ({
                         value={selectedServicioId}
                         onValueChange={setSelectedServicioId}
                       >
-                        <SelectTrigger className="h-12 rounded-xl">
+                        <SelectTrigger className="h-10 rounded-lg">
                           <SelectValue placeholder="Selecciona un servicio" />
                         </SelectTrigger>
                         <SelectContent>
@@ -406,7 +363,7 @@ export const AdmissionStep: React.FC<AdmissionStepProps> = ({
                       </Select>
                     )}
                     {selectedServicio && (
-                      <p className="text-xs text-muted-foreground pl-1">
+                      <p className="pl-0.5 text-xs text-muted-foreground">
                         Código: {selectedServicio.codigo_servicio} · Valor: $
                         {selectedServicio.valor.toLocaleString()}
                       </p>
@@ -415,12 +372,11 @@ export const AdmissionStep: React.FC<AdmissionStepProps> = ({
 
                   {/* Historia clínica que llevará el paciente */}
                   <div className="space-y-2">
-                    <Label htmlFor="admission-history" className="flex items-center gap-2 text-sm font-semibold">
-                      <FileText className="w-4 h-4 text-primary" />
+                    <Label htmlFor="admission-history" className="text-[13px] font-medium text-foreground">
                       Historia clínica *
                     </Label>
                     <Select value={historyId} onValueChange={setHistoryId}>
-                      <SelectTrigger id="admission-history" className="h-12 rounded-xl">
+                      <SelectTrigger id="admission-history" className="h-10 rounded-lg">
                         <SelectValue placeholder="Selecciona la historia clínica" />
                       </SelectTrigger>
                       <SelectContent>
@@ -431,15 +387,14 @@ export const AdmissionStep: React.FC<AdmissionStepProps> = ({
                         ))}
                       </SelectContent>
                     </Select>
-                    <p className="text-xs text-muted-foreground pl-1">
+                    <p className="pl-0.5 text-xs text-muted-foreground">
                       Según el servicio que se le prestará. El profesional puede agregar escalas y formatos durante la atención.
                     </p>
                   </div>
 
                   {/* Section 3: Motivo de la visita */}
                   <div className="space-y-2">
-                    <Label className="flex items-center gap-2 text-sm font-semibold">
-                      <MessageSquareText className="w-4 h-4 text-primary" />
+                    <Label className="text-[13px] font-medium text-foreground">
                       Motivo de la visita *
                     </Label>
                     <Textarea
@@ -447,19 +402,20 @@ export const AdmissionStep: React.FC<AdmissionStepProps> = ({
                       value={motivoConsulta}
                       onChange={(e) => setMotivoConsulta(e.target.value)}
                       rows={3}
-                      className="rounded-xl resize-none"
+                      className="resize-none rounded-lg"
                     />
                   </div>
 
-                  {/* Continue button */}
-                  <Button
-                    onClick={handleContinue}
-                    disabled={!selectedContratoId || !selectedServicioId || !motivoConsulta.trim()}
-                    className="w-full h-14 rounded-2xl text-lg font-semibold"
-                  >
-                    <ArrowRight className="mr-2 w-5 h-5" />
-                    Continuar a agenda
-                  </Button>
+                  <div className="flex justify-end pt-1">
+                    <Button
+                      onClick={handleContinue}
+                      disabled={!selectedContratoId || !selectedServicioId || !motivoConsulta.trim()}
+                      className="h-10 gap-2 rounded-full px-5 active:scale-[.97]"
+                    >
+                      Continuar a la agenda
+                      <ArrowRight className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </>
               )}
             </CardContent>
